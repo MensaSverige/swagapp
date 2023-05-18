@@ -2,7 +2,7 @@
   "name": "swagapp",
   "version": "0.0.1",
   "private": false,
-  "licence": "MIT",
+  "license": "MIT",
   "scripts": {
     "android": "react-native run-android",
     "ios": "react-native run-ios",
