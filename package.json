@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@cloudflare/workers-types": "^4.20230511.0",
+    "jsdom": "^22.0.0",
     "native-base": "^3.4.28",
     "react": "18.2.0",
     "react-native": "0.71.8",
