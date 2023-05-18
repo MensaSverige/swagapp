@@ -1,3 +1,6 @@
+# Local files and folders
+/tmp
+
 # OSX
 #
 .DS_Store

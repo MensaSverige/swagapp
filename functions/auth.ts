@@ -14,7 +14,12 @@ export const onRequest: PagesFunction<Env> = async context => {
   const requestBody: LoginRequestBody = await context.request.json();
 
   // Make a GET request to the login page and parse the HTML.
-  const loginPageResponse = await fetch(loginPageURL);
+  const loginPageResponse = await fetch(loginPageURL, {
+    headers: {
+      'User-Agent':
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.82 Safari/537.36',
+    },
+  });
   const loginPageHTML = await loginPageResponse.text();
 
   // Find the CSRF token from the HTML.
