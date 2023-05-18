@@ -33,6 +33,8 @@ export const onRequest: PagesFunction<Env> = async context => {
   loginFormData.append('remember_me', '0');
   loginFormData.append('remember_me_checkbox', '1');
 
+  console.log('loginFormData', loginFormData.toString());
+
   // Make the login POST request.
   const loginResponse = await fetch(loginPageURL, {
     method: 'POST',
@@ -43,8 +45,11 @@ export const onRequest: PagesFunction<Env> = async context => {
     body: loginFormData.toString(),
   });
 
+  console.log('loginResponse', loginResponse.status, loginResponse.headers);
+
   // Check for a 301 redirect. If there isn't one, the login failed.
   if (loginResponse.status !== 301) {
+    console.log('Login failed', loginResponse);
     return new Response('Login failed', {status: 401});
   }
 
