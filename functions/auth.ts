@@ -31,6 +31,8 @@ export const onRequest: PagesFunction<Env> = async context => {
     '"',
   );
 
+  console.log('ref', ref, 'csrfToken', csrfToken);
+
   // Create the form data for the login request.
   const loginFormData = new URLSearchParams();
   loginFormData.append('login__standard_submitted', '1');
