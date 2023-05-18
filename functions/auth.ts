@@ -77,10 +77,12 @@ export const onRequest: PagesFunction<Env> = async context => {
     headers: {'Content-Type': 'text/plain'},
   });
 };
-function parseHtml(loginPageHTML: string, start: string, end: string) {
-  const csrfTokenStart = loginPageHTML.indexOf(start) + start.length;
-  const csrfTokenEnd = loginPageHTML.indexOf(end, csrfTokenStart);
-  const result = loginPageHTML.substring(csrfTokenStart, csrfTokenEnd);
+function parseHtml(html: string, start: string, end: string) {
+  const csrfTokenStart = html.indexOf(start) + start.length;
+  const csrfTokenEnd = html.indexOf(end, csrfTokenStart);
+  const result = html.substring(csrfTokenStart, csrfTokenEnd);
+
+  console.log('parseHtml', html, start, end, result);
+
   return result;
 }
-
