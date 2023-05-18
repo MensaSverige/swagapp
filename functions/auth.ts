@@ -30,26 +30,14 @@ export const onRequest: PagesFunction<Env> = async context => {
     '"',
   );
 
-  // Find the ref string from the HTML.
-  const ref = parseHtml(
-    startPageHTML,
-    '<input type="hidden" name="ref" value="',
-    '"',
-  );
-
-  console.log('ref', ref, 'csrfToken', csrfToken);
-
   // Create the form data for the login request.
   const loginFormData = new URLSearchParams();
   loginFormData.append('login__standard_submitted', '1');
   loginFormData.append('csrfKey', csrfToken);
-  loginFormData.append('ref', ref);
   loginFormData.append('auth', requestBody.username);
   loginFormData.append('password', requestBody.password);
   loginFormData.append('remember_me', '0');
   loginFormData.append('remember_me_checkbox', '1');
-
-  console.log('loginFormData', loginFormData.toString());
 
   // Make the login POST request.
   const loginResponse = await fetch(loginPageURL, {
@@ -65,10 +53,7 @@ export const onRequest: PagesFunction<Env> = async context => {
     body: loginFormData.toString(),
   });
 
-  console.log('loginResponse', loginResponse.status, loginResponse.headers);
-
-  // Check for a 301 redirect. If there isn't one, the login failed.
-  if (loginResponse.status !== 301) {
+  if (loginResponse.status !== 200) {
     console.log('Login failed', loginResponse);
     return new Response('Login failed', {status: 401});
   }
@@ -91,8 +76,6 @@ function parseHtml(html: string, start: string, end: string) {
   const csrfTokenStart = html.indexOf(start) + start.length;
   const csrfTokenEnd = html.indexOf(end, csrfTokenStart);
   const result = html.substring(csrfTokenStart, csrfTokenEnd);
-
-  console.log('parseHtml', html, start, end, result);
 
   return result;
 }
