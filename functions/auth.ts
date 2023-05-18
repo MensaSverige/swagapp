@@ -18,16 +18,16 @@ export const onRequest: PagesFunction<Env> = async context => {
   const loginPageHTML = await loginPageResponse.text();
 
   // Find the CSRF token from the HTML.
-  const csrfTokenStart =
-    loginPageHTML.indexOf('name="csrfKey" value="') +
-    'name="csrfKey" value="'.length;
-  const csrfTokenEnd = loginPageHTML.indexOf('"', csrfTokenStart);
-  const csrfToken = loginPageHTML.substring(csrfTokenStart, csrfTokenEnd);
+  const csrfToken = parseHtml(loginPageHTML, 'name="csrfKey" value="', '"');
+
+  // Find the ref string from the HTML.
+  const ref = parseHtml(loginPageHTML, 'name="ref" value="', '"');
 
   // Create the form data for the login request.
   const loginFormData = new URLSearchParams();
   loginFormData.append('login__standard_submitted', '1');
   loginFormData.append('csrfKey', csrfToken);
+  loginFormData.append('ref', ref);
   loginFormData.append('auth', requestBody.username);
   loginFormData.append('password', requestBody.password);
   loginFormData.append('remember_me', '0');
@@ -57,14 +57,20 @@ export const onRequest: PagesFunction<Env> = async context => {
   const userPageHTML = await loginResponse.text();
 
   // Find the user's name from the HTML.
-  const userNameStart =
-    userPageHTML.indexOf(
-      '<a href="#elUserLink_menu" id="elUserLink" data-ipsmenu>',
-    ) + '<a href="#elUserLink_menu" id="elUserLink" data-ipsmenu>'.length;
-  const userNameEnd = userPageHTML.indexOf('<', userNameStart);
-  const userName = userPageHTML.substring(userNameStart, userNameEnd).trim();
+  const userName = parseHtml(
+    userPageHTML,
+    '<a href="#elUserLink_menu" id="elUserLink" data-ipsmenu>',
+    '<',
+  );
 
   return new Response(`Hello, ${userName}!`, {
     headers: {'Content-Type': 'text/plain'},
   });
 };
+function parseHtml(loginPageHTML: string, start: string, end: string) {
+  const csrfTokenStart = loginPageHTML.indexOf(start) + start.length;
+  const csrfTokenEnd = loginPageHTML.indexOf(end, csrfTokenStart);
+  const result = loginPageHTML.substring(csrfTokenStart, csrfTokenEnd);
+  return result;
+}
+
