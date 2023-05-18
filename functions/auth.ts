@@ -8,30 +8,31 @@ interface LoginRequestBody {
 }
 
 export const onRequest: PagesFunction<Env> = async context => {
+  const startPageURL = 'https://medlem.mensa.se/';
   const loginPageURL = 'https://medlem.mensa.se/login/';
 
   // Parse the incoming request for username and password.
   const requestBody: LoginRequestBody = await context.request.json();
 
   // Make a GET request to the login page and parse the HTML.
-  const loginPageResponse = await fetch(loginPageURL, {
+  const startPageResponse = await fetch(startPageURL, {
     headers: {
       'User-Agent':
         'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.82 Safari/537.36',
     },
   });
-  const loginPageHTML = await loginPageResponse.text();
+  const startPageHTML = await startPageResponse.text();
 
   // Find the CSRF token from the HTML.
   const csrfToken = parseHtml(
-    loginPageHTML,
+    startPageHTML,
     '<input type="hidden" name="csrfKey" value="',
     '"',
   );
 
   // Find the ref string from the HTML.
   const ref = parseHtml(
-    loginPageHTML,
+    startPageHTML,
     '<input type="hidden" name="ref" value="',
     '"',
   );
@@ -55,7 +56,11 @@ export const onRequest: PagesFunction<Env> = async context => {
     method: 'POST',
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',
-      // Include any other necessary headers, like cookies from the GET request.
+      Cookie: startPageResponse.headers.get('Set-Cookie') || '',
+      'User-Agent':
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko)',
+      Referer: startPageURL,
+      Origin: startPageURL,
     },
     body: loginFormData.toString(),
   });
