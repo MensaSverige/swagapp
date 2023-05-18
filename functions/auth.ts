@@ -72,6 +72,7 @@ export const onRequest: PagesFunction<Env> = async context => {
     headers: {'Content-Type': 'text/plain'},
   });
 };
+
 function parseHtml(html: string, start: string, end: string) {
   const csrfTokenStart = html.indexOf(start) + start.length;
   const csrfTokenEnd = html.indexOf(end, csrfTokenStart);
