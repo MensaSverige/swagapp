@@ -18,10 +18,18 @@ export const onRequest: PagesFunction<Env> = async context => {
   const loginPageHTML = await loginPageResponse.text();
 
   // Find the CSRF token from the HTML.
-  const csrfToken = parseHtml(loginPageHTML, 'name="csrfKey" value="', '"');
+  const csrfToken = parseHtml(
+    loginPageHTML,
+    '<input type="hidden" name="csrfKey" value="',
+    '"',
+  );
 
   // Find the ref string from the HTML.
-  const ref = parseHtml(loginPageHTML, 'name="ref" value="', '"');
+  const ref = parseHtml(
+    loginPageHTML,
+    '<input type="hidden" name="ref" value="',
+    '"',
+  );
 
   // Create the form data for the login request.
   const loginFormData = new URLSearchParams();
