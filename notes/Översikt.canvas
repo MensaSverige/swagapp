@@ -1,0 +1,9 @@
+{
+	"nodes":[
+		{"type":"file","file":"Appar/Swag/SWAG - React native för årsträffen.md","id":"6d0fdff1b835f68a","x":20,"y":-740,"width":400,"height":400},
+		{"type":"file","file":"Appar/Swag/Auth.md","id":"6576e3def6b43fd4","x":-443,"y":-740,"width":400,"height":740},
+		{"type":"file","file":"Appar/Swag/Lösenordstips.md","id":"0429885ee5bd8ce9","x":-443,"y":80,"width":400,"height":400},
+		{"type":"file","file":"Appar/Swag/Tamagui.md","id":"ae44a89be5844357","x":20,"y":-260,"width":400,"height":400}
+	],
+	"edges":[]
+}

@@ -1,0 +1,149 @@
+{
+  "main": {
+    "id": "a3ae86d83374b69d",
+    "type": "split",
+    "children": [
+      {
+        "id": "d2e912d70621fdce",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "bb46dfbf510c7bf1",
+            "type": "leaf",
+            "state": {
+              "type": "empty",
+              "state": {}
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "3e8b71b63306c540",
+    "type": "split",
+    "children": [
+      {
+        "id": "9e9a499a26c92d08",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "09058ad8e60ead27",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical"
+              }
+            }
+          },
+          {
+            "id": "f20e68f357e6eba1",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              }
+            }
+          },
+          {
+            "id": "067b91cd0a36f133",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {}
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "right": {
+    "id": "7f1ea22ae5985224",
+    "type": "split",
+    "children": [
+      {
+        "id": "2e52ff414326e768",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "544b189c6cad7505",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              }
+            }
+          },
+          {
+            "id": "76e64af6774967a4",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              }
+            }
+          },
+          {
+            "id": "0a007e4d1a1d7279",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true
+              }
+            }
+          },
+          {
+            "id": "16c6e774511822f1",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {}
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:Open quick switcher": false,
+      "graph:Open graph view": false,
+      "canvas:Create new canvas": false,
+      "daily-notes:Open today's daily note": false,
+      "templates:Insert template": false,
+      "command-palette:Open command palette": false
+    }
+  },
+  "active": "bb46dfbf510c7bf1",
+  "lastOpenFiles": [
+    "Tamagui.md",
+    "SWAG - React native för årsträffen.md",
+    "Översikt.canvas",
+    "Lösenordstips.md",
+    "Auth.md"
+  ]
+}
