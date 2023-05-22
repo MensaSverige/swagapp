@@ -1,6 +1,9 @@
 # Local files and folders
 /tmp
 
+# Obsidian
+notes/.obsidian
+
 # OSX
 #
 .DS_Store
