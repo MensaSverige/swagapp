@@ -1,6 +1,6 @@
 ## Flöde
 
-1. Användaren fyller i användarnamn och lösenord i appen och postar till edge-funktionen på Cloudflare
+1. Användaren fyller i användarnamn och lösenord i appen och postar till edge-funktionen på Cloudflare, just nu https://swag.mikael.green/auth
 2. Cloudflare loggar in på mensa.se och hämtar namnet på användaren om det funkade
 3. Cloudflare genererar HMAC och returnerar till användaren tillsammans med användarens riktiga namn.
 4. Appen känner sig nu inloggad.
@@ -14,4 +14,4 @@
 
 ## Håller på med nu
 
-- Generera HMAC
+- Micke: Generera HMAC
