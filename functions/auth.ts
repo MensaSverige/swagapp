@@ -55,6 +55,8 @@ export const onRequest: PagesFunction<Env> = async context => {
   // Check if login request body is in test mode
   if (requestBody.test) {
     if (context.env.TEST_MODE !== 'true') {
+      console.log('Test mode is not enabled');
+      console.log(context.env);
       return errorResponse('Test mode is not enabled', 400);
     }
 
@@ -108,7 +110,7 @@ export const onRequest: PagesFunction<Env> = async context => {
   });
 
   if (loginResponse.status !== 200) {
-    console.log('Login failed', loginResponse);
+    console.log('Login failed, invalid credentials', loginResponse);
     return errorResponse('Login failed', 401);
   }
 
