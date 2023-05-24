@@ -17,7 +17,11 @@ export const onRequest: PagesFunction<Env> = async context => {
   const requestBody: LoginRequestBody = await context.request.json();
 
   // Check if login request body is in test mode
-  if (requestBody.test && context.env.TEST_MODE === 'true') {
+  if (requestBody.test) {
+    if (context.env.TEST_MODE !== 'true') {
+      return new Response('Test mode is not enabled', {status: 401});
+    }
+
     const hmac = await createHMAC(
       context.env.SECRET_KEY,
       requestBody.username,
