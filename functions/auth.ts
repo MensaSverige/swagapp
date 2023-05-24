@@ -9,6 +9,37 @@ interface LoginRequestBody {
   test?: boolean;
 }
 
+const successResponse = (
+  username: string,
+  name: string,
+  token: string,
+  test?: boolean,
+) => {
+  return new Response(
+    JSON.stringify({
+      username,
+      name,
+      token,
+      test,
+    }),
+    {
+      headers: {'Content-Type': 'application/json'},
+    },
+  );
+};
+
+const errorResponse = (message: string, code: number) => {
+  return new Response(
+    JSON.stringify({
+      message,
+    }),
+    {
+      headers: {'Content-Type': 'application/json'},
+      status: code,
+    },
+  );
+};
+
 export const onRequest: PagesFunction<Env> = async context => {
   const startPageURL = 'https://medlem.mensa.se/';
   const loginPageURL = 'https://medlem.mensa.se/login/';
@@ -19,7 +50,7 @@ export const onRequest: PagesFunction<Env> = async context => {
   // Check if login request body is in test mode
   if (requestBody.test) {
     if (context.env.TEST_MODE !== 'true') {
-      return new Response('Test mode is not enabled', {status: 400});
+      return errorResponse('Test mode is not enabled', 400);
     }
 
     const hmac = await createHMAC(
@@ -29,16 +60,7 @@ export const onRequest: PagesFunction<Env> = async context => {
       true, // Create a test token that other endpoints will use to respond with dummy data
     );
 
-    const responseString = JSON.stringify({
-      username: requestBody.username,
-      name: 'Test User',
-      test: true,
-      token: hmac,
-    });
-
-    return new Response(responseString, {
-      headers: {'Content-Type': 'application/json'},
-    });
+    return successResponse(requestBody.username, 'Test User', hmac, true);
   }
 
   // Make a GET request to the login page and parse the HTML.
@@ -82,7 +104,7 @@ export const onRequest: PagesFunction<Env> = async context => {
 
   if (loginResponse.status !== 200) {
     console.log('Login failed', loginResponse);
-    return new Response('Login failed', {status: 401});
+    return errorResponse('Login failed', 401);
   }
 
   // Otherwise, parse the returned HTML for the user's name.
@@ -101,15 +123,7 @@ export const onRequest: PagesFunction<Env> = async context => {
     userName,
   );
 
-  const responseString = JSON.stringify({
-    username: requestBody.username,
-    name: userName,
-    token: hmac,
-  });
-
-  return new Response(responseString, {
-    headers: {'Content-Type': 'application/json'},
-  });
+  return successResponse(requestBody.username, userName, hmac);
 };
 
 function parseHtml(html: string, start: string, end: string) {
