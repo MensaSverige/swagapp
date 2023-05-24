@@ -44,8 +44,13 @@ export const onRequest: PagesFunction<Env> = async context => {
   const startPageURL = 'https://medlem.mensa.se/';
   const loginPageURL = 'https://medlem.mensa.se/login/';
 
-  // Parse the incoming request for username and password.
-  const requestBody: LoginRequestBody = await context.request.json();
+  let requestBody: LoginRequestBody;
+  try {
+    // Parse the incoming request for username and password.
+    requestBody = await context.request.json();
+  } catch (error) {
+    return errorResponse('Invalid request body', 400);
+  }
 
   // Check if login request body is in test mode
   if (requestBody.test) {
