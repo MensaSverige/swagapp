@@ -19,7 +19,7 @@ export const onRequest: PagesFunction<Env> = async context => {
   // Check if login request body is in test mode
   if (requestBody.test) {
     if (context.env.TEST_MODE !== 'true') {
-      return new Response('Test mode is not enabled', {status: 401});
+      return new Response('Test mode is not enabled', {status: 400});
     }
 
     const hmac = await createHMAC(
