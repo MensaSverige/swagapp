@@ -1,6 +1,6 @@
 import {NativeBaseProvider} from 'native-base';
 import React from 'react';
-import {SignupForm} from './components/SignupForm';
+import {SignupForm} from './components/SigninForm';
 
 function App(): JSX.Element {
   return (

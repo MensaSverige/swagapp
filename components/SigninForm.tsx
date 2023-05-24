@@ -1,4 +1,5 @@
 import {
+  AlertDialog,
   Box,
   Button,
   Center,
@@ -9,9 +10,22 @@ import {
 } from 'native-base';
 import React from 'react';
 
+interface LoginResponse {
+  token: string;
+  name: string;
+  username: string;
+  test?: boolean;
+}
+
+interface ErrorResponse {
+  message: string;
+}
+
 export const SignupForm = () => {
   const [username, setUsername] = React.useState('');
   const [password, setPassword] = React.useState('');
+  const [showLoginError, setShowLoginError] = React.useState(false);
+  const [loginErrorText, setLoginErrorText] = React.useState('');
 
   const handleLogin = async () => {
     try {
@@ -23,22 +37,39 @@ export const SignupForm = () => {
         body: JSON.stringify({
           username: username,
           password: password,
+          test: true,
         }),
       });
-
       if (response.ok) {
         // Login was successful.
-        const data = await response.text();
-        console.log(data);
+        const data: LoginResponse = await response.json();
+        console.log('login data', data);
       } else {
         // Something went wrong with the login.
-        console.error('Login failed.');
+        if (response.status === 401) {
+          console.error('Invalid credentials');
+          setLoginErrorText('Fel användarnamn eller lösenord.');
+          setShowLoginError(true);
+        } else if (response.status === 400) {
+          const data: ErrorResponse = await response.json();
+          if (data.message === 'Test mode is not enabled') {
+            setLoginErrorText(
+              'Testläge är inte aktiverat i backend. Appen borde inte köras i testläge.',
+            );
+          } else {
+            console.log('error data', data);
+            setLoginErrorText('Något gick fel. Försök igen senare.');
+          }
+          setShowLoginError(true);
+        }
       }
     } catch (error) {
       // An error occurred while trying to log in.
-      console.error(error);
+      console.error('undefined error', error);
     }
   };
+
+  const cancelRef = React.useRef(null);
 
   return (
     <Center w="100%">
@@ -80,6 +111,24 @@ export const SignupForm = () => {
           </Button>
         </VStack>
       </Box>
+      <AlertDialog
+        leastDestructiveRef={cancelRef}
+        isOpen={showLoginError}
+        onClose={() => {
+          setShowLoginError(false);
+        }}>
+        <AlertDialog.Content>
+          <AlertDialog.Header fontSize="lg" fontWeight="bold">
+            Fel vid inloggning
+          </AlertDialog.Header>
+          <AlertDialog.Body>{loginErrorText}</AlertDialog.Body>
+          <AlertDialog.Footer>
+            <Button ref={cancelRef} onPress={() => setShowLoginError(false)}>
+              OK
+            </Button>
+          </AlertDialog.Footer>
+        </AlertDialog.Content>
+      </AlertDialog>
     </Center>
   );
 };
