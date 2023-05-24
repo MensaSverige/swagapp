@@ -28,8 +28,16 @@ export const onRequest: PagesFunction<Env> = async context => {
       'Test User',
       true, // Create a test token that other endpoints will use to respond with dummy data
     );
-    return new Response(hmac, {
-      headers: {'Content-Type': 'text/plain'},
+
+    const responseString = JSON.stringify({
+      username: requestBody.username,
+      name: 'Test User',
+      test: true,
+      token: hmac,
+    });
+
+    return new Response(responseString, {
+      headers: {'Content-Type': 'application/json'},
     });
   }
 
@@ -87,8 +95,20 @@ export const onRequest: PagesFunction<Env> = async context => {
     '<',
   );
 
-  return new Response(`Hello, ${userName}!`, {
-    headers: {'Content-Type': 'text/plain'},
+  const hmac = await createHMAC(
+    context.env.SECRET_KEY,
+    requestBody.username,
+    userName,
+  );
+
+  const responseString = JSON.stringify({
+    username: requestBody.username,
+    name: userName,
+    token: hmac,
+  });
+
+  return new Response(responseString, {
+    headers: {'Content-Type': 'application/json'},
   });
 };
 
