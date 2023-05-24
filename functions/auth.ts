@@ -1,10 +1,12 @@
 interface Env {
-  KV: KVNamespace;
+  SECRET_KEY: string;
+  TEST_MODE?: string; // 'true', 'false' or undefined
 }
 
 interface LoginRequestBody {
   username: string;
   password: string;
+  test?: boolean;
 }
 
 export const onRequest: PagesFunction<Env> = async context => {
@@ -13,6 +15,18 @@ export const onRequest: PagesFunction<Env> = async context => {
 
   // Parse the incoming request for username and password.
   const requestBody: LoginRequestBody = await context.request.json();
+
+  // Check if login request body is in test mode
+  if (requestBody.test && context.env.TEST_MODE === 'true') {
+    const hmac = await createHMAC(
+      context.env.SECRET_KEY,
+      requestBody.username,
+      'Test User',
+    );
+    return new Response(hmac, {
+      headers: {'Content-Type': 'text/plain'},
+    });
+  }
 
   // Make a GET request to the login page and parse the HTML.
   const startPageResponse = await fetch(startPageURL, {
@@ -79,4 +93,39 @@ function parseHtml(html: string, start: string, end: string) {
   const result = html.substring(csrfTokenStart, csrfTokenEnd);
 
   return result;
+}
+
+async function createHMAC(secret: string, username: string, name: string) {
+  const encoder = new TextEncoder();
+
+  // Create payload
+  const payload = {username, name, exp: Math.floor(Date.now() / 1000) + 60};
+  const payloadString = JSON.stringify(payload);
+  const payloadBytes = encoder.encode(payloadString);
+  const payloadBase64 = btoa(payloadString);
+
+  // Import the HMAC key
+  const key = await crypto.subtle.importKey(
+    'raw',
+    encoder.encode(secret),
+    {
+      name: 'HMAC',
+      hash: 'SHA-256',
+    },
+    false,
+    ['sign'],
+  );
+
+  // Generate the HMAC
+  const signature = await crypto.subtle.sign('HMAC', key, payloadBytes);
+
+  const signatureArray = Array.from(new Uint8Array(signature));
+
+  // Convert the signature to Base64
+  const signatureBase64 = btoa(String.fromCharCode.apply(null, signatureArray));
+
+  // Create the final token
+  const token = `${payloadBase64}.${signatureBase64}`;
+
+  return token;
 }
