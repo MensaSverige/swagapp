@@ -22,6 +22,7 @@ export const onRequest: PagesFunction<Env> = async context => {
       context.env.SECRET_KEY,
       requestBody.username,
       'Test User',
+      true, // Create a test token that other endpoints will use to respond with dummy data
     );
     return new Response(hmac, {
       headers: {'Content-Type': 'text/plain'},
@@ -95,11 +96,21 @@ function parseHtml(html: string, start: string, end: string) {
   return result;
 }
 
-async function createHMAC(secret: string, username: string, name: string) {
+async function createHMAC(
+  secret: string,
+  username: string,
+  name: string,
+  test: boolean = false,
+) {
   const encoder = new TextEncoder();
 
   // Create payload
-  const payload = {username, name, exp: Math.floor(Date.now() / 1000) + 60};
+  const payload = {
+    username,
+    name,
+    test,
+    exp: Math.floor(Date.now() / 1000) + 60,
+  };
   const payloadString = JSON.stringify(payload);
   const payloadBytes = encoder.encode(payloadString);
   const payloadBase64 = btoa(payloadString);
