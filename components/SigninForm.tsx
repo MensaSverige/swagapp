@@ -3,13 +3,11 @@ import {
   Box,
   Button,
   Center,
-  FormControl,
   Heading,
   Input,
-  VStack,
+  VStack
 } from 'native-base';
 import React from 'react';
-
 interface LoginResponse {
   token: string;
   name: string;
@@ -68,67 +66,51 @@ export const SignupForm = () => {
       console.error('undefined error', error);
     }
   };
-
   const cancelRef = React.useRef(null);
 
   return (
-    <Center w="100%">
-      <Box safeArea p="2" w="90%" maxW="290" py="8">
-        <Heading
-          size="lg"
-          color="coolGray.800"
-          _dark={{
-            color: 'warmGray.50',
-          }}
-          fontWeight="semibold">
-          Välkommen Swagger
-        </Heading>
-        <Heading
-          mt="1"
-          color="coolGray.600"
-          _dark={{
-            color: 'warmGray.200',
-          }}
-          fontWeight="medium"
-          size="xs">
+    <Center w="100%" h="100%">
+      <Box safeArea flex={1} p={10} w="100%" mx="auto">
+        <Heading size="lg">Välkommen Swagger</Heading>
+        <Heading mt="1" fontWeight="medium" size="xs">
           Logga in med dina Mensa.se-uppgifter
         </Heading>
-        <VStack space={3} mt="5">
-          <FormControl>
-            <FormControl.Label>Användarnamn</FormControl.Label>
-            <Input value={username} onChangeText={setUsername} />
-          </FormControl>
-          <FormControl>
-            <FormControl.Label>Lösenord</FormControl.Label>
-            <Input
-              type="password"
-              value={password}
-              onChangeText={setPassword}
-            />
-          </FormControl>
-          <Button mt="2" colorScheme="indigo" onPress={handleLogin}>
+
+        <VStack space={4} mt={5}>
+          <Input
+            variant="filled"
+            placeholder="Email"
+            value={username}
+            onChangeText={setUsername}
+          />
+          <Input
+            variant="filled"
+            placeholder="Lösenord"
+            type="password"
+            value={password}
+            onChangeText={setPassword}
+          />
+          <Button mt={8} onPress={handleLogin}>
             Logga in
           </Button>
         </VStack>
+        <AlertDialog
+          leastDestructiveRef={cancelRef}
+          isOpen={showLoginError}
+          onClose={() => {
+            setShowLoginError(false);
+          }}>
+          <AlertDialog.Content>
+            <AlertDialog.Header>Fel vid inloggning</AlertDialog.Header>
+            <AlertDialog.Body>{loginErrorText}</AlertDialog.Body>
+            <AlertDialog.Footer>
+              <Button ref={cancelRef} onPress={() => setShowLoginError(false)}>
+                OK
+              </Button>
+            </AlertDialog.Footer>
+          </AlertDialog.Content>
+        </AlertDialog>
       </Box>
-      <AlertDialog
-        leastDestructiveRef={cancelRef}
-        isOpen={showLoginError}
-        onClose={() => {
-          setShowLoginError(false);
-        }}>
-        <AlertDialog.Content>
-          <AlertDialog.Header fontSize="lg" fontWeight="bold">
-            Fel vid inloggning
-          </AlertDialog.Header>
-          <AlertDialog.Body>{loginErrorText}</AlertDialog.Body>
-          <AlertDialog.Footer>
-            <Button ref={cancelRef} onPress={() => setShowLoginError(false)}>
-              OK
-            </Button>
-          </AlertDialog.Footer>
-        </AlertDialog.Content>
-      </AlertDialog>
     </Center>
   );
 };
