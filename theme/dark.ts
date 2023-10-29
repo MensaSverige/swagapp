@@ -10,7 +10,7 @@ const darkTheme = extendTheme({
     components: {
         Center: {
             defaultProps: {
-                bg: 'muted.800',
+                bg: '#08142A', //oxford_blue
             },
         },
         Heading: {
