@@ -1,0 +1,9 @@
+{
+  "type": "object",
+  "properties": {
+    "username": {"type": "string"},
+    "age": {"type": "number"},
+    "slogan": {"type": "string"}
+  },
+  "required": ["username"]
+}

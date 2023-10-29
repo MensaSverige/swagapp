@@ -5,11 +5,12 @@ import {
   Center,
   Heading,
   Input,
-  VStack
+  VStack,
 } from 'native-base';
 import React from 'react';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../functions/NavigationTypes';
+import {User} from '../types/user';
 interface LoginResponse {
   token: string;
   name: string;
@@ -23,9 +24,10 @@ interface ErrorResponse {
 
 
 type SigninFormProps = {
-  navigation: NativeStackNavigationProp<RootStackParamList, 'SigninForm'>;
+  navigation: NativeStackNavigationProp<RootStackParamList, 'SigninForm'>,
+  setUser: React.Dispatch<React.SetStateAction<User | null>>
 };
-export const SigninForm = ({ navigation }: SigninFormProps) => {
+export const SigninForm = ({ navigation, setUser }: SigninFormProps) => {
   const [username, setUsername] = React.useState('');
   const [password, setPassword] = React.useState('');
   const [showLoginError, setShowLoginError] = React.useState(false);
@@ -47,6 +49,7 @@ export const SigninForm = ({ navigation }: SigninFormProps) => {
       if (response.ok) {
         // Login was successful.
         const data: LoginResponse = await response.json();
+        setUser(data);
         console.log('login data', data);
         navigation.navigate('SwagMap');
       } else {

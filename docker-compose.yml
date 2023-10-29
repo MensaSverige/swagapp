@@ -1,0 +1,33 @@
+version: '3'
+services:
+  backend:
+    image: python:3.11
+    volumes:
+      - ./backend:/app  # Mount the backend code
+      - ./schema:/app/schema  # Mount the schema directory
+    working_dir: /app
+    command: bash -c "pip install -r requirements.txt && FLASK_APP=server.py FLASK_ENV=development flask run --host=0.0.0.0 --port=5000"
+    ports:
+      - "5000:5000"
+    depends_on:
+      - mongo
+
+  mongo:
+    image: mongo:latest
+    volumes:
+      - mongodata:/data/db
+    ports:
+      - "27017:27017"
+
+  frontend:
+    image: node:latest
+    volumes:
+      - ./frontend:/app  # Mount the frontend code
+      - ./model.json:/app/model.json  # Mount the model file
+    working_dir: /app
+    command: bash -c "npm install && npm start"
+    ports:
+      - "3000:3000"
+
+volumes:
+  mongodata:
