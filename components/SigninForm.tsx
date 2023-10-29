@@ -8,6 +8,8 @@ import {
   VStack
 } from 'native-base';
 import React from 'react';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../functions/NavigationTypes';
 interface LoginResponse {
   token: string;
   name: string;
@@ -19,7 +21,11 @@ interface ErrorResponse {
   message: string;
 }
 
-export const SignupForm = () => {
+
+type SigninFormProps = {
+  navigation: NativeStackNavigationProp<RootStackParamList, 'SigninForm'>;
+};
+export const SigninForm = ({ navigation }: SigninFormProps) => {
   const [username, setUsername] = React.useState('');
   const [password, setPassword] = React.useState('');
   const [showLoginError, setShowLoginError] = React.useState(false);
@@ -42,6 +48,7 @@ export const SignupForm = () => {
         // Login was successful.
         const data: LoginResponse = await response.json();
         console.log('login data', data);
+        navigation.navigate('SwagMap');
       } else {
         // Something went wrong with the login.
         if (response.status === 401) {
