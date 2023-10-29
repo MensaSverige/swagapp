@@ -6,13 +6,18 @@ import { getTheme} from './theme';
 import { NavigationContainer } from '@react-navigation/native';
 import {createNativeStackNavigator, NativeStackNavigationProp } from '@react-navigation/native-stack';
 import SwagMap from './components/SwagMap';
+import SplashScreen from 'react-native-splash-screen';
 
 
 const Stack = createNativeStackNavigator();
 
 function App(): JSX.Element {
-  const [colorScheme, setColorScheme] = useState<ColorSchemeName | null>(Appearance.getColorScheme());
 
+  const [colorScheme, setColorScheme] = useState<ColorSchemeName | null>(Appearance.getColorScheme());
+  useEffect(() => {
+    SplashScreen.hide();
+  }, []);
+  
   useEffect(() => {
     const subscription = Appearance.addChangeListener(({ colorScheme }) => {
       setColorScheme(colorScheme);
@@ -28,9 +33,12 @@ function App(): JSX.Element {
       <NavigationContainer>
         <Stack.Navigator initialRouteName="Signin">
           <Stack.Screen
-            name="Sigin"
+            name="Signin"
             component={SigninForm}
-            options={{ title: 'Logga in' }}
+            options={{ 
+              headerTitle: 'Logga in', 
+              headerShown: false,
+            }}
           />
           <Stack.Screen
             name="SwagMap"
