@@ -56,5 +56,22 @@ target 'swagapp' do
       :mac_catalyst_enabled => false
     )
     __apply_Xcode_12_5_M1_post_install_workaround(installer)
+
+    # Define the path to hash.hpp relative to the Podfile
+    file_path = File.join(Dir.pwd, 'Pods', 'boost', 'boost', 'container_hash', 'hash.hpp')
+
+    # Read the contents of hash.hpp
+    file_contents = File.read(file_path)
+
+    # Replace the relevant text
+    modified_contents = file_contents.gsub(
+      'struct hash_base : std::unary_function<T, std::size_t> {};',
+      'struct hash_base : std::__unary_function<T, std::size_t> {};'
+    )
+
+    # Write the modified contents back to hash.hpp
+    puts "Patching #{file_path}"
+    File.open(file_path, 'w') { |file| file.puts modified_contents }
+
   end
 end
