@@ -1,4 +1,4 @@
-import {NativeBaseProvider, extendTheme} from 'native-base';
+import {NativeBaseProvider, Text, extendTheme} from 'native-base';
 import {Appearance, ColorSchemeName} from 'react-native';
 import React, {useState, useEffect} from 'react';
 import {SigninForm} from './components/SigninForm';
@@ -41,12 +41,12 @@ function App(): JSX.Element {
           {user === null ? (
             <Stack.Screen
               name="Signin"
-              component={SigninForm}
               options={{
                 headerTitle: 'Logga in',
                 headerShown: false,
-              }}
-            />
+              }}>
+              {props => <SigninForm {...props} setUser={setUser} />}
+            </Stack.Screen>
           ) : (
             <Stack.Screen
               name="SwagMap"

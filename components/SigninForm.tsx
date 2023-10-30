@@ -49,7 +49,12 @@ export const SigninForm = ({ navigation, setUser }: SigninFormProps) => {
       if (response.ok) {
         // Login was successful.
         const data: LoginResponse = await response.json();
-        setUser(data);
+        const user: User = {
+          name: data.name,
+          token: data.token,
+          username: data.username,
+        };
+        setUser(user);
         console.log('login data', data);
         navigation.navigate('SwagMap');
       } else {
