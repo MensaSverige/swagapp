@@ -9,6 +9,7 @@
     "lint": "eslint .",
     "start": "react-native start",
     "test": "jest",
+    "prebuild": "yarn generate-types && yarn generate-icons",
     "generate-types": "json2ts -i ./schema -o ./types",
     "generate-icons": "icon-set-creator create ./assets/icon.jpg"
   },
@@ -23,6 +24,7 @@
     "native-base": "^3.4.28",
     "react": "18.2.0",
     "react-native": "0.71.8",
+    "react-native-config": "^1.5.1",
     "react-native-dotenv": "^3.4.9",
     "react-native-maps": "^1.8.0",
     "react-native-safe-area-context": "3.3.2",

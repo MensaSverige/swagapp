@@ -11,6 +11,8 @@ import React from 'react';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {RootStackParamList} from '../functions/NavigationTypes';
 import {User} from '../types/user';
+import Config from 'react-native-config';
+
 interface LoginResponse {
   token: string;
   name: string;
@@ -26,7 +28,7 @@ type SigninFormProps = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'SigninForm'>;
   setUser: React.Dispatch<React.SetStateAction<User | null>>;
 };
-export const SigninForm = ({navigation, setUser}: SigninFormProps) => {
+export const SigninForm = ({setUser}: SigninFormProps) => {
   const [username, setUsername] = React.useState('');
   const [password, setPassword] = React.useState('');
   const [showLoginError, setShowLoginError] = React.useState(false);
@@ -34,7 +36,7 @@ export const SigninForm = ({navigation, setUser}: SigninFormProps) => {
 
   const handleLogin = async () => {
     try {
-      const response = await fetch('https://swag.mikael.green/auth', {
+      const response = await fetch(Config.API_URL + '/auth', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -104,7 +106,7 @@ export const SigninForm = ({navigation, setUser}: SigninFormProps) => {
             onChangeText={setPassword}
           />
           <Button mt={8} onPress={handleLogin}>
-            Logga in
+            {Config.TEST_MODE === 'true' ? 'Logga in i testläge' : 'Logga in'}
           </Button>
         </VStack>
         <AlertDialog

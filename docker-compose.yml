@@ -11,6 +11,8 @@ services:
       - "5000:5000"
     depends_on:
       - mongo
+    env_file:
+      - .env
 
   mongo:
     image: mongo:latest
@@ -19,15 +21,15 @@ services:
     ports:
       - "27017:27017"
 
-  frontend:
-    image: node:latest
-    volumes:
-      - ./frontend:/app  # Mount the frontend code
-      - ./model.json:/app/model.json  # Mount the model file
-    working_dir: /app
-    command: bash -c "npm install && npm start"
-    ports:
-      - "3000:3000"
+  # WIP:
+  # frontend:
+  #   image: node:latest
+  #   volumes:
+  #     - ./:/app  # Mount the frontend code
+  #   working_dir: /app
+  #   command: bash -c "yarn && yarn prebuild && yarn start"
+  #   ports:
+  #     - "3000:3000"
 
 volumes:
   mongodata:
