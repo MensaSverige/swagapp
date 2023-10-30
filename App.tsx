@@ -1,18 +1,44 @@
-import {NativeBaseProvider, Text, extendTheme} from 'native-base';
+import {NativeBaseProvider} from 'native-base';
 import {Appearance, ColorSchemeName} from 'react-native';
 import React, {useState, useEffect} from 'react';
 import {SigninForm} from './components/SigninForm';
 import {getTheme} from './theme';
 import {NavigationContainer} from '@react-navigation/native';
-import {
-  createNativeStackNavigator,
-  NativeStackNavigationProp,
-} from '@react-navigation/native-stack';
+import {createNativeStackNavigator} from '@react-navigation/native-stack';
+import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
 import SwagMap from './components/SwagMap';
 import SplashScreen from 'react-native-splash-screen';
 import {User} from './types/user';
+import Profile from './components/Profile';
+import Icon from 'react-native-vector-icons/Ionicons';
 
 const Stack = createNativeStackNavigator();
+const BottomTab = createBottomTabNavigator();
+
+function LoggedInTabs() {
+  return (
+    <BottomTab.Navigator>
+      <BottomTab.Screen
+        name="Karta"
+        component={SwagMap}
+        options={{
+          tabBarIcon: ({color, size}) => (
+            <Icon name="map-outline" color={color} size={size} />
+          ),
+        }}
+      />
+      <BottomTab.Screen
+        name="Profil"
+        component={Profile}
+        options={{
+          tabBarIcon: ({color, size}) => (
+            <Icon name="person-outline" color={color} size={size} />
+          ),
+        }}
+      />
+    </BottomTab.Navigator>
+  );
+}
 
 function App(): JSX.Element {
   const [user, setUser] = useState<User | null>(null);
@@ -49,9 +75,9 @@ function App(): JSX.Element {
             </Stack.Screen>
           ) : (
             <Stack.Screen
-              name="SwagMap"
-              component={SwagMap}
-              options={{title: 'Swagmap'}}
+              name="Tab View"
+              component={LoggedInTabs}
+              options={{headerShown: false}}
             />
           )}
         </Stack.Navigator>

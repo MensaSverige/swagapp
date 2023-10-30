@@ -8,8 +8,8 @@ import {
   VStack,
 } from 'native-base';
 import React from 'react';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../functions/NavigationTypes';
+import {NativeStackNavigationProp} from '@react-navigation/native-stack';
+import {RootStackParamList} from '../functions/NavigationTypes';
 import {User} from '../types/user';
 interface LoginResponse {
   token: string;
@@ -22,12 +22,11 @@ interface ErrorResponse {
   message: string;
 }
 
-
 type SigninFormProps = {
-  navigation: NativeStackNavigationProp<RootStackParamList, 'SigninForm'>,
-  setUser: React.Dispatch<React.SetStateAction<User | null>>
+  navigation: NativeStackNavigationProp<RootStackParamList, 'SigninForm'>;
+  setUser: React.Dispatch<React.SetStateAction<User | null>>;
 };
-export const SigninForm = ({ navigation, setUser }: SigninFormProps) => {
+export const SigninForm = ({navigation, setUser}: SigninFormProps) => {
   const [username, setUsername] = React.useState('');
   const [password, setPassword] = React.useState('');
   const [showLoginError, setShowLoginError] = React.useState(false);
@@ -56,7 +55,6 @@ export const SigninForm = ({ navigation, setUser }: SigninFormProps) => {
         };
         setUser(user);
         console.log('login data', data);
-        navigation.navigate('SwagMap');
       } else {
         // Something went wrong with the login.
         if (response.status === 401) {
