@@ -1,0 +1,10 @@
+{
+  "type": "object",
+  "properties": {
+    "username": {"type": "string"},
+    "lat": {"type": "number"},
+    "lng": {"type": "number"},
+    "timestamp": {"type": "number"}
+  },
+  "required": ["username", "lat", "lng", "timestamp"]
+}

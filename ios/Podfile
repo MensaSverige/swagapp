@@ -56,5 +56,66 @@ target 'swagapp' do
       :mac_catalyst_enabled => false
     )
     __apply_Xcode_12_5_M1_post_install_workaround(installer)
+
+    patch_unary_function_bug
+    
+    add_fonts_to_info_plist
+
   end
+end
+
+
+
+
+def add_fonts_to_info_plist
+
+  puts "Adding react-native-vector-icons fonts to Info.plist..."
+
+  require 'plist'
+
+  # Path to Info.plist
+  info_plist_path = './swagapp/Info.plist'
+
+  # Path to the Fonts folder in node_modules
+  fonts_path = '../node_modules/react-native-vector-icons/Fonts'
+
+  # Read the existing Info.plist into a hash
+  info_plist = Plist.parse_xml(`plutil -convert xml1 -o - #{info_plist_path}`)
+
+  # Create an array to hold the font names
+  ui_app_fonts = []
+
+  # Loop through all .ttf files in the Fonts directory and add them to the array
+  Dir.foreach(fonts_path) do |font_file|
+    if font_file.end_with?('.ttf')
+      ui_app_fonts.push(font_file)
+    end
+  end
+
+  # Update the UIAppFonts key in the plist hash
+  info_plist['UIAppFonts'] = ui_app_fonts
+
+  # Write the updated plist back to Info.plist
+  File.write(info_plist_path, info_plist.to_plist)
+end
+
+
+
+
+def patch_unary_function_bug
+  # Define the path to hash.hpp relative to the Podfile
+  file_path = File.join(Dir.pwd, 'Pods', 'boost', 'boost', 'container_hash', 'hash.hpp')
+  puts "Doing s/unary_function/__unary_function/g in #{file_path}..."
+
+  # Read the contents of hash.hpp
+  file_contents = File.read(file_path)
+
+  # Replace the relevant text
+  modified_contents = file_contents.gsub(
+    'struct hash_base : std::unary_function<T, std::size_t> {};',
+    'struct hash_base : std::__unary_function<T, std::size_t> {};'
+  )
+
+  # Write the modified contents back to hash.hpp
+  File.open(file_path, 'w') { |file| file.puts modified_contents }
 end

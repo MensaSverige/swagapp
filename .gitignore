@@ -4,6 +4,9 @@
 # Obsidian
 notes/.obsidian
 
+# Backend
+.venv
+
 # OSX
 #
 .DS_Store
