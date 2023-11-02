@@ -4,14 +4,15 @@
   "private": false,
   "license": "MIT",
   "scripts": {
-    "android": "react-native run-android",
-    "ios": "react-native run-ios",
+    "android": "yarn cc && react-native run-android",
+    "ios": "yarn cc && react-native run-ios",
     "lint": "eslint .",
-    "start": "react-native start",
+    "start": "yarn cc && react-native start",
     "test": "jest",
     "prebuild": "yarn generate-types && yarn generate-icons",
     "generate-types": "json2ts -i ./schema -o ./types",
-    "generate-icons": "icon-set-creator create ./assets/icon.jpg"
+    "generate-icons": "npx icon-set-creator create ./assets/icon.jpg",
+    "cc": "rimraf node_modules/react-native-config/ios/ReactNativeConfig/GeneratedDotEnv.m"
   },
   "dependencies": {
     "@cloudflare/workers-types": "^4.20230511.0",
@@ -19,6 +20,7 @@
     "@react-navigation/bottom-tabs": "^6.5.11",
     "@react-navigation/native": "^6.1.9",
     "@react-navigation/native-stack": "^6.9.16",
+    "axios": "^1.6.0",
     "icon-set-creator": "^1.2.6",
     "json-schema-to-typescript": "^13.1.1",
     "native-base": "^3.4.28",
@@ -31,7 +33,8 @@
     "react-native-screens": "^3.27.0",
     "react-native-splash-screen": "^3.3.0",
     "react-native-svg": "12.1.1",
-    "react-native-vector-icons": "^10.0.1"
+    "react-native-vector-icons": "^10.0.1",
+    "zustand": "^4.4.4"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0",

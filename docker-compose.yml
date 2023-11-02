@@ -21,15 +21,5 @@ services:
     ports:
       - "27017:27017"
 
-  # WIP:
-  # frontend:
-  #   image: node:latest
-  #   volumes:
-  #     - ./:/app  # Mount the frontend code
-  #   working_dir: /app
-  #   command: bash -c "yarn && yarn prebuild && yarn start"
-  #   ports:
-  #     - "3000:3000"
-
 volumes:
   mongodata:

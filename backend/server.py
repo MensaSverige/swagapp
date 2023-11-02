@@ -5,9 +5,9 @@ from bson.objectid import ObjectId
 from functools import partial
 from token_processing import requires_auth
 from auth import auth_endpoint
+from mongo import initialize_collection_from_schema
 import jsonschema
 import os
-import json
 
 # Initialize logging
 logging.basicConfig(level=logging.INFO)
@@ -15,13 +15,13 @@ logging.basicConfig(level=logging.INFO)
 app = Flask(__name__)
 
 client = MongoClient('mongo', 27017)
-db = client['dynamic_crud']
-
+db = client['swag']
 schema_dir = './schema'
 
 
 @requires_auth
 def create(model_name, schema, collection):
+    logging.info(f"create: {request.method} {request.path}")
     try:
         item = request.json
         jsonschema.validate(instance=item, schema=schema)
@@ -35,6 +35,7 @@ def create(model_name, schema, collection):
 
 @requires_auth
 def read(model_name, collection):
+    logging.info(f"read: {request.method} {request.path}")
     try:
         items = list(collection.find())
         logging.info(f"Items successfully retrieved from {model_name}")
@@ -45,20 +46,39 @@ def read(model_name, collection):
 
 
 @requires_auth
-def update(model_name, schema, collection):
+def update(model_name, schema, collection, item_id):
+    logging.info(f"update: {request.method} {request.path}")
     try:
+        logging.info("Trying to read item from request body")
         item = request.json
+        logging.info(f"Item to update: {item}")
         jsonschema.validate(instance=item, schema=schema)
-        collection.replace_one({'_id': ObjectId(item_id)}, item)
-        logging.info(f"Item successfully updated in {model_name}")
-        return jsonify({'status': 'success'}), 200
+
+        # List all items in collection
+        items = list(collection.find())
+        logging.info(f"Items in {model_name}: {items}")
+
+        result = collection.replace_one({'_id': ObjectId(item_id)}, item)
+        logging.info(
+            f"Item successfully updated in {model_name}: {result.modified_count}")
+
+        # Get whole item from database
+        item = collection.find_one({'_id': ObjectId(item_id)})
+        logging.info(f"Item successfully retrieved from {model_name}: {item}")
+
+        # remove _id field
+        item.pop('_id', None)
+
+        return jsonify({'status': 'success', 'data': item}), 200
+
     except jsonschema.ValidationError as e:
         logging.error(f"Validation Error in PUT /{model_name}: {str(e)}")
         return jsonify({'error': str(e)}), 400
 
 
 @requires_auth
-def delete(model_name, collection):
+def delete(model_name, collection, item_id):
+    logging.info(f"delete: {request.method} {request.path}")
     try:
         result = collection.delete_one({'_id': ObjectId(item_id)})
         if result.deleted_count == 1:
@@ -75,10 +95,12 @@ def delete(model_name, collection):
 for filename in os.listdir(schema_dir):
     if filename.endswith('.json'):
         model_name = filename[:-5]
-        with open(os.path.join(schema_dir, filename)) as f:
-            schema = json.load(f)
 
-        collection = db[model_name]
+        schema, collection = initialize_collection_from_schema(
+            model_name,
+            os.path.join(schema_dir, filename),
+            db
+        )
 
         app.add_url_rule(f'/{model_name}', f'create_{model_name}',
                          partial(create, model_name, schema, collection), methods=['POST'])
@@ -89,15 +111,8 @@ for filename in os.listdir(schema_dir):
         app.add_url_rule(f'/{model_name}/<string:item_id>', f'delete_{model_name}',
                          partial(delete, model_name, collection), methods=['DELETE'])
 
-if os.environ.get('TEST_MODE') == 'true':
-    logging.info("Running in test mode")
-    auth_methods = ['GET', 'POST']
-else:
-    logging.info("Running in production mode")
-    auth_methods = ['POST']
-
 app.add_url_rule('/auth', 'auth_endpoint',
-                 auth_endpoint, methods=auth_methods)
+                 auth_endpoint, methods=['POST'])
 
 if __name__ == '__main__':
     app.config['ENV'] = 'development'

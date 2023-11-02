@@ -2,8 +2,13 @@
   "type": "object",
   "properties": {
     "username": {"type": "string"},
+    "name": {"type": "string"},
     "age": {"type": "number"},
-    "slogan": {"type": "string"}
+    "slogan": {"type": "string"},
+    "avatar_url": {"type": "string"},
+    "lat": {"type": "number"},
+    "lng": {"type": "number"},
+    "show_location": {"type": "boolean"}
   },
   "required": ["username"]
 }

@@ -3,3 +3,4 @@ pycryptodome
 jsonschema
 pymongo
 requests
+PyJWT
