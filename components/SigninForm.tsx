@@ -5,37 +5,37 @@ import {
   Center,
   Heading,
   Input,
+  Spinner,
   VStack,
 } from 'native-base';
 import React from 'react';
-import {NativeStackNavigationProp} from '@react-navigation/native-stack';
-import {RootStackParamList} from '../functions/NavigationTypes';
 import {User} from '../types/user';
 import Config from 'react-native-config';
+import useStore from '../store';
 
 interface LoginResponse {
+  user: User;
   token: string;
-  name: string;
-  username: string;
-  test?: boolean;
 }
 
 interface ErrorResponse {
   message: string;
 }
 
-type SigninFormProps = {
-  navigation: NativeStackNavigationProp<RootStackParamList, 'SigninForm'>;
-  setUser: React.Dispatch<React.SetStateAction<User | null>>;
-};
-export const SigninForm = ({setUser}: SigninFormProps) => {
+export const SigninForm = () => {
   const [username, setUsername] = React.useState('');
   const [password, setPassword] = React.useState('');
+
   const [showLoginError, setShowLoginError] = React.useState(false);
   const [loginErrorText, setLoginErrorText] = React.useState('');
 
+  const [isLoading, setIsLoading] = React.useState(false);
+
+  const store = useStore();
+
   const handleLogin = async () => {
     try {
+      setIsLoading(true);
       const response = await fetch(Config.API_URL + '/auth', {
         method: 'POST',
         headers: {
@@ -44,19 +44,19 @@ export const SigninForm = ({setUser}: SigninFormProps) => {
         body: JSON.stringify({
           username: username,
           password: password,
-          test: true,
+          test: Config.TEST_MODE === 'true' ? true : false,
         }),
       });
+
+      setIsLoading(false);
+
       if (response.ok) {
         // Login was successful.
         const data: LoginResponse = await response.json();
-        const user: User = {
-          name: data.name,
-          token: data.token,
-          username: data.username,
-        };
-        setUser(user);
-        console.log('login data', data);
+        console.log('data', data);
+        const user: User = data.user;
+        store.setToken(data.token);
+        store.setUser(user);
       } else {
         // Something went wrong with the login.
         if (response.status === 401) {
@@ -97,6 +97,9 @@ export const SigninForm = ({setUser}: SigninFormProps) => {
             placeholder="Email"
             value={username}
             onChangeText={setUsername}
+            autoCapitalize="none"
+            keyboardType="email-address"
+            isDisabled={isLoading}
           />
           <Input
             variant="filled"
@@ -104,10 +107,15 @@ export const SigninForm = ({setUser}: SigninFormProps) => {
             type="password"
             value={password}
             onChangeText={setPassword}
+            isDisabled={isLoading}
           />
-          <Button mt={8} onPress={handleLogin}>
-            {Config.TEST_MODE === 'true' ? 'Logga in i testläge' : 'Logga in'}
-          </Button>
+          {isLoading ? (
+            <Spinner />
+          ) : (
+            <Button mt={8} onPress={handleLogin}>
+              {Config.TEST_MODE === 'true' ? 'Logga in i testläge' : 'Logga in'}
+            </Button>
+          )}
         </VStack>
         <AlertDialog
           leastDestructiveRef={cancelRef}

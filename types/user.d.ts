@@ -6,8 +6,14 @@
  */
 
 export interface User {
+  id?: number;
   username: string;
+  name?: string;
   age?: number;
   slogan?: string;
+  avatar_url?: string;
+  lat?: number;
+  lng?: number;
+  show_location?: boolean;
   [k: string]: unknown;
 }

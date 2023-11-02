@@ -1,44 +1,64 @@
+from flask import request, jsonify, current_app
+import os
+import jwt
 from functools import wraps
-from Crypto.Hash import HMAC, SHA256
 from flask import request, jsonify
-import base64
-import json
-import time
+import logging
+import datetime
+
+logging.basicConfig(level=logging.INFO)
+
+SECRET_KEY = os.getenv('SECRET_KEY')
 
 
-def verify_token(token, secret):
+def create_token(username, name, test=False):
+    exp = datetime.datetime.utcnow() + datetime.timedelta(minutes=15)  # 1 minute expiry
+    payload = {
+        'exp': exp,
+        'iat': datetime.datetime.utcnow(),
+        'sub': username,
+        'name': name,
+        'test': test
+    }
+    return jwt.encode(
+        payload,
+        SECRET_KEY,
+        algorithm='HS256'
+    )
+
+
+def verify_token(token):
     try:
-        payload_base64, signature_base64 = token.split('.')
-        payload = base64.b64decode(payload_base64).decode('utf-8')
-        signature = base64.b64decode(signature_base64)
-
-        payload_json = json.loads(payload)
-
-        if payload_json['exp'] < time.time():
-            return False, 'Token expired'
-
-        # Calculate HMAC
-        hmac_obj = HMAC.new(secret.encode('utf-8'),
-                            payload.encode('utf-8'), digestmod=SHA256)
-        calculated_signature = hmac_obj.digest()
-
-        if calculated_signature == signature:
-            return True, payload_json
-        else:
-            return False, 'Invalid signature'
-    except Exception as e:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
+        return True, payload
+    except jwt.ExpiredSignatureError:
+        logging.error('Token expired at ' + str(payload['exp']))
+        return False, 'Token expired'
+    except jwt.InvalidTokenError as e:
         return False, str(e)
 
 
 def requires_auth(f):
     @wraps(f)
     def decorated(*args, **kwargs):
-        token = request.headers.get('Authorization', None)
-        if token is None:
+        logging.info(f"Request: {request.method} {request.path}")
+
+        auth_header = request.headers.get('Authorization', None)
+        if not auth_header:
+            logging.error('Missing token')
             return jsonify({'error': 'Missing token'}), 401
 
-        valid, result = verify_token(token, 'your_secret_key')
+        token = auth_header.split(' ')[1] if len(
+            auth_header.split(' ')) > 1 else None
+        if not token:
+            logging.error('Token missing')
+            return jsonify({'error': 'Token missing'}), 401
+
+        logging.info(f"Token: {token}")
+
+        valid, result = verify_token(token)
         if not valid:
+            logging.error(result)
             return jsonify({'error': result}), 401
 
         return f(*args, **kwargs)

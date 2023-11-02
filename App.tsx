@@ -11,6 +11,7 @@ import SplashScreen from 'react-native-splash-screen';
 import {User} from './types/user';
 import Profile from './components/Profile';
 import Icon from 'react-native-vector-icons/Ionicons';
+import useStore from './store';
 
 const Stack = createNativeStackNavigator();
 const BottomTab = createBottomTabNavigator();
@@ -41,7 +42,7 @@ function LoggedInTabs() {
 }
 
 function App(): JSX.Element {
-  const [user, setUser] = useState<User | null>(null);
+  const user: User | null = useStore(state => state.user);
 
   const [colorScheme, setColorScheme] = useState<ColorSchemeName | null>(
     Appearance.getColorScheme(),
@@ -67,12 +68,12 @@ function App(): JSX.Element {
           {user === null ? (
             <Stack.Screen
               name="Signin"
+              component={SigninForm}
               options={{
                 headerTitle: 'Logga in',
                 headerShown: false,
-              }}>
-              {props => <SigninForm {...props} setUser={setUser} />}
-            </Stack.Screen>
+              }}
+            />
           ) : (
             <Stack.Screen
               name="Tab View"
