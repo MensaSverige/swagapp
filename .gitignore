@@ -6,6 +6,7 @@ notes/.obsidian
 
 # Backend
 .venv
+backend/__pycache__
 
 # OSX
 #

@@ -6,6 +6,7 @@ from functools import partial
 from token_processing import requires_auth
 from auth import auth_endpoint
 from mongo import initialize_collection_from_schema
+from events import init_events
 import jsonschema
 import os
 
@@ -37,7 +38,16 @@ def create(model_name, schema, collection):
 def read(model_name, collection):
     logging.info(f"read: {request.method} {request.path}")
     try:
-        items = list(collection.find())
+        filters = {}
+
+        if request.args.get('show_location') == 'true':
+            filters.show_location = True
+
+        if filters:
+            items = list(collection.find(filters))
+        else:
+            items = list(collection.find())
+
         logging.info(f"Items successfully retrieved from {model_name}")
         return jsonify(items), 200
     except Exception as e:
@@ -113,6 +123,30 @@ for filename in os.listdir(schema_dir):
 
 app.add_url_rule('/auth', 'auth_endpoint',
                  auth_endpoint, methods=['POST'])
+
+init_events(app, db)
+
+
+@app.route('/users_showing_location', methods=['GET'])
+def users_showing_location():
+    try:
+        users = list(db.users.find({'show_location': True}))
+        return_users = []
+        for user in users:
+            return_users.append({
+                'name': user['name'],
+                'avatar_url': user['avatar_url'],
+                'location': {
+                    'lat': user['lat'],
+                    'lng': user['lng']
+                }
+            })
+
+        return jsonify(return_users), 200
+    except Exception as e:
+        logging.error(f"Error in GET /users_showing_location: {str(e)}")
+        return jsonify({'error': 'Internal Server Error'}), 500
+
 
 if __name__ == '__main__':
     app.config['ENV'] = 'development'

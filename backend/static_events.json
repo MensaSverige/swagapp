@@ -1,0 +1,305 @@
+[
+  {
+    "name": "Halvårsträff",
+    "type": "gathering",
+    "start": "2023-11-24",
+    "end": "2023-11-26",
+    "location": {
+      "description": "Scandic Grand, Örebro",
+      "lat": 59.269647170914794,
+      "lng": 15.206466209995233
+    },
+    "description": "Halvårsträffen är för dig som tycker att ett år är för lång tid att vänta på nästa årsträff. Den är numera ett officiellt Mensa-event, men en i högsta grad light-version av en vanlig årsträff. Fokus ligger på att träffa andra mensaner och socialisera och är inte lika uppstyrd som årsträffen. Halvårsträffen blir vad vi alla gör den till!",
+    "url": "https://docs.google.com/forms/d/e/1FAIpQLScrfN0uUjpIy5ZMo2_QrAai7wRFR0IOLt719vnFnuxIYUVReA/viewform"
+  },
+  {
+    "name": "Välkomstskål",
+    "start": "2023-11-24T17:30:00",
+    "location": {
+      "description": "Baren, Scandic Grand",
+      "lat": 59.269647170914794,
+      "lng": 15.206466209995233
+    },
+    "description": "Som en gemensam, officiell start på halvårsträffen ses vi i baren på hotellet och skålar med varandra. Var och en beställer och betalar själv det den vill ha att skåla med (vi har förvarnat hotellet om att det KAN gå åt en hel del bubbel). Värdar: Magnus Gripenhammar & Malin Cederfjärd"
+  },
+  {
+    "name": "Spel- och pysselrummet är öppet",
+    "start": "2023-11-24T18:00:00",
+    "end": "2023-11-26T12:00:00",
+    "location": {
+      "description": "Ingrid, Scandic Grand",
+      "lat": 59.269647170914794,
+      "lng": 15.206466209995233
+    },
+    "description": "Välkommen till träffens spel- och pysselrum Ingrid, som du hittar på plan 1 på hotellet. Rummet har öppet dygnet runt från fredag kl. 18:00 till söndag kl. 12:00. Ta med dig de spel som du vill spela, eller varför inte ordna en pysselhörna?"
+  },
+  {
+    "name": "Middagar på stan - Bishops Arms",
+    "start": "2023-11-24 19:00",
+    "end": "2023-11-24 21:00",
+    "location": {
+      "description": "Drottninggatan 1",
+      "lat": 59.27325626635881,
+      "lng": 15.213658413742644
+    },
+    "info": "https://www.bishopsarms.com/vara-pubar/orebro/"
+  },
+  {
+    "name": "Middagar på stan - Chandani",
+    "start": "2023-11-24 19:00",
+    "end": "2023-11-24 21:00",
+    "location": {
+      "description": "Kungsgatan 4",
+      "lat": 59.272208176699664,
+      "lng": 15.215203084907186
+    },
+    "info": "https://www.chandani.se/start/"
+  },
+  {
+    "name": "Middagar på stan - Fratelli",
+    "start": "2023-11-24 19:00",
+    "end": "2023-11-24 21:00",
+    "location": {
+      "description": "Stortorget 8",
+      "lat": 59.27160460622378,
+      "lng": 15.214152317438476
+    },
+    "info": "https://www.fratelliorebro.se/"
+  },
+  {
+    "name": "Middagar på stan - Pinchos",
+    "start": "2023-11-24 19:00",
+    "end": "2023-11-24 21:00",
+    "location": {
+      "description": "Drottninggatan 38",
+      "lat": 59.269320641677346,
+      "lng": 15.209086513742534
+    },
+    "info": "https://www.pinchos.se/"
+  },
+  {
+    "name": "Middagar på stan - Pitcher's",
+    "start": "2023-11-24 19:00",
+    "end": "2023-11-24 21:00",
+    "location": {
+      "description": "Engelbrektsgatan 8",
+      "lat": 59.27274247702621,
+      "lng": 15.214917788603055
+    },
+    "info": "https://www.pitchers.se/orebro"
+  },
+  {
+    "name": "Middagar på stan - Stallyktan",
+    "start": "2023-11-24 19:00",
+    "end": "2023-11-24 21:00",
+    "location": {
+      "description": "Södra Strandgatan 3B",
+      "lat": 59.27361009215563,
+      "lng": 15.21053198305933
+    },
+    "info": "https://stallyktan.se/"
+  },
+  {
+    "name": "Middagar på stan - Stora Örebro",
+    "start": "2023-11-24 19:00",
+    "end": "2023-11-24 21:00",
+    "location": {
+      "description": "Stora Örebro",
+      "lat": 59.271742941928494,
+      "lng": 15.212740357303618
+    },
+    "info": "https://storaorebro.gastrogate.com/"
+  },
+  {
+    "name": "Middagar på stan - Texas Longhorn",
+    "start": "2023-11-24 19:00",
+    "end": "2023-11-24 21:00",
+    "location": {
+      "description": "Kungsgatan 4-6",
+      "lat": 59.272251260783705,
+      "lng": 15.215216871413435
+    },
+    "info": "https://www.texaslonghorn.se/restaurang/orebro/"
+  },
+  {
+    "name": "Middagar på stan - Ummy",
+    "start": "2023-11-24 19:00",
+    "end": "2023-11-24 21:00",
+    "location": {
+      "description": "Ummy",
+      "lat": 59.27231990449704,
+      "lng": 15.20983471189465
+    },
+    "info": "https://ummy.se/"
+  },
+  {
+    "name": "Cuddle Party (max 20 personer)",
+    "start": "2023-11-24 20:00",
+    "location": {
+      "description": "Scandic Grand",
+      "lat": 59.269647170914794,
+      "lng": 15.206466209995233
+    },
+    "description": "Ett tryggt hållet rum för dig som vill bli bättre på att lyssna på vad du och människor omkring dig vill och inte vill i fysiska interaktioner. Vi blandar fysiska övningar med reflektioner och allt deltagande är frivilligt. Samling i entrén kl. 20:00.\nVärd: Emma Lundqvist"
+  },
+  {
+    "name": "Mingel",
+    "start": "2023-11-24 21:00",
+    "end": "2023-11-24 01:00",
+    "location": {
+      "description": "Baren, Scandic Grand",
+      "lat": 59.269647170914794,
+      "lng": 15.206466209995233
+    },
+    "description": "För dig som inte vill gå och lägga dig efter middagen så finns det naturligtvis möjlighet att fortsätta kvällen i hotellbaren. Berätta om vad du åt till middag, kramas med gamla bekanta, flirta med någon ny bekantskap, lös världsproblemen över ett glas öl, eller recitera Lindeman-citat. Inget är omöjligt på en halvårsträff!\nVärd: Magnus Gripenhammar & Malin Cederfjärd"
+  },
+  {
+    "name": "Kom igång med din släktforskning (workshop)",
+    "start": "2023-11-25 9:00",
+    "end": "2023-11-25 10:55",
+    "location": {
+      "description": "Gloria, Scandic Grand",
+      "lat": 59.269647170914794,
+      "lng": 15.206466209995233
+    },
+    "description": "En näve insnöade släktforskare hjälper dig att få tummen ur. I dag kan du få hjälp, lite tips och trix. Tillgång till digitala arkiv kommer att finnas.\nNivå: Inga förkunskaper \nFörberedelser:\n– Ta med egen dator\n– Ta reda på vad dina föräldrar heter, deras föräldrars namn och födelsedag samt, om möjligt, födelseförsamling eller ort.\nVärd: Catharina Jacobsson och Håkan Axelsson"
+  },
+  {
+    "name": "Magic loop",
+    "start": "2023-11-25 10:00",
+    "end": "2023-11-25 10:45",
+    "location": {
+      "description": "Ingrid, Scandic Grand",
+      "lat": 59.269647170914794,
+      "lng": 15.206466209995233
+    },
+    "description": "Har du heller aldrig lärt dig att bli vän med strumpstickor, men vill ändå kunna sticka vantar, strumpor och annat med mindre omkrets? Emma visar magic loop med ett par sockor där båda stickas samtidigt. Har du en egen stickning som du vill komma igång med, ta med den. För att magic loop ska funka behöver du en rundsticka om 80-120 cm lite beroende på vad du stickar. Om det är en enda ärm räcker det med 60-80, om du ska sticka båda samtidigt behöver du 80-100 cm.\nVärd: Emma Fryksmark"
+  },
+  {
+    "name": "Resilience handling in Cloud",
+    "start": "2023-11-25 11:00",
+    "end": "2023-11-25 11:55",
+    "location": {
+      "description": "Gloria, Scandic Grand",
+      "lat": 59.269647170914794,
+      "lng": 15.206466209995233
+    },
+    "description": "Erik har jobbat med AWS Cloud Infrastruktur sedan 2010. En stor del av denna tid har han jobbat med automation inom AWS användning av IaC \"Infrastructure as Code\" för att automatisera driftsättning. Föredraget kommer att vända sig till DevOps-nyfikna och som har en viss erfarenhet av IT-infrastruktur. Det hjälper att man kan en del om AWS men tekniker och användning fungerar lika bra i all IT-infrastruktur som Azure, GCP och \"OnPrem\".\nVärd: Erik Günther"
+  },
+  {
+    "name": "AI i vardagen",
+    "start": "2023-11-25 12:00",
+    "end": "2023-11-25 12:55",
+    "location": {
+      "description": "Gloria, Scandic Grand",
+      "lat": 59.269647170914794,
+      "lng": 15.206466209995233
+    },
+    "description": "På förra halvårsträffen och årsträffen föreläste Ronnie om vad AI egentligen är och hur det fungerar. Den här gången visar och berättar han om hur vi kan använda AI i vardagen och vad som är nytt inom AI just nu.\nVärd: Ronnie Kron"
+  },
+  {
+    "name": "Lokalföreningsforum",
+    "start": "2023-11-25 12:00",
+    "end": "2023-11-25 12:55",
+    "location": {
+      "description": "Lobbyn, Scandic Grand",
+      "lat": 59.269647170914794,
+      "lng": 15.206466209995233
+    },
+    "description": "Funktionärer från lokalföreningarna träffas för att utbyta kunskaper och erfarenheter. Denna programpunkt skiljer sig från funktionärsträffen i Nässjö dels genom att den är mer fokuserad på lokalföreningarna, dels att även lokala funktionärer utan styrelseuppdrag är välkomna.\nVärd: Jonas Islander"
+  },
+  {
+    "name": "Årsträffen 2024 i Örebro, hur vill du ha den?",
+    "start": "2023-11-25 13:00",
+    "end": "2023-11-25 13:55",
+    "location": {
+      "description": "Gloria, Scandic Grand",
+      "lat": 59.269647170914794,
+      "lng": 15.206466209995233
+    },
+    "description": "Var med och påverka hur årsträffen här i Örebro blir – aktiviteter, middag, häng på hotellet, brädspel, efterfester etc. \nVi kommer ha en kortare genomgång av hur det är tänkt i stora drag, därefter diskussioner.\nVärd: Tobias Ander"
+  },
+  {
+    "name": "Digitala dyrkar",
+    "start": "2023-11-25 14:00",
+    "end": "2023-11-25 14:55",
+    "location": {
+      "description": "Gloria, Scandic Grand",
+      "lat": 59.269647170914794,
+      "lng": 15.206466209995233
+    },
+    "description": "Vad gömmer hotellnyckeln för hemligheter och varför öppnar den bara din dörr och inte grannens?\n\nHur funkar egentligen våra plastkort som vi blippar överallt? Till dörrar, på bussen, i affären, på biblioteket, armband på badhusen?\n\nJag tar dig med på en resa och visar vad som finns inuti de alldagliga korten, förklarar hur de kommunicerar och visar information de innehåller. Hur är informationen tänkt att skyddas, och vad är konsekvenserna när det inte funkar som det var tänkt? Lättare teori varvas med praktiska demonstrationer, och du kommer att omvärdera begreppet \"hålla hårt i plånboken\".\nVärd: Stefan Alfredsson"
+  },
+  {
+    "name": "Örebro öl- och whiskyfestival",
+    "start": "2023-11-25 14:00",
+    "location": {
+      "description": "Samling vid receptionen, Scandic Grand",
+      "lat": 59.269647170914794,
+      "lng": 15.206466209995233
+    },
+    "description": "Örebros uppskattade öl- och whiskyfestival anordnas 2023 för 16:e gången på Conventum Arena. Vi går dit i samlad trupp för sällskapets skull!\nOBS! Var och en ansvarar för att köpa sin egen biljett! Förbeställ här: https://tinyurl.com/cxc35n4b\nVärd: Eric Haraldsson"
+  },
+  {
+    "name": "Lära känna varandra",
+    "start": "2023-11-25 15:00",
+    "end": "2023-11-25 15:55",
+    "location": {
+      "description": "Gloria, Scandic Grand",
+      "lat": 59.269647170914794,
+      "lng": 15.206466209995233
+    },
+    "description": "Passar lika bra för dig som aldrig pratat med en mensan förut som dig som hängt i mensakretsar så länge du kan minnas. Hitta vad du har gemensamt med andra och vad som skiljer er åt. Under timmen hinner vi med både samtal i par och i små grupper.\nVärd: Emma Lundqvist"
+  },
+  {
+    "name": "Varulv (max 40 personer)",
+    "start": "2023-11-25 16:00",
+    "end": "2023-11-25 18:00",
+    "location": {
+      "description": "Gloria, Scandic Grand",
+      "lat": 59.269647170914794,
+      "lng": 15.206466209995233
+    },
+    "description": "Byn har just vaknat upp, och spelledaren pekar ut vem som blev varulvarnas offer under natten. Nu gäller det för byborna att lista ut vilka varulvarna är och rösta ut dem ur spelet innan det är för sent...\nEtt spel mellan två lag, där det gäller att ljuga och bluffa och att lista ut vilka av de andra spelarna som ljuger.\nVärd: Mikael Jedenby"
+  },
+  {
+    "name": "Gemensam middag",
+    "start": "2023-11-25 19:00",
+    "location": {
+      "description": "Restaurangen, Scandic Grand",
+      "lat": 59.269647170914794,
+      "lng": 15.206466209995233
+    },
+    "description": "På lördagen arrangeras en gemensam middag på hotellets restaurang för de som har förbokat.\nAlternativ 1: Kött (Fläskfilé, bearnaisesås, tomat & löksallad, rostade rotfrukter)\nAlternativ 2: Fisk (Halstrad röding, sandefjordsås, bakad morot, örtslungad potatis)\nAlternativ 3: Vegansk (Pankopanerade kronärtskocksbiffar, lime- & dillsås, rostade rotfrukter)\nVärd: Magnus Gripenhammar & Malin Cederfjärd"
+  },
+  {
+    "name": "Lunchhäng",
+    "start": "2023-11-26 12:00",
+    "end": "2023-11-26 14:00",
+    "location": {
+      "description": "Mocca Deli",
+      "lat": 59.395518680962695,
+      "lng": 15.1715880856975
+    },
+    "description": "Har du inte åkt hem än? Då kanske du behöver lite ny energi under sansade former. Här kan du hänga och äta lunch, kanske skvallra om vad som hände i går (eller i förrgår, för den delen), eller bara sitta i ett hörn och njuta av lugnet. OBS! Vi har inga bokade platser, så det är tillgång efter utrymme!\nVärd: Magnus Gripenhammar & Malin Cederfjärd",
+    "info": "https://moccadeli.se/orebro/"
+  },
+  {
+    "name": "Hotellbokningskod för Årsträffen 2024 gäller till 2024-04-02",
+    "start": "2023-09-01",
+    "end": "2024-04-02"
+  },
+  {
+    "name": "Årsträff 2024",
+    "type": "gathering",
+    "start": "2024-05-09",
+    "end": "2024-05-12",
+    "location": {
+      "description": "Scandic Grand, Örebro",
+      "lat": 59.269647170914794,
+      "lng": 15.206466209995233
+    },
+    "description": "",
+    "info": "https://ag.mensa.se/"
+  }
+]
