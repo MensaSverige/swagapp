@@ -6,8 +6,8 @@ from functools import partial
 from token_processing import requires_auth
 from auth import auth_endpoint
 from mongo import initialize_collection_from_schema
-from events import init_events
 import jsonschema
+import json
 import os
 
 # Initialize logging
@@ -21,10 +21,14 @@ schema_dir = './schema'
 
 
 @requires_auth
-def create(model_name, schema, collection):
+def create(model_name, schema, collection, username):
     logging.info(f"create: {request.method} {request.path}")
     try:
         item = request.json
+
+        if schema['properties'].get('owner', None):
+            item['owner'] = username
+
         jsonschema.validate(instance=item, schema=schema)
         collection.insert_one(item)
         logging.info(f"Item successfully created in {model_name}")
@@ -35,20 +39,13 @@ def create(model_name, schema, collection):
 
 
 @requires_auth
-def read(model_name, collection):
+def read(model_name, collection, username):
     logging.info(f"read: {request.method} {request.path}")
     try:
-        filters = {}
+        items = list(collection.find())
 
-        if request.args.get('show_location') == 'true':
-            filters.show_location = True
-
-        if filters:
-            items = list(collection.find(filters))
-        else:
-            items = list(collection.find())
-
-        logging.info(f"Items successfully retrieved from {model_name}")
+        logging.info(
+            f"Items successfully retrieved from {model_name}: {items}")
         return jsonify(items), 200
     except Exception as e:
         logging.error(f"Error in GET /{model_name}: {str(e)}")
@@ -56,25 +53,32 @@ def read(model_name, collection):
 
 
 @requires_auth
-def update(model_name, schema, collection, item_id):
+def update(model_name, schema, collection, item_id, username):
     logging.info(f"update: {request.method} {request.path}")
     try:
-        logging.info("Trying to read item from request body")
+        # If item.owner exists, check if authorized user is owner
+        if 'owner' in schema['properties']:
+            item = collection.find_one({'_id': ObjectId(item_id)})
+            if item['owner'] != username:
+                logging.error(
+                    f"User {username} is not the owner of item {item_id}")
+                return jsonify({'error': 'Unauthorized'}), 401
+
+        # If model is user and username does not match, return unauthorized
+        if model_name == 'user':
+            item = collection.find_one({'_id': ObjectId(item_id)})
+            if item['username'] != username:
+                logging.error(
+                    f"User {username} is not the owner of item {item_id}")
+                return jsonify({'error': 'Unauthorized'}), 401
+
         item = request.json
-        logging.info(f"Item to update: {item}")
         jsonschema.validate(instance=item, schema=schema)
 
-        # List all items in collection
-        items = list(collection.find())
-        logging.info(f"Items in {model_name}: {items}")
-
-        result = collection.replace_one({'_id': ObjectId(item_id)}, item)
-        logging.info(
-            f"Item successfully updated in {model_name}: {result.modified_count}")
+        collection.replace_one({'_id': ObjectId(item_id)}, item)
 
         # Get whole item from database
         item = collection.find_one({'_id': ObjectId(item_id)})
-        logging.info(f"Item successfully retrieved from {model_name}: {item}")
 
         # remove _id field
         item.pop('_id', None)
@@ -87,9 +91,25 @@ def update(model_name, schema, collection, item_id):
 
 
 @requires_auth
-def delete(model_name, collection, item_id):
+def delete(model_name, collection, item_id, username):
     logging.info(f"delete: {request.method} {request.path}")
     try:
+        # If item.owner exists, check if authorized user is owner
+        if 'owner' in schema['properties']:
+            item = collection.find_one({'_id': ObjectId(item_id)})
+            if item['owner'] != username:
+                logging.error(
+                    f"User {username} is not the owner of item {item_id}")
+                return jsonify({'error': 'Unauthorized'}), 401
+
+        # If model is user and username does not match, return unauthorized
+        if model_name == 'user':
+            item = collection.find_one({'_id': ObjectId(item_id)})
+            if item['username'] != username:
+                logging.error(
+                    f"User {username} is not the owner of item {item_id}")
+                return jsonify({'error': 'Unauthorized'}), 401
+
         result = collection.delete_one({'_id': ObjectId(item_id)})
         if result.deleted_count == 1:
             logging.info(f"Item successfully deleted from {model_name}")
@@ -124,28 +144,17 @@ for filename in os.listdir(schema_dir):
 app.add_url_rule('/auth', 'auth_endpoint',
                  auth_endpoint, methods=['POST'])
 
-init_events(app, db)
 
+@app.route('/static_events', methods=['GET'])
+def list_events():
+    # Load static events from static_events.json
+    logging.info(f"list_events: {request.method} {request.path}")
+    static_events = []
+    with open('static_events.json') as f:
+        static_events = json.load(f)
+        logging.info(f"Static events successfully retrieved")
 
-@app.route('/users_showing_location', methods=['GET'])
-def users_showing_location():
-    try:
-        users = list(db.users.find({'show_location': True}))
-        return_users = []
-        for user in users:
-            return_users.append({
-                'name': user['name'],
-                'avatar_url': user['avatar_url'],
-                'location': {
-                    'lat': user['lat'],
-                    'lng': user['lng']
-                }
-            })
-
-        return jsonify(return_users), 200
-    except Exception as e:
-        logging.error(f"Error in GET /users_showing_location: {str(e)}")
-        return jsonify({'error': 'Internal Server Error'}), 500
+    return jsonify(static_events), 200
 
 
 if __name__ == '__main__':

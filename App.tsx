@@ -10,8 +10,15 @@ import SwagMap from './components/SwagMap';
 import SplashScreen from 'react-native-splash-screen';
 import {User} from './types/user';
 import Profile from './components/Profile';
-import Icon from 'react-native-vector-icons/Ionicons';
 import useStore from './store';
+import Events from './components/Events';
+
+import {FontAwesomeIcon} from '@fortawesome/react-native-fontawesome';
+import {
+  faMapLocationDot,
+  faCalendarDays,
+  faAddressCard,
+} from '@fortawesome/free-solid-svg-icons';
 
 const Stack = createNativeStackNavigator();
 const BottomTab = createBottomTabNavigator();
@@ -23,8 +30,17 @@ function LoggedInTabs() {
         name="Karta"
         component={SwagMap}
         options={{
-          tabBarIcon: ({color, size}) => (
-            <Icon name="map-outline" color={color} size={size} />
+          tabBarIcon: props => (
+            <FontAwesomeIcon {...props} icon={faMapLocationDot} />
+          ),
+        }}
+      />
+      <BottomTab.Screen
+        name="Evenemang"
+        component={Events}
+        options={{
+          tabBarIcon: props => (
+            <FontAwesomeIcon {...props} icon={faCalendarDays} />
           ),
         }}
       />
@@ -32,8 +48,8 @@ function LoggedInTabs() {
         name="Profil"
         component={Profile}
         options={{
-          tabBarIcon: ({color, size}) => (
-            <Icon name="person-outline" color={color} size={size} />
+          tabBarIcon: props => (
+            <FontAwesomeIcon {...props} icon={faAddressCard} />
           ),
         }}
       />

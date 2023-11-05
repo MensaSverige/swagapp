@@ -16,6 +16,9 @@
   },
   "dependencies": {
     "@cloudflare/workers-types": "^4.20230511.0",
+    "@fortawesome/fontawesome-svg-core": "^6.4.2",
+    "@fortawesome/free-solid-svg-icons": "^6.4.2",
+    "@fortawesome/react-native-fontawesome": "^0.3.0",
     "@react-native-community/geolocation": "^3.1.0",
     "@react-navigation/bottom-tabs": "^6.5.11",
     "@react-navigation/native": "^6.1.9",
@@ -32,7 +35,7 @@
     "react-native-safe-area-context": "3.3.2",
     "react-native-screens": "^3.27.0",
     "react-native-splash-screen": "^3.3.0",
-    "react-native-svg": "12.1.1",
+    "react-native-svg": "^13.14.0",
     "react-native-vector-icons": "^10.0.1",
     "zustand": "^4.4.4"
   },

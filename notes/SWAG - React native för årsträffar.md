@@ -1,3 +1,3 @@
 [[Auth]]
 [[Lösenordstips]]
-[[Tamagui]]
+[[Events]]

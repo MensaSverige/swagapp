@@ -5,15 +5,17 @@
  * and run json-schema-to-typescript to regenerate this file.
  */
 
-export interface User {
+export interface Event {
   id?: string;
-  username: string;
-  name?: string;
-  age?: number;
-  slogan?: string;
-  avatar_url?: string;
-  lat?: number;
-  lng?: number;
-  show_location?: boolean;
+  name: string;
+  location: {
+    description: string;
+    lat: number;
+    lng: number;
+    [k: string]: unknown;
+  };
+  start: string;
+  end?: string;
+  description?: string;
   [k: string]: unknown;
 }
