@@ -32,11 +32,11 @@ export const SigninForm = () => {
   const [isLoading, setIsLoading] = React.useState(false);
 
   const store = useStore();
-
+  
   const handleLogin = async () => {
     try {
       setIsLoading(true);
-      const response = await fetch(Config.API_URL + '/auth', {
+      const response = await fetch(store.config.apiUrl + '/auth', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -44,7 +44,7 @@ export const SigninForm = () => {
         body: JSON.stringify({
           username: username,
           password: password,
-          test: Config.TEST_MODE === 'true' ? true : false,
+          test: store.config.testMode === 'true' ? true : false,
         }),
       });
 

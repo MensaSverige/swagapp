@@ -18,7 +18,7 @@ import useStore from '../store';
 
 const Profile: React.FC = () => {
   // Get current user and token from Zustand store
-  const {user, token, setUser, setToken} = useStore();
+  const {user, token, config, setUser, setToken} = useStore();
 
   // Local state for dirty form
   const [dirtyForm, setDirtyForm] = useState(false);
@@ -46,7 +46,7 @@ const Profile: React.FC = () => {
 
     try {
       const response = await axios.put(
-        Config.API_URL + '/user/' + user.id,
+        config.apiUrl + '/user/' + user.id,
         {
           ...user,
           show_location: showLocation,
