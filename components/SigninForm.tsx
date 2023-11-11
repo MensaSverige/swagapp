@@ -43,7 +43,7 @@ export const SigninForm = () => {
         body: JSON.stringify({
           username: username,
           password: password,
-          test: store.config.testMode === 'true' ? true : false,
+          test: store.config.testMode,
         }),
       });
 

@@ -3,7 +3,7 @@ from flask import Flask, request, jsonify
 from pymongo import MongoClient
 from bson.objectid import ObjectId
 from functools import partial
-from token_processing import requires_auth
+from token_processing import requires_auth, create_access_token, verify_refresh_token
 from auth import auth_endpoint
 from mongo import initialize_collection_from_schema
 import jsonschema
@@ -25,6 +25,20 @@ schema_dir = './schema'
 def health():
     logging.info(f"health: {request.method} {request.path}")
     return jsonify({'status': 'healthy'}), 200
+
+
+@app.route('/refresh_token', methods=['POST'])
+def refresh_token():
+    refresh_token = request.json.get('refresh_token')
+    if not refresh_token:
+        return jsonify({'error': 'Missing refresh token'}), 400
+
+    valid, payload = verify_refresh_token(refresh_token, token_type='refresh')
+    if not valid:
+        return jsonify({'error': 'Invalid refresh token'}), 401
+
+    new_access_token = create_access_token(payload['sub'])
+    return jsonify({'access_token': new_access_token})
 
 
 @requires_auth

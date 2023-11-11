@@ -11,31 +11,46 @@ logging.basicConfig(level=logging.INFO)
 SECRET_KEY = os.getenv('SECRET_KEY')
 
 
-def create_token(username, name, test=False):
-    exp = datetime.datetime.utcnow() + datetime.timedelta(minutes=15)  # 1 minute expiry
+def create_token(username, expiry, type):
+    secret_key = current_app.config.get(
+        'SECRET_KEY', SECRET_KEY)  # Use app config if available
+
+    exp = datetime.datetime.utcnow() + expiry
     payload = {
         'exp': exp,
         'iat': datetime.datetime.utcnow(),
         'sub': username,
-        'name': name,
-        'test': test
+        'type': type
     }
-    return jwt.encode(
-        payload,
-        SECRET_KEY,
-        algorithm='HS256'
-    )
+    return jwt.encode(payload, secret_key, algorithm='HS256')
 
 
-def verify_token(token):
+def create_refresh_token(username):
+    return create_token(username, datetime.timedelta(hours=24), 'refresh')
+
+
+def create_access_token(username):
+    return create_token(username, datetime.timedelta(minutes=10), 'access')
+
+
+def verify_token(token, type):
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
+        if payload['type'] != type:
+            raise jwt.InvalidTokenError('Invalid token type')
         return True, payload
     except jwt.ExpiredSignatureError:
-        logging.error('Token expired at ' + str(payload['exp']))
         return False, 'Token expired'
     except jwt.InvalidTokenError as e:
         return False, str(e)
+
+
+def verify_access_token(token):
+    return verify_token(token, 'access')
+
+
+def verify_refresh_token(token):
+    return verify_token(token, 'refresh')
 
 
 def requires_auth(f):
@@ -56,7 +71,7 @@ def requires_auth(f):
 
         logging.info(f"Token: {token}")
 
-        valid, result = verify_token(token)
+        valid, result = verify_access_token(token)
         if not valid:
             logging.error(result)
             return jsonify({'error': result}), 401

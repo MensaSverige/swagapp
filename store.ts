@@ -4,7 +4,7 @@ import {User} from './types/user';
 const useStore = create<{
   config: {
     apiUrl: string;
-    testMode: string;
+    testMode: boolean;
   };
   user: User | null;
   token: string | null;
@@ -13,7 +13,7 @@ const useStore = create<{
 }>(set => ({
   config: {
     apiUrl: 'http://192.168.0.11:5000',
-    testMode: 'false',
+    testMode: false,
   },
   user: null,
   token: null,
