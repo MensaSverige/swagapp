@@ -1,7 +1,7 @@
 version: '3'
 services:
   backend:
-    image: ghcr.io/skaramicke/swag-app:latest
+    image: ghcr.io/skaramicke/swagapp:latest
     ports:
       - "5000:5000"
     depends_on:
@@ -12,7 +12,7 @@ services:
   mongo:
     image: mongo:latest
     volumes:
-      - mongodata:/data/db
+      - /persistent/mongo:/data/db
     ports:
       - "27017:27017"
 
@@ -23,6 +23,3 @@ services:
     command: --interval 30
     environment:
       - WATCHTOWER_CLEANUP=true
-
-volumes:
-  mongodata: /persistent/mongo
