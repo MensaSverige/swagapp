@@ -4,3 +4,4 @@ jsonschema
 pymongo
 requests
 PyJWT
+gunicorn
