@@ -15,8 +15,6 @@ logging.basicConfig(level=logging.INFO)
 
 app = Flask(__name__)
 
-client = MongoClient('mongo', 27017)
-db = client['swag']
 schema_dir = './schema'
 
 
@@ -143,25 +141,6 @@ def delete(model_name, collection, item_id, username):
         return jsonify({'error': 'Internal Server Error'}), 500
 
 
-for filename in os.listdir(schema_dir):
-    if filename.endswith('.json'):
-        model_name = filename[:-5]
-
-        schema, collection = initialize_collection_from_schema(
-            model_name,
-            os.path.join(schema_dir, filename),
-            db
-        )
-
-        app.add_url_rule(f'/{model_name}', f'create_{model_name}',
-                         partial(create, model_name, schema, collection), methods=['POST'])
-        app.add_url_rule(f'/{model_name}', f'read_{model_name}',
-                         partial(read, model_name, collection), methods=['GET'])
-        app.add_url_rule(f'/{model_name}/<string:item_id>', f'update_{model_name}',
-                         partial(update, model_name, schema, collection), methods=['PUT'])
-        app.add_url_rule(f'/{model_name}/<string:item_id>', f'delete_{model_name}',
-                         partial(delete, model_name, collection), methods=['DELETE'])
-
 app.add_url_rule('/auth', 'auth_endpoint',
                  auth_endpoint, methods=['POST'])
 
@@ -179,5 +158,27 @@ def list_events():
 
 
 if __name__ == '__main__':
+    client = MongoClient('mongo', 27017)
+    db = client['swag']
     app.config['ENV'] = 'development'
+
+    for filename in os.listdir(schema_dir):
+        if filename.endswith('.json'):
+            model_name = filename[:-5]
+
+            schema, collection = initialize_collection_from_schema(
+                model_name,
+                os.path.join(schema_dir, filename),
+                db
+            )
+
+            app.add_url_rule(f'/{model_name}', f'create_{model_name}',
+                             partial(create, model_name, schema, collection), methods=['POST'])
+            app.add_url_rule(f'/{model_name}', f'read_{model_name}',
+                             partial(read, model_name, collection), methods=['GET'])
+            app.add_url_rule(f'/{model_name}/<string:item_id>', f'update_{model_name}',
+                             partial(update, model_name, schema, collection), methods=['PUT'])
+            app.add_url_rule(f'/{model_name}/<string:item_id>', f'delete_{model_name}',
+                             partial(delete, model_name, collection), methods=['DELETE'])
+
     app.run(host='0.0.0.0', port=5000, debug=True)

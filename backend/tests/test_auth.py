@@ -1,6 +1,6 @@
+from server import app as flask_app
 import pytest
 import json
-from server import app as flask_app
 import requests_mock
 from unittest import mock
 from unittest.mock import MagicMock
