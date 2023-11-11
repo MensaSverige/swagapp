@@ -19,7 +19,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 
 # Expose the port the app runs on
-EXPOSE 8000
+EXPOSE 5000
 
-# Run the application with Gunicorn on port 8000
-CMD ["gunicorn", "-w", "4", "-b", "0.0.0.0:8000", "server:app"]
+# Run the application with Gunicorn on port 5000
+CMD ["gunicorn", "-w", "4", "-b", "0.0.0.0:5000", "server:app"]
