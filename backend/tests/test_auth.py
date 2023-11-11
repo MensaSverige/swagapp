@@ -3,6 +3,16 @@ import json
 from server import app as flask_app
 import requests_mock
 from unittest import mock
+from unittest.mock import MagicMock
+from pymongo import MongoClient
+
+mock_client = MagicMock(spec=MongoClient)
+
+
+@pytest.fixture(autouse=True)
+def mock_db(monkeypatch):
+    monkeypatch.setattr("server.MongoClient", lambda *args,
+                        **kwargs: mock_client)
 
 
 @pytest.fixture
