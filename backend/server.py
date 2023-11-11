@@ -20,6 +20,13 @@ db = client['swag']
 schema_dir = './schema'
 
 
+# Health check endpoint
+@app.route('/health', methods=['GET'])
+def health():
+    logging.info(f"health: {request.method} {request.path}")
+    return jsonify({'status': 'healthy'}), 200
+
+
 @requires_auth
 def create(model_name, schema, collection, username):
     logging.info(f"create: {request.method} {request.path}")
