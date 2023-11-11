@@ -3,7 +3,7 @@ services:
   website:
     image: ghcr.io/skaramicke/swagapp/website:latest
     ports:
-      - "8080:8080"
+      - "8080:80"
 
   backend:
     image: ghcr.io/skaramicke/swagapp/backend:latest

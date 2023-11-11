@@ -5,7 +5,7 @@ FROM nginx:alpine
 COPY ./website /usr/share/nginx/html
 
 # Expose port 8080
-EXPOSE 8080
+EXPOSE 80
 
 # Use the default Nginx command to run the server
 CMD ["nginx", "-g", "daemon off;"]
