@@ -1,0 +1,52 @@
+name: Publish Website
+
+on:
+  push:
+    branches: ['main']
+
+env:
+  # Use ghcr.io for GitHub Container Registry
+  REGISTRY: ghcr.io
+  # GitHub repository as <account>/<repo>
+  IMAGE_NAME: ${{ github.repository }}/website
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      # Needed for identity verification with sigstore/fulcio outside of PRs.
+      id-token: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # Install the cosign tool (for signing Docker images) except on PRs
+      - name: Install cosign
+        uses: sigstore/cosign-installer@v3.2.0
+        with:
+          cosign-release: 'v2.2.1'
+
+      # Setup Docker buildx (required for building multi-platform images)
+      - name: Setup Docker buildx
+        uses: docker/setup-buildx-action@v2
+
+      # Log into the GitHub Container Registry except on PRs
+      - name: Log into registry ${{ env.REGISTRY }}
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@28218f9b04b4f3f62068d7b6ce6ca5b26e35336c
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Build and push Docker image for the website
+      - name: Build and push
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          file: ./website.Dockerfile
+          push: true
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
