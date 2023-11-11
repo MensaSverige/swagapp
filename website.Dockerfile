@@ -5,7 +5,7 @@ FROM nginx:alpine
 COPY ./website /usr/share/nginx/html
 
 # Copy the custom Nginx configuration file
-COPY ./nginx.conf /etc/nginx/conf.d/default.conf
+COPY ./website.nginx.conf /etc/nginx/conf.d/default.conf
 
 # Expose port 80
 EXPOSE 80
