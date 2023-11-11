@@ -1,7 +1,6 @@
 import axios from 'axios';
 import {Box, Card, Center, Heading, ScrollView, Text} from 'native-base';
 import React from 'react';
-import Config from 'react-native-config';
 import {Event} from '../types/event';
 import {RefreshControl, TouchableNativeFeedback} from 'react-native';
 import useStore from '../store';
@@ -155,7 +154,7 @@ const EventCard: React.FC<{
 };
 
 const Events: React.FC = () => {
-  const {token} = useStore();
+  const {token, config} = useStore();
 
   const [refreshing, setRefreshing] = React.useState(false);
   const [events, setEvents] = React.useState<Array<Event>>([]);
@@ -178,7 +177,7 @@ const Events: React.FC = () => {
     console.log('Refreshing events...');
 
     const userEventsPromise = axios
-      .get(`${Config.API_URL}/event`, {
+      .get(`${config.apiUrl}/event`, {
         headers: {Authorization: `Bearer ${token}`},
       })
       .then(response => {
@@ -194,7 +193,7 @@ const Events: React.FC = () => {
       });
 
     const staticEventsPromise = axios
-      .get(`${Config.API_URL}/static_events`, {
+      .get(`${config.apiUrl}/static_events`, {
         headers: {Authorization: `Bearer ${token}`},
       })
       .then(response => {
@@ -213,7 +212,7 @@ const Events: React.FC = () => {
     Promise.all([userEventsPromise, staticEventsPromise]).finally(() => {
       setRefreshing(false);
     });
-  }, [token]);
+  }, [token, config]);
 
   // Trigger onRefresh on component mount
   React.useEffect(() => {
