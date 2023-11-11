@@ -24,6 +24,10 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r backend/requirements.txt
 
+      - name: Install database schema
+        run: |
+          cp -a schema backend/schema
+
       - name: Run tests
         run: |
           cd backend
