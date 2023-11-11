@@ -1,13 +1,5 @@
 import axios from 'axios';
-import {
-  Box,
-  Button,
-  Card,
-  Center,
-  Heading,
-  ScrollView,
-  Text,
-} from 'native-base';
+import {Box, Card, Center, Heading, ScrollView, Text} from 'native-base';
 import React from 'react';
 import Config from 'react-native-config';
 import {Event} from '../types/event';
