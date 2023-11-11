@@ -13,7 +13,6 @@ import {
   Stack,
 } from 'native-base';
 import axios from 'axios';
-import Config from 'react-native-config';
 import useStore from '../store';
 
 const Profile: React.FC = () => {

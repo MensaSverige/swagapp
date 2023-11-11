@@ -1,0 +1,20 @@
+{
+  "type": "object",
+  "properties": {
+    "id": {"type": "string"},
+    "name": {"type": "string"},
+    "location": {
+      "type": "object",
+      "properties": {
+        "description": {"type": "string"},
+        "lat": {"type": "number"},
+        "lng": {"type": "number"}
+      },
+      "required": ["description", "lat", "lng"]
+    },
+    "start": {"type": "string", "format": "date-time"},
+    "end": {"type": "string", "format": "date-time"},
+    "description": {"type": "string"}
+  },
+  "required": ["name", "location", "start"]
+}

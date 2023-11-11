@@ -1,0 +1,28 @@
+version: '3'
+services:
+  backend:
+    image: ghcr.io/skaramicke/swag-app:latest
+    ports:
+      - "5000:5000"
+    depends_on:
+      - mongo
+    env_file:
+      - .env
+
+  mongo:
+    image: mongo:latest
+    volumes:
+      - mongodata:/data/db
+    ports:
+      - "27017:27017"
+
+  watchtower:
+    image: containrrr/watchtower
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: --interval 30
+    environment:
+      - WATCHTOWER_CLEANUP=true
+
+volumes:
+  mongodata: /persistent/mongo

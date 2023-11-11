@@ -1,6 +1,7 @@
 {
   "type": "object",
   "properties": {
+    "id": {"type": "string"},
     "username": {"type": "string"},
     "name": {"type": "string"},
     "age": {"type": "number"},

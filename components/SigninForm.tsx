@@ -10,7 +10,6 @@ import {
 } from 'native-base';
 import React from 'react';
 import {User} from '../types/user';
-import Config from 'react-native-config';
 import useStore from '../store';
 
 interface LoginResponse {
@@ -32,7 +31,7 @@ export const SigninForm = () => {
   const [isLoading, setIsLoading] = React.useState(false);
 
   const store = useStore();
-  
+
   const handleLogin = async () => {
     try {
       setIsLoading(true);
@@ -113,7 +112,7 @@ export const SigninForm = () => {
             <Spinner />
           ) : (
             <Button mt={8} onPress={handleLogin}>
-              {Config.TEST_MODE === 'true' ? 'Logga in i testläge' : 'Logga in'}
+              {store.config.testMode ? 'Logga in i testläge' : 'Logga in'}
             </Button>
           )}
         </VStack>

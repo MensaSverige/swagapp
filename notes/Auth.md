@@ -1,17 +1,18 @@
-## Flöde
+## Flöde, autentisering
 
-1. Användaren fyller i användarnamn och lösenord i appen och postar till edge-funktionen på Cloudflare, just nu https://swag.mikael.green/auth
-2. Cloudflare loggar in på mensa.se och hämtar namnet på användaren om det funkade
-3. Cloudflare genererar HMAC och returnerar till användaren tillsammans med användarens riktiga namn.
+1. Användaren fyller i användarnamn och lösenord i appen och postar till /auth, just nu https://swag.mikael.green/auth
+2. Backend loggar in på mensa.se och hämtar namnet på användaren om det funkade
+3. Backend genererar JWT och returnerar till användaren tillsammans med användarens riktiga namn.
 4. Appen känner sig nu inloggad.
-5. Appen använder HMAC vid framtida requests till cloudflare så cloudflare vet vilken användare det är och att den är inloggad.
+5. Appen använder JWT vid framtida requests till backend så backend vet vilken användare det är och att den är inloggad.
 
 ## Att göra
 
-- Visa felmeddelande
-- Verifiera signerad token
-- Visa inloggad vy 
+- Events
+- Visa folk på kartan
+- Visa events på kartan
 
 ## Håller på med nu
 
-- Micke: Generera HMAC
+- Micke: Events
+- Amy: Folk på kartan

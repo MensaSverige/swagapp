@@ -61,5 +61,7 @@ def requires_auth(f):
             logging.error(result)
             return jsonify({'error': result}), 401
 
+        kwargs['username'] = result['sub']
+
         return f(*args, **kwargs)
     return decorated
