@@ -25,10 +25,9 @@ jobs:
 
       # Install the cosign tool (for signing Docker images) except on PRs
       - name: Install cosign
-        if: github.event_name != 'pull_request'
-        uses: sigstore/cosign-installer@f3c664df7af409cb4873aa5068053ba9d61a57b6
+        uses: sigstore/cosign-installer@3.2.0
         with:
-          cosign-release: 'v1.11.0'
+          cosign-release: 'v2.2.1'
 
       # Setup Docker buildx (required for building multi-platform images)
       - name: Setup Docker buildx
