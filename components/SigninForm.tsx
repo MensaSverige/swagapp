@@ -11,10 +11,13 @@ import {
 import React from 'react';
 import {User} from '../types/user';
 import useStore from '../store';
+import * as Keychain from 'react-native-keychain';
+import api from '../apiClient';
 
 interface LoginResponse {
   user: User;
-  token: string;
+  accessToken: string;
+  refreshToken: string;
 }
 
 interface ErrorResponse {
@@ -35,27 +38,28 @@ export const SigninForm = () => {
   const handleLogin = async () => {
     try {
       setIsLoading(true);
-      const response = await fetch(store.config.apiUrl + '/auth', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          username: username,
-          password: password,
-          test: store.config.testMode === 'true' ? true : false,
-        }),
+      const response = await api.post('/auth', {
+        username: username,
+        password: password,
+        test: store.config.testMode,
       });
 
       setIsLoading(false);
 
-      if (response.ok) {
-        // Login was successful.
-        const data: LoginResponse = await response.json();
+      if (response.status === 200) {
+        const data: LoginResponse = response.data;
         console.log('data', data);
         const user: User = data.user;
-        store.setToken(data.token);
-        store.setUser(user);
+
+        if (data.accessToken && data.refreshToken) {
+          store.setUser(user);
+          await Keychain.setGenericPassword('accessToken', data.accessToken);
+          await Keychain.setGenericPassword('refreshToken', data.refreshToken);
+        } else {
+          console.error('Received null accessToken or refreshToken');
+          setLoginErrorText('Något gick fel. Försök igen senare.');
+          setShowLoginError(true);
+        }
       } else {
         // Something went wrong with the login.
         if (response.status === 401) {
@@ -63,7 +67,7 @@ export const SigninForm = () => {
           setLoginErrorText('Fel användarnamn eller lösenord.');
           setShowLoginError(true);
         } else if (response.status === 400) {
-          const data: ErrorResponse = await response.json();
+          const data: ErrorResponse = response.data;
           if (data.message === 'Test mode is not enabled') {
             setLoginErrorText(
               'Testläge är inte aktiverat i backend. Appen borde inte köras i testläge.',
@@ -76,10 +80,13 @@ export const SigninForm = () => {
         }
       }
     } catch (error) {
-      // An error occurred while trying to log in.
-      console.error('undefined error', error);
+      console.error('Login error', error);
+      setLoginErrorText('Något gick fel. Försök igen senare.');
+      setShowLoginError(true);
+      setIsLoading(false);
     }
   };
+
   const cancelRef = React.useRef(null);
 
   return (

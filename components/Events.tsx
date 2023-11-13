@@ -3,7 +3,7 @@ import {Box, Card, Center, Heading, ScrollView, Text} from 'native-base';
 import React from 'react';
 import {Event} from '../types/event';
 import {RefreshControl, TouchableNativeFeedback} from 'react-native';
-import useStore from '../store';
+import api from '../apiClient';
 
 function formatDateAndTime(dateTimeStr: string, startDateTimeStr?: string) {
   // Parse the Swedish date and time format, assuming it's in "yyyy-mm-dd hh:mm" format
@@ -154,8 +154,6 @@ const EventCard: React.FC<{
 };
 
 const Events: React.FC = () => {
-  const {token, config} = useStore();
-
   const [refreshing, setRefreshing] = React.useState(false);
   const [events, setEvents] = React.useState<Array<Event>>([]);
   const [userEvents, setUserEvents] = React.useState<Array<Event>>([]);
@@ -176,10 +174,8 @@ const Events: React.FC = () => {
     setRefreshing(true);
     console.log('Refreshing events...');
 
-    const userEventsPromise = axios
-      .get(`${config.apiUrl}/event`, {
-        headers: {Authorization: `Bearer ${token}`},
-      })
+    const userEventsPromise = api
+      .get('/event')
       .then(response => {
         if (response.status === 200) {
           setUserEvents(response.data);
@@ -193,9 +189,7 @@ const Events: React.FC = () => {
       });
 
     const staticEventsPromise = axios
-      .get(`${config.apiUrl}/static_events`, {
-        headers: {Authorization: `Bearer ${token}`},
-      })
+      .get('/static_events')
       .then(response => {
         if (response.status === 200) {
           setStaticEvents(response.data);
@@ -212,7 +206,7 @@ const Events: React.FC = () => {
     Promise.all([userEventsPromise, staticEventsPromise]).finally(() => {
       setRefreshing(false);
     });
-  }, [token, config]);
+  }, []);
 
   // Trigger onRefresh on component mount
   React.useEffect(() => {

@@ -4,7 +4,7 @@ import json
 from flask import Flask, request, jsonify
 import requests
 from pymongo import MongoClient
-from token_processing import create_token
+from token_processing import create_access_token, create_refresh_token
 
 logging.basicConfig(level=logging.INFO)
 
@@ -24,7 +24,6 @@ def parse_html(html, start, end):
 
 @app.route('/auth', methods=['POST'])
 def auth_endpoint():
-    secret_key = os.environ.get("SECRET_KEY")
     test_mode = os.environ.get("TEST_MODE", "false")
 
     try:
@@ -32,15 +31,18 @@ def auth_endpoint():
     except json.JSONDecodeError:
         return jsonify({"message": "Invalid request body"}), 400
 
+    username = request_body.get("username", "").lower()
     if request_body.get("test"):
         if test_mode != "true":
             return jsonify({"message": "Test mode is not enabled"}), 400
-        hmac = create_token(
-            secret_key, request_body["username"], "Test User", test=True)
+        access_token = create_access_token(username)
+        refresh_token = create_refresh_token(username)
+
         return jsonify({
-            "username": request_body["username"],
+            "username": username,
             "name": "Test User",
-            "token": hmac,
+            "access_token": access_token,
+            "refresh_token": refresh_token,
             "test": True
         }), 200
 
@@ -87,8 +89,8 @@ def auth_endpoint():
 
     user_name = parse_html(user_name_container, '>', '<').strip()
 
-    hmac = create_token(
-        secret_key, request_body["username"].lower(), user_name)
+    access_token = create_access_token(username)
+    refresh_token = create_refresh_token(username)
 
     # Fetch user's profile picture from the response
     profile_picture_container = parse_html(
@@ -134,7 +136,8 @@ def auth_endpoint():
 
     response = {
         "user": user,
-        "token": hmac
+        "access_token": access_token,
+        "refresh_token": refresh_token
     }
 
     return jsonify(response), 200

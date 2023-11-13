@@ -3,7 +3,7 @@ from flask import Flask, request, jsonify
 from pymongo import MongoClient
 from bson.objectid import ObjectId
 from functools import partial
-from token_processing import requires_auth
+from token_processing import requires_auth, create_access_token, verify_refresh_token
 from auth import auth_endpoint
 from mongo import initialize_collection_from_schema
 import jsonschema
@@ -15,8 +15,6 @@ logging.basicConfig(level=logging.INFO)
 
 app = Flask(__name__)
 
-client = MongoClient('mongo', 27017)
-db = client['swag']
 schema_dir = './schema'
 
 
@@ -25,6 +23,20 @@ schema_dir = './schema'
 def health():
     logging.info(f"health: {request.method} {request.path}")
     return jsonify({'status': 'healthy'}), 200
+
+
+@app.route('/refresh_token', methods=['POST'])
+def refresh_token():
+    refresh_token = request.json.get('refresh_token')
+    if not refresh_token:
+        return jsonify({'error': 'Missing refresh token'}), 400
+
+    valid, payload = verify_refresh_token(refresh_token, token_type='refresh')
+    if not valid:
+        return jsonify({'error': 'Invalid refresh token'}), 401
+
+    new_access_token = create_access_token(payload['sub'])
+    return jsonify({'access_token': new_access_token})
 
 
 @requires_auth
@@ -129,25 +141,6 @@ def delete(model_name, collection, item_id, username):
         return jsonify({'error': 'Internal Server Error'}), 500
 
 
-for filename in os.listdir(schema_dir):
-    if filename.endswith('.json'):
-        model_name = filename[:-5]
-
-        schema, collection = initialize_collection_from_schema(
-            model_name,
-            os.path.join(schema_dir, filename),
-            db
-        )
-
-        app.add_url_rule(f'/{model_name}', f'create_{model_name}',
-                         partial(create, model_name, schema, collection), methods=['POST'])
-        app.add_url_rule(f'/{model_name}', f'read_{model_name}',
-                         partial(read, model_name, collection), methods=['GET'])
-        app.add_url_rule(f'/{model_name}/<string:item_id>', f'update_{model_name}',
-                         partial(update, model_name, schema, collection), methods=['PUT'])
-        app.add_url_rule(f'/{model_name}/<string:item_id>', f'delete_{model_name}',
-                         partial(delete, model_name, collection), methods=['DELETE'])
-
 app.add_url_rule('/auth', 'auth_endpoint',
                  auth_endpoint, methods=['POST'])
 
@@ -165,5 +158,27 @@ def list_events():
 
 
 if __name__ == '__main__':
+    client = MongoClient('mongo', 27017)
+    db = client['swag']
     app.config['ENV'] = 'development'
+
+    for filename in os.listdir(schema_dir):
+        if filename.endswith('.json'):
+            model_name = filename[:-5]
+
+            schema, collection = initialize_collection_from_schema(
+                model_name,
+                os.path.join(schema_dir, filename),
+                db
+            )
+
+            app.add_url_rule(f'/{model_name}', f'create_{model_name}',
+                             partial(create, model_name, schema, collection), methods=['POST'])
+            app.add_url_rule(f'/{model_name}', f'read_{model_name}',
+                             partial(read, model_name, collection), methods=['GET'])
+            app.add_url_rule(f'/{model_name}/<string:item_id>', f'update_{model_name}',
+                             partial(update, model_name, schema, collection), methods=['PUT'])
+            app.add_url_rule(f'/{model_name}/<string:item_id>', f'delete_{model_name}',
+                             partial(delete, model_name, collection), methods=['DELETE'])
+
     app.run(host='0.0.0.0', port=5000, debug=True)
