@@ -12,6 +12,7 @@ import {User} from './types/user';
 import Profile from './components/Profile';
 import useStore from './store';
 import Events from './components/Events';
+import * as Keychain from 'react-native-keychain';
 
 import {FontAwesomeIcon} from '@fortawesome/react-native-fontawesome';
 import {
@@ -59,6 +60,14 @@ function LoggedInTabs() {
 
 function App(): JSX.Element {
   const user: User | null = useStore(state => state.user);
+
+  useEffect(() => {
+    if (!user) {
+      // Remove remnant tokens from the keychain
+      console.log('Removing tokens from keychain');
+      Keychain.resetGenericPassword();
+    }
+  }, [user]);
 
   const [colorScheme, setColorScheme] = useState<ColorSchemeName | null>(
     Appearance.getColorScheme(),
