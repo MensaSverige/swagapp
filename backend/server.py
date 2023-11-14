@@ -184,9 +184,16 @@ if __name__ == '__main__':
     db = client['swag']
     app.config['ENV'] = 'development'
 
+    # Print all files in schema directory
+    logging.info(f"Schema files: {os.listdir(schema_dir)}")
+
     for filename in os.listdir(schema_dir):
+        logging.info(f"Looking at {filename}")
         if filename.endswith('.json'):
+            logging.info(f"{filename} is a json file")
+
             model_name = filename[:-5]
+            logging.info(f"Model name: {model_name}")
 
             schema, collection = initialize_collection_from_schema(
                 model_name,
