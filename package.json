@@ -4,15 +4,14 @@
   "private": false,
   "license": "MIT",
   "scripts": {
-    "android": "yarn cc && react-native run-android",
-    "ios": "yarn cc && react-native run-ios",
+    "android": "react-native run-android",
+    "ios": "react-native run-ios",
     "lint": "eslint .",
-    "start": "yarn cc && react-native start",
+    "start": "react-native start",
     "test": "jest",
     "prebuild": "yarn generate-types && yarn generate-icons",
     "generate-types": "json2ts -i ./schema -o ./types",
-    "generate-icons": "npx icon-set-creator create ./assets/icon.jpg",
-    "cc": "rimraf node_modules/react-native-config/ios/ReactNativeConfig/GeneratedDotEnv.m"
+    "generate-icons": "npx icon-set-creator create ./assets/icon.jpg"
   },
   "dependencies": {
     "@cloudflare/workers-types": "^4.20230511.0",
