@@ -1,15 +1,17 @@
 import axios from 'axios';
 import * as Keychain from 'react-native-keychain';
 
-const customAxios = axios.create({
-  baseURL: 'https://swag.mikael.green/api',
+const apiClient = axios.create({
+  baseURL: 'http://localhost:5000',
 });
 
 // Request Interceptor to add the access token
-customAxios.interceptors.request.use(
+apiClient.interceptors.request.use(
   async config => {
     try {
-      const credentials = await Keychain.getGenericPassword();
+      const credentials = await Keychain.getGenericPassword({
+        service: 'accessToken',
+      });
       if (credentials) {
         config.headers.Authorization = `Bearer ${credentials.password}`;
       }
@@ -24,7 +26,7 @@ customAxios.interceptors.request.use(
 );
 
 // Response Interceptor to refresh the access token
-customAxios.interceptors.response.use(
+apiClient.interceptors.response.use(
   response => {
     return response;
   },
@@ -33,17 +35,19 @@ customAxios.interceptors.response.use(
     if (error.response.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
       try {
-        const credentials = await Keychain.getGenericPassword();
+        const credentials = await Keychain.getGenericPassword({
+          service: 'refreshToken',
+        });
         if (credentials) {
-          const response = await customAxios.post('/refresh_token', {
-            refresh_token: credentials.username,
+          const response = await apiClient.post('/refresh_token', {
+            refresh_token: credentials.password,
           });
           if (response.status === 200) {
             await Keychain.setGenericPassword(
               'accessToken',
               response.data.access_token,
             );
-            return customAxios(originalRequest);
+            return apiClient(originalRequest);
           }
         }
       } catch (credentialsError) {
@@ -57,4 +61,4 @@ customAxios.interceptors.response.use(
   },
 );
 
-export default customAxios;
+export default apiClient;

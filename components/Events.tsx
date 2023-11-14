@@ -1,9 +1,9 @@
-import axios from 'axios';
 import {Box, Card, Center, Heading, ScrollView, Text} from 'native-base';
 import React from 'react';
 import {Event} from '../types/event';
 import {RefreshControl, TouchableNativeFeedback} from 'react-native';
 import api from '../apiClient';
+import apiClient from '../apiClient';
 
 function formatDateAndTime(dateTimeStr: string, startDateTimeStr?: string) {
   // Parse the Swedish date and time format, assuming it's in "yyyy-mm-dd hh:mm" format
@@ -158,8 +158,10 @@ const Events: React.FC = () => {
   const [events, setEvents] = React.useState<Array<Event>>([]);
   const [userEvents, setUserEvents] = React.useState<Array<Event>>([]);
   const [staticEvents, setStaticEvents] = React.useState<Array<Event>>([]);
-  const [showUserEvents, setShowUserEvents] = React.useState(true);
-  const [showStaticEvents, setShowStaticEvents] = React.useState(true);
+  // const [showUserEvents, setShowUserEvents] = React.useState(true);
+  const showUserEvents = true;
+  // const [showStaticEvents, setShowStaticEvents] = React.useState(true);
+  const showStaticEvents = true;
 
   const [openEvents, setOpenEvents] = React.useState<Array<Event>>([]);
   const toggleOpen = (event: Event) => {
@@ -188,7 +190,7 @@ const Events: React.FC = () => {
         console.error('Error fetching user events', error);
       });
 
-    const staticEventsPromise = axios
+    const staticEventsPromise = apiClient
       .get('/static_events')
       .then(response => {
         if (response.status === 200) {
