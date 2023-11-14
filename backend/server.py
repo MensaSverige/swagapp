@@ -15,7 +15,8 @@ from werkzeug.routing import Rule
 logging.basicConfig(level=logging.INFO)
 
 app = Flask(__name__)
-
+db = None
+client = None
 schema_dir = './schema'
 
 
@@ -179,12 +180,7 @@ def page_not_found(e):
     return jsonify(error="404 Not Found"), 404
 
 
-if __name__ == '__main__':
-    client = MongoClient('mongo', 27017)
-    db = client['swag']
-    app.config['ENV'] = 'development'
-
-    # Print all files in schema directory
+def initialize_dynamic_routes():
     logging.info(f"Schema files: {os.listdir(schema_dir)}")
 
     for filename in os.listdir(schema_dir):
@@ -212,4 +208,19 @@ if __name__ == '__main__':
             app.add_url_rule(f'/{model_name}/<string:item_id>', f'delete_{model_name}',
                              partial(delete, model_name, collection), methods=['DELETE'])
 
+
+def initialize_app():
+    global db
+
+    # Initialize MongoDB client
+    client = MongoClient('mongo', 27017)
+    db = client['swag']
+
+    # Initialize dynamic routes
+    initialize_dynamic_routes()
+
+
+if __name__ == '__main__':
+    app.config['ENV'] = 'development'
+    initialize_app()
     app.run(host='0.0.0.0', port=5000, debug=True)
