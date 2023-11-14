@@ -12,8 +12,8 @@ from cryptography.fernet import Fernet
 # access_token_expiry = datetime.timedelta(minutes=10)
 # refresh_token_expiry = datetime.timedelta(hours=24)
 
-access_token_expiry = datetime.timedelta(seconds=10)
-refresh_token_expiry = datetime.timedelta(seconds=20)
+access_token_expiry = datetime.timedelta(minutes=15)
+refresh_token_expiry = datetime.timedelta(hours=24)
 
 
 # Initialize logging
