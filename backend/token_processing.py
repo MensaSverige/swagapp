@@ -5,15 +5,46 @@ from functools import wraps
 from flask import request, jsonify
 import logging
 import datetime
+from cryptography.fernet import Fernet
 
+
+# Initialize logging
 logging.basicConfig(level=logging.INFO)
 
-SECRET_KEY = os.getenv('SECRET_KEY')
+# Function to generate a new secret key
+
+
+def generate_secret_key():
+    return Fernet.generate_key().decode()
+
+
+def initialize_secret_key():
+    '''Check if SECRET_KEY is set in environment, if not generate and save it'''
+    # Replace with your actual .env file path
+    secret_key_env_path = os.path.join(
+        os.path.dirname(__file__), '.env')
+    secret_key = os.getenv('SECRET_KEY')
+
+    if not secret_key:
+        secret_key = generate_secret_key()
+
+        # Writing SECRET_KEY to .env file
+        with open(secret_key_env_path, 'a') as env_file:
+            env_file.write(f'SECRET_KEY={secret_key}\n')
+
+        # Load the new SECRET_KEY into environment
+        os.environ['SECRET_KEY'] = secret_key
+
+        logging.info("Generated and saved a new SECRET_KEY.")
+
+
+# Call the function to ensure SECRET_KEY is initialized
+initialize_secret_key()
 
 
 def create_token(username, expiry, type):
     secret_key = current_app.config.get(
-        'SECRET_KEY', SECRET_KEY)  # Use app config if available
+        'SECRET_KEY', os.getenv('SECRET_KEY'))  # Use app config if available
 
     exp = datetime.datetime.utcnow() + expiry
     payload = {
