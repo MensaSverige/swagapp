@@ -1,8 +1,10 @@
 import axios from 'axios';
 import * as Keychain from 'react-native-keychain';
+import appConfig from './appConfig';
+import useStore from './store';
 
 const apiClient = axios.create({
-  baseURL: 'http://swag.mikael.green/api',
+  baseURL: appConfig.baseURL,
 });
 
 // Request Interceptor to add the access token
@@ -32,13 +34,19 @@ apiClient.interceptors.response.use(
   },
   async error => {
     const originalRequest = error.config;
-    if (error.response.status === 401 && !originalRequest._retry) {
+    if (
+      error.response.status === 401 &&
+      !originalRequest._retry &&
+      !originalRequest.url.includes('/refresh_token')
+    ) {
+      console.log('Request failed to url: ', originalRequest.url);
       originalRequest._retry = true;
       try {
         const credentials = await Keychain.getGenericPassword({
           service: 'refreshToken',
         });
         if (credentials) {
+          console.log('Refreshing access token');
           const response = await apiClient.post('/refresh_token', {
             refresh_token: credentials.password,
           });
@@ -51,6 +59,8 @@ apiClient.interceptors.response.use(
           }
         }
       } catch (credentialsError) {
+        const store = useStore.getState();
+        store.setUser(null);
         console.log(
           'Error processing keychain when refreshing access token',
           credentialsError,
