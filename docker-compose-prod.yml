@@ -12,7 +12,7 @@ services:
     depends_on:
       - mongo
     volumes:
-      - /persistent/.env:/app/.env
+      - /persistent/backend.ini:/app/backend.ini
 
   mongo:
     image: mongo:latest
