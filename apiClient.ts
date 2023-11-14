@@ -2,7 +2,7 @@ import axios from 'axios';
 import * as Keychain from 'react-native-keychain';
 
 const apiClient = axios.create({
-  baseURL: 'http://localhost:5000',
+  baseURL: 'http://swag.mikael.green/api',
 });
 
 // Request Interceptor to add the access token
