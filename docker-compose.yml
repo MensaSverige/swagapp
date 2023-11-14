@@ -5,14 +5,14 @@ services:
     volumes:
       - ./backend:/app  # Mount the backend code
       - ./schema:/app/schema  # Mount the schema directory
+      - ./tmp/backend.ini:/app/backend.ini
     working_dir: /app
-    command: bash -c "pip install -r requirements.txt && FLASK_APP=server.py FLASK_ENV=development flask run --host=0.0.0.0 --port=5000"
+    command: bash -c "pip install -r requirements.txt && python server.py"
     ports:
       - "5000:5000"
     depends_on:
       - mongo
-    env_file:
-      - .env
+    
 
   mongo:
     image: mongo:latest
