@@ -1,3 +1,4 @@
+import configparser
 from flask import request, jsonify, current_app
 import os
 import jwt
@@ -11,41 +12,42 @@ from cryptography.fernet import Fernet
 # Initialize logging
 logging.basicConfig(level=logging.INFO)
 
-# Function to generate a new secret key
-
 
 def generate_secret_key():
+    '''Generate a new JWT secret key for the backend.ini file'''
     return Fernet.generate_key().decode()
 
 
-def initialize_secret_key():
-    '''Check if SECRET_KEY is set in environment, if not generate and save it'''
-    # Replace with your actual .env file path
+def get_or_create_jwt_secret():
+    '''Function to get or create JWT secret from backend.ini file'''
+
+    mocked_secret_key = current_app.config.get('SECRET_KEY', False)
+    if mocked_secret_key:
+        return mocked_secret_key
+
     secret_key_env_path = os.path.join(
-        os.path.dirname(__file__), '.env')
-    secret_key = os.getenv('SECRET_KEY')
+        os.path.dirname(__file__), 'backend.ini')
+    config = configparser.ConfigParser()
 
-    if not secret_key:
-        secret_key = generate_secret_key()
+    # Check if backend.ini file exists, if not, create it
+    if not os.path.exists(secret_key_env_path):
+        config['DEFAULT'] = {'SECRET_KEY': generate_secret_key()}
+        with open(secret_key_env_path, 'w') as configfile:
+            config.write(configfile)
+    else:
+        config.read(secret_key_env_path)
 
-        # Writing SECRET_KEY to .env file
-        with open(secret_key_env_path, 'a') as env_file:
-            env_file.write(f'SECRET_KEY={secret_key}\n')
+    # Check if SECRET_KEY is set, if not, generate and set it
+    if 'SECRET_KEY' not in config['DEFAULT']:
+        config['DEFAULT']['SECRET_KEY'] = generate_secret_key()
+        with open(secret_key_env_path, 'w') as configfile:
+            config.write(configfile)
 
-        # Load the new SECRET_KEY into environment
-        os.environ['SECRET_KEY'] = secret_key
-
-        logging.info("Generated and saved a new SECRET_KEY.")
-
-
-# Call the function to ensure SECRET_KEY is initialized
-initialize_secret_key()
+    # Return the SECRET_KEY
+    return config['DEFAULT']['SECRET_KEY']
 
 
 def create_token(username, expiry, type):
-    secret_key = current_app.config.get(
-        'SECRET_KEY', os.getenv('SECRET_KEY'))  # Use app config if available
-
     exp = datetime.datetime.utcnow() + expiry
     payload = {
         'exp': exp,
@@ -53,7 +55,7 @@ def create_token(username, expiry, type):
         'sub': username,
         'type': type
     }
-    return jwt.encode(payload, secret_key, algorithm='HS256')
+    return jwt.encode(payload, get_or_create_jwt_secret(), algorithm='HS256')
 
 
 def create_refresh_token(username):
@@ -66,7 +68,8 @@ def create_access_token(username):
 
 def verify_token(token, type):
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
+        payload = jwt.decode(
+            token, get_or_create_jwt_secret(), algorithms=['HS256'])
         if payload['type'] != type:
             raise jwt.InvalidTokenError('Invalid token type')
         return True, payload
