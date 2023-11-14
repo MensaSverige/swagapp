@@ -16,8 +16,8 @@ import api from '../apiClient';
 
 interface LoginResponse {
   user: User;
-  accessToken: string;
-  refreshToken: string;
+  access_token: string;
+  refresh_token: string;
 }
 
 interface ErrorResponse {
@@ -51,10 +51,10 @@ export const SigninForm = () => {
         console.log('data', data);
         const user: User = data.user;
 
-        if (data.accessToken && data.refreshToken) {
+        if (data.access_token && data.refresh_token) {
           store.setUser(user);
-          await Keychain.setGenericPassword('accessToken', data.accessToken);
-          await Keychain.setGenericPassword('refreshToken', data.refreshToken);
+          await Keychain.setGenericPassword('accessToken', data.access_token);
+          await Keychain.setGenericPassword('refreshToken', data.refresh_token);
         } else {
           console.error('Received null accessToken or refreshToken');
           setLoginErrorText('Något gick fel. Försök igen senare.');
