@@ -13,6 +13,8 @@ import {User} from '../types/user';
 import useStore from '../store';
 import * as Keychain from 'react-native-keychain';
 import api from '../apiClient';
+import {FontAwesomeIcon} from '@fortawesome/react-native-fontawesome';
+import {faEye, faEyeSlash} from '@fortawesome/free-solid-svg-icons';
 
 interface LoginResponse {
   user: User;
@@ -27,6 +29,7 @@ interface ErrorResponse {
 export const SigninForm = () => {
   const [username, setUsername] = React.useState('');
   const [password, setPassword] = React.useState('');
+  const [passwordVisible, setPasswordVisible] = React.useState(false);
 
   const [showLoginError, setShowLoginError] = React.useState(false);
   const [loginErrorText, setLoginErrorText] = React.useState('');
@@ -118,10 +121,24 @@ export const SigninForm = () => {
           <Input
             variant="filled"
             placeholder="Lösenord"
-            type="password"
+            type={passwordVisible ? 'text' : 'password'}
             value={password}
             onChangeText={setPassword}
             isDisabled={isLoading}
+            InputRightElement={
+              <Button
+                ml={1}
+                bg="transparent"
+                roundedLeft={0}
+                roundedRight="md"
+                onPress={() => setPasswordVisible(!passwordVisible)}>
+                {passwordVisible ? (
+                  <FontAwesomeIcon icon={faEyeSlash} />
+                ) : (
+                  <FontAwesomeIcon icon={faEye} />
+                )}
+              </Button>
+            }
           />
           {isLoading ? (
             <Spinner />
