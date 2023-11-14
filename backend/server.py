@@ -1,4 +1,7 @@
 import logging
+import jsonschema
+import json
+import os
 from flask import Flask, request, jsonify
 from pymongo import MongoClient
 from bson.objectid import ObjectId
@@ -6,9 +9,7 @@ from functools import partial
 from token_processing import requires_auth, create_access_token, verify_refresh_token
 from auth import auth_endpoint
 from mongo import initialize_collection_from_schema
-import jsonschema
-import json
-import os
+from werkzeug.routing import Rule
 
 # Initialize logging
 logging.basicConfig(level=logging.INFO)
@@ -157,6 +158,27 @@ def list_events():
     return jsonify(static_events), 200
 
 
+# Debugging of dynamic API
+
+def log_endpoints():
+    '''Function to log all registered endpoints'''
+    endpoints = []
+    for rule in app.url_map.iter_rules():
+        if isinstance(rule, Rule):
+            endpoints.append(
+                f'{rule.endpoint}: {list(rule.methods)} @ {rule.rule}')
+    logging.info("Registered Endpoints:\n" + "\n".join(endpoints))
+
+
+@app.errorhandler(404)
+def page_not_found(e):
+    '''Error handler for 404'''
+
+    # Log all endpoints when a 404 occurs
+    log_endpoints()
+    return jsonify(error="404 Not Found"), 404
+
+
 if __name__ == '__main__':
     client = MongoClient('mongo', 27017)
     db = client['swag']
@@ -171,6 +193,8 @@ if __name__ == '__main__':
                 os.path.join(schema_dir, filename),
                 db
             )
+
+            logging.info(f"Initialized collection {model_name}")
 
             app.add_url_rule(f'/{model_name}', f'create_{model_name}',
                              partial(create, model_name, schema, collection), methods=['POST'])
