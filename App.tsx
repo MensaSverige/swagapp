@@ -1,4 +1,4 @@
-import {NativeBaseProvider} from 'native-base';
+import {Center, NativeBaseProvider, Spinner} from 'native-base';
 import {Appearance, ColorSchemeName} from 'react-native';
 import React, {useState, useEffect} from 'react';
 import {SigninForm} from './components/SigninForm';
@@ -20,9 +20,28 @@ import {
   faCalendarDays,
   faAddressCard,
 } from '@fortawesome/free-solid-svg-icons';
+import apiClient from './apiClient';
 
 const Stack = createNativeStackNavigator();
 const BottomTab = createBottomTabNavigator();
+
+interface TabBarIconProps {
+  focused: boolean;
+  color: string;
+  size: number;
+}
+
+const MapIcon: React.FC<TabBarIconProps> = ({color, size}) => (
+  <FontAwesomeIcon color={color} size={size} icon={faMapLocationDot} />
+);
+
+const CalendarIcon: React.FC<TabBarIconProps> = ({color, size}) => (
+  <FontAwesomeIcon color={color} size={size} icon={faCalendarDays} />
+);
+
+const ProfileIcon: React.FC<TabBarIconProps> = ({color, size}) => (
+  <FontAwesomeIcon color={color} size={size} icon={faAddressCard} />
+);
 
 function LoggedInTabs() {
   return (
@@ -31,43 +50,72 @@ function LoggedInTabs() {
         name="Karta"
         component={SwagMap}
         options={{
-          tabBarIcon: props => (
-            <FontAwesomeIcon {...props} icon={faMapLocationDot} />
-          ),
+          tabBarIcon: MapIcon,
         }}
       />
       <BottomTab.Screen
         name="Evenemang"
         component={Events}
         options={{
-          tabBarIcon: props => (
-            <FontAwesomeIcon {...props} icon={faCalendarDays} />
-          ),
+          tabBarIcon: CalendarIcon,
         }}
       />
       <BottomTab.Screen
         name="Profil"
         component={Profile}
         options={{
-          tabBarIcon: props => (
-            <FontAwesomeIcon {...props} icon={faAddressCard} />
-          ),
+          tabBarIcon: ProfileIcon,
         }}
       />
     </BottomTab.Navigator>
   );
 }
 
+const LoadingScreen: React.FC = () => (
+  <Center w="100%" h="100%">
+    <Spinner size="lg" />
+  </Center>
+);
+
 function App(): JSX.Element {
-  const user: User | null = useStore(state => state.user);
+  const [isTryingToLogin, setIsTryingToLogin] = useState(false);
+  const {user, setUser} = useStore();
 
   useEffect(() => {
     if (!user) {
-      // Remove remnant tokens from the keychain
-      console.log('Removing tokens from keychain');
-      Keychain.resetGenericPassword();
+      Keychain.getAllGenericPasswordServices().then(allSavedCredentials => {
+        console.log('All saved credentials:', allSavedCredentials);
+        if (
+          allSavedCredentials.some(
+            credential =>
+              credential === 'accessToken' ||
+              credential === 'refreshToken' ||
+              credential === 'credentials',
+          )
+        ) {
+          console.log('Found tokens in keychain, trying to get user object');
+          setIsTryingToLogin(true);
+          apiClient
+            .get('/user/me')
+            .then(response => {
+              if (response.status === 200) {
+                const userData: User = response.data;
+                setUser(userData);
+              } else {
+                Keychain.resetGenericPassword();
+                console.log('Removing tokens from keychain');
+              }
+            })
+            .finally(() => {
+              setIsTryingToLogin(false);
+            });
+        } else {
+          console.log('No tokens in keychain');
+          setIsTryingToLogin(false);
+        }
+      });
     }
-  }, [user]);
+  }, [user, setUser]);
 
   const [colorScheme, setColorScheme] = useState<ColorSchemeName | null>(
     Appearance.getColorScheme(),
@@ -89,23 +137,18 @@ function App(): JSX.Element {
   return (
     <NativeBaseProvider theme={theme}>
       <NavigationContainer>
-        <Stack.Navigator initialRouteName="Signin">
-          {user === null ? (
-            <Stack.Screen
-              name="Signin"
-              component={SigninForm}
-              options={{
-                headerTitle: 'Logga in',
-                headerShown: false,
-              }}
-            />
-          ) : (
-            <Stack.Screen
-              name="Tab View"
-              component={LoggedInTabs}
-              options={{headerShown: false}}
-            />
-          )}
+        <Stack.Navigator initialRouteName="Start">
+          <Stack.Screen name="Start" options={{headerShown: false}}>
+            {() => {
+              if (isTryingToLogin) {
+                return <LoadingScreen />;
+              } else if (user === null) {
+                return <SigninForm />;
+              } else {
+                return <LoggedInTabs />;
+              }
+            }}
+          </Stack.Screen>
         </Stack.Navigator>
       </NavigationContainer>
     </NativeBaseProvider>

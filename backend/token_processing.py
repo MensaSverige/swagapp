@@ -9,6 +9,13 @@ import datetime
 from cryptography.fernet import Fernet
 
 
+# access_token_expiry = datetime.timedelta(minutes=10)
+# refresh_token_expiry = datetime.timedelta(hours=24)
+
+access_token_expiry = datetime.timedelta(seconds=10)
+refresh_token_expiry = datetime.timedelta(seconds=20)
+
+
 # Initialize logging
 logging.basicConfig(level=logging.INFO)
 
@@ -59,11 +66,11 @@ def create_token(username, expiry, type):
 
 
 def create_refresh_token(username):
-    return create_token(username, datetime.timedelta(hours=24), 'refresh')
+    return create_token(username, refresh_token_expiry, 'refresh')
 
 
 def create_access_token(username):
-    return create_token(username, datetime.timedelta(minutes=10), 'access')
+    return create_token(username, access_token_expiry, 'access')
 
 
 def verify_token(token, type):
@@ -90,7 +97,6 @@ def verify_refresh_token(token):
 def requires_auth(f):
     @wraps(f)
     def decorated(*args, **kwargs):
-        logging.info(f"Request: {request.method} {request.path}")
 
         auth_header = request.headers.get('Authorization', None)
         if not auth_header:
@@ -102,8 +108,6 @@ def requires_auth(f):
         if not token:
             logging.error('Token missing')
             return jsonify({'error': 'Token missing'}), 401
-
-        logging.info(f"Token: {token}")
 
         valid, result = verify_access_token(token)
         if not valid:

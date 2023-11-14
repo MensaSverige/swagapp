@@ -10,6 +10,7 @@ from token_processing import requires_auth, create_access_token, verify_refresh_
 from auth import auth_endpoint
 from mongo import initialize_collection_from_schema
 from werkzeug.routing import Rule
+from bson_to_json import bson_to_json
 
 # Initialize logging
 logging.basicConfig(level=logging.INFO)
@@ -35,6 +36,7 @@ def refresh_token():
 
     valid, payload = verify_refresh_token(refresh_token)
     if not valid:
+        logging.error(f"Invalid refresh token: {refresh_token}")
         return jsonify({'error': 'Invalid refresh token'}), 401
 
     new_access_token = create_access_token(payload['sub'])
@@ -60,14 +62,31 @@ def create(model_name, schema, collection, username):
 
 
 @requires_auth
-def read(model_name, collection, username):
+def read(model_name, collection, username, item_id=None):
     logging.info(f"read: {request.method} {request.path}")
     try:
-        items = list(collection.find())
+        if item_id:
 
-        logging.info(
-            f"Items successfully retrieved from {model_name}: {items}")
-        return jsonify(items), 200
+            if model_name == 'user' and item_id == 'me':
+                item = collection.find_one({'username': username})
+            else:
+                item = collection.find_one({'_id': ObjectId(item_id)})
+
+            if not item:
+                logging.error(f"Item not found in GET /{model_name}")
+                return jsonify({'error': 'Item not found'}), 404
+
+            logging.info(
+                f"Item successfully retrieved from {model_name}: {item}")
+
+            return jsonify(bson_to_json(item)), 200
+
+        else:
+            items = list(collection.find())
+            logging.info(
+                f"Items successfully retrieved from {model_name}: {items}")
+            return jsonify(bson_to_json(items)), 200
+
     except Exception as e:
         logging.error(f"Error in GET /{model_name}: {str(e)}")
         return jsonify({'error': 'Internal Server Error'}), 500
@@ -112,7 +131,7 @@ def update(model_name, schema, collection, item_id, username):
 
 
 @requires_auth
-def delete(model_name, collection, item_id, username):
+def delete(model_name, schema, collection, item_id, username):
     logging.info(f"delete: {request.method} {request.path}")
     try:
         # If item.owner exists, check if authorized user is owner
@@ -203,10 +222,12 @@ def initialize_dynamic_routes():
                              partial(create, model_name, schema, collection), methods=['POST'])
             app.add_url_rule(f'/{model_name}', f'read_{model_name}',
                              partial(read, model_name, collection), methods=['GET'])
+            app.add_url_rule(f'/{model_name}/<string:item_id>', f'read_{model_name}_by_id',
+                             partial(read, model_name, collection), methods=['GET'])
             app.add_url_rule(f'/{model_name}/<string:item_id>', f'update_{model_name}',
                              partial(update, model_name, schema, collection), methods=['PUT'])
             app.add_url_rule(f'/{model_name}/<string:item_id>', f'delete_{model_name}',
-                             partial(delete, model_name, collection), methods=['DELETE'])
+                             partial(delete, model_name, schema, collection), methods=['DELETE'])
 
 
 def initialize_app():

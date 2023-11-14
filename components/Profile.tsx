@@ -14,6 +14,7 @@ import {
 } from 'native-base';
 import apiClient from '../apiClient';
 import useStore from '../store';
+import * as Keychain from 'react-native-keychain';
 
 const Profile: React.FC = () => {
   // Get current user and token from Zustand store
@@ -32,7 +33,10 @@ const Profile: React.FC = () => {
   }, [showLocation, user?.show_location]);
 
   const handleLogout = () => {
-    setUser(null); // The rest is handled in App.tsx
+    Keychain.resetGenericPassword({service: 'credentials'});
+    Keychain.resetGenericPassword({service: 'refreshToken'});
+    Keychain.resetGenericPassword({service: 'accessToken'});
+    setUser(null);
   };
 
   const handleSave = async () => {

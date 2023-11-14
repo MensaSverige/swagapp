@@ -3,18 +3,20 @@ import {
   Box,
   Button,
   Center,
+  Checkbox,
   Heading,
   Input,
   Spinner,
   VStack,
 } from 'native-base';
-import React from 'react';
+import React, {useEffect} from 'react';
 import {User} from '../types/user';
 import useStore from '../store';
 import * as Keychain from 'react-native-keychain';
 import api from '../apiClient';
 import {FontAwesomeIcon} from '@fortawesome/react-native-fontawesome';
 import {faEye, faEyeSlash} from '@fortawesome/free-solid-svg-icons';
+import {set} from 'yaml/dist/schema/yaml-1.1/set';
 
 interface LoginResponse {
   user: User;
@@ -30,6 +32,7 @@ export const SigninForm = () => {
   const [username, setUsername] = React.useState('');
   const [password, setPassword] = React.useState('');
   const [passwordVisible, setPasswordVisible] = React.useState(false);
+  const [saveCredentials, setSaveCredentials] = React.useState(false);
 
   const [showLoginError, setShowLoginError] = React.useState(false);
   const [loginErrorText, setLoginErrorText] = React.useState('');
@@ -41,6 +44,13 @@ export const SigninForm = () => {
   const handleLogin = async () => {
     try {
       setIsLoading(true);
+
+      if (saveCredentials) {
+        Keychain.setGenericPassword(username, password, {
+          service: 'credentials',
+        });
+      }
+
       const response = await api.post('/auth', {
         username: username,
         password: password,
@@ -140,6 +150,9 @@ export const SigninForm = () => {
               </Button>
             }
           />
+          <Checkbox value="saveCredentials" onChange={setSaveCredentials}>
+            Spara inloggning
+          </Checkbox>
           {isLoading ? (
             <Spinner />
           ) : (
