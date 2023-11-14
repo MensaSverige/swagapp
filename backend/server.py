@@ -33,7 +33,7 @@ def refresh_token():
     if not refresh_token:
         return jsonify({'error': 'Missing refresh token'}), 400
 
-    valid, payload = verify_refresh_token(refresh_token, token_type='refresh')
+    valid, payload = verify_refresh_token(refresh_token)
     if not valid:
         return jsonify({'error': 'Invalid refresh token'}), 401
 

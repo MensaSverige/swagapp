@@ -53,8 +53,16 @@ export const SigninForm = () => {
 
         if (data.access_token && data.refresh_token) {
           store.setUser(user);
-          await Keychain.setGenericPassword('accessToken', data.access_token);
-          await Keychain.setGenericPassword('refreshToken', data.refresh_token);
+          await Keychain.setGenericPassword('accessToken', data.access_token, {
+            service: 'accessToken',
+          });
+          await Keychain.setGenericPassword(
+            'refreshToken',
+            data.refresh_token,
+            {
+              service: 'refreshToken',
+            },
+          );
         } else {
           console.error('Received null accessToken or refreshToken');
           setLoginErrorText('Något gick fel. Försök igen senare.');

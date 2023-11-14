@@ -12,12 +12,12 @@ import {
   FormControl,
   Stack,
 } from 'native-base';
-import axios from 'axios';
+import apiClient from '../apiClient';
 import useStore from '../store';
 
 const Profile: React.FC = () => {
   // Get current user and token from Zustand store
-  const {user, token, config, setUser, setToken} = useStore();
+  const {user, setUser} = useStore();
 
   // Local state for dirty form
   const [dirtyForm, setDirtyForm] = useState(false);
@@ -32,8 +32,7 @@ const Profile: React.FC = () => {
   }, [showLocation, user?.show_location]);
 
   const handleLogout = () => {
-    setUser(null);
-    setToken(null);
+    setUser(null); // The rest is handled in App.tsx
   };
 
   const handleSave = async () => {
@@ -44,18 +43,10 @@ const Profile: React.FC = () => {
     console.log('User', user);
 
     try {
-      const response = await axios.put(
-        config.apiUrl + '/user/' + user.id,
-        {
-          ...user,
-          show_location: showLocation,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        },
-      );
+      const response = await apiClient.put('/user/' + user.id, {
+        ...user,
+        show_location: showLocation,
+      });
 
       if (response.status === 200 && response.data.status === 'success') {
         const returnedUser = response.data.data;
