@@ -1,19 +1,76 @@
 import {create} from 'zustand';
 import {User} from './types/user';
+import {Event} from './types/event';
 
-const useStore = create<{
+interface State {
   config: {
     testMode: boolean;
   };
   user: User | null;
+  visibleEvents: Event[];
+  userEvents: Event[];
+  showUserEvents: boolean;
+  staticEvents: Event[];
+  showStaticEvents: boolean;
+  eventsRefreshing: boolean;
+  eventsLastFetched: Date | null;
+}
+
+interface Actions {
   setUser: (user: User | null) => void;
-}>(set => ({
+  setUserEvents: (events: Event[]) => void;
+  setShowUserEvents: (showUserEvents: boolean) => void;
+  setStaticEvents: (events: Event[]) => void;
+  setShowStaticEvents: (showStaticEvents: boolean) => void;
+  setEventsRefreshing: (eventsRefreshing: boolean) => void;
+  setEventsLastFetched: (eventsLastFetched: Date | null) => void;
+  updateVisibleEvents: () => void;
+}
+
+const useStore = create<State & Actions>(set => ({
+  // Default state
   config: {
     testMode: false,
   },
   user: null,
-  token: null,
+  visibleEvents: [],
+  userEvents: [],
+  showUserEvents: true,
+  staticEvents: [],
+  showStaticEvents: true,
+  eventsRefreshing: false,
+  eventsLastFetched: null,
+
+  // Actions
   setUser: user => set({user}),
+
+  setUserEvents: userEvents => {
+    set({userEvents});
+    useStore.getState().updateVisibleEvents();
+  },
+  setShowUserEvents: showUserEvents => {
+    set({showUserEvents});
+    useStore.getState().updateVisibleEvents();
+  },
+  setStaticEvents: staticEvents => {
+    set({staticEvents});
+    useStore.getState().updateVisibleEvents();
+  },
+  setShowStaticEvents: showStaticEvents => {
+    set({showStaticEvents});
+    useStore.getState().updateVisibleEvents();
+  },
+  setEventsRefreshing: eventsRefreshing => set({eventsRefreshing}),
+  setEventsLastFetched: eventsLastFetched => set({eventsLastFetched}),
+  updateVisibleEvents: () => {
+    const {showUserEvents, showStaticEvents, userEvents, staticEvents} =
+      useStore.getState();
+    const newVisibleEvents = [
+      ...(showUserEvents ? userEvents : []),
+      ...(showStaticEvents ? staticEvents : []),
+    ];
+    set({visibleEvents: newVisibleEvents});
+  },
 }));
 
 export default useStore;

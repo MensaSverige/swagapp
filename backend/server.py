@@ -175,6 +175,9 @@ def list_events():
         static_events = json.load(f)
         logging.info(f"Static events successfully retrieved")
 
+        for event in static_events:
+            event['id'] = f"{event['name'].replace(' ', '-').lower()}-{event['start'].replace(' ', '-').lower()}"
+
     return jsonify(static_events), 200
 
 
