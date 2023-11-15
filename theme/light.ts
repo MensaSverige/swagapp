@@ -29,6 +29,13 @@ const lightTheme = extendTheme({
         color: 'gray.800',
       },
     },
+    Card: {
+      baseStyle: {
+        borderColor: 'muted.500',
+        borderWidth: 1,
+        backgroundColor: 'primary.900',
+      },
+    },
     Input: {
       defaultProps: {
         bg: 'transparent',

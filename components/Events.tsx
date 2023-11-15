@@ -4,6 +4,14 @@ import {Event} from '../types/event';
 import {RefreshControl, TouchableNativeFeedback} from 'react-native';
 import api from '../apiClient';
 import apiClient from '../apiClient';
+import {LayoutAnimation, UIManager, Platform} from 'react-native';
+
+if (
+  Platform.OS === 'android' &&
+  UIManager.setLayoutAnimationEnabledExperimental
+) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
 
 function formatDateAndTime(dateTimeStr: string, startDateTimeStr?: string) {
   // Parse the Swedish date and time format, assuming it's in "yyyy-mm-dd hh:mm" format
@@ -165,6 +173,7 @@ const Events: React.FC = () => {
 
   const [openEvents, setOpenEvents] = React.useState<Array<Event>>([]);
   const toggleOpen = (event: Event) => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     if (openEvents.includes(event)) {
       setOpenEvents(openEvents.filter(e => e !== event));
     } else {
