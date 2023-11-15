@@ -13,6 +13,7 @@ import Profile from './components/Profile';
 import useStore from './store';
 import Events from './components/Events';
 import * as Keychain from 'react-native-keychain';
+import apiClient from './apiClient';
 
 import {FontAwesomeIcon} from '@fortawesome/react-native-fontawesome';
 import {
@@ -20,7 +21,6 @@ import {
   faCalendarDays,
   faAddressCard,
 } from '@fortawesome/free-solid-svg-icons';
-import apiClient from './apiClient';
 
 const Stack = createNativeStackNavigator();
 const BottomTab = createBottomTabNavigator();

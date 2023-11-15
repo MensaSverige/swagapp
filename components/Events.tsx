@@ -2,7 +2,7 @@ import {Box, Card, Center, Heading, ScrollView, Text} from 'native-base';
 import React from 'react';
 import {Event} from '../types/event';
 import {RefreshControl, TouchableNativeFeedback} from 'react-native';
-import api from '../apiClient';
+import useStore from '../store';
 import apiClient from '../apiClient';
 import {LayoutAnimation, UIManager, Platform} from 'react-native';
 
@@ -61,15 +61,19 @@ function formatDateAndTime(dateTimeStr: string, startDateTimeStr?: string) {
   return formattedDate;
 }
 
-const timeUntil = (dateTimeStr: string, long: boolean = false) => {
-  const now = new Date();
+const timeUntil = (
+  comparedTo: Date,
+  dateTimeStr: string,
+  long: boolean = false,
+) => {
   const dateTime = new Date(dateTimeStr);
 
-  const diff = dateTime.getTime() - now.getTime();
+  const diff = dateTime.getTime() - comparedTo.getTime();
 
   const days = Math.floor(diff / (1000 * 60 * 60 * 24));
   const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
   const minutes = Math.floor((diff / (1000 * 60)) % 60);
+  const seconds = Math.floor((diff / 1000) % 60);
 
   if (!long) {
     if (days > 0) {
@@ -79,58 +83,70 @@ const timeUntil = (dateTimeStr: string, long: boolean = false) => {
     } else if (minutes > 0) {
       return `${minutes}m`;
     } else {
-      return 'nu!';
+      return `${seconds}s`;
     }
   } else {
     // Show all units that are not zero
     let timeLeft = '';
-    if (days > 0) {
+    if (days !== 0) {
       timeLeft += `${days} dag${days > 1 ? 'ar' : ''}`;
     }
     if (hours > 0) {
-      timeLeft += `${timeLeft === '' ? '' : ', '} ${hours} timma${
-        hours > 1 ? 'r' : ''
+      timeLeft += `${timeLeft === '' ? '' : ', '}${hours} timma${
+        hours !== 1 ? 'r' : ''
       }`;
     }
     if (minutes > 0) {
-      timeLeft += `${timeLeft === '' ? '' : ', '} ${minutes} minut${
-        minutes > 1 ? 'er' : ''
+      timeLeft += `${timeLeft === '' ? '' : ', '}${minutes} minut${
+        minutes !== 1 ? 'er' : ''
+      }`;
+    }
+    if (hours === 0 && minutes < 10) {
+      timeLeft += `${timeLeft === '' ? '' : ', '}${seconds} sekund${
+        seconds !== 1 ? 'er' : ''
       }`;
     }
     return timeLeft;
   }
 };
 
-const TimeLeft: React.FC<{start: string; end?: string; long?: boolean}> = ({
-  start,
-  end,
-  long,
-}) => {
+const TimeLeft: React.FC<{
+  comparedTo: Date;
+  start: string;
+  end?: string;
+  long?: boolean;
+}> = ({comparedTo, start, end, long}) => {
   // If start hasn't passed:
   let text = '';
   if (new Date(start) > new Date()) {
-    text = `om ${timeUntil(start, long ?? false)}`;
+    text = `om ${timeUntil(comparedTo, start, long ?? false)}`;
   } else if (end) {
-    text = `slutar om ${timeUntil(end, long ?? false)}`;
+    text = `slutar om ${timeUntil(comparedTo, end, long ?? false)}`;
   } else {
     // Show how long ago the event started
-    text = `${timeUntil(start)} sedan`;
+    text = `${timeUntil(comparedTo, start)} sedan`;
   }
   return <Text>{text}</Text>;
 };
 
 const EventCard: React.FC<{
+  comparisonDate: Date;
   event: Event;
   open: Boolean;
   toggleOpen: (event: Event) => void;
-}> = ({event, open, toggleOpen}) => {
+}> = ({comparisonDate, event, open, toggleOpen}) => {
   return (
     <TouchableNativeFeedback onPress={() => toggleOpen(event)}>
       <Card rounded="lg" overflow="hidden" m="2" opacity={open ? '1' : '0.8'}>
         {open ? (
           <>
             <Box flexDirection="row-reverse">
-              <TimeLeft start={event.start} end={event.end} long />
+              <TimeLeft
+                comparedTo={comparisonDate}
+                start={event.start}
+                end={event.end}
+                long
+              />
             </Box>
             <Heading size="lg" isTruncated={!open}>
               {event.name}
@@ -141,7 +157,11 @@ const EventCard: React.FC<{
             <Heading size="sm" isTruncated maxW="80%">
               {event.name}
             </Heading>
-            <TimeLeft start={event.start} end={event.end} />
+            <TimeLeft
+              comparedTo={comparisonDate}
+              start={event.start}
+              end={event.end}
+            />
           </Box>
         )}
         {open && (
@@ -150,7 +170,7 @@ const EventCard: React.FC<{
             <Box flex="1" flexDirection="row" justifyContent="space-between">
               <Heading size="xs" mt="5">
                 {formatDateAndTime(event.start)}
-                {event.end && '–' + formatDateAndTime(event.end, event.start)}
+                {event.end && ' – ' + formatDateAndTime(event.end, event.start)}
               </Heading>
               <Text mt="5">{event.location.description}</Text>
             </Box>
@@ -162,16 +182,21 @@ const EventCard: React.FC<{
 };
 
 const Events: React.FC = () => {
+  const {
+    userEvents,
+    setUserEvents,
+    showUserEvents,
+    staticEvents,
+    setStaticEvents,
+    showStaticEvents,
+  } = useStore();
+
   const [refreshing, setRefreshing] = React.useState(false);
   const [events, setEvents] = React.useState<Array<Event>>([]);
-  const [userEvents, setUserEvents] = React.useState<Array<Event>>([]);
-  const [staticEvents, setStaticEvents] = React.useState<Array<Event>>([]);
-  // const [showUserEvents, setShowUserEvents] = React.useState(true);
-  const showUserEvents = true;
-  // const [showStaticEvents, setShowStaticEvents] = React.useState(true);
-  const showStaticEvents = true;
-
   const [openEvents, setOpenEvents] = React.useState<Array<Event>>([]);
+
+  const [comparisonDate, setComparisonDate] = React.useState(new Date());
+
   const toggleOpen = (event: Event) => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     if (openEvents.includes(event)) {
@@ -185,12 +210,11 @@ const Events: React.FC = () => {
     setRefreshing(true);
     console.log('Refreshing events...');
 
-    const userEventsPromise = api
+    const userEventsPromise = apiClient
       .get('/event')
       .then(response => {
         if (response.status === 200) {
           setUserEvents(response.data);
-          console.log('User events', response.data);
         } else {
           console.log('Error fetching user events', response.status);
         }
@@ -204,7 +228,6 @@ const Events: React.FC = () => {
       .then(response => {
         if (response.status === 200) {
           setStaticEvents(response.data);
-          console.log('Static events', response.data);
         } else {
           console.log('Error fetching static events', response.status);
         }
@@ -217,12 +240,20 @@ const Events: React.FC = () => {
     Promise.all([userEventsPromise, staticEventsPromise]).finally(() => {
       setRefreshing(false);
     });
-  }, []);
+  }, [setStaticEvents, setUserEvents]);
 
   // Trigger onRefresh on component mount
   React.useEffect(() => {
     onRefresh();
   }, [onRefresh]);
+
+  React.useEffect(() => {
+    const interval = setInterval(() => {
+      setComparisonDate(new Date());
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, []);
 
   React.useEffect(() => {
     const newEvents: Event[] = [];
@@ -265,6 +296,7 @@ const Events: React.FC = () => {
         {events.map((event: Event) => (
           <EventCard
             key={event.id}
+            comparisonDate={comparisonDate}
             event={event}
             open={openEvents.includes(event)}
             toggleOpen={toggleOpen}
