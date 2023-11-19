@@ -7,8 +7,14 @@
     "age": {"type": "number"},
     "slogan": {"type": "string"},
     "avatar_url": {"type": "string"},
-    "lat": {"type": "number"},
-    "lng": {"type": "number"},
+    "location": {
+      "type": "object",
+      "properties": {
+        "latitude": {"type": "number"},
+        "longitude": {"type": "number"},
+        "timestamp": { "type": "number"}
+      }
+    },
     "show_location": {"type": "boolean"}
   },
   "required": ["username"]

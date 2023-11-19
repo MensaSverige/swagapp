@@ -6,13 +6,17 @@
  */
 
 export interface User {
+  id?: string;
   username: string;
   name?: string;
   age?: number;
   slogan?: string;
   avatar_url?: string;
-  lat?: number;
-  lng?: number;
+  location?: {
+    latitude?: number;
+    longitude?: number;
+    [k: string]: unknown;
+  };
   show_location?: boolean;
   [k: string]: unknown;
 }

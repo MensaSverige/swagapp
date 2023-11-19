@@ -5,6 +5,7 @@ import {Event} from './types/event';
 interface State {
   config: {
     testMode: boolean;
+    locationUpdateInterval: number;
   };
   user: User | null;
   visibleEvents: Event[];
@@ -19,6 +20,7 @@ interface State {
 interface Actions {
   setUser: (user: User | null) => void;
   setUserEvents: (events: Event[]) => void;
+  setUserLocation: (latitude: number, longitude: number) => void;
   setShowUserEvents: (showUserEvents: boolean) => void;
   setStaticEvents: (events: Event[]) => void;
   setShowStaticEvents: (showStaticEvents: boolean) => void;
@@ -31,6 +33,7 @@ const useStore = create<State & Actions>(set => ({
   // Default state
   config: {
     testMode: false,
+    locationUpdateInterval: 60000,
   },
   user: null,
   visibleEvents: [],
@@ -47,6 +50,16 @@ const useStore = create<State & Actions>(set => ({
   setUserEvents: userEvents => {
     set({userEvents});
     useStore.getState().updateVisibleEvents();
+  },
+  setUserLocation(latitude, longitude) {
+    const {user} = useStore.getState();
+    if (user) {
+      user.location = {
+        latitude,
+        longitude,
+      };
+      set({user});
+    }
   },
   setShowUserEvents: showUserEvents => {
     set({showUserEvents});
