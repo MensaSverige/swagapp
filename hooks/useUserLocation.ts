@@ -1,10 +1,11 @@
-import useStore from '../store';
+import useStore from '../store/store';
 import Geolocation from '@react-native-community/geolocation';
 import { useEffect } from 'react';
+import { updateUserLocation, LocationUpdateData } from '../services/locationService';
 
 
 const useUserLocation = () => {
-  const {user, config, setUserLocation} = useStore();
+  const {user, config, locationUpdateInterval, setUserLocation, setRegion} = useStore();
 
   // const checkLocationPermission = async () => {
   //     let permissionStatus = await check(PERMISSIONS.IOS.LOCATION_WHEN_IN_USE);
@@ -25,13 +26,17 @@ const useUserLocation = () => {
           //     setError('Location permission denied');
           //     return;
           // }
-          
           Geolocation.getCurrentPosition(
               (position) => {
                 const {latitude, longitude} = position.coords;
                 
                 if(user && user.username != undefined && latitude != undefined && longitude != undefined)  {
                   setUserLocation(latitude, longitude);
+                  setRegion({latitude: latitude, longitude: longitude, latitudeDelta: 0.0922, longitudeDelta: 0.0421});
+                  if(user.show_location) {
+                    const locationUpdateData: LocationUpdateData = { username: user.username, latitude: latitude, longitude: longitude }; 
+                    updateUserLocation(locationUpdateData);
+                  }
                 }
               },
               (e) => {
@@ -42,8 +47,8 @@ const useUserLocation = () => {
       };
 
       fetchLocation();
-      setInterval(fetchLocation, config.locationUpdateInterval);
-  }, [setUserLocation]);
+      setInterval(fetchLocation, locationUpdateInterval);
+  }, [setUserLocation]); 
 
 };
 

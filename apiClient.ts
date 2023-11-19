@@ -1,7 +1,7 @@
 import axios, {AxiosRequestConfig, AxiosResponse} from 'axios';
 import * as Keychain from 'react-native-keychain';
 import appConfig from './appConfig';
-import useStore from './store';
+import useStore from './store/store';
 
 const apiClient = axios.create({
   baseURL: appConfig.baseURL,
@@ -16,6 +16,7 @@ apiClient.interceptors.request.use(
       if (credentials) {
         config.headers.Authorization = `Bearer ${credentials.password}`;
       }
+      config.headers['Content-Type'] = 'application/json';
     } catch (error) {
       console.log('Error retrieving access token', error);
     }

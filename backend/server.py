@@ -249,19 +249,16 @@ def users_showing_location():
         # get all users
         allusers= list(db.user.find())
         logging.info(f"all users: {allusers}")
-        users = list(db.user.find({'show_location': True, 'lat': {'$ne': None}, 'lng': {'$ne': None}}))
+        users = list(db.user.find({'show_location': True, 'latitude': {'$ne': None}, 'longitude': {'$ne': None}}))
         return_users = []
         for user in users:
             return_users.append({
                 'name': user['name'],
                 'avatar_url': user['avatar_url'],
-                # 'location': {
-                #     'lat': user['lat'],
-                #     'lng': user['lng']
-                # }
-                'lat': user['lat'],
-                'lng': user['lng']
-
+                'location': {
+                    'latitude': user['latitude'],
+                    'lng': user['lng']
+                }
             })
         logging.info(f"Users showing location: {return_users}")
         return jsonify(return_users), 200
@@ -275,8 +272,8 @@ def update_user_location():
         # Extract the user ID and new location from the request body
         data = request.json
         username = data['username']
-        new_lat = data['lat']
-        new_lng = data['lng']
+        new_lat = data['latitude']
+        new_lng = data['longitude']
 
         existing_user = db.user.find_one(
             {"username": username})
@@ -284,9 +281,9 @@ def update_user_location():
         if existing_user:
             db.user.update_one(
                 {"username": data["username"]},
-                {'$set': {'lat': new_lat, 'lng': new_lng}}
+                {'$set': {'latitude': new_lat, 'longitude': new_lng}}
             )
-            logging.info(f"User with id {username} location updated to lat: {new_lat}, lng: {new_lng}")
+            logging.info(f"User with id {username} location updated to latitude: {new_lat}, longitude: {new_lng}")
             return jsonify({'message': 'User location updated successfully'}), 200
         else:
             # This means that no document was found with the provided `_id`

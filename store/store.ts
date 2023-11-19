@@ -1,11 +1,11 @@
 import {create} from 'zustand';
-import {User} from './types/user';
-import {Event} from './types/event';
+import {User} from '../types/user';
+import {Event} from '../types/event';
+import { LocationState, createLocationSlice } from './LocationState';
 
 interface State {
   config: {
     testMode: boolean;
-    locationUpdateInterval: number;
   };
   user: User | null;
   visibleEvents: Event[];
@@ -16,11 +16,9 @@ interface State {
   eventsRefreshing: boolean;
   eventsLastFetched: Date | null;
 }
-
 interface Actions {
   setUser: (user: User | null) => void;
   setUserEvents: (events: Event[]) => void;
-  setUserLocation: (latitude: number, longitude: number) => void;
   setShowUserEvents: (showUserEvents: boolean) => void;
   setStaticEvents: (events: Event[]) => void;
   setShowStaticEvents: (showStaticEvents: boolean) => void;
@@ -29,11 +27,11 @@ interface Actions {
   updateVisibleEvents: () => void;
 }
 
-const useStore = create<State & Actions>(set => ({
+export const useStore = create<State & Actions & LocationState>(set => ({
+  ...createLocationSlice(set),
   // Default state
   config: {
     testMode: false,
-    locationUpdateInterval: 60000,
   },
   user: null,
   visibleEvents: [],
@@ -44,22 +42,13 @@ const useStore = create<State & Actions>(set => ({
   eventsRefreshing: false,
   eventsLastFetched: null,
 
+
   // Actions
   setUser: user => set({user}),
 
   setUserEvents: userEvents => {
     set({userEvents});
     useStore.getState().updateVisibleEvents();
-  },
-  setUserLocation(latitude, longitude) {
-    const {user} = useStore.getState();
-    if (user) {
-      user.location = {
-        latitude,
-        longitude,
-      };
-      set({user});
-    }
   },
   setShowUserEvents: showUserEvents => {
     set({showUserEvents});
@@ -87,3 +76,14 @@ const useStore = create<State & Actions>(set => ({
 }));
 
 export default useStore;
+
+export const useLocationState = () => {
+  return useStore(state => ({
+    currentLocation: state.currentLocation,
+    showlocation: state.showlocation,
+    region: state.region,
+    locationUpdateInterval: state.locationUpdateInterval,
+    setRegion: state.setRegion,
+    setUserLocation: state.setUserLocation,
+  }));
+}

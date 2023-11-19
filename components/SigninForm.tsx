@@ -11,7 +11,7 @@ import {
 } from 'native-base';
 import React from 'react';
 import {User} from '../types/user';
-import useStore from '../store';
+import useStore from '../store/store';
 import * as Keychain from 'react-native-keychain';
 import api from '../apiClient';
 import {FontAwesomeIcon} from '@fortawesome/react-native-fontawesome';

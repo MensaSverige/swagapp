@@ -13,7 +13,7 @@ import {
   Stack,
 } from 'native-base';
 import apiClient from '../apiClient';
-import useStore from '../store';
+import useStore from '../store/store';
 import * as Keychain from 'react-native-keychain';
 
 const Profile: React.FC = () => {
