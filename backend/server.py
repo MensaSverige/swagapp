@@ -5,6 +5,7 @@ import os
 from flask import Flask, request, jsonify
 from pymongo import MongoClient
 from bson.objectid import ObjectId
+from bson.errors import InvalidId
 from functools import partial
 from token_processing import requires_auth, create_access_token, verify_refresh_token
 from auth import auth_endpoint
@@ -242,6 +243,59 @@ def initialize_app():
 
     # Initialize dynamic routes
     initialize_dynamic_routes()
+@app.route('/users_showing_location', methods=['GET'])
+def users_showing_location():
+    try:
+        # get all users
+        allusers= list(db.user.find())
+        logging.info(f"all users: {allusers}")
+        users = list(db.user.find({'show_location': True, 'lat': {'$ne': None}, 'lng': {'$ne': None}}))
+        return_users = []
+        for user in users:
+            return_users.append({
+                'name': user['name'],
+                'avatar_url': user['avatar_url'],
+                # 'location': {
+                #     'lat': user['lat'],
+                #     'lng': user['lng']
+                # }
+                'lat': user['lat'],
+                'lng': user['lng']
+
+            })
+        logging.info(f"Users showing location: {return_users}")
+        return jsonify(return_users), 200
+    except Exception as e:
+        logging.error(f"Error in GET /users_showing_location: {str(e)}")
+        return jsonify({'error': 'Internal Server Error'}), 500
+
+@app.route('/update_user_location', methods=['POST'])
+def update_user_location():
+    try:
+        # Extract the user ID and new location from the request body
+        data = request.json
+        username = data['username']
+        new_lat = data['lat']
+        new_lng = data['lng']
+
+        existing_user = db.user.find_one(
+            {"username": username})
+
+        if existing_user:
+            db.user.update_one(
+                {"username": data["username"]},
+                {'$set': {'lat': new_lat, 'lng': new_lng}}
+            )
+            logging.info(f"User with id {username} location updated to lat: {new_lat}, lng: {new_lng}")
+            return jsonify({'message': 'User location updated successfully'}), 200
+        else:
+            # This means that no document was found with the provided `_id`
+            logging.warning(f"No user found with id {username} for location update.")
+            return jsonify({'error': 'User not found or location already up to date'}), 404
+
+    except Exception as e:
+        logging.error(f"Error in POST /update_user_location: {str(e)}")
+        return jsonify({'error': 'Internal Server Error'}), 500
 
 
 if __name__ == '__main__':
