@@ -5,6 +5,7 @@ from flask import Flask, request, jsonify
 import requests
 from pymongo import MongoClient
 from token_processing import create_access_token, create_refresh_token
+from bson_to_json import bson_to_json
 
 logging.basicConfig(level=logging.INFO)
 
@@ -24,6 +25,14 @@ def parse_html(html, start, end):
 
 @app.route('/auth', methods=['POST'])
 def auth_endpoint():
+    review_user = ""
+    review_password = ""
+
+    with open('/review_user.txt', 'r') as f:
+        review_user = f.read()
+    with open('/review_password.txt', 'r') as f:
+        review_password = f.read()
+
     test_mode = os.environ.get("TEST_MODE", "false")
 
     try:
@@ -45,6 +54,22 @@ def auth_endpoint():
             "refresh_token": refresh_token,
             "test": True
         }), 200
+
+    if username == review_user and request_body.get("password") == review_password:
+        access_token = create_access_token(username)
+        refresh_token = create_refresh_token(username)
+
+        # Review user should always exist. It's supposed to be created in server.initialize_app()
+        user = users_collection.find_one(
+            {"username": review_user})
+
+        response = {
+            "user": user,
+            "access_token": access_token,
+            "refresh_token": refresh_token
+        }
+
+        return jsonify(bson_to_json(response)), 200
 
     user_agent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.82 Safari/537.36'
     session = requests.Session()
@@ -128,11 +153,7 @@ def auth_endpoint():
     user = users_collection.find_one(
         {"username": user_data["username"]})
 
-    # add string ID
-    user["id"] = str(user["_id"])
-
-    # Remove MongoDB _id field
-    user.pop("_id")
+    user = bson_to_json(user)
 
     response = {
         "user": user,

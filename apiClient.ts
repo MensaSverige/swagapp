@@ -50,8 +50,10 @@ async function refreshAccessToken(originalRequest: AxiosRequestConfig) {
       'Error while refreshing token, trying to log in using stored credentials',
       error,
     );
-    return attemptLoginWithStoredCredentials(originalRequest);
   }
+  console.log(
+    'Refreshing token failed, trying to log in using stored credentials',
+  );
   return attemptLoginWithStoredCredentials(originalRequest);
 }
 
@@ -59,6 +61,7 @@ async function attemptLoginWithStoredCredentials(
   originalRequest: AxiosRequestConfig,
 ) {
   try {
+    console.log('Attempting to log in using stored credentials');
     const credentials = await Keychain.getGenericPassword({
       service: 'credentials',
     });
@@ -68,6 +71,7 @@ async function attemptLoginWithStoredCredentials(
         password: credentials.password,
       });
       if (loginResponse.status === 200) {
+        console.log('0 Login with stored credentials successful');
         await Keychain.setGenericPassword(
           'accessToken',
           loginResponse.data.access_token,
@@ -79,6 +83,8 @@ async function attemptLoginWithStoredCredentials(
           {service: 'refreshToken'},
         );
         return apiClient(originalRequest);
+      } else {
+        console.log('Login with stored credentials failed, giving up.');
       }
     } else {
       console.log('No stored credentials found, giving up.');
@@ -88,6 +94,10 @@ async function attemptLoginWithStoredCredentials(
   }
   const store = useStore.getState();
   store.setUser(null);
+  // Remove stored credentials and tokens. Clean slate!
+  await Keychain.resetGenericPassword({service: 'accessToken'});
+  await Keychain.resetGenericPassword({service: 'refreshToken'});
+  await Keychain.resetGenericPassword({service: 'credentials'});
   return Promise.reject('Login failed');
 }
 
@@ -99,7 +109,8 @@ apiClient.interceptors.response.use(
     if (
       error.response.status === 401 &&
       !originalRequest._retry &&
-      !originalRequest.url.includes('/refresh_token')
+      !originalRequest.url.includes('/refresh_token') &&
+      !originalRequest.url.includes('/auth')
     ) {
       originalRequest._retry = true;
       return refreshAccessToken(originalRequest);

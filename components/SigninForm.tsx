@@ -42,69 +42,81 @@ export const SigninForm = () => {
 
   const handleLogin = async () => {
     try {
-      setIsLoading(true);
-
       if (saveCredentials) {
         Keychain.setGenericPassword(username, password, {
           service: 'credentials',
         });
       }
+    } catch (error) {
+      console.error('Save credentials error', error);
+      setLoginErrorText(
+        'Något gick fel. Kunde inte spara dina inloggningsuppgifter.',
+      );
+      setShowLoginError(true);
+    }
 
-      const response = await api.post('/auth', {
+    setIsLoading(true);
+    api
+      .post('/auth', {
         username: username,
         password: password,
         test: store.config.testMode,
-      });
+      })
+      .then(async response => {
+        if (response.status === 200) {
+          const data: LoginResponse = response.data;
+          console.log('data', data);
+          const user: User = data.user;
 
-      setIsLoading(false);
-
-      if (response.status === 200) {
-        const data: LoginResponse = response.data;
-        console.log('data', data);
-        const user: User = data.user;
-
-        if (data.access_token && data.refresh_token) {
-          store.setUser(user);
-          await Keychain.setGenericPassword('accessToken', data.access_token, {
-            service: 'accessToken',
-          });
-          await Keychain.setGenericPassword(
-            'refreshToken',
-            data.refresh_token,
-            {
-              service: 'refreshToken',
-            },
-          );
-        } else {
-          console.error('Received null accessToken or refreshToken');
-          setLoginErrorText('Något gick fel. Försök igen senare.');
-          setShowLoginError(true);
-        }
-      } else {
-        // Something went wrong with the login.
-        if (response.status === 401) {
-          console.error('Invalid credentials');
-          setLoginErrorText('Fel användarnamn eller lösenord.');
-          setShowLoginError(true);
-        } else if (response.status === 400) {
-          const data: ErrorResponse = response.data;
-          if (data.message === 'Test mode is not enabled') {
-            setLoginErrorText(
-              'Testläge är inte aktiverat i backend. Appen borde inte köras i testläge.',
+          if (data.access_token && data.refresh_token) {
+            store.setUser(user);
+            await Keychain.setGenericPassword(
+              'accessToken',
+              data.access_token,
+              {
+                service: 'accessToken',
+              },
+            );
+            await Keychain.setGenericPassword(
+              'refreshToken',
+              data.refresh_token,
+              {
+                service: 'refreshToken',
+              },
             );
           } else {
-            console.log('error data', data);
+            console.error('Received null accessToken or refreshToken');
             setLoginErrorText('Något gick fel. Försök igen senare.');
+            setShowLoginError(true);
           }
-          setShowLoginError(true);
+        } else {
+          // Something went wrong with the login.
+          if (response.status === 401) {
+            console.error('Invalid credentials');
+            setLoginErrorText('Fel användarnamn eller lösenord.');
+            setShowLoginError(true);
+          } else if (response.status === 400) {
+            const data: ErrorResponse = response.data;
+            if (data.message === 'Test mode is not enabled') {
+              setLoginErrorText(
+                'Testläge är inte aktiverat i backend. Appen borde inte köras i testläge.',
+              );
+            } else {
+              console.log('error data', data);
+              setLoginErrorText('Något gick fel. Försök igen senare.');
+            }
+            setShowLoginError(true);
+          }
         }
-      }
-    } catch (error) {
-      console.error('Login error', error);
-      setLoginErrorText('Något gick fel. Försök igen senare.');
-      setShowLoginError(true);
-      setIsLoading(false);
-    }
+      })
+      .catch(error => {
+        console.error('Login error', error);
+        setLoginErrorText('Något gick fel. Försök igen senare.');
+        setShowLoginError(true);
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
   };
 
   const cancelRef = React.useRef(null);

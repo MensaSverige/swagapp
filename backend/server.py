@@ -241,6 +241,16 @@ def initialize_app():
     client = MongoClient('mongo', 27017)
     db = client['swag']
 
+    # Ensure appstore review user exists
+    with open('/review_user.txt', 'r') as f:
+        review_user = f.read()
+        result = db['user'].update_one({'username': review_user}, {
+            '$set': {
+                'name': 'Reviewer',
+                'avatar': 'https://swag.mikael.green/i-love-apple.png',
+            }}, upsert=True)
+        logging.info(f"Ensured review user exists: {result}")
+
     # Initialize dynamic routes
     initialize_dynamic_routes()
 @app.route('/users_showing_location', methods=['GET'])
