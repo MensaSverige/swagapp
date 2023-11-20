@@ -1,0 +1,85 @@
+# Semver is useless when the same codebase gets different versions in different platforms.
+# Also it's not useful enough to varrant solving that discrepancy.
+# So instead we just use the date as the version number which has a bunch of benefits:
+# - It's unique for every publishable build (until Apple or Google starts approving builds in less than a day)
+# - It's easy to use to identify a codebase state  
+
+$project_name = 'swagapp'
+
+$ios_project_path = "./ios/#{$project_name}.xcodeproj"
+$ios_workspace_path = "./ios/#{$project_name}.xcworkspace"
+$ios_target_name = $project_name
+$ios_main_scheme_name = $project_name
+$ios_appstoreconnect_username = 'skaramicke@gmail.com'
+$ios_bundle_id = 'green.mikael.swagapp'
+
+# Ensure that the git branch is master,
+# and that the working directory is clean,
+# and that the branch is up to date with the remote
+# before_all do
+#   ensure_git_status_clean
+#   git_pull
+# end
+
+platform :ios do
+
+  private_lane :update_version do
+    $version = Time.now.strftime("%Y.%m.%d")
+    ios_set_version($version) # uses 'fastlane-plugin-versioning_ios'
+    commit_version_bump(message: 'iOS version: #{$version}')
+  end
+  
+  private_lane :staging_build do
+    increment_build_number_in_plist(xcodeproj: $ios_project_path, target: $ios_target_name)
+    gym(
+      scheme: $ios_main_scheme_name,
+      workspace: $ios_workspace_path,
+      clean: true,
+      export_method: 'ad-hoc',
+      configuration: 'Staging',
+      output_directory: './build',
+      output_name: $project_name
+    )
+  end
+
+  private_lane :release do
+    $version = Time.now.strftime("%Y.%m.%d")
+    produce(
+      app_name: 'SWAG Communiator',
+      language: 'sv',
+      app_version: $version,
+      sku: 'swag',
+  
+      enable_services: {
+        push_notification: "on",
+      }
+    )
+  
+    deliver
+
+    increment_build_number_in_plist(xcodeproj: $ios_project_path, target: $ios_target_name)
+    gym(
+      scheme: $ios_main_scheme_name,
+      workspace: $ios_workspace_path,
+      clean: true,
+      export_method: 'ad-hoc',
+      configuration: 'Release',
+      output_directory: './build',
+      output_name: $project_name
+    )
+    ios_set_version($version) # uses 'fastlane-plugin-versioning_ios'
+    commit_version_bump(message: 'iOS version: #{$version}')
+    upload_to_apps_store
+
+  end
+
+  lane :beta do
+
+    staging_build
+    update_version
+    upload_to_testflight(username: $ios_appstoreconnect_username, app_identifier: $ios_bundle_id)
+    push_to_git_remote
+
+  end
+  
+end

@@ -3,16 +3,18 @@ services:
   backend:
     image: python:3.11
     volumes:
-      - ./backend:/app  # Mount the backend code
-      - ./schema:/app/schema  # Mount the schema directory
-      - ./tmp/backend.ini:/app/backend.ini
+      - ./backend:/app
+      - ./schema:/app/schema
+      - ${PWD}/tmp/backend.ini:/backend.ini
+      - ${PWD}/fastlane/metadata/review_information/demo_user.txt:/review_user.txt
+      - ${PWD}/fastlane/metadata/review_information/demo_password.txt:/review_password.txt
     working_dir: /app
     command: bash -c "pip install -r requirements.txt && python server.py"
     ports:
       - "5000:5000"
     depends_on:
       - mongo
-    
+    restart: unless-stopped
 
   mongo:
     image: mongo:latest

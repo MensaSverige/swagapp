@@ -12,7 +12,9 @@ services:
     depends_on:
       - mongo
     volumes:
-      - /persistent/backend.ini:/app/backend.ini
+      - ${PWD}/fastlane/metadata/review_information/demo_user.txt:/review_user.txt
+      - /persistent/review_password.txt:/review_password.txt
+      - /persistent/backend.ini:/backend.ini
 
   mongo:
     image: mongo:latest
