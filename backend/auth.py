@@ -28,10 +28,11 @@ def auth_endpoint():
     review_user = ""
     review_password = ""
 
-    with open('/review_user.txt', 'r') as f:
-        review_user = f.read()
-    with open('/review_password.txt', 'r') as f:
-        review_password = f.read()
+    if os.path.exists('/review_user.txt') and os.path.exists('/review_password.txt'):
+        with open('/review_user.txt', 'r') as f:
+            review_user = f.read()
+        with open('/review_password.txt', 'r') as f:
+            review_password = f.read()
 
     test_mode = os.environ.get("TEST_MODE", "false")
 
@@ -55,7 +56,7 @@ def auth_endpoint():
             "test": True
         }), 200
 
-    if username == review_user and request_body.get("password") == review_password:
+    if review_user != "" and review_password != "" and username == review_user and request_body.get("password") == review_password:
         access_token = create_access_token(username)
         refresh_token = create_refresh_token(username)
 

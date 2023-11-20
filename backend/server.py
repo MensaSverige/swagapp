@@ -242,14 +242,17 @@ def initialize_app():
     db = client['swag']
 
     # Ensure appstore review user exists
-    with open('/review_user.txt', 'r') as f:
-        review_user = f.read()
-        result = db['user'].update_one({'username': review_user}, {
-            '$set': {
-                'name': 'Reviewer',
-                'avatar': 'https://swag.mikael.green/i-love-apple.png',
-            }}, upsert=True)
-        logging.info(f"Ensured review user exists: {result}")
+
+    # Check if /review_user.txt exists
+    if os.path.exists('/review_user.txt'):
+        with open('/review_user.txt', 'r') as f:
+            review_user = f.read()
+            result = db['user'].update_one({'username': review_user}, {
+                '$set': {
+                    'name': 'Reviewer',
+                    'avatar': 'https://swag.mikael.green/i-love-apple.png',
+                }}, upsert=True)
+            logging.info(f"Ensured review user exists: {result}")
 
     # Initialize dynamic routes
     initialize_dynamic_routes()
