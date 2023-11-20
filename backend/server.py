@@ -250,19 +250,22 @@ def initialize_app():
             result = db['user'].update_one({'username': review_user}, {
                 '$set': {
                     'name': 'Reviewer',
-                    'avatar': 'https://swag.mikael.green/i-love-apple.png',
+                    'avatar_url': 'https://swag.mikael.green/i-love-apple.png',
                 }}, upsert=True)
             logging.info(f"Ensured review user exists: {result}")
 
     # Initialize dynamic routes
     initialize_dynamic_routes()
+
+
 @app.route('/users_showing_location', methods=['GET'])
 def users_showing_location():
     try:
         # get all users
-        allusers= list(db.user.find())
+        allusers = list(db.user.find())
         logging.info(f"all users: {allusers}")
-        users = list(db.user.find({'show_location': True, 'latitude': {'$ne': None}, 'longitude': {'$ne': None}}))
+        users = list(db.user.find({'show_location': True, 'latitude': {
+                     '$ne': None}, 'longitude': {'$ne': None}}))
         return_users = []
         for user in users:
             return_users.append({
@@ -278,6 +281,7 @@ def users_showing_location():
     except Exception as e:
         logging.error(f"Error in GET /users_showing_location: {str(e)}")
         return jsonify({'error': 'Internal Server Error'}), 500
+
 
 @app.route('/update_user_location', methods=['POST'])
 def update_user_location():
@@ -296,11 +300,13 @@ def update_user_location():
                 {"username": data["username"]},
                 {'$set': {'latitude': new_lat, 'longitude': new_lng}}
             )
-            logging.info(f"User with id {username} location updated to latitude: {new_lat}, longitude: {new_lng}")
+            logging.info(
+                f"User with id {username} location updated to latitude: {new_lat}, longitude: {new_lng}")
             return jsonify({'message': 'User location updated successfully'}), 200
         else:
             # This means that no document was found with the provided `_id`
-            logging.warning(f"No user found with id {username} for location update.")
+            logging.warning(
+                f"No user found with id {username} for location update.")
             return jsonify({'error': 'User not found or location already up to date'}), 404
 
     except Exception as e:
