@@ -33,7 +33,7 @@ const lightTheme = extendTheme({
       baseStyle: {
         borderColor: 'muted.500',
         borderWidth: 1,
-        backgroundColor: 'primary.900',
+        backgroundColor: 'primary.100',
       },
     },
     Input: {
