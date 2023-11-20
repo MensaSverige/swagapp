@@ -1,6 +1,15 @@
 # Use the official Python base image
 FROM python:3.11-slim
 
+
+# Accept GIT_COMMIT_INFO and GIT_COMMIT_HASH as build arguments
+ARG GIT_COMMIT_INFO
+ARG GIT_COMMIT_HASH
+
+# Set them as environment variables
+ENV GIT_COMMIT_INFO $GIT_COMMIT_INFO
+ENV GIT_COMMIT_HASH $GIT_COMMIT_HASH
+
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1

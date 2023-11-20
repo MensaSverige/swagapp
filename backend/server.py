@@ -26,7 +26,20 @@ schema_dir = './schema'
 @app.route('/health', methods=['GET'])
 def health():
     logging.info(f"health: {request.method} {request.path}")
-    return jsonify({'status': 'healthy'}), 200
+
+    # Retrieve commit information from environment variables
+    commit_message = os.getenv('GIT_COMMIT_INFO', 'Unknown')
+    commit_hash = os.getenv('GIT_COMMIT_HASH', 'Unknown')
+
+    # Construct commit URL using the commit hash
+    commit_url = f"https://github.com/skaramicke/swagapp/commit/{commit_hash}"
+
+    # Return the health check response with commit information
+    return jsonify({
+        'status': 'healthy',
+        'commit_message': commit_message,
+        'commit_url': commit_url
+    }), 200
 
 
 @app.route('/refresh_token', methods=['POST'])

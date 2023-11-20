@@ -15,6 +15,9 @@ services:
     depends_on:
       - mongo
     restart: unless-stopped
+    environment:
+      GIT_COMMIT_INFO: 'Commit messages are not available locally'
+      GIT_COMMIT_HASH: ''
 
   mongo:
     image: mongo:latest

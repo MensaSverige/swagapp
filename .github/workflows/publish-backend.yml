@@ -12,6 +12,8 @@ env:
   REGISTRY: ghcr.io
   # GitHub repository as <account>/<repo>
   IMAGE_NAME: ${{ github.repository }}/backend
+  # Git commit information, default to empty string, used in health endpoint to identify backend version
+  GIT_COMMIT_INFO: ''
 
 jobs:
   build:
@@ -25,6 +27,12 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
+
+      # Extract desired git commit information
+      - name: Export GIT_COMMIT_INFO with git commit information
+        id: git_commit_info
+        run: |
+          echo "GIT_COMMIT_INFO=$(git log -1 --pretty=format:'%an <%ae>: %s')" >> $GITHUB_ENV
 
       # Install the cosign tool (for signing Docker images) except on PRs
       - name: Install cosign
@@ -53,3 +61,6 @@ jobs:
           file: ./backend.Dockerfile
           push: true
           tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+          build-args: |
+            GIT_COMMIT_INFO=${{ env.GIT_COMMIT_INFO }}
+            GIT_COMMIT_HASH=${{ github.sha }}
