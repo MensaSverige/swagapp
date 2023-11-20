@@ -46,6 +46,34 @@ const lightTheme = extendTheme({
           placeholderTextColor: 'text.600',
           _hover: {borderColor: 'primary.500'},
         },
+        Heading: {
+          defaultProps: {
+            color: 'text.900',
+          },
+        },
+        Button: {
+          defaultProps: {
+            colorScheme: 'primary',
+            _text: {color: 'white'},
+          },
+        },
+        Text: {
+          baseStyle: {
+            color: 'gray.800',
+          },
+        },
+        Input: {
+          defaultProps: {
+            bg: 'transparent',
+            borderColor: 'muted.500',
+            placeholderTextColor: 'text.600',
+            _focus: {
+              borderColor: 'primary.500',
+              placeholderTextColor: 'text.600',
+              _hover: {borderColor: 'primary.500'},
+            },
+          },
+        },
       },
     },
   },

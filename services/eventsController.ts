@@ -1,4 +1,4 @@
-import useStore from '../store';
+import useStore from '../store/store';
 import apiClient from '../apiClient';
 
 const DATA_STALE_INTERVAL = 1000 * 60 * 5; // 5 minutes

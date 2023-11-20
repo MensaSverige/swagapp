@@ -10,10 +10,11 @@ import SwagMap from './components/SwagMap';
 import SplashScreen from 'react-native-splash-screen';
 import {User} from './types/user';
 import Profile from './components/Profile';
-import useStore from './store';
+import useStore from './store/store';
 import Events from './components/Events';
 import * as Keychain from 'react-native-keychain';
 import apiClient from './apiClient';
+import useUserLocation from './hooks/useUserLocation';
 
 import {FontAwesomeIcon} from '@fortawesome/react-native-fontawesome';
 import {
@@ -78,6 +79,7 @@ const LoadingScreen: React.FC = () => (
 );
 
 function App(): JSX.Element {
+  useUserLocation();
   const [isTryingToLogin, setIsTryingToLogin] = useState(false);
   const {user, setUser} = useStore();
 

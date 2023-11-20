@@ -9,14 +9,13 @@ import {
   Spinner,
   VStack,
 } from 'native-base';
-import React, {useEffect} from 'react';
+import React from 'react';
 import {User} from '../types/user';
-import useStore from '../store';
+import useStore from '../store/store';
 import * as Keychain from 'react-native-keychain';
 import api from '../apiClient';
 import {FontAwesomeIcon} from '@fortawesome/react-native-fontawesome';
 import {faEye, faEyeSlash} from '@fortawesome/free-solid-svg-icons';
-import {set} from 'yaml/dist/schema/yaml-1.1/set';
 
 interface LoginResponse {
   user: User;
