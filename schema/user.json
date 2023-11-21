@@ -12,10 +12,9 @@
       "properties": {
         "latitude": {"type": "number"},
         "longitude": {"type": "number"},
-        "timestamp": { "type": "number"}
+        "timestamp": {"type": "number"}
       }
     },
     "show_location": {"type": "boolean"}
-  },
-  "required": ["username"]
+  }
 }

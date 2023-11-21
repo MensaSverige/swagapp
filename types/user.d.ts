@@ -7,7 +7,7 @@
 
 export interface User {
   id?: string;
-  username: string;
+  username?: string;
   name?: string;
   age?: number;
   slogan?: string;
@@ -15,6 +15,7 @@ export interface User {
   location?: {
     latitude?: number;
     longitude?: number;
+    timestamp?: number;
     [k: string]: unknown;
   };
   show_location?: boolean;

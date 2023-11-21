@@ -74,7 +74,7 @@ const EventCard: React.FC<{
             <Box flexDirection="row-reverse">
               <TimeLeft
                 comparedTo={comparisonDate}
-                start={event.start}
+                start={event.start !== undefined ? event.start : ''}
                 end={event.end}
                 long
               />

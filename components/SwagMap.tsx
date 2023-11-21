@@ -1,85 +1,84 @@
-import React, {useState, useEffect} from 'react';
-import {View, StyleSheet, Image} from 'react-native';
-import MapView, {Marker, Region} from 'react-native-maps';
+import React, {useEffect, useRef} from 'react';
+import {StyleSheet} from 'react-native';
+import MapView from 'react-native-maps';
 import {Box, Center, Text} from 'native-base';
-import useStore, {useLocationState} from '../store/store';
-import {User} from '../types/user';
-import {getUserLocations} from '../services/locationService';
+import {useEventsController} from '../services/eventsController';
+import UserMarker from './UserMarker';
+import EventMarker from './EventMarker';
+import {useLocationController} from '../services/locationController';
 
 const UserMap: React.FC = () => {
-  const [usersShowingLocation, setUsersShowingLocation] = useState<User[]>([]);
-  const {locationUpdateInterval, region} = useLocationState();
+  const [manualRegion, setManualRegion] = React.useState<boolean>(false);
+
+  const {
+    usersWithLocation: users,
+    subscribe: subscribeToLocations,
+    unsubscribe: unsubscribeToLocations,
+  } = useLocationController();
+  const {
+    eventsRefreshing,
+    eventsWithLocation: events,
+    subscribe: subscribeToEvents,
+    unsubscribe: unsubscribeToEvents,
+  } = useEventsController();
+
+  const mapRef = useRef<MapView | null>(null);
 
   useEffect(() => {
-    const users = getUserLocations().then(users => {
-      setUsersShowingLocation(users);
-    });
-  }, []);
+    subscribeToEvents('map');
+    subscribeToLocations('map');
+    return () => {
+      unsubscribeToEvents('map');
+      unsubscribeToLocations('map');
+    };
+  }, [
+    subscribeToEvents,
+    subscribeToLocations,
+    unsubscribeToEvents,
+    unsubscribeToLocations,
+  ]);
+
+  const onMapRegionChange = () => {
+    setManualRegion(true);
+  };
 
   useEffect(() => {
-    const intervalId = setInterval(() => {
-      const users = getUserLocations().then(users => {
-        setUsersShowingLocation(users);
-        console.log("helloo", users);
-      });
-    }, locationUpdateInterval);
+    if (
+      mapRef.current &&
+      !manualRegion &&
+      (users.length > 0 || events.length > 0)
+    ) {
+      const coordinates = [...users, ...events].map(item => ({
+        latitude: item.location.latitude,
+        longitude: item.location.longitude,
+      }));
 
-    // Clear the interval when the component is unmounted
-    return () => clearInterval(intervalId);
-  }, []);
+      if (coordinates.length > 0) {
+        mapRef.current.fitToCoordinates(coordinates, {
+          edgePadding: {top: 50, right: 50, bottom: 50, left: 50},
+          animated: true,
+        });
+      }
+    }
+  }, [users, events, manualRegion]);
 
   return (
     <Center w="100%" h="100%">
       <Box safeArea flex={1} w="100%" mx="auto">
+        <Box style={styles.refreshIndicatorsWrapper}>
+          {eventsRefreshing && <Text>Loading events...</Text>}
+        </Box>
         <MapView
+          ref={mapRef}
           style={styles.map}
-          region={region}
           showsUserLocation={true}
-          >
-          {/* Marker for the main hotel */}
-          <Marker
-            pinColor="red"
-            coordinate={{
-              latitude: 59.269249,
-              longitude: 15.206333,
-            }}
-          />
-          {usersShowingLocation.map(
-            (u, index) =>
-              u &&
-              u.location &&
-              u.location.latitude &&
-              u.location.longitude && (
-                <Marker
-                  key={index}
-                  coordinate={{
-                    latitude: u.location.latitude,
-                    longitude: u.location.longitude,
-                  }}>
-                  {/* Custom view for the marker */}
-                  <View
-                    style={{
-                      width: 50, // specify a size for the image
-                      height: 50,
-                      borderRadius: 25, // half of width/height to make it circular
-                      borderWidth: 2, // optional border
-                      borderColor: 'white', // optional border color
-                      overflow: 'hidden', // this ensures the image doesn't exceed the border radius
-                      justifyContent: 'center',
-                      alignItems: 'center',
-                    }}>
-                    <Image
-                      source={{uri: u.avatar_url}}
-                      style={{
-                        width: 46, // slightly less than the View to account for the border
-                        height: 46,
-                        borderRadius: 23, // again, half of the width/height
-                      }}
-                    />
-                  </View>
-                </Marker>
-              ),
-          )}
+          onRegionChange={onMapRegionChange}>
+          {users.map(user => (
+            <UserMarker key={`user-${user.username}`} user={user} />
+          ))}
+          {events.map(event => (
+            <EventMarker key={`event-${event.id}`} event={event} />
+          ))}
         </MapView>
       </Box>
     </Center>
@@ -89,6 +88,14 @@ const UserMap: React.FC = () => {
 const styles = StyleSheet.create({
   map: {
     ...StyleSheet.absoluteFillObject,
+  },
+  refreshIndicatorsWrapper: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    left: 0,
+    alignItems: 'center',
+    zIndex: 1,
   },
 });
 

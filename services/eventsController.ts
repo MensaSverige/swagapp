@@ -1,5 +1,6 @@
 import useStore from '../store/store';
 import apiClient from '../apiClient';
+import {useCallback, useEffect, useRef, useState} from 'react';
 
 const DATA_STALE_INTERVAL = 1000 * 60 * 5; // 5 minutes
 
@@ -9,17 +10,20 @@ export const useEventsController = () => {
     setStaticEvents,
     setEventsRefreshing,
     setEventsLastFetched,
-    eventsLastFetched,
     eventsRefreshing,
+    eventsLastFetched,
     visibleEvents,
+    eventsWithLocation,
   } = useStore();
 
-  const fetchData = async () => {
+  const [consumers, setConsumers] = useState<string[]>([]);
+  const updateIntervalRef = useRef<Number | null>(null);
+
+  const fetchData = useCallback(async () => {
     if (eventsRefreshing) {
       return;
     }
 
-    console.log('fetchData started');
     setEventsRefreshing(true);
 
     // Fetch user events
@@ -37,22 +41,56 @@ export const useEventsController = () => {
     const lastFetched = new Date();
     setEventsLastFetched(lastFetched);
     setEventsRefreshing(false);
+  }, [
+    setUserEvents,
+    setStaticEvents,
+    setEventsRefreshing,
+    setEventsLastFetched,
+    eventsRefreshing,
+  ]);
+
+  useEffect(() => {
+    if (consumers.length > 0 && !updateIntervalRef.current) {
+      let timeout = 0;
+      if (eventsLastFetched) {
+        timeout =
+          DATA_STALE_INTERVAL -
+          (new Date().getTime() - eventsLastFetched?.getTime());
+        if (timeout < 0) {
+          timeout = 0;
+        }
+      }
+
+      updateIntervalRef.current = setTimeout(() => {
+        fetchData();
+        updateIntervalRef.current = setInterval(() => {
+          fetchData();
+        }, DATA_STALE_INTERVAL);
+      }, timeout);
+    } else if (consumers.length === 0 && updateIntervalRef.current) {
+      clearInterval(updateIntervalRef.current as number);
+      updateIntervalRef.current = null;
+    }
+  }, [consumers, eventsLastFetched, eventsRefreshing, fetchData]);
+
+  const subscribe: (id: string) => void = id => {
+    if (!consumers.includes(id)) {
+      setConsumers([...consumers, id]);
+    }
   };
 
-  const eventsConsumerVisible = () => {
-    const now = new Date();
-    if (
-      !eventsLastFetched ||
-      now.getTime() - eventsLastFetched.getTime() > DATA_STALE_INTERVAL
-    ) {
-      fetchData();
+  const unsubscribe: (id: string) => void = id => {
+    if (consumers.includes(id)) {
+      setConsumers(consumers.filter(consumer => consumer !== id));
     }
   };
 
   return {
     visibleEvents,
+    eventsWithLocation,
     eventsRefreshing,
     fetchData,
-    eventsConsumerVisible,
+    subscribe,
+    unsubscribe,
   };
 };

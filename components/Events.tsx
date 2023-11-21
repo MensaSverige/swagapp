@@ -14,7 +14,7 @@ if (
 }
 
 const Events: React.FC = () => {
-  const {visibleEvents, eventsRefreshing, fetchData, eventsConsumerVisible} =
+  const {visibleEvents, eventsRefreshing, fetchData, subscribe, unsubscribe} =
     useEventsController();
 
   const [openEvents, setOpenEvents] = React.useState<Array<Event>>([]);
@@ -28,8 +28,11 @@ const Events: React.FC = () => {
     }
   };
   React.useEffect(() => {
-    eventsConsumerVisible();
-  }, [eventsConsumerVisible]);
+    subscribe('eventsView');
+    return () => {
+      unsubscribe('eventsView');
+    };
+  }, [subscribe, unsubscribe]);
 
   return (
     <Center w="100%" h="100%">

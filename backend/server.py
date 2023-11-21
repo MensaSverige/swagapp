@@ -120,7 +120,19 @@ def update(model_name, schema, collection, item_id, username):
 
         # If model is user and username does not match, return unauthorized
         if model_name == 'user':
-            item = collection.find_one({'_id': ObjectId(item_id)})
+            logging.info(f"User {username} is trying to update user {item_id}")
+
+            if item_id == 'me':
+                item = collection.find_one({'username': username})
+                if item:
+                    item_id = item['_id']
+            else:
+                item = collection.find_one({'_id': ObjectId(item_id)})
+
+            if not item:
+                logging.error(f"Item {item_id} not found in GET /{model_name}")
+                return jsonify({'error': 'Item not found'}), 404
+
             if item['username'] != username:
                 logging.error(
                     f"User {username} is not the owner of item {item_id}")
@@ -191,8 +203,29 @@ def list_events():
 
         for event in static_events:
             event['id'] = f"{event['name'].replace(' ', '-').lower()}-{event['start'].replace(' ', '-').lower()}"
+            # add location {latitude, longitude} if not present
+            if 'location' not in event or 'latitude' not in event['location'] or 'longitude' not in event['location']:
+                event['location'] = {
+                    'latitude': 0,
+                    'longitude': 0
+                }
 
     return jsonify(static_events), 200
+
+
+@app.route('/users_showing_location', methods=['GET'])
+def users_showing_location():
+    try:
+        # get all users
+        allusers = list(db.user.find())
+        logging.info(f"all users: {allusers}")
+        users = list(db.user.find({'show_location': True, 'latitude': {
+                     '$ne': None}, 'longitude': {'$ne': None}}))
+        logging.info(f"Users showing location: {users}")
+        return jsonify(bson_to_json(users)), 200
+    except Exception as e:
+        logging.error(f"Error in GET /users_showing_location: {str(e)}")
+        return jsonify({'error': 'Internal Server Error'}), 500
 
 
 # Debugging of dynamic API
@@ -269,62 +302,6 @@ def initialize_app():
 
     # Initialize dynamic routes
     initialize_dynamic_routes()
-
-
-@app.route('/users_showing_location', methods=['GET'])
-def users_showing_location():
-    try:
-        # get all users
-        allusers = list(db.user.find())
-        logging.info(f"all users: {allusers}")
-        users = list(db.user.find({'show_location': True, 'latitude': {
-                     '$ne': None}, 'longitude': {'$ne': None}}))
-        return_users = []
-        for user in users:
-            return_users.append({
-                'name': user['name'],
-                'avatar_url': user['avatar_url'],
-                'location': {
-                    'latitude': user['latitude'],
-                    'lng': user['lng']
-                }
-            })
-        logging.info(f"Users showing location: {return_users}")
-        return jsonify(return_users), 200
-    except Exception as e:
-        logging.error(f"Error in GET /users_showing_location: {str(e)}")
-        return jsonify({'error': 'Internal Server Error'}), 500
-
-
-@app.route('/update_user_location', methods=['POST'])
-def update_user_location():
-    try:
-        # Extract the user ID and new location from the request body
-        data = request.json
-        username = data['username']
-        new_lat = data['latitude']
-        new_lng = data['longitude']
-
-        existing_user = db.user.find_one(
-            {"username": username})
-
-        if existing_user:
-            db.user.update_one(
-                {"username": data["username"]},
-                {'$set': {'latitude': new_lat, 'longitude': new_lng}}
-            )
-            logging.info(
-                f"User with id {username} location updated to latitude: {new_lat}, longitude: {new_lng}")
-            return jsonify({'message': 'User location updated successfully'}), 200
-        else:
-            # This means that no document was found with the provided `_id`
-            logging.warning(
-                f"No user found with id {username} for location update.")
-            return jsonify({'error': 'User not found or location already up to date'}), 404
-
-    except Exception as e:
-        logging.error(f"Error in POST /update_user_location: {str(e)}")
-        return jsonify({'error': 'Internal Server Error'}), 500
 
 
 if __name__ == '__main__':

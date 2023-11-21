@@ -1,7 +1,10 @@
 import {create} from 'zustand';
 import {User} from '../types/user';
 import {Event} from '../types/event';
-import { LocationState, createLocationSlice } from './LocationState';
+import {LocationState, createLocationSlice} from './LocationState';
+import EventWithLocation, {
+  isEventWithLocation,
+} from '../types/eventWithLocation';
 
 interface State {
   config: {
@@ -9,6 +12,7 @@ interface State {
   };
   user: User | null;
   visibleEvents: Event[];
+  eventsWithLocation: EventWithLocation[];
   userEvents: Event[];
   showUserEvents: boolean;
   staticEvents: Event[];
@@ -25,6 +29,7 @@ interface Actions {
   setEventsRefreshing: (eventsRefreshing: boolean) => void;
   setEventsLastFetched: (eventsLastFetched: Date | null) => void;
   updateVisibleEvents: () => void;
+  updateEventsWithLocation: () => void;
 }
 
 export const useStore = create<State & Actions & LocationState>(set => ({
@@ -35,6 +40,7 @@ export const useStore = create<State & Actions & LocationState>(set => ({
   },
   user: null,
   visibleEvents: [],
+  eventsWithLocation: [],
   userEvents: [],
   showUserEvents: true,
   staticEvents: [],
@@ -42,25 +48,28 @@ export const useStore = create<State & Actions & LocationState>(set => ({
   eventsRefreshing: false,
   eventsLastFetched: null,
 
-
   // Actions
   setUser: user => set({user}),
 
   setUserEvents: userEvents => {
     set({userEvents});
     useStore.getState().updateVisibleEvents();
+    useStore.getState().updateEventsWithLocation();
   },
   setShowUserEvents: showUserEvents => {
     set({showUserEvents});
     useStore.getState().updateVisibleEvents();
+    useStore.getState().updateEventsWithLocation();
   },
   setStaticEvents: staticEvents => {
     set({staticEvents});
     useStore.getState().updateVisibleEvents();
+    useStore.getState().updateEventsWithLocation();
   },
   setShowStaticEvents: showStaticEvents => {
     set({showStaticEvents});
     useStore.getState().updateVisibleEvents();
+    useStore.getState().updateEventsWithLocation();
   },
   setEventsRefreshing: eventsRefreshing => set({eventsRefreshing}),
   setEventsLastFetched: eventsLastFetched => set({eventsLastFetched}),
@@ -73,17 +82,21 @@ export const useStore = create<State & Actions & LocationState>(set => ({
     ];
     set({visibleEvents: newVisibleEvents});
   },
+  updateEventsWithLocation: () => {
+    const {userEvents, staticEvents} = useStore.getState();
+    const newEventsWithLocation = userEvents
+      .concat(staticEvents)
+      .filter(isEventWithLocation);
+    set({eventsWithLocation: newEventsWithLocation});
+  },
 }));
 
 export default useStore;
 
 export const useLocationState = () => {
   return useStore(state => ({
+    usersWithLocation: state.usersWithLocation,
     currentLocation: state.currentLocation,
-    showlocation: state.showlocation,
-    region: state.region,
-    locationUpdateInterval: state.locationUpdateInterval,
-    setRegion: state.setRegion,
     setUserLocation: state.setUserLocation,
   }));
-}
+};

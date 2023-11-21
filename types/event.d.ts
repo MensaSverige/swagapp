@@ -7,14 +7,14 @@
 
 export interface Event {
   id?: string;
-  name: string;
-  location: {
-    description: string;
-    lat: number;
-    lng: number;
+  name?: string;
+  location?: {
+    description?: string;
+    latitude?: number;
+    longitude?: number;
     [k: string]: unknown;
   };
-  start: string;
+  start?: string;
   end?: string;
   description?: string;
   [k: string]: unknown;

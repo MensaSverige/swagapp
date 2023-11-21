@@ -19,4 +19,10 @@ def client(app):
 def test_health_endpoint(client):
     response = client.get('/health')
     assert response.status_code == 200
-    assert response.json == {'status': 'healthy'}
+    expected_response = {
+        'status': 'healthy',
+        'commit_message': 'Unknown',  # Expected value in test environment
+        # Expected value in test environment
+        'commit_url': 'https://github.com/skaramicke/swagapp/commit/Unknown'
+    }
+    assert response.json == expected_response

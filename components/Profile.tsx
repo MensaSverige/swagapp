@@ -66,8 +66,6 @@ const Profile: React.FC = () => {
     return null;
   }
 
-  console.log('user', user);
-
   return (
     <Center w="100%" h="100%">
       <ScrollView>
