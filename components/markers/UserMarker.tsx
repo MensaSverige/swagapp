@@ -3,13 +3,17 @@ import {View, Image, StyleSheet} from 'react-native';
 import {Marker} from 'react-native-maps';
 import UserWithLocation from '../types/userWithLocation';
 
-const UserMarker: React.FC<{user: UserWithLocation}> = ({user}) => {
+const UserMarker: React.FC<{user: UserWithLocation; zIndex: number}> = ({
+  user,
+  zIndex,
+}) => {
   return (
     <Marker
       coordinate={{
         latitude: user.location.latitude,
         longitude: user.location.longitude,
-      }}>
+      }}
+      zIndex={zIndex}>
       <View style={styles.marker}>
         <Image source={{uri: user.avatar_url}} style={styles.avatar} />
       </View>

@@ -1,8 +1,8 @@
 import {Box, Card, Heading, Text} from 'native-base';
 import React from 'react';
-import {Event} from '../types/event';
+import {Event} from '../../types/event';
 import {TouchableNativeFeedback} from 'react-native';
-import TimeLeft from './TimeLeft';
+import TimeLeft from '../utilities/TimeLeft';
 
 function formatDateAndTime(dateTimeStr: string, startDateTimeStr?: string) {
   // Parse the Swedish date and time format, assuming it's in "yyyy-mm-dd hh:mm" format

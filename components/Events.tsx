@@ -4,7 +4,7 @@ import {Event} from '../types/event';
 import {RefreshControl} from 'react-native';
 import {LayoutAnimation, UIManager, Platform} from 'react-native';
 import {useEventsController} from '../services/eventsController';
-import EventCard from './EventCard';
+import EventCard from './cards/EventCard';
 
 if (
   Platform.OS === 'android' &&

@@ -23,6 +23,7 @@
     "@react-navigation/native": "^6.1.9",
     "@react-navigation/native-stack": "^6.9.16",
     "axios": "^1.6.0",
+    "haversine": "^1.1.1",
     "icon-set-creator": "^1.2.6",
     "json-schema-to-typescript": "^13.1.1",
     "native-base": "^3.4.28",

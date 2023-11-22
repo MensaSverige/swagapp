@@ -6,7 +6,7 @@ import {getTheme} from './theme';
 import {NavigationContainer} from '@react-navigation/native';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
-import SwagMap from './components/SwagMap';
+import MapView from './components/Map';
 import SplashScreen from 'react-native-splash-screen';
 import {User} from './types/user';
 import Profile from './components/Profile';
@@ -48,7 +48,7 @@ function LoggedInTabs() {
     <BottomTab.Navigator>
       <BottomTab.Screen
         name="Karta"
-        component={SwagMap}
+        component={MapView}
         options={{
           tabBarIcon: MapIcon,
         }}

@@ -40,6 +40,7 @@ export const useLocationController = () => {
   const user = useStore(state => state.user);
   const setUsersWithLocation = useStore(state => state.setUsersWithLocation);
   const usersWithLocation = useStore(state => state.usersWithLocation);
+  const [refreshing, setRefreshing] = useState(false);
 
   const [locationConsumers, setLocationConsumers] = useState<string[]>([]);
   const updateIntervalRef = useRef<number | null>(null);
@@ -74,10 +75,17 @@ export const useLocationController = () => {
 
   const fetchUserLocations = useCallback(async () => {
     if (locationConsumers.length > 0) {
-      const response = await apiClient.get('/users_showing_location');
-      if (response.status === 200) {
-        setUsersWithLocation(response.data);
-      }
+      setRefreshing(true);
+      apiClient
+        .get('/users_showing_location')
+        .then(response => {
+          if (response.status === 200) {
+            setUsersWithLocation(response.data);
+          }
+        })
+        .finally(() => {
+          setRefreshing(false);
+        });
     }
   }, [locationConsumers, setUsersWithLocation]);
 
@@ -108,5 +116,10 @@ export const useLocationController = () => {
     }
   };
 
-  return {subscribe, unsubscribe, usersWithLocation};
+  return {
+    subscribe,
+    unsubscribe,
+    usersWithLocation,
+    userLocationsRefreshing: refreshing,
+  };
 };

@@ -6,15 +6,16 @@
  */
 
 export interface Event {
-  id?: string;
-  name?: string;
-  location?: {
+  id: string;
+  name: string;
+  location: {
     description?: string;
+    marker?: string;
     latitude?: number;
     longitude?: number;
     [k: string]: unknown;
   };
-  start?: string;
+  start: string;
   end?: string;
   description?: string;
   [k: string]: unknown;

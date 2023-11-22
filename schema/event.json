@@ -7,6 +7,7 @@
       "type": "object",
       "properties": {
         "description": {"type": "string"},
+        "marker": {"type": "string"},
         "latitude": {"type": "number"},
         "longitude": {"type": "number"}
       }
@@ -14,5 +15,6 @@
     "start": {"type": "string", "format": "date-time"},
     "end": {"type": "string", "format": "date-time"},
     "description": {"type": "string"}
-  }
+  },
+  "required": ["id", "name", "location", "start"]
 }
