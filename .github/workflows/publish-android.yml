@@ -1,0 +1,96 @@
+name: Build and Release Android App
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build_and_release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Get Current Date
+        run: echo "CURRENT_DATE=$(date +%Y.%m.%d)" >> $GITHUB_ENV
+
+      - name: Check if Release Exists
+        id: check_release
+        uses: actions/github-script@v3
+        with:
+          github-token: ${{secrets.GITHUB_TOKEN}}
+          script: |
+            const { data: releases } = await github.repos.listReleases({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+            });
+            const release = releases.find(release => release.tag_name === process.env.CURRENT_DATE);
+            if (release) {
+              console.log(`Release with tag ${process.env.CURRENT_DATE} exists`);
+              return release.id;
+            } else {
+              console.log(`No release with tag ${process.env.CURRENT_DATE}`);
+              return null;
+            }
+
+      # If release exists, skip the rest of the workflow
+      - name: Skip if Release Exists
+        if: steps.check_release.outputs.result != null
+        run: exit 1
+
+      - name: Checkout Code
+        uses: actions/checkout@v2
+
+      - name: Set up JDK 11
+        uses: actions/setup-java@v2
+        with:
+          java-version: '11'
+          distribution: 'adopt'
+
+      - name: Install Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: 14
+
+      - name: Install npm dependencies
+        run: npm install
+
+      - name: Build Android App Bundle
+        run: |
+          cd android && chmod +x ./gradlew
+          ./gradlew bundleRelease --no-daemon
+
+      - name: Sign App Bundle
+        uses: r0adkll/sign-android-release@v1
+        with:
+          releaseDirectory: android/app/build/outputs/bundle/release
+          signingKeyBase64: ${{ secrets.ANDROID_SIGNING_KEY }}
+          alias: ${{ secrets.ANDROID_SIGNING_ALIAS }}
+          keyStorePassword: ${{ secrets.ANDROID_SIGNING_STORE_PASSWORD }}
+          keyPassword: ${{ secrets.ANDROID_SIGNING_STORE_PASSWORD }}
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: Signed App Bundle
+          path: android/app/build/outputs/bundle/release/app-release.aab
+
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ env.CURRENT_DATE }}
+          release_name: Release ${{ env.CURRENT_DATE }}
+          draft: false
+          prerelease: false
+
+      - name: Upload APK to Release
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./android/app/build/outputs/bundle/release/app-release.aab
+          asset_name: app-release-${{ env.CURRENT_DATE }}.aab
+          asset_content_type: application/vnd.android.package-archive

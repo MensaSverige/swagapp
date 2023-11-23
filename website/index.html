@@ -1,9 +1,24 @@
-<!-- Make it id as utf8 -->
 <!DOCTYPE html>
 <html>
   <head>
     <meta charset="utf-8" />
     <title>SWAG App</title>
+    <script>
+      window.onload = function () {
+        fetch('https://api.github.com/repos/skaramicke/swagapp/releases/latest')
+          .then(response => response.json())
+          .then(data => {
+            const aabAsset = data.assets.find(asset =>
+              asset.name.endsWith('.aab'),
+            );
+            if (aabAsset) {
+              document.getElementById('aabLink').href =
+                aabAsset.browser_download_url;
+            }
+          })
+          .catch(error => console.error('Error fetching the AAB URL:', error));
+      };
+    </script>
   </head>
   <body>
     <div class="container">
@@ -12,7 +27,7 @@
         <a href="https://apple.com">Ladda ner från Apple Appstore</a>
       </div>
       <div class="app">
-        <a href="https://google.com">Ladda ner från Google Playstore</a>
+        <a id="aabLink" href="#">Ladda ner AAB</a>
       </div>
     </div>
   </body>
