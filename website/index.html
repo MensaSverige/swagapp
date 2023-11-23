@@ -8,15 +8,15 @@
         fetch('https://api.github.com/repos/skaramicke/swagapp/releases/latest')
           .then(response => response.json())
           .then(data => {
-            const aabAsset = data.assets.find(asset =>
-              asset.name.endsWith('.aab'),
+            const apkAsset = data.assets.find(asset =>
+              asset.name.endsWith('.apk'),
             );
-            if (aabAsset) {
-              document.getElementById('aabLink').href =
-                aabAsset.browser_download_url;
+            if (apkAsset) {
+              document.getElementById('apkLink').href =
+                apkAsset.browser_download_url;
             }
           })
-          .catch(error => console.error('Error fetching the AAB URL:', error));
+          .catch(error => console.error('Error fetching the APK URL:', error));
       };
     </script>
   </head>
@@ -27,7 +27,7 @@
         <a href="https://apple.com">Ladda ner från Apple Appstore</a>
       </div>
       <div class="app">
-        <a id="aabLink" href="#">Ladda ner AAB</a>
+        <a id="apkLink" href="#">Ladda ner Android-appen</a>
       </div>
     </div>
   </body>
