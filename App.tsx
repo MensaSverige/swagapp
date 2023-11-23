@@ -1,4 +1,4 @@
-import {Center, NativeBaseProvider, Spinner} from 'native-base';
+import {Center, NativeBaseProvider, Spinner, useTheme} from 'native-base';
 import {Appearance, ColorSchemeName} from 'react-native';
 import React, {useState, useEffect} from 'react';
 import {SigninForm} from './components/SigninForm';
@@ -44,8 +44,21 @@ const ProfileIcon: React.FC<TabBarIconProps> = ({color, size}) => (
 );
 
 function LoggedInTabs() {
+  const theme = useTheme();
+  const screenOptions = {
+    tabBarStyle: {
+      backgroundColor: theme.colors.background[100],
+    },
+    tabBarActiveTintColor: theme.colors.primary[500],
+    tabBarInactiveTintColor: theme.colors.primary[300],
+    tabBarShowLabel: true,
+    headerStyle: {
+      backgroundColor: theme.colors.background[100],
+    },
+    headerTintColor: theme.colors.primary[500],
+  };
   return (
-    <BottomTab.Navigator>
+    <BottomTab.Navigator screenOptions={screenOptions}>
       <BottomTab.Screen
         name="Karta"
         component={MapView}

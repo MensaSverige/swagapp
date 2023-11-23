@@ -15,11 +15,15 @@ let appConfig: {
   baseURL: 'https://swag.mikael.green/api',
 };
 
-try {
-  console.log('Local config found');
-  appConfig = require('./local-config').default;
-} catch (error) {
-  console.log('No local config found');
+// If not release build, try to load local config
+if (__DEV__) {
+  console.log('Running in development mode');
+  try {
+    console.log('Local config found');
+    appConfig = require('./local-config').default;
+  } catch (error) {
+    console.log('No local config found');
+  }
 }
 
 export default appConfig;

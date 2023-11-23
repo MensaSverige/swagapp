@@ -83,6 +83,8 @@ def auth_endpoint():
     csrf_token = parse_html(start_page_response.text,
                             '<input type="hidden" name="csrfKey" value="', '"')
 
+    logging.info(f"CSRF token: {csrf_token}")
+
     # Perform login using POST request
     login_page_url = 'https://medlem.mensa.se/login/'
     login_form_data = {
@@ -107,6 +109,7 @@ def auth_endpoint():
 
     if 'Logga in' in login_response.text:
         logging.info("'Logga in' found in response")
+        logging.info(login_response.text)
         return jsonify({"message": "Login failed"}), 401
 
     # Fetch user's name from the response

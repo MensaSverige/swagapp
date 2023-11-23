@@ -1,7 +1,7 @@
 import React, {useEffect, useRef} from 'react';
 import {StyleSheet} from 'react-native';
 import ReactNativeMapView, {Polyline, Region} from 'react-native-maps';
-import {Box, Center, Text} from 'native-base';
+import {Box, Center, Text, useTheme} from 'native-base';
 import {useEventsController} from '../services/eventsController';
 import UserMarker from './markers/UserMarker';
 import ClusterMarker, {clusterMarkerDiameter} from './markers/ClusterMarker';
@@ -26,6 +26,7 @@ const styles = StyleSheet.create({
 });
 
 const MapView: React.FC = () => {
+  const theme = useTheme();
   const [manualRegion, setManualRegion] = React.useState<boolean>(false);
   const [eventClusters, setEventClusters] = React.useState<EventCluster[]>([]);
   const [epsilon, setEpsilon] = React.useState<number>(0.01); // Define epsilon based on your coordinate system
@@ -68,6 +69,7 @@ const MapView: React.FC = () => {
   };
 
   const zoomToCluster = (cluster: EventCluster) => {
+    setManualRegion(true);
     if (!mapRef.current || !mapRegion.current || cluster.events.length <= 1) {
       return;
     }
@@ -115,6 +117,8 @@ const MapView: React.FC = () => {
   };
 
   const panToCluster = (cluster: EventCluster) => {
+    setManualRegion(true);
+
     const currentRegion = mapRegion.current;
     if (!currentRegion) {
       return;
@@ -282,7 +286,7 @@ const MapView: React.FC = () => {
                     key={`polyline-to-${event.id}`}
                     coordinates={[event.location, cluster.centerCoordinate]}
                     strokeWidth={2}
-                    strokeColor="rgba(0, 0, 0, 0.5)"
+                    strokeColor={theme.colors.text[500]}
                     zIndex={10}
                   />
                 ))}

@@ -26,7 +26,12 @@ const lightTheme = extendTheme({
     },
     Text: {
       baseStyle: {
-        color: 'gray.800',
+        color: 'text.900',
+      },
+    },
+    Checkbox: {
+      baseStyle: {
+        color: 'text.900',
       },
     },
     Card: {

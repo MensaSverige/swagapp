@@ -30,7 +30,7 @@ platform :ios do
   end
   
   private_lane :staging_build do
-    increment_build_number_in_plist(xcodeproj: $ios_project_path, target: $ios_target_name)
+    increment_build_number(xcodeproj: $ios_project_path)
     gym(
       scheme: $ios_main_scheme_name,
       workspace: $ios_workspace_path,
@@ -42,7 +42,7 @@ platform :ios do
     )
   end
 
-  private_lane :release do
+  lane :release do
     $version = Time.now.strftime("%Y.%m.%d")
     produce(
       app_name: 'SWAG Communiator',
@@ -57,7 +57,7 @@ platform :ios do
   
     deliver
 
-    increment_build_number_in_plist(xcodeproj: $ios_project_path, target: $ios_target_name)
+    increment_build_number(xcodeproj: $ios_project_path)
     gym(
       scheme: $ios_main_scheme_name,
       workspace: $ios_workspace_path,
@@ -69,7 +69,7 @@ platform :ios do
     )
     ios_set_version($version) # uses 'fastlane-plugin-versioning_ios'
     commit_version_bump(message: 'iOS version: #{$version}')
-    upload_to_apps_store
+    upload_to_app_store
 
   end
 
@@ -82,4 +82,8 @@ platform :ios do
 
   end
   
+  lane :version do
+    update_version
+  end
+
 end

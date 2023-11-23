@@ -7,7 +7,9 @@ import {
   Heading,
   Input,
   Spinner,
+  Text,
   VStack,
+  useTheme,
 } from 'native-base';
 import React from 'react';
 import {User} from '../types/user';
@@ -28,6 +30,7 @@ interface ErrorResponse {
 }
 
 export const SigninForm = () => {
+  const theme = useTheme();
   const [username, setUsername] = React.useState('');
   const [password, setPassword] = React.useState('');
   const [passwordVisible, setPasswordVisible] = React.useState(false);
@@ -154,15 +157,21 @@ export const SigninForm = () => {
                 roundedRight="md"
                 onPress={() => setPasswordVisible(!passwordVisible)}>
                 {passwordVisible ? (
-                  <FontAwesomeIcon icon={faEyeSlash} />
+                  <FontAwesomeIcon
+                    icon={faEyeSlash}
+                    color={theme.colors.primary[500]}
+                  />
                 ) : (
-                  <FontAwesomeIcon icon={faEye} />
+                  <FontAwesomeIcon
+                    icon={faEye}
+                    color={theme.colors.primary[500]}
+                  />
                 )}
               </Button>
             }
           />
           <Checkbox value="saveCredentials" onChange={setSaveCredentials}>
-            Spara inloggning
+            <Text>Spara inloggning</Text>
           </Checkbox>
           {isLoading ? (
             <Spinner />
