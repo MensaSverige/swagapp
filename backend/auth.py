@@ -30,9 +30,11 @@ def auth_endpoint():
 
     if os.path.exists('/review_user.txt') and os.path.exists('/review_password.txt'):
         with open('/review_user.txt', 'r') as f:
-            review_user = f.read()
+            review_user = f.read().strip()
         with open('/review_password.txt', 'r') as f:
-            review_password = f.read()
+            review_password = f.read().strip()
+
+    logging.info("Review user: " + review_user)
 
     test_mode = os.environ.get("TEST_MODE", "false")
 
@@ -56,7 +58,7 @@ def auth_endpoint():
             "test": True
         }), 200
 
-    if review_user != "" and review_password != "" and username == review_user and request_body.get("password") == review_password:
+    if username == review_user and request_body.get("password") == review_password:
         access_token = create_access_token(username)
         refresh_token = create_refresh_token(username)
 
@@ -108,8 +110,7 @@ def auth_endpoint():
         return jsonify({"message": "Login failed"}), 401
 
     if 'Logga in' in login_response.text:
-        logging.info("'Logga in' found in response")
-        logging.info(login_response.text)
+        logging.info("'Logga in' found in response. Username: " + username)
         return jsonify({"message": "Login failed"}), 401
 
     # Fetch user's name from the response

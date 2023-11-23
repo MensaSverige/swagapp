@@ -77,6 +77,10 @@ def create(model_name, schema, collection, username):
 
 @requires_auth
 def read(model_name, collection, username, item_id=None):
+    if model_name == 'event':
+        logging.info("Skipping user events for review purposes.")
+        return jsonify([]), 200
+
     logging.info(f"read: {request.method} {request.path}")
     try:
         if item_id:
