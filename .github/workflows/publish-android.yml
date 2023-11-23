@@ -57,7 +57,7 @@ jobs:
       - name: Build Android App Bundle
         run: |
           cd android && chmod +x ./gradlew
-          ./gradlew bundleRelease --no-daemon
+          ./gradlew assembleRelease --no-daemon
 
       - name: Sign App Bundle
         uses: r0adkll/sign-android-release@v1
@@ -72,7 +72,7 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: Signed App Bundle
-          path: android/app/build/outputs/bundle/release/app-release.aab
+          path: android/app/build/outputs/bundle/release/swag-app.apk
 
       - name: Create Release
         id: create_release
@@ -91,6 +91,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./android/app/build/outputs/bundle/release/app-release.aab
-          asset_name: app-release-${{ env.CURRENT_DATE }}.aab
+          asset_path: ./android/app/build/outputs/bundle/release/swag-app.apk
+          asset_name: swag-app-${{ env.CURRENT_DATE }}.apk
           asset_content_type: application/vnd.android.package-archive
