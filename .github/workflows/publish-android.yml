@@ -13,30 +13,6 @@ jobs:
       - name: Get Current Date
         run: echo "CURRENT_DATE=$(date +%Y.%m.%d)" >> $GITHUB_ENV
 
-      - name: Check if Release Exists
-        id: check_release
-        uses: actions/github-script@v3
-        with:
-          github-token: ${{secrets.GITHUB_TOKEN}}
-          script: |
-            const { data: releases } = await github.repos.listReleases({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-            });
-            const release = releases.find(release => release.tag_name === process.env.CURRENT_DATE);
-            if (release) {
-              console.log(`Release with tag ${process.env.CURRENT_DATE} exists`);
-              return release.id;
-            } else {
-              console.log(`No release with tag ${process.env.CURRENT_DATE}`);
-              return null;
-            }
-
-      # If release exists, skip the rest of the workflow
-      - name: Skip if Release Exists
-        if: steps.check_release.outputs.result != null
-        run: exit 1
-
       - name: Checkout Code
         uses: actions/checkout@v2
 
