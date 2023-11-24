@@ -1,6 +1,8 @@
 import useStore from '../store/store';
 import apiClient from '../apiClient';
 import {useCallback, useEffect, useRef, useState} from 'react';
+import {Event} from '../types/event';
+import {isFutureEvent} from '../types/futureEvent';
 
 const DATA_STALE_INTERVAL = 1000 * 60 * 5; // 5 minutes
 
@@ -17,7 +19,7 @@ export const useEventsController = () => {
   } = useStore();
 
   const [consumers, setConsumers] = useState<string[]>([]);
-  const updateIntervalRef = useRef<Number | null>(null);
+  const updateIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const fetchData = useCallback(async () => {
     if (eventsRefreshing) {
@@ -29,13 +31,15 @@ export const useEventsController = () => {
     // Fetch user events
     const userEventsResponse = await apiClient.get('/event');
     if (userEventsResponse.status === 200) {
-      setUserEvents(userEventsResponse.data);
+      const events = userEventsResponse.data as Event[];
+      setUserEvents(events.filter(isFutureEvent));
     }
 
     // Fetch static events
     const staticEventsResponse = await apiClient.get('/static_events');
     if (staticEventsResponse.status === 200) {
-      setStaticEvents(staticEventsResponse.data);
+      const events = staticEventsResponse.data as Event[];
+      setStaticEvents(events.filter(isFutureEvent));
     }
 
     const lastFetched = new Date();
@@ -68,7 +72,7 @@ export const useEventsController = () => {
         }, DATA_STALE_INTERVAL);
       }, timeout);
     } else if (consumers.length === 0 && updateIntervalRef.current) {
-      clearInterval(updateIntervalRef.current as number);
+      clearInterval(updateIntervalRef.current);
       updateIntervalRef.current = null;
     }
   }, [consumers, eventsLastFetched, eventsRefreshing, fetchData]);

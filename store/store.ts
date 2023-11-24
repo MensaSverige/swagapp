@@ -1,30 +1,30 @@
 import {create} from 'zustand';
 import {User} from '../types/user';
-import {Event} from '../types/event';
 import {LocationState, createLocationSlice} from './LocationState';
 import EventWithLocation, {
   isEventWithLocation,
 } from '../types/eventWithLocation';
+import FutureEvent from '../types/futureEvent';
 
 interface State {
   config: {
     testMode: boolean;
   };
   user: User | null;
-  visibleEvents: Event[];
+  visibleEvents: FutureEvent[];
   eventsWithLocation: EventWithLocation[];
-  userEvents: Event[];
+  userEvents: FutureEvent[];
   showUserEvents: boolean;
-  staticEvents: Event[];
+  staticEvents: FutureEvent[];
   showStaticEvents: boolean;
   eventsRefreshing: boolean;
   eventsLastFetched: Date | null;
 }
 interface Actions {
   setUser: (user: User | null) => void;
-  setUserEvents: (events: Event[]) => void;
+  setUserEvents: (events: FutureEvent[]) => void;
   setShowUserEvents: (showUserEvents: boolean) => void;
-  setStaticEvents: (events: Event[]) => void;
+  setStaticEvents: (events: FutureEvent[]) => void;
   setShowStaticEvents: (showStaticEvents: boolean) => void;
   setEventsRefreshing: (eventsRefreshing: boolean) => void;
   setEventsLastFetched: (eventsLastFetched: Date | null) => void;
