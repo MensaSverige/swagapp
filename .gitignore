@@ -1,6 +1,9 @@
 # Local files and folders
 /tmp
-local-config.ts
+.env
+
+package-lock.json
+
 
 # Obsidian
 notes/.obsidian

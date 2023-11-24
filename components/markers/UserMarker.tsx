@@ -1,7 +1,8 @@
 import React from 'react';
 import {View, Image, StyleSheet} from 'react-native';
 import {Marker} from 'react-native-maps';
-import UserWithLocation from '../types/userWithLocation';
+import UserWithLocation from '../../types/userWithLocation';
+
 
 const UserMarker: React.FC<{user: UserWithLocation; zIndex: number}> = ({
   user,

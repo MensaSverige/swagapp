@@ -1,10 +1,10 @@
 import axios, {AxiosRequestConfig, AxiosResponse} from 'axios';
 import * as Keychain from 'react-native-keychain';
-import appConfig from './appConfig';
+import { API_URL } from '@env';
 import useStore from './store/store';
 
 const apiClient = axios.create({
-  baseURL: appConfig.baseURL,
+  baseURL: API_URL,
 });
 
 apiClient.interceptors.request.use(

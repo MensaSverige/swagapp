@@ -95,8 +95,11 @@ export default useStore;
 
 export const useLocationState = () => {
   return useStore(state => ({
-    usersWithLocation: state.usersWithLocation,
     currentLocation: state.currentLocation,
+    showlocation: state.showlocation,
+    region: state.region,
+    locationUpdateInterval: state.locationUpdateInterval,
+    setRegion: state.setRegion,
     setUserLocation: state.setUserLocation,
   }));
 };

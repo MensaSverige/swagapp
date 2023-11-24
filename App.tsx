@@ -21,6 +21,7 @@ import {
   faCalendarDays,
   faAddressCard,
 } from '@fortawesome/free-solid-svg-icons';
+import useUserLocation from './hooks/useUserLocation';
 
 const Stack = createNativeStackNavigator();
 const BottomTab = createBottomTabNavigator();
@@ -47,13 +48,13 @@ function LoggedInTabs() {
   const theme = useTheme();
   const screenOptions = {
     tabBarStyle: {
-      backgroundColor: theme.colors.background[100],
+      backgroundColor: theme.colors.background[900],
     },
-    tabBarActiveTintColor: theme.colors.primary[500],
-    tabBarInactiveTintColor: theme.colors.primary[300],
+    tabBarActiveTintColor: theme.colors.primary[50],
+    tabBarInactiveTintColor: theme.colors.primary[900],
     tabBarShowLabel: true,
     headerStyle: {
-      backgroundColor: theme.colors.background[100],
+      backgroundColor: theme.colors.background[900],
     },
     headerTintColor: theme.colors.primary[500],
   };
@@ -91,6 +92,7 @@ const LoadingScreen: React.FC = () => (
 );
 
 function App(): JSX.Element {
+  useUserLocation();
   const [isTryingToLogin, setIsTryingToLogin] = useState(false);
   const {user, setUser} = useStore();
 
