@@ -258,14 +258,13 @@ const MapView: React.FC = () => {
 
       setEventClusters(clusters);
     }
-  }, [users, events, manualRegion, epsilon]);
+  }, [usersShowingLocation, events, manualRegion, epsilon]);
 
   return (
     <Center w="100%" h="100%">
       <Box safeArea flex={1} w="100%" mx="auto">
         <Box style={styles.refreshIndicatorsWrapper}>
           {eventsRefreshing && <Text>Laddar evenemang...</Text>}
-          {userLocationsRefreshing && <Text>Laddar mensaner...</Text>}
         </Box>
         <ReactNativeMapView
           ref={mapRef}
