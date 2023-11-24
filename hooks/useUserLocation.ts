@@ -49,8 +49,10 @@ const useUserLocation = () => {
             if (user.show_location) {
               const locationUpdateData: LocationUpdateData = {
                 username: user.username,
-                latitude: latitude,
-                longitude: longitude,
+                location: { 
+                  latitude: latitude,
+                  longitude: longitude,
+                }
               };
               updateUserLocation(locationUpdateData);
             }

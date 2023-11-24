@@ -238,8 +238,7 @@ def update_user_location():
         # Extract the user ID and new location from the request body
         data = request.json
         username = data['username']
-        new_lat = data['latitude']
-        new_lng = data['longitude']
+        new_location = data['location']
 
         existing_user = db.user.find_one(
             {"username": username})
@@ -247,10 +246,10 @@ def update_user_location():
         if existing_user:
             db.user.update_one(
                 {"username": data["username"]},
-                {'$set': {'latitude': new_lat, 'longitude': new_lng}}
+                {'$set': {'location': new_location}}
             )
             logging.info(
-                f"User with id {username} location updated to latitude: {new_lat}, longitude: {new_lng}")
+                f"User with id {username} location updated to {new_location}")
             return jsonify({'message': 'User location updated successfully'}), 200
         else:
             # This means that no document was found with the provided `_id`

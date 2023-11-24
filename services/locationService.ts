@@ -1,17 +1,22 @@
 import {User} from '../types/user';
 import apiClient from '../apiClient';
+import UserWithLocation, { isUserWithLocation } from '../types/userWithLocation';
 
 export interface LocationUpdateData {
   username: string;
-  latitude: number;
-  longitude: number;
+  location: {
+    latitude: number;
+    longitude: number;
+  }
 }
 
 export const getUserLocations = async () => {
-  return generateFakeUserLocations(10);
   const response = await apiClient.get('/users_showing_location');
   console.log('response', response);
-  return response.data as User[];
+  if(response.data){
+    return response.data.filter(isUserWithLocation);
+  }
+  return [] as UserWithLocation[];
 };
 
 export const updateUserLocation = async (data: LocationUpdateData) => {

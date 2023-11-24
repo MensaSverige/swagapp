@@ -9,9 +9,10 @@ import {EventCluster} from '../types/EventCluster';
 import EventWithLocation from '../types/eventWithLocation';
 import {findFarthestEvent, getCoordinateDistance} from '../functions/mapping';
 import {getCenterCoordinate} from '../functions/events';
-import {useLocationState} from '../store/store';
+import useStore, {useLocationState} from '../store/store';
 import {User} from '../types/user';
 import {getUserLocations} from '../services/locationService';
+import UserWithLocation from '../types/userWithLocation';
 
 const styles = StyleSheet.create({
   map: {
@@ -29,15 +30,17 @@ const styles = StyleSheet.create({
 
 const MapView: React.FC = () => {
   const theme = useTheme();
+  const {user} = useStore();
   const [manualRegion, setManualRegion] = React.useState<boolean>(false);
   const [eventClusters, setEventClusters] = React.useState<EventCluster[]>([]);
   const [epsilon, setEpsilon] = React.useState<number>(0.01); // Define epsilon based on your coordinate system
 
-  const [usersShowingLocation, setUsersShowingLocation] = useState<User[]>([]);
+  const [usersShowingLocation, setUsersShowingLocation] = useState<UserWithLocation[]>([]);
   const {locationUpdateInterval} = useLocationState();
 
   useEffect(() => {
     getUserLocations().then(users => {
+      console.log('usersShowingLocation', users);
       setUsersShowingLocation(users);
     });
   }, []);
@@ -45,8 +48,8 @@ const MapView: React.FC = () => {
   useEffect(() => {
     const intervalId = setInterval(() => {
       getUserLocations().then(users => {
+        console.log('usersShowingLocation', users);
         setUsersShowingLocation(users);
-        console.log('helloo', users);
       });
     }, locationUpdateInterval);
 
@@ -274,12 +277,13 @@ const MapView: React.FC = () => {
           onCalloutPress={() => onTouchingMap()}
           onDoublePress={() => onTouchingMap()}
           onRegionChangeComplete={onMapRegionChangeComplete}>
-          {usersShowingLocation.map(user => (
+          {usersShowingLocation && usersShowingLocation.map(u => (
+            u.username != user?.username && (
             <UserMarker
-              key={`user-${user.username}`}
-              user={user}
+              key={`user-${u.username}`}
+              user={u}
               zIndex={100}
-            />
+            />)
           ))}
           {eventClusters.map((cluster, i) => (
             // This draws the lines between events and a cluster center

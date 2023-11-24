@@ -21,6 +21,7 @@ import {
   faCalendarDays,
   faAddressCard,
 } from '@fortawesome/free-solid-svg-icons';
+import useUserLocation from './hooks/useUserLocation';
 
 const Stack = createNativeStackNavigator();
 const BottomTab = createBottomTabNavigator();
@@ -91,6 +92,7 @@ const LoadingScreen: React.FC = () => (
 );
 
 function App(): JSX.Element {
+  useUserLocation();
   const [isTryingToLogin, setIsTryingToLogin] = useState(false);
   const {user, setUser} = useStore();
 
