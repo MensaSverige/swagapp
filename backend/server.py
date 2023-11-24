@@ -232,6 +232,37 @@ def users_showing_location():
         return jsonify({'error': 'Internal Server Error'}), 500
 
 
+@app.route('/update_user_location', methods=['POST'])
+def update_user_location():
+    try:
+        # Extract the user ID and new location from the request body
+        data = request.json
+        username = data['username']
+        new_lat = data['latitude']
+        new_lng = data['longitude']
+
+        existing_user = db.user.find_one(
+            {"username": username})
+
+        if existing_user:
+            db.user.update_one(
+                {"username": data["username"]},
+                {'$set': {'latitude': new_lat, 'longitude': new_lng}}
+            )
+            logging.info(
+                f"User with id {username} location updated to latitude: {new_lat}, longitude: {new_lng}")
+            return jsonify({'message': 'User location updated successfully'}), 200
+        else:
+            # This means that no document was found with the provided `_id`
+            logging.warning(
+                f"No user found with id {username} for location update.")
+            return jsonify({'error': 'User not found or location already up to date'}), 404
+
+    except Exception as e:
+        logging.error(f"Error in POST /update_user_location: {str(e)}")
+        return jsonify({'error': 'Internal Server Error'}), 500
+
+
 # Debugging of dynamic API
 
 def log_endpoints():

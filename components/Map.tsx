@@ -1,4 +1,4 @@
-import React, {useEffect, useRef} from 'react';
+import React, {useEffect, useState, useRef} from 'react';
 import {StyleSheet} from 'react-native';
 import ReactNativeMapView, {Polyline, Region} from 'react-native-maps';
 import {Box, Center, Text, useTheme} from 'native-base';
@@ -6,10 +6,12 @@ import {useEventsController} from '../services/eventsController';
 import UserMarker from './markers/UserMarker';
 import ClusterMarker, {clusterMarkerDiameter} from './markers/ClusterMarker';
 import {EventCluster} from '../types/EventCluster';
-import {useLocationController} from '../services/locationController';
 import EventWithLocation from '../types/eventWithLocation';
 import {findFarthestEvent, getCoordinateDistance} from '../functions/mapping';
 import {getCenterCoordinate} from '../functions/events';
+import {useLocationState} from '../store/store';
+import {User} from '../types/user';
+import {getUserLocations} from '../services/locationService';
 
 const styles = StyleSheet.create({
   map: {
@@ -31,12 +33,27 @@ const MapView: React.FC = () => {
   const [eventClusters, setEventClusters] = React.useState<EventCluster[]>([]);
   const [epsilon, setEpsilon] = React.useState<number>(0.01); // Define epsilon based on your coordinate system
 
-  const {
-    usersWithLocation: users,
-    subscribe: subscribeToLocations,
-    unsubscribe: unsubscribeToLocations,
-    userLocationsRefreshing,
-  } = useLocationController();
+  const [usersShowingLocation, setUsersShowingLocation] = useState<User[]>([]);
+  const {locationUpdateInterval} = useLocationState();
+
+  useEffect(() => {
+    getUserLocations().then(users => {
+      setUsersShowingLocation(users);
+    });
+  }, []);
+
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      getUserLocations().then(users => {
+        setUsersShowingLocation(users);
+        console.log('helloo', users);
+      });
+    }, locationUpdateInterval);
+
+    // Clear the interval when the component is unmounted
+    return () => clearInterval(intervalId);
+  }, []);
+
   const {
     eventsRefreshing,
     eventsWithLocation: events,
@@ -133,25 +150,19 @@ const MapView: React.FC = () => {
 
   useEffect(() => {
     subscribeToEvents('map');
-    subscribeToLocations('map');
     return () => {
       unsubscribeToEvents('map');
-      unsubscribeToLocations('map');
     };
-  }, [
-    subscribeToEvents,
-    subscribeToLocations,
-    unsubscribeToEvents,
-    unsubscribeToLocations,
-  ]);
+  }, [subscribeToEvents, unsubscribeToEvents]);
 
   useEffect(() => {
     if (
       mapRef.current &&
       !manualRegion &&
-      (users.length > 0 || events.length > 0)
+      (usersShowingLocation.length > 0 || events.length > 0)
     ) {
-      const coordinates = [...users, ...events].map(item => ({
+      // TODO: Add user location to this so map zooms to include users
+      const coordinates = events.map(item => ({
         latitude: item.location.latitude,
         longitude: item.location.longitude,
       }));
@@ -247,14 +258,13 @@ const MapView: React.FC = () => {
 
       setEventClusters(clusters);
     }
-  }, [users, events, manualRegion, epsilon]);
+  }, [usersShowingLocation, events, manualRegion, epsilon]);
 
   return (
     <Center w="100%" h="100%">
       <Box safeArea flex={1} w="100%" mx="auto">
         <Box style={styles.refreshIndicatorsWrapper}>
           {eventsRefreshing && <Text>Laddar evenemang...</Text>}
-          {userLocationsRefreshing && <Text>Laddar mensaner...</Text>}
         </Box>
         <ReactNativeMapView
           ref={mapRef}
@@ -264,7 +274,7 @@ const MapView: React.FC = () => {
           onCalloutPress={() => onTouchingMap()}
           onDoublePress={() => onTouchingMap()}
           onRegionChangeComplete={onMapRegionChangeComplete}>
-          {users.map(user => (
+          {usersShowingLocation.map(user => (
             <UserMarker
               key={`user-${user.username}`}
               user={user}
