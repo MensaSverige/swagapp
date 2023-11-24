@@ -85,7 +85,7 @@ const Profile: React.FC = () => {
                 <Input
                   placeholder="Email"
                   value={user.username}
-                  onChangeText={_ => {}}
+                  onChangeText={null}
                   isDisabled
                 />
                 <FormControl.HelperText>
@@ -100,7 +100,7 @@ const Profile: React.FC = () => {
                 <Input
                   placeholder="Namn"
                   value={user.name}
-                  onChangeText={_ => {}}
+                  onChangeText={null}
                   isDisabled
                 />
                 <FormControl.HelperText>
