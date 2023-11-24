@@ -1,8 +1,9 @@
 import {Box, Card, Heading, Text} from 'native-base';
 import React from 'react';
 import {Event} from '../../types/event';
-import {TouchableNativeFeedback} from 'react-native';
+import {TouchableOpacity} from 'react-native';
 import TimeLeft from '../utilities/TimeLeft';
+import {clockForTime} from '../../functions/events';
 
 function formatDateAndTime(dateTimeStr: string, startDateTimeStr?: string) {
   // Parse the Swedish date and time format, assuming it's in "yyyy-mm-dd hh:mm" format
@@ -54,10 +55,10 @@ function formatDateAndTime(dateTimeStr: string, startDateTimeStr?: string) {
 
 const EventCard: React.FC<{
   event: Event;
-  open: Boolean;
-  toggleOpen: (event: Event) => void;
-}> = ({event, open, toggleOpen}) => {
+}> = ({event}) => {
   const [comparisonDate, setComparisonDate] = React.useState(new Date());
+  const [open, setOpen] = React.useState(false);
+
   React.useEffect(() => {
     const interval = setInterval(() => {
       setComparisonDate(new Date());
@@ -67,34 +68,31 @@ const EventCard: React.FC<{
   }, []);
 
   return (
-    <TouchableNativeFeedback onPress={() => toggleOpen(event)}>
+    <TouchableOpacity onPress={() => setOpen(!open)}>
       <Card rounded="lg" overflow="hidden" m="2" opacity={open ? '1' : '0.8'}>
-        {open ? (
-          <>
-            <Box flexDirection="row-reverse">
-              <TimeLeft
-                comparedTo={comparisonDate}
-                start={event.start !== undefined ? event.start : ''}
-                end={event.end}
-                long
-              />
-            </Box>
-            <Heading size="lg" isTruncated={!open}>
-              {event.name}
-            </Heading>
-          </>
-        ) : (
-          <Box flex="1" flexDirection="row" justifyContent="space-between">
-            <Heading size="sm" isTruncated maxW="80%">
+        <Box
+          flex="1"
+          flexDirection="row"
+          justifyContent="space-between"
+          alignItems={'center'}>
+          <Box flex="1" flexDirection="column">
+            <Heading
+              size={open ? 'lg' : 'sm'}
+              isTruncated={!open}
+              flexShrink={1}>
               {event.name}
             </Heading>
             <TimeLeft
               comparedTo={comparisonDate}
-              start={event.start}
+              start={event.start !== undefined ? event.start : ''}
               end={event.end}
+              long
             />
           </Box>
-        )}
+          <Heading size="lg" isTruncated={!open}>
+            {event.location.marker ?? clockForTime(event.start)}
+          </Heading>
+        </Box>
         {open && (
           <>
             <Text mt="5">{event.description}</Text>
@@ -103,12 +101,16 @@ const EventCard: React.FC<{
                 {formatDateAndTime(event.start)}
                 {event.end && ' – ' + formatDateAndTime(event.end, event.start)}
               </Heading>
-              <Text mt="5">{event.location.description}</Text>
+              {event.location.description && (
+                <Heading size="xs" mt="5">
+                  {event.location.description}
+                </Heading>
+              )}
             </Box>
           </>
         )}
       </Card>
-    </TouchableNativeFeedback>
+    </TouchableOpacity>
   );
 };
 

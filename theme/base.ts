@@ -1,78 +1,86 @@
 import {extendTheme} from 'native-base';
 
 const baseTheme = extendTheme({
-  colors: {
-    background: {
-      50: '#ffffff',
-      100: '#eeeeee',
-      200: '#dddddd',
-      300: '#cccccc',
-      400: '#bbbbbb',
-      500: '#aaaaaa',
-      600: '#999999',
-      700: '#888888',
-      800: '#777777',
-      900: '#666666',
+  components: {
+    Header: {
+      defaultProps: {
+        bg: 'background.50', //oxford_blue
+      },
     },
-    text: {
-      50: '#000000',
-      100: '#000000',
-      200: '#000000',
-      300: '#000000',
-      400: '#000000',
-      500: '#000000',
-      600: '#000000',
-      700: '#000000',
-      800: '#000000',
-      900: '#000000',
+    Center: {
+      defaultProps: {
+        bg: 'background.500', //oxford_blue
+      },
     },
-    icon: {
-      50: '#e3f3fe',
-      100: '#bbdfff',
-      200: '#8eccff',
-      300: '#5fb8ff',
-      400: '#38a8ff',
-      500: '#0099FF', ///mensablå
-      600: '#048bf1',
-      700: '#0478dd',
-      800: '#0467cb',
-      900: '#0248ac',
+    Heading: {
+      defaultProps: {
+        color: 'primary.900',
+      },
     },
-    primary: {
-      50: '#e3f3fe',
-      100: '#bbdfff',
-      200: '#8eccff',
-      300: '#5fb8ff',
-      400: '#38a8ff',
-      500: '#0099FF', ///mensablå
-      600: '#048bf1',
-      700: '#0478dd',
-      800: '#0467cb',
-      900: '#0248ac',
+    Button: {
+      defaultProps: {
+        colorScheme: 'primary',
+        _text: {
+          color: 'background.50',
+        },
+      },
     },
-    // primary:  {
-    //     50: '#e3f3fe',
-    //     100: '#0a1216',
-    //     200: '#14242c',
-    //     300: '#1d3741',
-    //     400: '#274957',
-    //     500: '#315c6e',
-    //     600: '#47849e',
-    //     700: '#6da5be',
-    //     800: '#9ec3d3',
-    //     900: '#cee1e9'
-    // },
-    secondary: {
-      50: '#060a10',
-      100: '#060a10',
-      200: '#0b141f',
-      300: '#111e2f',
-      400: '#17273f',
-      500: '#1c314e',
-      600: '#32568a',
-      700: '#4d7dbf',
-      800: '#89a8d4',
-      900: '#c4d4ea',
+    Text: {
+      baseStyle: {
+        color: 'text.500',
+      },
+    },
+    Checkbox: {
+      baseStyle: {
+        color: 'text.50',
+      },
+    },
+    Card: {
+      baseStyle: {
+        backgroundColor: 'background.400',
+      },
+    },
+    Input: {
+      defaultProps: {
+        bg: 'transparent',
+        borderColor: 'muted.500',
+        placeholderTextColor: 'text.400',
+        _focus: {
+          borderColor: 'primary.600',
+          backgroundColor: 'darkblue.700',
+          placeholderTextColor: 'text.100',
+          _hover: {borderColor: 'primary.600'},
+        },
+        Heading: {
+          defaultProps: {
+            color: 'text.50',
+          },
+        },
+        Text: {
+          baseStyle: {
+            color: 'gray.200',
+          },
+        },
+        Input: {
+          defaultProps: {
+            bg: 'transparent',
+            borderColor: 'muted.500',
+            placeholderTextColor: 'text.400',
+            _focus: {
+              color: 'text.50',
+              borderColor: 'primary.600',
+              backgroundColor: 'darkblue.700',
+              placeholderTextColor: 'text.100',
+              _hover: {borderColor: 'primary.600'},
+            },
+          },
+        },
+        IconButton: {
+          defaultProps: {
+            colorScheme: 'primary',
+          },
+        },
+      },
     },
   },
 });

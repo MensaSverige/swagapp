@@ -2,7 +2,7 @@ import {Center, ScrollView, Text} from 'native-base';
 import React from 'react';
 import {Event} from '../types/event';
 import {RefreshControl} from 'react-native';
-import {LayoutAnimation, UIManager, Platform} from 'react-native';
+import {UIManager, Platform} from 'react-native';
 import {useEventsController} from '../services/eventsController';
 import EventCard from './cards/EventCard';
 
@@ -17,16 +17,6 @@ const Events: React.FC = () => {
   const {visibleEvents, eventsRefreshing, fetchData, subscribe, unsubscribe} =
     useEventsController();
 
-  const [openEvents, setOpenEvents] = React.useState<Array<Event>>([]);
-
-  const toggleOpen = (event: Event) => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    if (openEvents.includes(event)) {
-      setOpenEvents(openEvents.filter(e => e !== event));
-    } else {
-      setOpenEvents([...openEvents, event]);
-    }
-  };
   React.useEffect(() => {
     subscribe('eventsView');
     return () => {
@@ -48,12 +38,7 @@ const Events: React.FC = () => {
           </Center>
         )}
         {visibleEvents.map((event: Event) => (
-          <EventCard
-            key={event.id}
-            event={event}
-            open={openEvents.includes(event)}
-            toggleOpen={toggleOpen}
-          />
+          <EventCard key={`event-${event.id}`} event={event} />
         ))}
       </ScrollView>
     </Center>

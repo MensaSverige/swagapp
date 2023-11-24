@@ -6,40 +6,64 @@ const darkTheme = extendTheme({
   colors: {
     ...baseTheme.colors,
     background: {
-      50: '#08142A',
-      100: '#08142A',
-      200: '#08142A',
-      300: '#08142A',
-      400: '#08142A',
-      500: '#08142A',
-      600: '#08142A',
-      700: '#08142A',
-      800: '#08142A',
-      900: '#08142A',
+      50: '#303030',
+      100: '#2b2b2b',
+      200: '#272727',
+      300: '#222222',
+      400: '#1e1e1e',
+      500: '#181818',
+      600: '#151515',
+      700: '#0f0f0f',
+      800: '#080808',
+      900: '#000000',
     },
     text: {
-      50: '#ffffff',
-      100: '#ffffff',
-      200: '#ffffff',
-      300: '#ffffff',
-      400: '#ffffff',
-      500: '#ffffff',
-      600: '#ffffff',
-      700: '#ffffff',
-      800: '#ffffff',
-      900: '#ffffff',
+      50: '#f5f5bd',
+      100: '#efefb9',
+      200: '#e9e9b4',
+      300: '#e4e4b0',
+      400: '#dedeab',
+      500: '#dcdcaa',
+      600: '#d3d3a3',
+      700: '#cdcd9f',
+      800: '#c8c89a',
+      900: '#c2c296',
     },
-    icon: {
-      50: '#e3f3fe',
-      100: '#bbdfff',
-      200: '#8eccff',
-      300: '#5fb8ff',
-      400: '#38a8ff',
-      500: '#0099FF', ///mensablå
-      600: '#048bf1',
-      700: '#0478dd',
-      800: '#0467cb',
-      900: '#0248ac',
+    accent: {
+      50: '#58e3c7',
+      100: '#56ddc2',
+      200: '#53d7bd',
+      300: '#51d2b8',
+      400: '#4fccb3',
+      500: '#4ec9b0',
+      600: '#4bc1a9',
+      700: '#48bba4',
+      800: '#46b69f',
+      900: '#44b09a',
+    },
+    secondary: {
+      50: '#474747',
+      100: '#414141',
+      200: '#3b3b3b',
+      300: '#353535',
+      400: '#2f2f2f',
+      500: '#2d2d2d',
+      600: '#242424',
+      700: '#1f1f1f',
+      800: '#191919',
+      900: '#141414',
+    },
+    primary: {
+      50: '#97d9fc',
+      100: '#8fd4f9',
+      200: '#87cff7',
+      300: '#7ecbf5',
+      400: '#76c6f2',
+      500: '#4FC1FF',
+      600: '#65bced',
+      700: '#5bb8eb',
+      800: '#51b3e8',
+      900: '#47aee6',
     },
   },
   config: {
@@ -47,98 +71,7 @@ const darkTheme = extendTheme({
     initialColorMode: 'dark',
   },
   components: {
-    Header: {
-      defaultProps: {
-        bg: '#08142A', //oxford_blue
-      },
-    },
-    TabBar: {
-      baseStyle: {
-        backgroundColor: '#08142A',
-      },
-    },
-
-    Center: {
-      defaultProps: {
-        bg: '#08142A', //oxford_blue
-      },
-    },
-    Heading: {
-      defaultProps: {
-        color: 'text.50',
-      },
-    },
-    Button: {
-      defaultProps: {
-        colorScheme: 'primary',
-        _text: {color: 'white'},
-      },
-    },
-    Text: {
-      baseStyle: {
-        color: 'gray.200',
-      },
-    },
-    Checkbox: {
-      baseStyle: {
-        color: 'text.50',
-      },
-    },
-    Card: {
-      baseStyle: {
-        borderColor: 'muted.500',
-        borderWidth: 1,
-        backgroundColor: 'primary.400',
-      },
-    },
-    Input: {
-      defaultProps: {
-        bg: 'transparent',
-        borderColor: 'muted.500',
-        placeholderTextColor: 'text.400',
-        _focus: {
-          borderColor: 'primary.600',
-          backgroundColor: 'darkblue.700',
-          placeholderTextColor: 'text.100',
-          _hover: {borderColor: 'primary.600'},
-        },
-        Heading: {
-          defaultProps: {
-            color: 'text.50',
-          },
-        },
-        Button: {
-          defaultProps: {
-            colorScheme: 'secondary',
-            _text: {color: 'white'},
-          },
-        },
-        Text: {
-          baseStyle: {
-            color: 'gray.200',
-          },
-        },
-        Input: {
-          defaultProps: {
-            bg: 'transparent',
-            borderColor: 'muted.500',
-            placeholderTextColor: 'text.400',
-            _focus: {
-              color: 'text.50',
-              borderColor: 'primary.600',
-              backgroundColor: 'darkblue.700',
-              placeholderTextColor: 'text.100',
-              _hover: {borderColor: 'primary.600'},
-            },
-          },
-        },
-        IconButton: {
-          defaultProps: {
-            colorScheme: 'primary',
-          },
-        },
-      },
-    },
+    ...baseTheme.components,
   },
 });
 export default darkTheme;
