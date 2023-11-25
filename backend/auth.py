@@ -156,12 +156,16 @@ def auth_endpoint():
         )
     else:
         # Create new user
-        logging.info(f"Creating user {username}")
-        users_collection.insert_one(user_data)
+        user_data["username"] = username
+        logging.info(f"Creating user {username}, {user_data}")
+        result = users_collection.insert_one(user_data)
+        logging.info(f"Result: {result}")
 
     # Get user object from database
     user = users_collection.find_one(
         {"username": username})
+
+    logging.info(f"User after signin: {user}")
 
     user = bson_to_json(user)
 
