@@ -156,7 +156,7 @@ def auth_endpoint():
         )
     else:
         # Create new user
-        logging.info(f"Creating user {user_data['username']}")
+        logging.info(f"Creating user {username}")
         users_collection.insert_one(user_data)
 
     # Get user object from database
