@@ -30,7 +30,7 @@ const styles = StyleSheet.create({
 
 const MapView: React.FC = () => {
   const theme = useTheme();
-  const {user} = useStore();
+  const {user, region } = useStore();
   const [manualRegion, setManualRegion] = React.useState<boolean>(false);
   const [eventClusters, setEventClusters] = React.useState<EventCluster[]>([]);
   const [epsilon, setEpsilon] = React.useState<number>(0.01); // Define epsilon based on your coordinate system
@@ -275,12 +275,7 @@ const MapView: React.FC = () => {
           ref={mapRef}
           style={styles.map}
           showsUserLocation={true}
-          initialRegion={{
-            latitude: 59.269249,
-            longitude: 15.206333,
-            latitudeDelta: 0.0922,
-            longitudeDelta: 0.0421,
-          }}
+          initialRegion={region}
           // onPanDrag={onTouchingMap}
           // onCalloutPress={() => onTouchingMap()}
           // onDoublePress={() => onTouchingMap()}
