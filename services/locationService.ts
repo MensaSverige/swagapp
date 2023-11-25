@@ -1,19 +1,19 @@
 import {User} from '../types/user';
 import apiClient from '../apiClient';
-import UserWithLocation, { isUserWithLocation } from '../types/userWithLocation';
+import UserWithLocation, {isUserWithLocation} from '../types/userWithLocation';
 
 export interface LocationUpdateData {
   username: string;
   location: {
     latitude: number;
     longitude: number;
-  }
+  };
 }
 
 export const getUserLocations = async () => {
   const response = await apiClient.get('/users_showing_location');
   console.log('response', response);
-  if(response.data){
+  if (response.data) {
     return response.data.filter(isUserWithLocation);
   }
   return [] as UserWithLocation[];

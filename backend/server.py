@@ -124,8 +124,6 @@ def update(model_name, schema, collection, item_id, username):
 
         # If model is user and username does not match, return unauthorized
         if model_name == 'user':
-            logging.info(f"User {username} is trying to update user {item_id}")
-
             if item_id == 'me':
                 item = collection.find_one({'username': username})
                 if item:
@@ -145,6 +143,8 @@ def update(model_name, schema, collection, item_id, username):
         item = request.json
         jsonschema.validate(instance=item, schema=schema)
 
+        logging.info(
+            f"Item successfully validated in {model_name}. Update: {item}")
         collection.replace_one({'_id': ObjectId(item_id)}, item)
 
         # Get whole item from database
@@ -220,11 +220,8 @@ def list_events():
 @app.route('/users_showing_location', methods=['GET'])
 def users_showing_location():
     try:
-        # get all users
-        allusers = list(db.user.find())
-        logging.info(f"all users: {allusers}")
-        users = list(db.user.find({'show_location': True, 'location': {'$ne': None}, 'location.latitude': {'$ne': None}, 'location.longitude': {'$ne': None}}))
-        logging.info(f"Users showing location: {users}")
+        users = list(db.user.find({'show_location': True, 'location': {
+                     '$ne': None}, 'location.latitude': {'$ne': None}, 'location.longitude': {'$ne': None}}))
         return jsonify(bson_to_json(users)), 200
     except Exception as e:
         logging.error(f"Error in GET /users_showing_location: {str(e)}")
