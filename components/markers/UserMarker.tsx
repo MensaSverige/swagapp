@@ -3,6 +3,8 @@ import {View, Image, StyleSheet} from 'react-native';
 import {Callout, Marker} from 'react-native-maps';
 import UserWithLocation from '../../types/userWithLocation';
 import {Heading} from 'native-base';
+import {faUser, faCircle} from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 
 const UserMarker: React.FC<{user: UserWithLocation; zIndex: number}> = ({
   user,
@@ -14,17 +16,25 @@ const UserMarker: React.FC<{user: UserWithLocation; zIndex: number}> = ({
         latitude: user.location.latitude,
         longitude: user.location.longitude,
       }}
+      anchor={{x: 0.5, y: 0.5}}
       zIndex={zIndex}>
       <View style={styles.marker}>
-        <Image source={{uri: user.avatar_url}} style={styles.avatar} />
+        {user.avatar_url ? (
+          <Image source={{uri: user.avatar_url}} style={styles.avatar} />
+        ) : (
+          <FontAwesomeIcon icon={faUser
+           } size={24} color="white"/>
+        )}
       </View>
       <Callout>
         <View style={styles.callout}>
           <Heading>{user.name}</Heading>
-          <Image
-            source={{uri: user.avatar_url}}
-            style={styles.callout_avatar}
-          />
+          {user.avatar_url && (
+            <Image
+              source={{uri: user.avatar_url}}
+              style={styles.callout_avatar}
+            />
+          )}
         </View>
       </Callout>
     </Marker>
@@ -41,6 +51,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: '#333',
   },
   avatar: {
     width: 46,

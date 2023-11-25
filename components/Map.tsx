@@ -276,7 +276,7 @@ const MapView: React.FC = () => {
           style={styles.map}
           showsUserLocation={true}
           initialRegion={region}
-          // onPanDrag={onTouchingMap}
+           // onPanDrag={onTouchingMap}
           // onCalloutPress={() => onTouchingMap()}
           // onDoublePress={() => onTouchingMap()}
           // onRegionChangeComplete={onMapRegionChangeComplete}

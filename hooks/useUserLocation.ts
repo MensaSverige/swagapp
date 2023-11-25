@@ -7,7 +7,7 @@ import {
 } from '../services/locationService';
 
 const useUserLocation = () => {
-  const {user, locationUpdateInterval, setUserLocation, setRegion} = useStore();
+  const {user, region, locationUpdateInterval, setUserLocation, setRegion} = useStore();
 
   // const checkLocationPermission = async () => {
   //     let permissionStatus = await check(PERMISSIONS.IOS.LOCATION_WHEN_IN_USE);
@@ -40,10 +40,9 @@ const useUserLocation = () => {
           ) {
             setUserLocation(latitude, longitude);
             setRegion({
+              ...region,
               latitude: latitude,
               longitude: longitude,
-              latitudeDelta: 0.0922,
-              longitudeDelta: 0.0421,
             });
             if (user.show_location) {
               const locationUpdateData: LocationUpdateData = {
@@ -53,6 +52,7 @@ const useUserLocation = () => {
                   longitude: longitude,
                 },
               };
+              console.log('locationUpdateData', locationUpdateData);
               updateUserLocation(locationUpdateData);
             }
           }
