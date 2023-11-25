@@ -122,19 +122,10 @@ def auth_endpoint():
     access_token = create_access_token(username)
     refresh_token = create_refresh_token(username)
 
-    # Fetch user's profile picture from the response
-    profile_picture_container = parse_html(
-        login_response.text, 'ipsUserPhoto', '</span')
-
-    profile_picture_tag = parse_html(profile_picture_container, '<img', '>')
-    profile_picture_tag = profile_picture_tag.replace("'", '"')
-    profile_picture_url = parse_html(profile_picture_tag, 'src="', '"')
-
     # User details from login
     user_data = {
         "username": request_body["username"].lower(),
         "name": user_name,
-        "avatar_url": profile_picture_url,
     }
 
     # Check if user exists
@@ -142,6 +133,21 @@ def auth_endpoint():
         {"username": user_data["username"]})
 
     if existing_user:
+
+        # If missing avatar, update avatar
+        if not existing_user.get("avatar_url"):
+
+            # Fetch user's profile picture from the response
+            profile_picture_container = parse_html(
+                login_response.text, 'ipsUserPhoto', '</span')
+
+            profile_picture_tag = parse_html(
+                profile_picture_container, '<img', '>')
+            profile_picture_tag = profile_picture_tag.replace("'", '"')
+            profile_picture_url = parse_html(profile_picture_tag, 'src="', '"')
+
+            user_data["avatar_url"] = profile_picture_url
+
         # Update user
         logging.info(f"Updating user {user_data['username']}: {user_data}")
         users_collection.update_one(
