@@ -31,6 +31,7 @@ interface ErrorResponse {
 }
 
 export const SigninForm = () => {
+  console.log('TEST_MODE', TEST_MODE);
   const theme = useTheme();
   const [username, setUsername] = React.useState('');
   const [password, setPassword] = React.useState('');
@@ -178,7 +179,7 @@ export const SigninForm = () => {
             <Spinner />
           ) : (
             <Button mt={8} onPress={handleLogin}>
-              {TEST_MODE ? 'Logga in i testläge' : 'Logga in'}
+              {TEST_MODE ? 'Logga in': 'Logga in i testläge' }
             </Button>
           )}
         </VStack>
