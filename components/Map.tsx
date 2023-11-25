@@ -151,132 +151,139 @@ const MapView: React.FC = () => {
     mapRef.current?.animateToRegion(newRegion, 500);
   };
 
-  useEffect(() => {
-    subscribeToEvents('map');
-    return () => {
-      unsubscribeToEvents('map');
-    };
-  }, [subscribeToEvents, unsubscribeToEvents]);
+  // useEffect(() => {
+  //   subscribeToEvents('map');
+  //   return () => {
+  //     unsubscribeToEvents('map');
+  //   };
+  // }, [subscribeToEvents, unsubscribeToEvents]);
 
-  useEffect(() => {
-    if (
-      mapRef.current &&
-      !manualRegion &&
-      (usersShowingLocation.length > 0 || events.length > 0)
-    ) {
-      // TODO: Add user location to this so map zooms to include users
-      const coordinates = events.map(item => ({
-        latitude: item.location.latitude,
-        longitude: item.location.longitude,
-      }));
+  // useEffect(() => {
+  //   if (
+  //     mapRef.current &&
+  //     !manualRegion &&
+  //     (usersShowingLocation.length > 0 || events.length > 0)
+  //   ) {
+  //     // TODO: Add user location to this so map zooms to include users
+  //     const coordinates = events.map(item => ({
+  //       latitude: item.location.latitude,
+  //       longitude: item.location.longitude,
+  //     }));
 
-      if (coordinates.length > 0) {
-        mapRef.current.fitToCoordinates(coordinates, {
-          edgePadding: {top: 50, right: 50, bottom: 50, left: 50},
-          animated: true,
-        });
-      }
-    }
+  //     if (coordinates.length > 0) {
+  //       mapRef.current.fitToCoordinates(coordinates, {
+  //         edgePadding: {top: 50, right: 50, bottom: 50, left: 50},
+  //         animated: true,
+  //       });
+  //     }
+  //   }
 
-    if (events.length > 0) {
-      const findNeighbors = (
-        event: EventWithLocation,
-        otherEvents: EventWithLocation[],
-      ) => {
-        return otherEvents.filter(
-          otherEvent =>
-            getCoordinateDistance(event.location, otherEvent.location) <=
-            epsilon,
-        );
-      };
+  //   if (events.length > 0) {
+  //     const findNeighbors = (
+  //       event: EventWithLocation,
+  //       otherEvents: EventWithLocation[],
+  //     ) => {
+  //       return otherEvents.filter(
+  //         otherEvent =>
+  //           getCoordinateDistance(event.location, otherEvent.location) <=
+  //           epsilon,
+  //       );
+  //     };
 
-      const expandCluster = (
-        cluster: EventCluster,
-        allClusters: EventCluster[],
-        event: EventWithLocation,
-        neighbors: EventWithLocation[],
-        visited: Set<EventWithLocation>,
-        otherEvents: EventWithLocation[],
-        minPts: number,
-      ) => {
-        cluster.events.push(event);
+  //     const expandCluster = (
+  //       cluster: EventCluster,
+  //       allClusters: EventCluster[],
+  //       event: EventWithLocation,
+  //       neighbors: EventWithLocation[],
+  //       visited: Set<EventWithLocation>,
+  //       otherEvents: EventWithLocation[],
+  //       minPts: number,
+  //     ) => {
+  //       cluster.events.push(event);
 
-        neighbors.forEach(neighbor => {
-          if (!visited.has(neighbor)) {
-            visited.add(neighbor);
-            const neighborNeighbors = findNeighbors(neighbor, otherEvents);
-            if (neighborNeighbors.length >= minPts) {
-              neighbors = neighbors.concat(neighborNeighbors);
-            }
-          }
+  //       neighbors.forEach(neighbor => {
+  //         if (!visited.has(neighbor)) {
+  //           visited.add(neighbor);
+  //           const neighborNeighbors = findNeighbors(neighbor, otherEvents);
+  //           if (neighborNeighbors.length >= minPts) {
+  //             neighbors = neighbors.concat(neighborNeighbors);
+  //           }
+  //         }
 
-          if (!isEventInClusters(cluster, allClusters, neighbor)) {
-            cluster.events.push(neighbor);
-          }
-        });
-      };
+  //         if (!isEventInClusters(cluster, allClusters, neighbor)) {
+  //           cluster.events.push(neighbor);
+  //         }
+  //       });
+  //     };
 
-      const isEventInClusters = (
-        currentCluster: EventCluster,
-        allClusters: EventCluster[],
-        event: EventWithLocation,
-      ) => {
-        return allClusters
-          .concat([currentCluster])
-          .some(cluster => cluster.events.includes(event));
-      };
+  //     const isEventInClusters = (
+  //       currentCluster: EventCluster,
+  //       allClusters: EventCluster[],
+  //       event: EventWithLocation,
+  //     ) => {
+  //       return allClusters
+  //         .concat([currentCluster])
+  //         .some(cluster => cluster.events.includes(event));
+  //     };
 
-      const clusters: EventCluster[] = [];
-      const visited = new Set<EventWithLocation>();
-      const minPts = 1;
+  //     const clusters: EventCluster[] = [];
+  //     const visited = new Set<EventWithLocation>();
+  //     const minPts = 1;
 
-      events.forEach(event => {
-        if (!visited.has(event)) {
-          visited.add(event);
-          const neighbors = findNeighbors(event, events);
+  //     events.forEach(event => {
+  //       if (!visited.has(event)) {
+  //         visited.add(event);
+  //         const neighbors = findNeighbors(event, events);
 
-          if (neighbors.length >= minPts) {
-            const cluster: EventCluster = {
-              events: [],
-              centerCoordinate: event.location,
-            };
-            expandCluster(
-              cluster,
-              clusters,
-              event,
-              neighbors,
-              visited,
-              events,
-              minPts,
-            );
-            clusters.push(cluster);
-          }
-        }
-      });
+  //         if (neighbors.length >= minPts) {
+  //           const cluster: EventCluster = {
+  //             events: [],
+  //             centerCoordinate: event.location,
+  //           };
+  //           expandCluster(
+  //             cluster,
+  //             clusters,
+  //             event,
+  //             neighbors,
+  //             visited,
+  //             events,
+  //             minPts,
+  //           );
+  //           clusters.push(cluster);
+  //         }
+  //       }
+  //     });
 
-      // Calculate center coordinate for each cluster
-      clusters.forEach(cluster => {
-        cluster.centerCoordinate = getCenterCoordinate(cluster.events);
-      });
+  //     // Calculate center coordinate for each cluster
+  //     clusters.forEach(cluster => {
+  //       cluster.centerCoordinate = getCenterCoordinate(cluster.events);
+  //     });
 
-      setEventClusters(clusters);
-    }
-  }, [usersShowingLocation, events, manualRegion, epsilon]);
+  //     setEventClusters(clusters);
+  //   }
+  // }, [usersShowingLocation, events, manualRegion, epsilon]);
 
   return (
     <Center w="100%" h="100%">
       <Box safeArea flex={1} w="100%" mx="auto">
-        <Box style={styles.refreshIndicatorsWrapper}>
+        {/* <Box style={styles.refreshIndicatorsWrapper}>
           {eventsRefreshing && <Text>Laddar evenemang...</Text>}
-        </Box>
+        </Box> */}
         <ReactNativeMapView
           ref={mapRef}
           style={styles.map}
           showsUserLocation={true}
-          onPanDrag={onTouchingMap}
-          onCalloutPress={() => onTouchingMap()}
-          onDoublePress={() => onTouchingMap()}
-          onRegionChangeComplete={onMapRegionChangeComplete}>
+          initialRegion={{
+            latitude: 59.269249,
+            longitude: 15.206333,
+            latitudeDelta: 0.0922,
+            longitudeDelta: 0.0421,
+          }}
+          // onPanDrag={onTouchingMap}
+          // onCalloutPress={() => onTouchingMap()}
+          // onDoublePress={() => onTouchingMap()}
+          // onRegionChangeComplete={onMapRegionChangeComplete}
+          >
           {usersShowingLocation && usersShowingLocation.map(u => (
             u.username != user?.username && (
             <UserMarker
@@ -285,7 +292,7 @@ const MapView: React.FC = () => {
               zIndex={100}
             />)
           ))}
-          {eventClusters.map((cluster, i) => (
+          {/* {eventClusters.map((cluster, i) => (
             // This draws the lines between events and a cluster center
             <React.Fragment key={`event-cluster-${i}`}>
               <ClusterMarker
@@ -305,7 +312,7 @@ const MapView: React.FC = () => {
                   />
                 ))}
             </React.Fragment>
-          ))}
+          ))} */}
         </ReactNativeMapView>
       </Box>
     </Center>

@@ -11,26 +11,21 @@ import {
   Switch,
   FormControl,
   Stack,
+  Spinner,
 } from 'native-base';
 import apiClient from '../apiClient';
 import useStore from '../store/store';
 import * as Keychain from 'react-native-keychain';
+import {User} from '../types/user';
 
 const Profile: React.FC = () => {
   // Get current user and token from Zustand store
   const {user, setUser} = useStore();
 
-  // Local state for dirty form
-  const [dirtyForm, setDirtyForm] = useState(false);
-
   // Local state for form fields
   const [showLocation, setShowLocation] = useState(user?.show_location);
-
-  useEffect(() => {
-    if (showLocation !== user?.show_location) {
-      setDirtyForm(true);
-    }
-  }, [showLocation, user?.show_location]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [avararChanged, setAvatarChanged] = useState(false);
 
   const handleLogout = () => {
     Keychain.resetGenericPassword({service: 'credentials'});
@@ -40,6 +35,7 @@ const Profile: React.FC = () => {
   };
 
   const handleSave = async () => {
+    setIsLoading(true);
     if (!user) {
       return;
     }
@@ -53,12 +49,19 @@ const Profile: React.FC = () => {
       });
 
       if (response.status === 200 && response.data.status === 'success') {
-        const returnedUser = response.data.data;
+        const returnedUser = response.data.data as User;
         console.log('User after update', returnedUser);
-        setUser(returnedUser);
+
+        setUser({...user, 
+          avatar_url: returnedUser.avatar_url,
+          show_location: returnedUser.show_location,
+        });
       }
     } catch (error) {
       console.error('Failed to update profile:', error);
+    } finally {
+      setIsLoading(false);
+      setAvatarChanged(false);
     }
   };
 
@@ -68,14 +71,16 @@ const Profile: React.FC = () => {
 
   return (
     <Center w="100%" h="100%">
-      <ScrollView>
+      <ScrollView w="100%" h="100%" padding="10px">
         <Center pt={10}>
+          {!avararChanged && (
           <Image
             source={{uri: user.avatar_url}}
             alt="Profile image"
             size={150}
             borderRadius={100}
           />
+          )}
         </Center>
         <Box safeArea flex={1} pb={10} w="100%" mx="auto">
           <VStack space={4}>
@@ -109,6 +114,19 @@ const Profile: React.FC = () => {
               </Stack>
             </FormControl>
 
+            <FormControl isRequired>
+              <Stack>
+                <FormControl.Label>Avatar url</FormControl.Label>
+                <Input
+                  placeholder="https://example.com/avatar.png"
+                  value={user.avatar_url}
+                  onChangeText={(avatar_url: string) => {
+                    setUser({...user, avatar_url});
+                    setAvatarChanged(true);
+                  }}
+                />
+              </Stack>
+            </FormControl>
             <FormControl>
               <Stack>
                 <FormControl.Label>Visa position</FormControl.Label>
@@ -126,16 +144,28 @@ const Profile: React.FC = () => {
               </Stack>
             </FormControl>
 
-            <FormControl isDisabled={!dirtyForm}>
-              <Button onPress={handleSave} disabled={!dirtyForm}>
-                Spara
+            <FormControl>
+              <Button onPress={handleSave}>
+                <Text color="white">
+                  Spara
+                  {isLoading && (
+                    <Spinner
+                      color="white"
+                      top="10"
+                      size="sm"
+                      accessibilityLabel="Sparar..."
+                    />
+                  )}
+                </Text>
               </Button>
             </FormControl>
           </VStack>
           <VStack space={4} mt={10}>
             <Text>Du är inloggad som {user.username}</Text>
             <Button size="sm" onPress={() => handleLogout()}>
+            <Text color="white">
               Logga ut
+              </Text>
             </Button>
           </VStack>
         </Box>
