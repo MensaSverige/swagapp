@@ -123,14 +123,14 @@ def auth_endpoint():
     refresh_token = create_refresh_token(username)
 
     # User details from login
+    username = request_body["username"].lower()
     user_data = {
-        "username": request_body["username"].lower(),
         "name": user_name,
     }
 
     # Check if user exists
     existing_user = users_collection.find_one(
-        {"username": user_data["username"]})
+        {"username": username})
 
     if existing_user:
 
@@ -149,11 +149,10 @@ def auth_endpoint():
             user_data["avatar_url"] = profile_picture_url
 
         # Update user
-        logging.info(f"Updating user {user_data['username']}: {user_data}")
+        logging.info(f"Updating user {username}: {user_data}")
         users_collection.update_one(
-            {"username": user_data["username"]},
-            {"$set": {"name": user_data["name"],
-                      "avatar_url": user_data["avatar_url"]}}
+            {"username": username},
+            {"$set": user_data}
         )
     else:
         # Create new user
@@ -162,7 +161,7 @@ def auth_endpoint():
 
     # Get user object from database
     user = users_collection.find_one(
-        {"username": user_data["username"]})
+        {"username": username})
 
     user = bson_to_json(user)
 
