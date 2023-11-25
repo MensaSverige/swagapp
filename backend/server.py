@@ -223,8 +223,7 @@ def users_showing_location():
         # get all users
         allusers = list(db.user.find())
         logging.info(f"all users: {allusers}")
-        users = list(db.user.find({'show_location': True, 'latitude': {
-                     '$ne': None}, 'longitude': {'$ne': None}}))
+        users = list(db.user.find({'show_location': True, 'location': {'$ne': None}, 'location.latitude': {'$ne': None}, 'location.longitude': {'$ne': None}}))
         logging.info(f"Users showing location: {users}")
         return jsonify(bson_to_json(users)), 200
     except Exception as e:
