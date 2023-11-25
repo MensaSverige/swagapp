@@ -35,7 +35,9 @@ const MapView: React.FC = () => {
   const [eventClusters, setEventClusters] = React.useState<EventCluster[]>([]);
   const [epsilon, setEpsilon] = React.useState<number>(0.01); // Define epsilon based on your coordinate system
 
-  const [usersShowingLocation, setUsersShowingLocation] = useState<UserWithLocation[]>([]);
+  const [usersShowingLocation, setUsersShowingLocation] = useState<
+    UserWithLocation[]
+  >([]);
   const {locationUpdateInterval} = useLocationState();
 
   useEffect(() => {
@@ -283,15 +285,18 @@ const MapView: React.FC = () => {
           // onCalloutPress={() => onTouchingMap()}
           // onDoublePress={() => onTouchingMap()}
           // onRegionChangeComplete={onMapRegionChangeComplete}
-          >
-          {usersShowingLocation && usersShowingLocation.map(u => (
-            u.username != user?.username && (
-            <UserMarker
-              key={`user-${u.username}`}
-              user={u}
-              zIndex={100}
-            />)
-          ))}
+        >
+          {usersShowingLocation &&
+            usersShowingLocation.map(
+              u =>
+                u.username != user?.username && (
+                  <UserMarker
+                    key={`user-${u.username}`}
+                    user={u}
+                    zIndex={100}
+                  />
+                ),
+            )}
           {/* {eventClusters.map((cluster, i) => (
             // This draws the lines between events and a cluster center
             <React.Fragment key={`event-cluster-${i}`}>
