@@ -21,8 +21,18 @@ services:
     image: mongo:latest
     volumes:
       - mongodata:/data/db
-    ports:
-      - "27017:27017"
+
+  mongo-express:
+    image: mongo-express:latest
+      - "8082:8081"
+    depends_on:
+      - mongo
+    restart: unless-stopped
+    environment:
+      ME_CONFIG_MONGODB_SERVER: mongo
+      ME_CONFIG_MONGODB_PORT: 27017
+      ME_CONFIG_BASICAUTH_USERNAME: admin
+      ME_CONFIG_BASICAUTH_PASSWORD: admin
 
 volumes:
   mongodata:

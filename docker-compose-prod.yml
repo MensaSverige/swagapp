@@ -7,8 +7,6 @@ services:
 
   backend:
     image: ghcr.io/skaramicke/swagapp/backend:latest
-    ports:
-      - "5000:5000"
     depends_on:
       - mongo
     volumes:
@@ -20,8 +18,14 @@ services:
     image: mongo:latest
     volumes:
       - /persistent/mongo:/data/db
-    ports:
-      - "27017:27017"
+
+  mongo-express:
+    image: mongo-express:latest
+    depends_on:
+      - mongo
+    restart: unless-stopped
+    env_file:
+      - fileName: /persistent/mongo-express.env
 
   watchtower:
     image: containrrr/watchtower
