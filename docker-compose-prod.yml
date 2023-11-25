@@ -24,8 +24,7 @@ services:
     depends_on:
       - mongo
     restart: unless-stopped
-    env_file:
-      - fileName: /persistent/mongo-express.env
+    env_file: /persistent/mongo-express.env
 
   watchtower:
     image: containrrr/watchtower
