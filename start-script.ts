@@ -29,15 +29,16 @@ const getWifiIPAddress = (): Promise<string> => {
 
 const setEnvironmentVariables = async (): Promise<void> => {
   try {
-    const isProd = process.argv.includes('--prod');
+    const isProd = process.argv.includes('--prod-server');
+    const testMode = process.argv.includes('--test-mode');
     const backendURL = isProd
       ? 'https://swag.mikael.green/api'
       : `http://${await getWifiIPAddress()}:5000`;
 
-    fs.writeFileSync('.env', `API_URL=${backendURL}\nTEST_MODE=${!isProd}\n`);
+    fs.writeFileSync('.env', `API_URL=${backendURL}\nTEST_MODE=${testMode}\n`);
 
     console.log(`Using Backend URL: ${backendURL}`);
-    console.log(`Test mode is set to: ${!isProd}`);
+    console.log(`Test mode is set to: ${testMode}`);
   } catch (error: any) {
     console.error(`Failed to set backend URL: ${error.message}`);
   }

@@ -18,7 +18,7 @@ import * as Keychain from 'react-native-keychain';
 import api from '../apiClient';
 import {FontAwesomeIcon} from '@fortawesome/react-native-fontawesome';
 import {faEye, faEyeSlash} from '@fortawesome/free-solid-svg-icons';
-import { TEST_MODE } from '@env';
+import {TEST_MODE} from '@env';
 
 interface LoginResponse {
   user: User;
