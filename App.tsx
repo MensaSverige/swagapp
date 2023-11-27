@@ -6,7 +6,7 @@ import {getTheme} from './theme';
 import {NavigationContainer} from '@react-navigation/native';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
-import MapView from './components/Map';
+import MapView from './components/Map/Map';
 import SplashScreen from 'react-native-splash-screen';
 import {User} from './types/user';
 import Profile from './components/Profile';
@@ -14,7 +14,6 @@ import useStore from './store/store';
 import Events from './components/Events';
 import * as Keychain from 'react-native-keychain';
 import apiClient from './apiClient';
-
 import {FontAwesomeIcon} from '@fortawesome/react-native-fontawesome';
 import {
   faMapLocationDot,

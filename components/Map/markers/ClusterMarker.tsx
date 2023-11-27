@@ -1,12 +1,12 @@
 import React from 'react';
-import EventWithLocation from '../../types/eventWithLocation';
+import EventWithLocation from '../../../types/eventWithLocation';
 import {Marker} from 'react-native-maps';
 import {ICustomTheme, Text, View, useTheme} from 'native-base';
 import {StyleSheet} from 'react-native';
 import EventMarker from './EventMarker';
-import {clockForTime} from '../../functions/events';
-import {getCoordinateDistance} from '../../functions/mapping';
-import {EventCluster} from '../../types/EventCluster';
+import {clockForTime} from '../../../functions/events';
+import {getCoordinateDistance} from '../../../functions/mapping';
+import {EventCluster} from '../../../types/EventCluster';
 
 export const clusterMarkerDiameter = 60;
 const containedEventSize = clusterMarkerDiameter / 3;

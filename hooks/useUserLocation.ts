@@ -7,31 +7,23 @@ import {
 } from '../services/locationService';
 
 const useUserLocation = () => {
-  const {user, region, locationUpdateInterval, setUserLocation, setRegion} = useStore();
-
-  // const checkLocationPermission = async () => {
-  //     let permissionStatus = await check(PERMISSIONS.IOS.LOCATION_WHEN_IN_USE);
-
-  //     if (permissionStatus === RESULTS.DENIED) {
-  //         const requestPermission = await request(PERMISSIONS.IOS.LOCATION_WHEN_IN_USE);
-  //         return requestPermission === RESULTS.GRANTED;
-  //     }
-
-  //     return permissionStatus === RESULTS.GRANTED;
-  // };
+  const {
+    user,
+    locationUpdateInterval,
+    hasLocationPermission,
+    setUserLocation,
+    setRegion,
+    region,
+  } = useStore();
 
   useEffect(() => {
     const fetchLocation = async () => {
-      // const hasPermission = await checkLocationPermission();
-
-      // if (!hasPermission) {
-      //     setError('Location permission denied');
-      //     return;
-      // }
+      if (!hasLocationPermission) {
+        return;
+      }
       Geolocation.getCurrentPosition(
         position => {
           const {latitude, longitude} = position.coords;
-
           if (
             user &&
             user.username != undefined &&
@@ -58,7 +50,7 @@ const useUserLocation = () => {
           }
         },
         e => {
-          //setError(e.message);
+          console.error('Geolocation.getCurrentPosition error: ', e);
         },
         {enableHighAccuracy: true, timeout: 15000, maximumAge: 10000},
       );

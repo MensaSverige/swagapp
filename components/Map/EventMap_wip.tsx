@@ -2,17 +2,18 @@ import React, {useEffect, useState, useRef} from 'react';
 import {StyleSheet} from 'react-native';
 import ReactNativeMapView, {Polyline, Region} from 'react-native-maps';
 import {Box, Center, Text, useTheme} from 'native-base';
-import {useEventsController} from '../services/eventsController';
+import {useEventsController} from '../../services/eventsController';
 import UserMarker from './markers/UserMarker';
 import ClusterMarker, {clusterMarkerDiameter} from './markers/ClusterMarker';
-import {EventCluster} from '../types/EventCluster';
-import EventWithLocation from '../types/eventWithLocation';
-import {findFarthestEvent, getCoordinateDistance} from '../functions/mapping';
-import {getCenterCoordinate} from '../functions/events';
-import useStore, {useLocationState} from '../store/store';
-import {User} from '../types/user';
-import {getUserLocations} from '../services/locationService';
-import UserWithLocation from '../types/userWithLocation';
+import {EventCluster} from '../../types/EventCluster';
+import EventWithLocation from '../../types/eventWithLocation';
+import {findFarthestEvent, getCoordinateDistance} from '../../functions/mapping';
+import {getCenterCoordinate} from '../../functions/events';
+import useStore, {useLocationState} from '../../store/store';
+import {User} from '../../types/user';
+import {getUserLocations} from '../../services/locationService';
+import UserWithLocation from '../../types/userWithLocation';
+import { requestLocationPermission } from '../../functions/requestPermission';
 
 const styles = StyleSheet.create({
   map: {
@@ -30,7 +31,7 @@ const styles = StyleSheet.create({
 
 const MapView: React.FC = () => {
   const theme = useTheme();
-  const {user, region } = useStore();
+  const {user, region, hasLocationPermission, setHasLocationPermission } = useStore();
   const [manualRegion, setManualRegion] = React.useState<boolean>(false);
   const [eventClusters, setEventClusters] = React.useState<EventCluster[]>([]);
   const [epsilon, setEpsilon] = React.useState<number>(0.01); // Define epsilon based on your coordinate system
@@ -39,8 +40,16 @@ const MapView: React.FC = () => {
     UserWithLocation[]
   >([]);
   const {locationUpdateInterval} = useLocationState();
-
+      
   useEffect(() => {
+    if (!hasLocationPermission) {
+      requestLocationPermission().then((hasPermission) => {
+        if (hasPermission) {
+          setHasLocationPermission(true);
+        }
+      });
+      return;
+    }
     getUserLocations().then(users => {
       console.log('usersShowingLocation', users);
       setUsersShowingLocation(users);
@@ -68,10 +77,6 @@ const MapView: React.FC = () => {
 
   const mapRef = useRef<ReactNativeMapView | null>(null);
   const mapRegion = useRef<Region | null>(null);
-
-  const onTouchingMap = () => {
-    setManualRegion(true);
-  };
 
   const onMapRegionChangeComplete = (region: Region) => {
     mapRegion.current = region;

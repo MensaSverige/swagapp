@@ -1,7 +1,7 @@
 import React from 'react';
 import {View, Image, StyleSheet} from 'react-native';
 import {Callout, Marker} from 'react-native-maps';
-import UserWithLocation from '../../types/userWithLocation';
+import UserWithLocation from '../../../types/userWithLocation';
 import {Heading} from 'native-base';
 import {faUser, faCircle} from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';

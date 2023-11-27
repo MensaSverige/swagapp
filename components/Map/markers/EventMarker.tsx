@@ -1,10 +1,10 @@
 import React from 'react';
 import {Callout, Marker} from 'react-native-maps';
-import EventWithLocation from '../../types/eventWithLocation';
-import EventCard from '../cards/EventCard';
+import EventWithLocation from '../../../types/eventWithLocation';
+import EventCard from '../../cards/EventCard';
 import {StyleSheet, Dimensions, View, Text} from 'react-native';
-import TimeLeft from '../utilities/TimeLeft';
-import {clockForTime} from '../../functions/events';
+import TimeLeft from '../../utilities/TimeLeft';
+import {clockForTime} from '../../../functions/events';
 import {ICustomTheme, useTheme} from 'native-base';
 
 const screenWidth = Dimensions.get('window').width;
