@@ -15,7 +15,7 @@ import React from 'react';
 import {User} from '../types/user';
 import useStore from '../store/store';
 import * as Keychain from 'react-native-keychain';
-import api from '../apiClient';
+import apiClient from '../apiClient';
 import {FontAwesomeIcon} from '@fortawesome/react-native-fontawesome';
 import {faEye, faEyeSlash} from '@fortawesome/free-solid-svg-icons';
 import {TEST_MODE} from '@env';
@@ -31,7 +31,6 @@ interface ErrorResponse {
 }
 
 export const SigninForm = () => {
-  console.log('TEST_MODE', TEST_MODE);
   const theme = useTheme();
   const [username, setUsername] = React.useState('');
   const [password, setPassword] = React.useState('');
@@ -61,7 +60,7 @@ export const SigninForm = () => {
     }
 
     setIsLoading(true);
-    api
+    apiClient
       .post('/auth', {
         username: username,
         password: password,
@@ -70,25 +69,24 @@ export const SigninForm = () => {
       .then(async response => {
         if (response.status === 200) {
           const data: LoginResponse = response.data;
-          console.log('data', data);
           const user: User = data.user;
 
           if (data.access_token && data.refresh_token) {
             store.setUser(user);
-            await Keychain.setGenericPassword(
-              'accessToken',
-              data.access_token,
-              {
+            return Promise.all([
+              Keychain.setGenericPassword('accessToken', data.access_token, {
                 service: 'accessToken',
-              },
-            );
-            await Keychain.setGenericPassword(
-              'refreshToken',
-              data.refresh_token,
-              {
+              }),
+              Keychain.setGenericPassword('refreshToken', data.refresh_token, {
                 service: 'refreshToken',
-              },
-            );
+              }),
+            ]).catch(error => {
+              console.error('Keychain error', error);
+              setLoginErrorText(
+                'Något gick fel. Kunde inte spara dina inloggningsuppgifter.',
+              );
+              setShowLoginError(true);
+            });
           } else {
             console.error('Received null accessToken or refreshToken');
             setLoginErrorText('Något gick fel. Försök igen senare.');
@@ -107,7 +105,7 @@ export const SigninForm = () => {
                 'Testläge är inte aktiverat i backend. Appen borde inte köras i testläge.',
               );
             } else {
-              console.log('error data', data);
+              console.error('backend responded with status 400', data);
               setLoginErrorText('Något gick fel. Försök igen senare.');
             }
             setShowLoginError(true);
@@ -115,7 +113,7 @@ export const SigninForm = () => {
         }
       })
       .catch(error => {
-        console.error('Login error', error);
+        console.error('Login error', error.message || error);
         setLoginErrorText('Något gick fel. Försök igen senare.');
         setShowLoginError(true);
       })
@@ -179,7 +177,7 @@ export const SigninForm = () => {
             <Spinner />
           ) : (
             <Button mt={8} onPress={handleLogin}>
-              {TEST_MODE ? 'Logga in': 'Logga in i testläge' }
+              {TEST_MODE ? 'Logga in' : 'Logga in i testläge'}
             </Button>
           )}
         </VStack>

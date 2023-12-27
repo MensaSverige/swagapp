@@ -28,23 +28,31 @@ export const useEventsController = () => {
 
     setEventsRefreshing(true);
 
-    // Fetch user events
-    const userEventsResponse = await apiClient.get('/event');
-    if (userEventsResponse.status === 200) {
-      const events = userEventsResponse.data as Event[];
-      setUserEvents(events.filter(isFutureEvent));
-    }
+    const fetchUserEvents = apiClient.get('/event').then(response => {
+      if (response.status === 200) {
+        const events = response.data as Event[];
+        setUserEvents(events.filter(isFutureEvent));
+      }
+      return response;
+    });
 
-    // Fetch static events
-    const staticEventsResponse = await apiClient.get('/static_events');
-    if (staticEventsResponse.status === 200) {
-      const events = staticEventsResponse.data as Event[];
-      setStaticEvents(events.filter(isFutureEvent));
-    }
+    const fetchStaticEvents = apiClient.get('/static_events').then(response => {
+      if (response.status === 200) {
+        const events = response.data as Event[];
+        setStaticEvents(events.filter(isFutureEvent));
+      }
+      return response;
+    });
 
-    const lastFetched = new Date();
-    setEventsLastFetched(lastFetched);
-    setEventsRefreshing(false);
+    return Promise.all([fetchUserEvents, fetchStaticEvents])
+      .catch(error => {
+        console.error('Error fetching data:', error);
+      })
+      .finally(() => {
+        const lastFetched = new Date();
+        setEventsLastFetched(lastFetched);
+        setEventsRefreshing(false);
+      });
   }, [
     setUserEvents,
     setStaticEvents,

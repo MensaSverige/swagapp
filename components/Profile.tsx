@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, {useState} from 'react';
 import {
   Box,
   Center,
@@ -40,29 +40,28 @@ const Profile: React.FC = () => {
       return;
     }
 
-    console.log('User', user);
-
-    try {
-      const response = await apiClient.put('/user/' + user.id, {
+    return apiClient
+      .put('/user/' + user.id, {
         ...user,
         show_location: showLocation,
+      })
+      .then(response => {
+        if (response.status === 200 && response.data.status === 'success') {
+          const returnedUser = response.data.data as User;
+          setUser({
+            ...user,
+            avatar_url: returnedUser.avatar_url,
+            show_location: returnedUser.show_location,
+          });
+        }
+      })
+      .catch(error => {
+        console.error('Failed to update profile:', error.message || error);
+      })
+      .finally(() => {
+        setIsLoading(false);
+        setAvatarChanged(false);
       });
-
-      if (response.status === 200 && response.data.status === 'success') {
-        const returnedUser = response.data.data as User;
-        console.log('User after update', returnedUser);
-
-        setUser({...user, 
-          avatar_url: returnedUser.avatar_url,
-          show_location: returnedUser.show_location,
-        });
-      }
-    } catch (error) {
-      console.error('Failed to update profile:', error);
-    } finally {
-      setIsLoading(false);
-      setAvatarChanged(false);
-    }
   };
 
   if (!user) {
@@ -74,12 +73,12 @@ const Profile: React.FC = () => {
       <ScrollView w="100%" h="100%" padding="10px">
         <Center pt={10}>
           {!avararChanged && (
-          <Image
-            source={{uri: user.avatar_url}}
-            alt="Profile image"
-            size={150}
-            borderRadius={100}
-          />
+            <Image
+              source={{uri: user.avatar_url}}
+              alt="Profile image"
+              size={150}
+              borderRadius={100}
+            />
           )}
         </Center>
         <Box safeArea flex={1} pb={10} w="100%" mx="auto">
@@ -133,7 +132,6 @@ const Profile: React.FC = () => {
                 <Switch
                   isChecked={showLocation}
                   onToggle={show_location => {
-                    console.log('show_location', show_location);
                     setShowLocation(show_location);
                   }}
                   accessibilityLabel="Visa min position på kartan"
@@ -163,9 +161,7 @@ const Profile: React.FC = () => {
           <VStack space={4} mt={10}>
             <Text>Du är inloggad som {user.username}</Text>
             <Button size="sm" onPress={() => handleLogout()}>
-            <Text color="white">
-              Logga ut
-              </Text>
+              <Text color="white">Logga ut</Text>
             </Button>
           </VStack>
         </Box>

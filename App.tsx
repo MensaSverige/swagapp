@@ -116,9 +116,15 @@ function App(): JSX.Element {
                 const userData: User = response.data;
                 setUser(userData);
               } else {
-                Keychain.resetGenericPassword();
-                console.log('Removing tokens from keychain');
+                return response.data().then((data: any) => {
+                  throw new Error(`Could not get user object. Data: ${data}`);
+                });
               }
+            })
+            .catch(error => {
+              console.error(error);
+              Keychain.resetGenericPassword();
+              console.log('Removing tokens from keychain');
             })
             .finally(() => {
               setIsTryingToLogin(false);

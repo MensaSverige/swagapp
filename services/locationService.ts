@@ -10,27 +10,42 @@ export interface LocationUpdateData {
   };
 }
 
-export const getUserLocations = async () => {
-  const response = await apiClient.get('/users_showing_location');
-  console.log('response', response);
-  if (response.data) {
-    return response.data.filter(isUserWithLocation);
-  }
-  return [] as UserWithLocation[];
+export const getUserLocations = async (): Promise<UserWithLocation[]> => {
+  return apiClient
+    .get('/users_showing_location')
+    .then(
+      response => {
+        console.log('response', response);
+        if (response.data) {
+          return response.data.filter(isUserWithLocation);
+        }
+        return [];
+      },
+      error => {
+        throw new Error(error.message || error);
+      },
+    )
+    .catch(error => {
+      console.error('Error fetching user locations:', error);
+    });
 };
 
 export const updateUserLocation = async (data: LocationUpdateData) => {
-  try {
-    const respose = await apiClient.post(
-      '/update_user_location',
-      JSON.stringify(data),
-    );
-
-    console.log('Location updated successfully:', respose);
-  } catch (error: any) {
-    console.error('Error updating location:', error.message || error);
-  }
+  return apiClient
+    .post('/update_user_location', JSON.stringify(data))
+    .then(
+      response => {
+        console.log('Location updated successfully:', response);
+      },
+      error => {
+        throw new Error(error.message || error);
+      },
+    )
+    .catch(error => {
+      console.error('Error updating location:', error.message || error);
+    });
 };
+
 function generateFakeUserLocations(numberOfUsers: number) {
   const fakeUsers: User[] = [];
 
