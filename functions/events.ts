@@ -2,6 +2,9 @@ import {LatLng} from 'react-native-maps';
 import EventWithLocation from '../types/eventWithLocation';
 
 export function clockForTime(time: string) {
+  if (!time) {
+    return '🕛';
+  }
   return [
     '🕛',
     '🕐',

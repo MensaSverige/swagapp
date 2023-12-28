@@ -2,6 +2,7 @@
   "type": "object",
   "properties": {
     "id": {"type": "string"},
+    "owner": {"type": "string"},
     "name": {"type": "string"},
     "location": {
       "type": "object",
@@ -16,8 +17,21 @@
     },
     "start": {"type": "string", "format": "date-time"},
     "end": {"type": "string", "format": "date-time"},
-    "description": {"type": "string"}
+    "description": {"type": "string"},
+    "reports": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "user": {"type": "string"},
+          "text": {"type": "string"}
+        },
+        "required": ["text"],
+        "additionalProperties": false
+      },
+      "default": []
+    }
   },
-  "required": ["id", "name", "start"],
+  "required": ["id", "name", "start", "owner"],
   "additionalProperties": false
 }

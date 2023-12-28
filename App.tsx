@@ -1,4 +1,10 @@
-import {Center, NativeBaseProvider, Spinner, useTheme} from 'native-base';
+import {
+  Center,
+  ICustomTheme,
+  NativeBaseProvider,
+  Spinner,
+  useTheme,
+} from 'native-base';
 import {Appearance, ColorSchemeName} from 'react-native';
 import React, {useState, useEffect} from 'react';
 import {SigninForm} from './components/SigninForm';
@@ -11,7 +17,7 @@ import SplashScreen from 'react-native-splash-screen';
 import {User} from './types/user';
 import Profile from './components/Profile';
 import useStore from './store/store';
-import Events from './components/Events';
+import Events from './components/Events/Events';
 import * as Keychain from 'react-native-keychain';
 import apiClient from './apiClient';
 import {FontAwesomeIcon} from '@fortawesome/react-native-fontawesome';
@@ -21,8 +27,15 @@ import {
   faAddressCard,
 } from '@fortawesome/free-solid-svg-icons';
 import useUserLocation from './hooks/useUserLocation';
+import EventForm from './components/Events/EventForm';
+import FutureUserEvent from './types/futureUserEvent';
 
-const Stack = createNativeStackNavigator();
+export type RootStackParamList = {
+  Start: undefined;
+  EventForm: {event: FutureUserEvent | null};
+};
+
+const Stack = createNativeStackNavigator<RootStackParamList>();
 const BottomTab = createBottomTabNavigator();
 
 interface TabBarIconProps {
@@ -44,7 +57,7 @@ const ProfileIcon: React.FC<TabBarIconProps> = ({color, size}) => (
 );
 
 function LoggedInTabs() {
-  const theme = useTheme();
+  const theme = useTheme() as ICustomTheme;
   const screenOptions = {
     tabBarStyle: {
       backgroundColor: theme.colors.background[900],
@@ -145,9 +158,11 @@ function App(): JSX.Element {
   }, []);
 
   useEffect(() => {
-    const subscription = Appearance.addChangeListener(({colorScheme}) => {
-      setColorScheme(colorScheme);
-    });
+    const subscription = Appearance.addChangeListener(
+      ({colorScheme: newColorScheme}) => {
+        setColorScheme(newColorScheme);
+      },
+    );
 
     return () => subscription.remove();
   }, []);
@@ -169,6 +184,18 @@ function App(): JSX.Element {
               }
             }}
           </Stack.Screen>
+          <Stack.Screen
+            name="EventForm"
+            component={EventForm}
+            options={{
+              title: 'Skapa evenemang',
+              presentation: 'modal',
+              headerTintColor: theme.colors.primary[500],
+              headerStyle: {
+                backgroundColor: theme.colors.background[900],
+              },
+            }}
+          />
         </Stack.Navigator>
       </NavigationContainer>
     </NativeBaseProvider>

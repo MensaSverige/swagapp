@@ -3,6 +3,8 @@ import apiClient from '../apiClient';
 import {useCallback, useEffect, useRef, useState} from 'react';
 import {Event} from '../types/event';
 import {isFutureEvent} from '../types/futureEvent';
+import {UserEvent} from '../types/user_event';
+import {isFutureUserEvent} from '../types/futureUserEvent';
 
 const DATA_STALE_INTERVAL = 1000 * 60 * 5; // 5 minutes
 
@@ -28,10 +30,10 @@ export const useEventsController = () => {
 
     setEventsRefreshing(true);
 
-    const fetchUserEvents = apiClient.get('/event').then(response => {
+    const fetchUserEvents = apiClient.get('/user_event').then(response => {
       if (response.status === 200) {
         const events = response.data as Event[];
-        setUserEvents(events.filter(isFutureEvent));
+        setUserEvents(events.filter(isFutureUserEvent));
       }
       return response;
     });

@@ -5,15 +5,19 @@ import EventWithLocation, {
   isEventWithLocation,
 } from '../types/eventWithLocation';
 import FutureEvent from '../types/futureEvent';
+import FutureUserEvent from '../types/futureUserEvent';
+import UserEventWithLocation, {
+  isUserEventWithLocation,
+} from '../types/userEventWithLocation';
 
 interface State {
   config: {
     testMode: boolean;
   };
   user: User | null;
-  visibleEvents: FutureEvent[];
-  eventsWithLocation: EventWithLocation[];
-  userEvents: FutureEvent[];
+  visibleEvents: (FutureEvent | FutureUserEvent)[];
+  eventsWithLocation: (EventWithLocation | UserEventWithLocation)[];
+  userEvents: FutureUserEvent[];
   showUserEvents: boolean;
   staticEvents: FutureEvent[];
   showStaticEvents: boolean;
@@ -22,7 +26,7 @@ interface State {
 }
 interface Actions {
   setUser: (user: User | null) => void;
-  setUserEvents: (events: FutureEvent[]) => void;
+  setUserEvents: (events: FutureUserEvent[]) => void;
   setShowUserEvents: (showUserEvents: boolean) => void;
   setStaticEvents: (events: FutureEvent[]) => void;
   setShowStaticEvents: (showStaticEvents: boolean) => void;
@@ -84,9 +88,12 @@ export const useStore = create<State & Actions & LocationState>(set => ({
   },
   updateEventsWithLocation: () => {
     const {userEvents, staticEvents} = useStore.getState();
-    const newEventsWithLocation = userEvents
-      .concat(staticEvents)
-      .filter(isEventWithLocation);
+    const eventsWithLocation = staticEvents.filter(isEventWithLocation);
+    const userEventsWithLocation = userEvents.filter(isUserEventWithLocation);
+    const newEventsWithLocation = [
+      ...eventsWithLocation,
+      ...userEventsWithLocation,
+    ];
     set({eventsWithLocation: newEventsWithLocation});
   },
 }));

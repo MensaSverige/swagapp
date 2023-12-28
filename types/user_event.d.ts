@@ -5,8 +5,9 @@
  * and run json-schema-to-typescript to regenerate this file.
  */
 
-export interface Event {
+export interface UserEvent {
   id: string;
+  owner: string;
   name: string;
   location?: {
     description?: string;
@@ -17,4 +18,8 @@ export interface Event {
   start: string;
   end?: string;
   description?: string;
+  reports?: {
+    user?: string;
+    text: string;
+  }[];
 }

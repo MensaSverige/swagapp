@@ -1,71 +1,94 @@
-import {Box, Card, Heading, Text} from 'native-base';
-import React from 'react';
-import {Event} from '../../types/event';
+import {Box, Card, Heading, ICustomTheme, Text, useTheme} from 'native-base';
+import React, { useEffect } from 'react';
 import {TouchableOpacity} from 'react-native';
 import TimeLeft from '../utilities/TimeLeft';
 import {clockForTime} from '../../functions/events';
+import {Event} from '../../types/event';
+import {isFutureUserEvent} from '../../types/futureUserEvent';
+import useStore from '../../store/store';
+import {FontAwesomeIcon} from '@fortawesome/react-native-fontawesome';
+import {faEdit} from '@fortawesome/free-solid-svg-icons';
+import {useNavigation} from '@react-navigation/native';
+import {NativeStackNavigationProp} from '@react-navigation/native-stack';
+import {RootStackParamList} from '../../App';
 
 function formatDateAndTime(dateTimeStr: string, startDateTimeStr?: string) {
-  // Parse the Swedish date and time format, assuming it's in "yyyy-mm-dd hh:mm" format
-  const [datePart, timePart] = dateTimeStr.split(' ');
-  const [year, month, day] = datePart.split('-').map(Number);
+  const datetime = new Date(dateTimeStr);
+  const timePart = datetime.toLocaleTimeString('sv-SE', {
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+  const datePart = datetime.toLocaleDateString('sv-SE', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  });
 
   let formattedDate = '';
 
-  // If the date is further in the future than 6 months, show the year,
-  // so here's a value to compare to (days > 100)
+  // Calculate the difference in days
   const now = new Date();
-  const date = new Date(year, month - 1, day);
-  const diff = date.getTime() - now.getTime();
+  const diff = datetime.getTime() - now.getTime();
   const days = Math.floor(diff / (1000 * 60 * 60 * 24));
 
-  // If there's a start date provided, this is the end date of an event and
-  // then we only show the date if it's different from the start date
-  if (startDateTimeStr) {
-    const [startDatePart] = startDateTimeStr.split(' ');
-    if (startDatePart !== datePart) {
-      if (days > 180) {
-        formattedDate = `${day}/${month} ${year}`;
-      } else {
-        formattedDate = `${day}/${month}`;
-      }
-    }
+  // Determine whether to show the year
+  if (days > 180) {
+    formattedDate = datePart;
   } else {
-    if (days > 180) {
-      formattedDate = `${day}/${month} ${year}`;
-    } else {
-      formattedDate = `${day}/${month}`;
+    formattedDate = datePart.slice(0, -5); // Remove year
+  }
+
+  // For end date, only show if different from start date
+  if (startDateTimeStr) {
+    const startDate = new Date(startDateTimeStr);
+    const startDatePart = startDate.toLocaleDateString('sv-SE', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+    });
+
+    if (startDatePart === datePart) {
+      formattedDate = ''; // Same date, don't repeat
     }
   }
 
-  // If there is a time part, format it and append to the date string
-  if (timePart) {
-    const [hours, minutes] = timePart.split(':');
-    if (formattedDate === '') {
-      return `${hours}${minutes === '00' ? '' : ':' + minutes}`;
-    } else {
-      return `${formattedDate} kl ${hours}${
-        minutes === '00' ? '' : ':' + minutes
-      }`;
-    }
+  // Time part formatting
+  if (timePart !== '00:00') {
+    // Assuming '00:00' means no specific time
+    return (formattedDate ? formattedDate + ' kl ' : '') + timePart;
   }
 
   return formattedDate;
 }
 
+const createStyles = (theme: ICustomTheme) => ({
+  editButton: {
+    color: theme.colors.accent[500],
+  },
+});
+
 const EventCard: React.FC<{
   event: Event;
-}> = ({event}) => {
+  initiallyOpen?: boolean;
+}> = ({event, initiallyOpen = false}) => {
+  const theme = useTheme() as ICustomTheme;
+  const styles = createStyles(theme);
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const user = useStore(state => state.user);
   const [comparisonDate, setComparisonDate] = React.useState(new Date());
-  const [open, setOpen] = React.useState(false);
+  const [open, setOpen] = React.useState(initiallyOpen || false);
 
-  React.useEffect(() => {
+  useEffect(() => {
     const interval = setInterval(() => {
       setComparisonDate(new Date());
     }, 1000);
 
     return () => clearInterval(interval);
   }, []);
+  useEffect(() => {
+    //update if event changes
+  }, [event, event.start, event.end, event.location?.marker, event.description])
 
   return (
     <TouchableOpacity onPress={() => setOpen(!open)}>
@@ -80,7 +103,7 @@ const EventCard: React.FC<{
               size={open ? 'lg' : 'sm'}
               isTruncated={!open}
               flexShrink={1}>
-              {event.name}
+              {event.name || 'Inget namn'}
             </Heading>
             <TimeLeft
               comparedTo={comparisonDate}
@@ -89,21 +112,37 @@ const EventCard: React.FC<{
               long
             />
           </Box>
-          <Heading size="lg" isTruncated={!open}>
-            {event.location.marker ?? clockForTime(event.start)}
-          </Heading>
+
+          {open &&
+          isFutureUserEvent(event) &&
+          event.owner === user?.username ? (
+            <TouchableOpacity
+              onPress={() => {
+                console.log('Edit event', event);
+                navigation.navigate('EventForm', {event: event});
+              }}>
+              <FontAwesomeIcon icon={faEdit} style={styles.editButton} />
+            </TouchableOpacity>
+          ) : (
+            <Heading size="lg" isTruncated={!open}>
+              {event.location?.marker || clockForTime(event.start)}
+            </Heading>
+          )}
         </Box>
         {open && (
           <>
             <Text mt="5">{event.description}</Text>
+            {isFutureUserEvent(event) && (
+              <Heading size="sm">Värd: {event.owner}</Heading>
+            )}
             <Box flex="1" flexDirection="row" justifyContent="space-between">
               <Heading size="xs" mt="5">
                 {formatDateAndTime(event.start)}
                 {event.end && ' – ' + formatDateAndTime(event.end, event.start)}
               </Heading>
-              {event.location.description && (
+              {event.location?.description && (
                 <Heading size="xs" mt="5">
-                  {event.location.description}
+                  {event.location?.description || ''}
                 </Heading>
               )}
             </Box>

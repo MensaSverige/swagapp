@@ -57,11 +57,17 @@ const getStyles = (theme: ICustomTheme) =>
     },
   });
 
-const EventMarker: React.FC<{event: EventWithLocation}> = ({event}) => {
-  const theme = useTheme();
+const EventMarker: React.FC<{
+  event: EventWithLocation;
+  hasCallout?: boolean;
+}> = ({event, hasCallout}) => {
+  const theme = useTheme() as ICustomTheme;
   const styles = getStyles(theme);
   return (
-    <Marker coordinate={event.location} anchor={{x: 0.5, y: 0.5}}>
+    <Marker
+      coordinate={event.location}
+      anchor={{x: 0.5, y: 0.5}}
+      pointerEvents={hasCallout ? 'auto' : 'none'}>
       <View style={styles.markerView}>
         <View style={styles.titlePill}>
           <Text style={{color: theme.colors.text[50]}}>{event.name}</Text>
@@ -77,9 +83,11 @@ const EventMarker: React.FC<{event: EventWithLocation}> = ({event}) => {
           />
         </View>
       </View>
-      <Callout tooltip style={styles.callout}>
-        <EventCard event={event} open={true} toggleOpen={() => {}} />
-      </Callout>
+      {hasCallout === true && (
+        <Callout tooltip style={styles.callout}>
+          <EventCard event={event} initiallyOpen />
+        </Callout>
+      )}
     </Marker>
   );
 };
