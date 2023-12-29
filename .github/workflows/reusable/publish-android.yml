@@ -1,9 +1,11 @@
 name: Build and Release Android App
 
 on:
-  push:
-    branches:
-      - main
+  workflow_call:
+    inputs:
+      version:
+        required: true
+        type: string
 
 jobs:
   build_and_release:
@@ -12,9 +14,16 @@ jobs:
     steps:
       - name: Set build version
         run: echo "BUILD_VERSION=$(date +%Y.%m.%d)-$GITHUB_RUN_NUMBER" >> $GITHUB_ENV
-        
+
       - name: Checkout Code
         uses: actions/checkout@v2
+
+      - name: Extract Date from Tag
+        id: date_extract
+        run: |
+          TAG_NAME="${GITHUB_REF##*/}"
+          RELEASE_DATE=$(echo $TAG_NAME | sed -e 's/Release //')
+          echo "RELEASE_DATE=$RELEASE_DATE" >> $GITHUB_ENV
 
       - name: Create .env file
         run: |
@@ -39,7 +48,7 @@ jobs:
       - name: Build Android App Bundle
         run: |
           cd android && chmod +x ./gradlew
-          ./gradlew assembleRelease --no-daemon
+          ./gradlew assembleRelease --no-daemon -PversionName=${{ inputs.version }}
 
       - name: Sign App APK
         uses: r0adkll/sign-android-release@v1
@@ -62,8 +71,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{ env.BUILD_VERSION  }}
-          release_name: Release ${{ env.BUILD_VERSION  }}
+          tag_name: Release ${{ inputs.version }}
+          release_name: Release ${{ inputs.version  }}
           draft: false
           prerelease: false
 
@@ -74,5 +83,5 @@ jobs:
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ./android/app/build/outputs/apk/release/app-release-unsigned-signed.apk
-          asset_name: swag-app-${{ env.BUILD_VERSION  }}.apk
+          asset_name: swag-app-${{ inputs.version  }}.apk
           asset_content_type: application/vnd.android.package-archive

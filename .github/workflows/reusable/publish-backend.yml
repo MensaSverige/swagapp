@@ -1,17 +1,23 @@
 name: Publish Backend
 
 on:
-  push:
-    branches:
-      - main
+  workflow_call:
+    inputs:
+      docker_tag:
+        required: true
+        type: string
+      commit_message:
+        required: true
+        type: string
+      commit_hash:
+        required: true
+        type: string
 
 env:
   # Use ghcr.io for GitHub Container Registry
   REGISTRY: ghcr.io
   # GitHub repository as <account>/<repo>
   IMAGE_NAME: ${{ github.repository }}/backend
-  # Git commit information, default to empty string, used in health endpoint to identify backend version
-  GIT_COMMIT_INFO: ''
 
 jobs:
   build:
@@ -45,12 +51,6 @@ jobs:
           cd backend
           python -m pytest
 
-      # Extract desired git commit information
-      - name: Export GIT_COMMIT_INFO with git commit information
-        id: git_commit_info
-        run: |
-          echo "GIT_COMMIT_INFO=$(git log -1 --pretty=format:'%an <%ae>: %s')" >> $GITHUB_ENV
-
       # Install the cosign tool (for signing Docker images) except on PRs
       - name: Install cosign
         uses: sigstore/cosign-installer@v3.2.0
@@ -70,14 +70,13 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # Build and push Docker image
       - name: Build and push
         uses: docker/build-push-action@v2
         with:
           context: .
           file: ./backend.Dockerfile
           push: true
-          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ inputs.docker_tag }}
           build-args: |
-            GIT_COMMIT_INFO=${{ env.GIT_COMMIT_INFO }}
-            GIT_COMMIT_HASH=${{ github.sha }}
+            GIT_COMMIT_INFO=${{ inputs.commit_message }}
+            commit_hash=${{ inputs.commit_hash }}

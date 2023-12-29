@@ -1,8 +1,11 @@
 name: Publish Website
 
 on:
-  push:
-    branches: ['main']
+  workflow_call:
+    inputs:
+      docker_tag:
+        required: true
+        type: string
 
 env:
   # Use ghcr.io for GitHub Container Registry
@@ -49,4 +52,4 @@ jobs:
           context: .
           file: ./website.Dockerfile
           push: true
-          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ inputs.docker_tag }}
