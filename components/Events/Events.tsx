@@ -8,7 +8,7 @@ import {useNavigation} from '@react-navigation/native';
 import {FontAwesomeIcon} from '@fortawesome/react-native-fontawesome';
 import {faPlus} from '@fortawesome/free-solid-svg-icons';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
-import {RootStackParamList} from '../../App';
+import {RootStackParamList} from '../../navigation/RootStackParamList';
 
 if (
   Platform.OS === 'android' &&

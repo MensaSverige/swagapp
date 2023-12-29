@@ -15,6 +15,7 @@ interface State {
     testMode: boolean;
   };
   user: User | null;
+  isTryingToLogin: boolean;
   visibleEvents: (FutureEvent | FutureUserEvent)[];
   eventsWithLocation: (EventWithLocation | UserEventWithLocation)[];
   userEvents: FutureUserEvent[];
@@ -26,6 +27,7 @@ interface State {
 }
 interface Actions {
   setUser: (user: User | null) => void;
+  setIsTryingToLogin: (isTryingToLogin: boolean) => void;
   setUserEvents: (events: FutureUserEvent[]) => void;
   setShowUserEvents: (showUserEvents: boolean) => void;
   setStaticEvents: (events: FutureEvent[]) => void;
@@ -43,6 +45,7 @@ export const useStore = create<State & Actions & LocationState>(set => ({
     testMode: false,
   },
   user: null,
+  isTryingToLogin: false,
   visibleEvents: [],
   eventsWithLocation: [],
   userEvents: [],
@@ -54,6 +57,7 @@ export const useStore = create<State & Actions & LocationState>(set => ({
 
   // Actions
   setUser: user => set({user}),
+  setIsTryingToLogin: isTryingToLogin => set({isTryingToLogin}),
 
   setUserEvents: userEvents => {
     set({userEvents});

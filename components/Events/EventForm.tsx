@@ -18,12 +18,11 @@ import {
   useTheme,
 } from 'native-base';
 import DatePicker from 'react-native-date-picker';
-import {RouteProp} from '@react-navigation/native';
+import {RouteProp, useRoute, useNavigation} from '@react-navigation/native';
 import apiClient from '../../apiClient';
 import {useEventsController} from '../../services/eventsController';
 import {clockForTime} from '../../functions/events';
-import {NativeStackNavigationProp} from '@react-navigation/native-stack';
-import {RootStackParamList} from '../../App';
+import {RootStackParamList} from '../../navigation/RootStackParamList';
 import EmojiSelector from 'react-native-emoji-selector';
 import EventMarker from '../Map/markers/EventMarker';
 import EventWithLocation from '../../types/eventWithLocation';
@@ -31,10 +30,9 @@ import Field from '../Field';
 import Fields from '../Fields';
 import EventCard from '../cards/EventCard';
 import FutureUserEvent from '../../types/futureUserEvent';
+import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 
-export type EventFormProps = {
-  event: FutureUserEvent | null;
-};
+type EventFormProps = RouteProp<RootStackParamList, 'EventForm'>;
 
 const initializeNewEvent = (region: Region): FutureUserEvent => {
   const initialStartTime = new Date(Date.now());
@@ -57,12 +55,9 @@ const initializeNewEvent = (region: Region): FutureUserEvent => {
   } as FutureUserEvent;
 };
 
-const EditEventForm: React.FC<
-  EventFormProps & {
-    navigation: NativeStackNavigationProp<RootStackParamList, 'EventForm'>;
-    route: RouteProp<RootStackParamList, 'EventForm'>;
-  }
-> = ({navigation, route}) => {
+const EditEventForm: React.FC =() => {
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const route = useRoute<EventFormProps>();
   const event = route.params.event;
 
   const theme = useTheme() as ICustomTheme;

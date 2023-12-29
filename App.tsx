@@ -1,112 +1,20 @@
 import {
-  Center,
-  ICustomTheme,
   NativeBaseProvider,
-  Spinner,
-  useTheme,
 } from 'native-base';
 import {Appearance, ColorSchemeName} from 'react-native';
 import React, {useState, useEffect} from 'react';
-import {SigninForm} from './components/SigninForm';
 import {getTheme} from './theme';
-import {NavigationContainer} from '@react-navigation/native';
-import {createNativeStackNavigator} from '@react-navigation/native-stack';
-import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
-import MapView from './components/Map/Map';
 import SplashScreen from 'react-native-splash-screen';
 import {User} from './types/user';
-import Profile from './components/Profile';
 import useStore from './store/store';
-import Events from './components/Events/Events';
 import * as Keychain from 'react-native-keychain';
 import apiClient from './apiClient';
-import {FontAwesomeIcon} from '@fortawesome/react-native-fontawesome';
-import {
-  faMapLocationDot,
-  faCalendarDays,
-  faAddressCard,
-} from '@fortawesome/free-solid-svg-icons';
 import useUserLocation from './hooks/useUserLocation';
-import EventForm from './components/Events/EventForm';
-import FutureUserEvent from './types/futureUserEvent';
-
-export type RootStackParamList = {
-  Start: undefined;
-  EventForm: {event: FutureUserEvent | null};
-};
-
-const Stack = createNativeStackNavigator<RootStackParamList>();
-const BottomTab = createBottomTabNavigator();
-
-interface TabBarIconProps {
-  focused: boolean;
-  color: string;
-  size: number;
-}
-
-const MapIcon: React.FC<TabBarIconProps> = ({color, size}) => (
-  <FontAwesomeIcon color={color} size={size} icon={faMapLocationDot} />
-);
-
-const CalendarIcon: React.FC<TabBarIconProps> = ({color, size}) => (
-  <FontAwesomeIcon color={color} size={size} icon={faCalendarDays} />
-);
-
-const ProfileIcon: React.FC<TabBarIconProps> = ({color, size}) => (
-  <FontAwesomeIcon color={color} size={size} icon={faAddressCard} />
-);
-
-function LoggedInTabs() {
-  const theme = useTheme() as ICustomTheme;
-  const screenOptions = {
-    tabBarStyle: {
-      backgroundColor: theme.colors.background[900],
-    },
-    tabBarActiveTintColor: theme.colors.primary[50],
-    tabBarInactiveTintColor: theme.colors.primary[900],
-    tabBarShowLabel: true,
-    headerStyle: {
-      backgroundColor: theme.colors.background[900],
-    },
-    headerTintColor: theme.colors.primary[500],
-  };
-  return (
-    <BottomTab.Navigator screenOptions={screenOptions}>
-      <BottomTab.Screen
-        name="Karta"
-        component={MapView}
-        options={{
-          tabBarIcon: MapIcon,
-        }}
-      />
-      <BottomTab.Screen
-        name="Evenemang"
-        component={Events}
-        options={{
-          tabBarIcon: CalendarIcon,
-        }}
-      />
-      <BottomTab.Screen
-        name="Profil"
-        component={Profile}
-        options={{
-          tabBarIcon: ProfileIcon,
-        }}
-      />
-    </BottomTab.Navigator>
-  );
-}
-
-const LoadingScreen: React.FC = () => (
-  <Center w="100%" h="100%">
-    <Spinner size="lg" />
-  </Center>
-);
+import {RootStackNavigation} from './navigation/RootStackNavigation';
 
 function App(): JSX.Element {
   useUserLocation();
-  const [isTryingToLogin, setIsTryingToLogin] = useState(false);
-  const {user, setUser} = useStore();
+  const {user, setUser, setIsTryingToLogin} = useStore();
 
   useEffect(() => {
     if (!user) {
@@ -171,33 +79,7 @@ function App(): JSX.Element {
 
   return (
     <NativeBaseProvider theme={theme}>
-      <NavigationContainer>
-        <Stack.Navigator initialRouteName="Start">
-          <Stack.Screen name="Start" options={{headerShown: false}}>
-            {() => {
-              if (isTryingToLogin) {
-                return <LoadingScreen />;
-              } else if (user === null) {
-                return <SigninForm />;
-              } else {
-                return <LoggedInTabs />;
-              }
-            }}
-          </Stack.Screen>
-          <Stack.Screen
-            name="EventForm"
-            component={EventForm}
-            options={{
-              title: 'Skapa evenemang',
-              presentation: 'modal',
-              headerTintColor: theme.colors.primary[500],
-              headerStyle: {
-                backgroundColor: theme.colors.background[900],
-              },
-            }}
-          />
-        </Stack.Navigator>
-      </NavigationContainer>
+      <RootStackNavigation />
     </NativeBaseProvider>
   );
 }

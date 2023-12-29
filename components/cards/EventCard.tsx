@@ -10,7 +10,7 @@ import {FontAwesomeIcon} from '@fortawesome/react-native-fontawesome';
 import {faEdit} from '@fortawesome/free-solid-svg-icons';
 import {useNavigation} from '@react-navigation/native';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
-import {RootStackParamList} from '../../App';
+import {RootStackParamList} from '../../navigation/RootStackParamList';
 
 function formatDateAndTime(dateTimeStr: string, startDateTimeStr?: string) {
   const datetime = new Date(dateTimeStr);
