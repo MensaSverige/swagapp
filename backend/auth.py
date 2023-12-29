@@ -1,3 +1,7 @@
+"""
+This module contains the authentication endpoint for the SWAG backend.  
+It handles user authentication, token generation, and user creation/update in the MongoDB database.
+"""
 import logging
 import os
 import json
@@ -18,6 +22,18 @@ users_collection = db['user']
 
 
 def parse_html(html, start, end):
+    """
+    Extracts a substring from the given HTML string between the specified start and end strings.
+
+    :param html: The HTML string to parse.
+    :type html: str
+    :param start: The starting string to search for.
+    :type start: str
+    :param end: The ending string to search for.
+    :type end: str
+    :returns: The extracted substring between the start and end strings.
+    :rtype: str
+    """
     start_idx = html.find(start) + len(start)
     end_idx = html.find(end, start_idx)
     return html[start_idx:end_idx]
@@ -25,6 +41,20 @@ def parse_html(html, start, end):
 
 @app.route('/auth', methods=['POST'])
 def auth_endpoint():
+    """
+    Authenticates a user and returns the access and refresh tokens.
+
+    This function handles the authentication process for a user. It checks the provided
+    credentials against a review user and password stored in separate text files. If the
+    credentials match, it generates access and refresh tokens for the user. If the
+    credentials do not match, it attempts to log in to a remote server using the provided
+    username and password. If the login is successful, it retrieves the user's name and
+    creates or updates the user in the database.
+
+    :returns: A JSON object containing the user object, access token, and refresh token.
+    :rtype: flask.Response
+    """
+
     review_user = ""
     review_password = ""
 

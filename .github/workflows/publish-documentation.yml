@@ -1,0 +1,57 @@
+name: Generate and Push Documentation to the GitHub repo wiki
+
+on:
+  push:
+    branches:
+      - develop
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.11
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r backend/requirements.txt
+
+      - name: Generate Backend Documentation
+        run: |
+          cp -a ./schema ./backend
+          cd docs
+          sphinx-apidoc -f -o ./source ../backend
+          sphinx-build -b markdown ./source ./backend
+          rm -rf ../backend/schema
+          rm -rf ../docs/backend/.doctrees
+          # Remove all mentions of ".md" from the generated files
+          find ./backend -type f -exec sed -i 's/\.md//g' {} \;
+
+      - name: Checkout Wiki Repository
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository }}.wiki.git
+          token: ${{ secrets.PAT_FOR_DOCS }}
+          ref: master
+          path: wiki
+
+      - name: Copy Documentation to Wiki Repo
+        run: |
+          cp -r docs/* wiki/
+          rm -rf wiki/source
+
+      - name: Commit and Push Changes to Wiki
+        run: |
+          cd wiki
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+          git add .
+          git commit -m "Update Wiki Documentation" || exit 0  # Exit gracefully if no changes
+          git push

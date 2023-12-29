@@ -9,3 +9,7 @@ pytest
 Flask-Testing
 requests-mock
 cryptography
+
+# Documentation
+sphinx
+sphinx-markdown-builder

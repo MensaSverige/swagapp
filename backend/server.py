@@ -1,4 +1,23 @@
+"""
+This module contains the server implementation for the SwagApp backend.
+
+The server is built using Flask, a lightweight web framework for Python.
+It provides various endpoints for handling CRUD operations on different models,
+such as creating, reading, updating, and deleting items.
+
+The server also includes authentication and authorization mechanisms using JWT tokens.
+It uses JSON schemas for validating the request payloads and interacts with a MongoDB database.
+
+Additionally, the server has endpoints for health checks, refreshing access tokens,
+listing static events, retrieving users showing their location, and updating user locations.
+
+The module also includes helper functions for logging, endpoint registration, and error handling.
+
+Note: The app is not started in this module. Instead, it is started in the wsgi.py :func:`wsgi` module.
+"""
+
 import logging
+import sys
 import jsonschema
 import json
 import os
@@ -19,12 +38,21 @@ logging.basicConfig(level=logging.INFO)
 app = Flask(__name__)
 db = None
 client = None
-schema_dir = './schema'
+schema_dir = os.path.join(os.path.dirname(__file__), 'schema')
 
 
 # Health check endpoint
 @app.route('/health', methods=['GET'])
 def health():
+    """
+    Endpoint for health check.
+
+    Retrieves commit information from environment variables and constructs a commit URL using the commit hash.
+    Returns the health check response with commit information.
+
+    :returns: A JSON response containing the health check information.
+    :rtype: flask.Response
+    """
     logging.info(f"health: {request.method} {request.path}")
 
     # Retrieve commit information from environment variables
@@ -44,6 +72,14 @@ def health():
 
 @app.route('/refresh_token', methods=['POST'])
 def refresh_token():
+    """
+    Refreshes the access token using the provided refresh token.
+
+    :returns: A JSON response containing the new access token.
+    :rtype: flask.Response
+
+    :raises: json.decoder.JSONDecodeError: If the request body is not valid JSON.
+    """
     refresh_token = request.json.get('refresh_token')
     if not refresh_token:
         return jsonify({'error': 'Missing refresh token'}), 400
@@ -59,6 +95,22 @@ def refresh_token():
 
 @requires_auth
 def create(model_name, schema, collection, username):
+    """
+    Create a new item in the specified collection.
+
+    :param model_name: The name of the model.
+    :type model_name: str
+    :param schema: The JSON schema for validating the item.
+    :type schema: dict
+    :param collection: The collection object to insert the item into.
+    :type collection: pymongo.collection.Collection
+    :param username: The username of the owner.
+    :type username: str
+    :returns: A tuple containing the JSON response and the HTTP status code.
+    :rtype: tuple
+    :raises jsonschema.ValidationError: If the item fails validation against the schema.
+    """
+
     logging.info(f"create: {request.method} {request.path}")
     try:
         item = request.json
@@ -77,6 +129,25 @@ def create(model_name, schema, collection, username):
 
 @requires_auth
 def read(model_name, collection, username, item_id=None):
+    """
+    Retrieve data from the collection based on the given model name, username, and item ID (optional).
+
+    :param model_name: The name of the model.
+    :type model_name: str
+    :param collection: The collection to retrieve data from.
+    :type collection: pymongo.collection.Collection
+    :param username: The username associated with the item.
+    :type username: str
+    :param item_id: The ID of the item to retrieve.
+    :type item_id: str
+    :returns: A tuple containing the JSON response and the HTTP status code.
+    :rtype: tuple
+    """
+
+    if model_name == 'event':
+        logging.info("Skipping user events for review purposes.")
+        return jsonify([]), 200
+
     logging.info(f"read: {request.method} {request.path}")
 
     if model_name == 'event':
@@ -113,6 +184,24 @@ def read(model_name, collection, username, item_id=None):
 
 @requires_auth
 def update(model_name, schema, collection, item_id, username):
+    """
+    Update an item in the collection based on the provided model name, schema, item ID, and username.
+
+    :param model_name: The name of the model.
+    :type model_name: str
+    :param schema: The JSON schema, used to check if the item is owned by matching the username.
+    :type schema: dict
+    :param collection: The collection to update the item in.
+    :type collection: pymongo.collection.Collection
+    :param item_id: The ID of the item to update.
+    :type item_id: str
+    :param username: The username of the authorized user.
+    :type username: str
+    :returns: A JSON response containing the updated item or an error message.
+    :rtype: flask.Response
+    :raises jsonschema.ValidationError: If there is a validation error.
+    """
+
     logging.info(f"update: {request.method} {request.path}")
     try:
         # If item.owner exists, check if authorized user is owner
@@ -163,6 +252,24 @@ def update(model_name, schema, collection, item_id, username):
 
 @requires_auth
 def delete(model_name, schema, collection, item_id, username):
+    """
+    Delete an item from the collection.
+
+    :param model_name: The name of the model.
+    :type model_name: str
+    :param schema: The JSON schema, used to check if the item is owned by matching the username.
+    :type schema: dict
+    :param collection: The collection to delete from.
+    :type collection: pymongo.collection.Collection
+    :param item_id: The ID of the item to delete.
+    :type item_id: str
+    :param username: The username of the authorized user.
+    :type username: str
+    :returns: A JSON response containing the status of the deletion.
+    :rtype: flask.Response
+    :raises jsonschema.ValidationError: If there is a validation error.
+    """
+
     logging.info(f"delete: {request.method} {request.path}")
     try:
         # If item.owner exists, check if authorized user is owner
@@ -199,6 +306,13 @@ app.add_url_rule('/auth', 'auth_endpoint',
 
 @app.route('/static_events', methods=['GET'])
 def list_events():
+    """
+    Retrieve a list of static events from static_events.json.
+
+    :returns: A JSON response containing the list of static events.
+    :rtype: flask.Response
+    """
+
     # Load static events from static_events.json
     logging.info(f"list_events: {request.method} {request.path}")
     static_events = []
@@ -220,6 +334,12 @@ def list_events():
 
 @app.route('/users_showing_location', methods=['GET'])
 def users_showing_location():
+    """
+    Retrieves a list of users who have enabled location sharing and have valid latitude and longitude coordinates.
+
+    :returns: A JSON response containing the list of users with their location information.
+    :rtype: flask.Response
+    """
     try:
         users = list(db.user.find({'show_location': True, 'location': {
                      '$ne': None}, 'location.latitude': {'$ne': None}, 'location.longitude': {'$ne': None}}))
@@ -231,6 +351,22 @@ def users_showing_location():
 
 @app.route('/update_user_location', methods=['POST'])
 def update_user_location():
+    """
+    Update the location of a user in the database.
+
+    This function extracts the user ID and new location from the request body,
+    checks if the user exists in the database, and updates the location if the user exists.
+    If the user does not exist or the location is already up to date, appropriate error messages are returned.
+
+    Returns:
+    - A JSON response with a success message and status code 200 if the location is updated successfully.
+    - A JSON response with an error message and status code 404 if the user is not found or the location is already up to date.
+    - A JSON response with an error message and status code 500 if there is an internal server error.
+
+    :returns: A JSON response containing the status of the location update.
+    :rtype: flask.Response
+    """
+
     try:
         # Extract the user ID and new location from the request body
         data = request.json
@@ -259,10 +395,18 @@ def update_user_location():
         return jsonify({'error': 'Internal Server Error'}), 500
 
 
-# Debugging of dynamic API
+@app.errorhandler(404)
+def page_not_found(e):
+    """
+    Handler for 404 Not Found errors.
 
-def log_endpoints():
-    '''Function to log all registered endpoints'''
+    Logs all registered endpoints when a 404 error occurs.
+
+    :param e: The error object.
+    :type e: Exception
+    :returns: A JSON response containing the error message and status code 404.
+    :rtype: flask.Response
+    """
     endpoints = []
     for rule in app.url_map.iter_rules():
         if isinstance(rule, Rule):
@@ -270,17 +414,15 @@ def log_endpoints():
                 f'{rule.endpoint}: {list(rule.methods)} @ {rule.rule}')
     logging.info("Registered Endpoints:\n" + "\n".join(endpoints))
 
-
-@app.errorhandler(404)
-def page_not_found(e):
-    '''Error handler for 404'''
-
-    # Log all endpoints when a 404 occurs
-    log_endpoints()
     return jsonify(error="404 Not Found"), 404
 
 
 def initialize_dynamic_routes():
+    """
+    Initializes dynamic routes based on the JSON schema files in the schema directory.
+    Each JSON file represents a model, and the routes are created accordingly.
+    """
+
     logging.info(f"Schema files: {os.listdir(schema_dir)}")
 
     for filename in os.listdir(schema_dir):
@@ -312,6 +454,14 @@ def initialize_dynamic_routes():
 
 
 def initialize_app():
+    """
+    Initializes the application by setting up the MongoDB client, ensuring the existence of the appstore review user,
+    and initializing dynamic routes.
+    """
+
+    if 'sphinx' in sys.modules:
+        return
+
     global db
 
     # Initialize MongoDB client
