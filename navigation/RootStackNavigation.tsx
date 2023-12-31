@@ -2,7 +2,7 @@ import {NavigationContainer} from '@react-navigation/native';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import {RootStackParamList} from './RootStackParamList';
 import {LoggedInTabs} from './LoggedInTabs';
-import {useStore} from '../store/store';
+import useStore from '../store/store';
 import {LoadingScreen} from '../components/LoadingScreen';
 import {SigninForm} from '../components/SigninForm';
 

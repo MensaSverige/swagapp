@@ -64,7 +64,7 @@ export const SigninForm = () => {
       .post('/auth', {
         username: username,
         password: password,
-        test: store.config.testMode,
+        test: store.testMode,
       })
       .then(async response => {
         if (response.status === 200) {

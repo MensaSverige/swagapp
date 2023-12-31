@@ -1,11 +1,11 @@
 import {Region} from 'react-native-maps';
 import UserWithLocation from '../types/userWithLocation';
-
+import {StateCreator} from 'zustand';
 interface Location {
   longitude: number;
   latitude: number;
 }
-export interface LocationState {
+export interface LocationSlice {
   currentLocation: Location;
   hasLocationPermission: boolean;
   locationUpdateInterval: number;
@@ -17,12 +17,13 @@ export interface LocationState {
   setRegion: (region: Region) => void;
   setUserLocation: (longitude: number, latitude: number) => void;
 }
-export const createLocationSlice = (set: any): LocationState => ({
+
+export const createLocationSlice: StateCreator<LocationSlice> = (set, get) => ({
   currentLocation: {
     longitude: 0,
     latitude: 0,
   },
-  hasLocationPermission: false,  
+  hasLocationPermission: false,
   locationUpdateInterval: 60000,
   region: {
     latitude: 59.269230831933754,
@@ -32,9 +33,16 @@ export const createLocationSlice = (set: any): LocationState => ({
   },
   showlocation: false,
   usersShowingLocation: [],
-  setUsersShowingLocation: usersShowingLocation =>  set({usersShowingLocation}),
+  setUsersShowingLocation: usersShowingLocation => set({usersShowingLocation}),
   setHasLocationPermission: hasLocationPermission =>
     set({hasLocationPermission}),
   setRegion: region => set({region}),
-  setUserLocation: (longitude, latitude) => set({longitude, latitude}),
+  setUserLocation: (longitude, latitude) =>
+    set(state => ({
+      currentLocation: {
+        ...state.currentLocation,
+        longitude,
+        latitude,
+      },
+    })),
 });

@@ -1,116 +1,23 @@
 import {create} from 'zustand';
-import {User} from '../types/user';
-import {LocationState, createLocationSlice} from './LocationState';
-import EventWithLocation, {
-  isEventWithLocation,
-} from '../types/eventWithLocation';
-import FutureEvent from '../types/futureEvent';
-import FutureUserEvent from '../types/futureUserEvent';
-import UserEventWithLocation, {
-  isUserEventWithLocation,
-} from '../types/userEventWithLocation';
+import {EventsSlice, createEventsSlice} from './EventsSlice';
+import {LocationSlice, createLocationSlice} from './LocationSlice';
+import {UserSlice, createUserSlice} from './UserSlice';
+import {SettingsSlice, createSettingsSlice} from './SettingsSlice';
 
-interface State {
-  config: {
-    testMode: boolean;
-  };
-  user: User | null;
-  isTryingToLogin: boolean;
-  visibleEvents: (FutureEvent | FutureUserEvent)[];
-  eventsWithLocation: (EventWithLocation | UserEventWithLocation)[];
-  userEvents: FutureUserEvent[];
-  showUserEvents: boolean;
-  staticEvents: FutureEvent[];
-  showStaticEvents: boolean;
-  eventsRefreshing: boolean;
-  eventsLastFetched: Date | null;
-}
-interface Actions {
-  setUser: (user: User | null) => void;
-  setIsTryingToLogin: (isTryingToLogin: boolean) => void;
-  setUserEvents: (events: FutureUserEvent[]) => void;
-  setShowUserEvents: (showUserEvents: boolean) => void;
-  setStaticEvents: (events: FutureEvent[]) => void;
-  setShowStaticEvents: (showStaticEvents: boolean) => void;
-  setEventsRefreshing: (eventsRefreshing: boolean) => void;
-  setEventsLastFetched: (eventsLastFetched: Date | null) => void;
-  updateVisibleEvents: () => void;
-  updateEventsWithLocation: () => void;
-}
-
-export const useStore = create<State & Actions & LocationState>(set => ({
-  ...createLocationSlice(set),
-  // Default state
-  config: {
-    testMode: false,
-  },
-  user: null,
-  isTryingToLogin: false,
-  visibleEvents: [],
-  eventsWithLocation: [],
-  userEvents: [],
-  showUserEvents: true,
-  staticEvents: [],
-  showStaticEvents: true,
-  eventsRefreshing: false,
-  eventsLastFetched: null,
-
-  // Actions
-  setUser: user => set({user}),
-  setIsTryingToLogin: isTryingToLogin => set({isTryingToLogin}),
-
-  setUserEvents: userEvents => {
-    set({userEvents});
-    useStore.getState().updateVisibleEvents();
-    useStore.getState().updateEventsWithLocation();
-  },
-  setShowUserEvents: showUserEvents => {
-    set({showUserEvents});
-    useStore.getState().updateVisibleEvents();
-    useStore.getState().updateEventsWithLocation();
-  },
-  setStaticEvents: staticEvents => {
-    set({staticEvents});
-    useStore.getState().updateVisibleEvents();
-    useStore.getState().updateEventsWithLocation();
-  },
-  setShowStaticEvents: showStaticEvents => {
-    set({showStaticEvents});
-    useStore.getState().updateVisibleEvents();
-    useStore.getState().updateEventsWithLocation();
-  },
-  setEventsRefreshing: eventsRefreshing => set({eventsRefreshing}),
-  setEventsLastFetched: eventsLastFetched => set({eventsLastFetched}),
-  updateVisibleEvents: () => {
-    const {showUserEvents, showStaticEvents, userEvents, staticEvents} =
-      useStore.getState();
-    const newVisibleEvents = [
-      ...(showUserEvents ? userEvents : []),
-      ...(showStaticEvents ? staticEvents : []),
-    ];
-    set({visibleEvents: newVisibleEvents});
-  },
-  updateEventsWithLocation: () => {
-    const {userEvents, staticEvents} = useStore.getState();
-    const eventsWithLocation = staticEvents.filter(isEventWithLocation);
-    const userEventsWithLocation = userEvents.filter(isUserEventWithLocation);
-    const newEventsWithLocation = [
-      ...eventsWithLocation,
-      ...userEventsWithLocation,
-    ];
-    set({eventsWithLocation: newEventsWithLocation});
-  },
-}));
-
+const useStore = create<EventsSlice & LocationSlice & UserSlice & SettingsSlice>()((...a) => ({
+  ...createEventsSlice(...a),
+  ...createLocationSlice(...a),
+  ...createUserSlice(...a),
+  ...createSettingsSlice(...a),
+}))
 export default useStore;
 
-export const useLocationState = () => {
+// optional to use slices in components. All slices and their methods are available in useStore
+export function useUserSlice(): UserSlice {
   return useStore(state => ({
-    currentLocation: state.currentLocation,
-    showlocation: state.showlocation,
-    region: state.region,
-    locationUpdateInterval: state.locationUpdateInterval,
-    setRegion: state.setRegion,
-    setUserLocation: state.setUserLocation,
+    user: state.user,
+    isTryingToLogin: state.isTryingToLogin,
+    setUser: state.setUser,
+    setIsTryingToLogin: state.setIsTryingToLogin,
   }));
-};
+}
