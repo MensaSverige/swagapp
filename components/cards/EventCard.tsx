@@ -1,5 +1,5 @@
 import {Box, Card, Heading, ICustomTheme, Text, useTheme} from 'native-base';
-import React, { useEffect } from 'react';
+import React, {useEffect} from 'react';
 import {TouchableOpacity} from 'react-native';
 import TimeLeft from '../utilities/TimeLeft';
 import {clockForTime} from '../../functions/events';
@@ -76,9 +76,8 @@ const EventCard: React.FC<{
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const user = useStore(state => state.user);
-  const [comparisonDate, setComparisonDate] = React.useState(new Date());
   const [open, setOpen] = React.useState(initiallyOpen || false);
-
+  const [comparisonDate, setComparisonDate] = React.useState(new Date());
   useEffect(() => {
     const interval = setInterval(() => {
       setComparisonDate(new Date());
@@ -88,7 +87,13 @@ const EventCard: React.FC<{
   }, []);
   useEffect(() => {
     //update if event changes
-  }, [event, event.start, event.end, event.location?.marker, event.description])
+  }, [
+    event,
+    event.start,
+    event.end,
+    event.location?.marker,
+    event.description,
+  ]);
 
   return (
     <TouchableOpacity onPress={() => setOpen(!open)}>

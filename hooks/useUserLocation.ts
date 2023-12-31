@@ -1,22 +1,23 @@
 import useStore from '../store/store';
 import Geolocation from '@react-native-community/geolocation';
-import {useEffect} from 'react';
+import {useEffect, useRef} from 'react';
 import {
   updateUserLocation,
   LocationUpdateData,
 } from '../services/locationService';
 
 const useUserLocation = () => {
-  const {
-    user,
-    locationUpdateInterval,
-    hasLocationPermission,
-    setUserLocation,
-    setRegion,
-    region,
-  } = useStore();
+  const {user, locationUpdateInterval, hasLocationPermission, setUserLocation} =
+    useStore();
+
+  const intervalRef = useRef<NodeJS.Timeout>();
 
   useEffect(() => {
+    // Make sure there is only one interval running
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+    }
+
     const fetchLocation = async () => {
       if (!hasLocationPermission) {
         return;
@@ -26,16 +27,11 @@ const useUserLocation = () => {
           const {latitude, longitude} = position.coords;
           if (
             user &&
-            user.username != undefined &&
-            latitude != undefined &&
-            longitude != undefined
+            user.username !== undefined &&
+            latitude !== undefined &&
+            longitude !== undefined
           ) {
             setUserLocation(latitude, longitude);
-            setRegion({
-              ...region,
-              latitude: latitude,
-              longitude: longitude,
-            });
             if (user.show_location) {
               const locationUpdateData: LocationUpdateData = {
                 username: user.username,
@@ -44,7 +40,6 @@ const useUserLocation = () => {
                   longitude: longitude,
                 },
               };
-              console.log('locationUpdateData', locationUpdateData);
               updateUserLocation(locationUpdateData);
             }
           }
@@ -57,8 +52,8 @@ const useUserLocation = () => {
     };
 
     fetchLocation();
-    setInterval(fetchLocation, locationUpdateInterval);
-  }, [locationUpdateInterval, setRegion, setUserLocation, user]);
+    intervalRef.current = setInterval(fetchLocation, locationUpdateInterval);
+  }, [locationUpdateInterval, hasLocationPermission, setUserLocation, user]);
 };
 
 export default useUserLocation;

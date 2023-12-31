@@ -15,9 +15,11 @@ export interface User {
   location?: {
     latitude?: number;
     longitude?: number;
-    timestamp?: number;
+    timestamp?: string;
     [k: string]: unknown;
   };
   show_location?: boolean;
+  show_contact_info?: boolean;
+  contact_info?: string;
   [k: string]: unknown;
 }

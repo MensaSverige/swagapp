@@ -15,7 +15,6 @@ export const getUserLocations = async (): Promise<UserWithLocation[]> => {
     .get('/users_showing_location')
     .then(
       response => {
-        console.log('response', response);
         if (response.data) {
           return response.data.filter(isUserWithLocation);
         }
@@ -34,8 +33,8 @@ export const updateUserLocation = async (data: LocationUpdateData) => {
   return apiClient
     .post('/update_user_location', JSON.stringify(data))
     .then(
-      response => {
-        console.log('Location updated successfully:', response);
+      () => {
+        console.log('Location updated successfully');
       },
       error => {
         throw new Error(error.message || error);

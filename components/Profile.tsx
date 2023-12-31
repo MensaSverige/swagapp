@@ -31,6 +31,11 @@ const Profile: React.FC = () => {
 
   // Local state for form fields
   const [showLocation, setShowLocation] = useState(user?.show_location);
+  const [showContactInfo, setShowContactInfo] = useState(
+    user?.show_contact_info,
+  );
+  const [contactInfo, setContactInfo] = useState(user?.contact_info);
+
   const [isLoading, setIsLoading] = useState(false);
   const [avararChanged, setAvatarChanged] = useState(false);
 
@@ -51,6 +56,8 @@ const Profile: React.FC = () => {
       .put('/user/' + user.id, {
         ...user,
         show_location: showLocation,
+        show_contact_info: showContactInfo,
+        contact_info: contactInfo,
       })
       .then(response => {
         if (response.status === 200 && response.data.status === 'success') {
@@ -94,6 +101,7 @@ const Profile: React.FC = () => {
               />
             )}
           </Center>
+
           <Fields heading="Profilbild">
             <Field
               label="Adress till profilbild"
@@ -108,6 +116,7 @@ const Profile: React.FC = () => {
               />
             </Field>
           </Fields>
+
           <Fields heading="Kartan">
             <Field label="Visa position" help="Visa din position på kartan">
               <Switch
@@ -118,21 +127,40 @@ const Profile: React.FC = () => {
                 accessibilityLabel="Visa min position på kartan"
               />
             </Field>
+            <Field label="Visa kontaktuppgift">
+              <Switch
+                isChecked={showContactInfo}
+                onToggle={show_contact_info => {
+                  setShowContactInfo(show_contact_info);
+                }}
+                accessibilityLabel="Visa mina kontaktuppgifter på kartan"
+              />
+            </Field>
+            <Field label="Kontaktuppgift">
+              <Input
+                placeholder="Telefonnummer eller e-post"
+                value={contactInfo}
+                onChangeText={(contact_info: string) => {
+                  setContactInfo(contact_info);
+                }}
+              />
+            </Field>
           </Fields>
-
-          <Button onPress={handleSave}>
-            <Text color="white">
-              Spara
-              {isLoading && (
-                <Spinner
-                  color="white"
-                  top="10"
-                  size="sm"
-                  accessibilityLabel="Sparar..."
-                />
-              )}
-            </Text>
-          </Button>
+          <Fields>
+            <Button onPress={handleSave}>
+              <Text color="white">
+                Spara
+                {isLoading && (
+                  <Spinner
+                    color="white"
+                    top="10"
+                    size="sm"
+                    accessibilityLabel="Sparar..."
+                  />
+                )}
+              </Text>
+            </Button>
+          </Fields>
           <VStack space={4} mt={10}>
             <Text>Du är inloggad som {user.username}</Text>
             <Button size="sm" onPress={() => handleLogout()}>

@@ -1,40 +1,38 @@
-from bson import json_util
+from bson import json_util, ObjectId
 import json
-import logging
 
 
 def bson_to_json(data):
     """
-    Convert BSON data to JSON format.
-
-    :param data: The BSON data to be converted.
-    :return: The JSON representation of the BSON data with the following modifications:
-        - Recursively copies the '_id' field to 'id'
-        - Converts ObjectID to string
+    Convert BSON data to JSON format, converting MongoDB-specific types to standard types.
     """
-    json_data = json.loads(json_util.dumps(data))
-
-    def copy_id_to_id(json_data):
+    def convert_item(item):
         """
-        Recursively copies the '_id' field to 'id' in the JSON data.
-
-        :param json_data: The JSON data to be modified.
-        :type json_data: dict
-        :return: The modified JSON data.
-        :rtype: dict
+        Convert special BSON types (like ObjectId and Date) to standard formats.
         """
-        if isinstance(json_data, dict):
-            if '_id' in json_data:
-                if isinstance(json_data['_id'], dict) and '$oid' in json_data['_id']:
-                    json_data['id'] = str(json_data['_id']['$oid'])
+        if isinstance(item, ObjectId):
+            return str(item)
+        elif isinstance(item, dict) and '$date' in item:
+            # Convert BSON date to ISO 8601 string
+            return item['$date']
+        else:
+            return item
+
+    def transform(data):
+        """
+        Recursively traverse the data to convert special BSON types.
+        """
+        if isinstance(data, dict):
+            new_data = {}
+            for k, v in data.items():
+                if k == '_id':  # Convert '_id' field
+                    new_data['id'] = convert_item(v)
                 else:
-                    json_data['id'] = str(json_data['_id'])
-                del json_data['_id']
-            for key in json_data:
-                copy_id_to_id(json_data[key])
-        elif isinstance(json_data, list):
-            for item in json_data:
-                copy_id_to_id(item)
+                    new_data[k] = transform(convert_item(v))
+            return new_data
+        elif isinstance(data, list):
+            return [transform(convert_item(v)) for v in data]
+        else:
+            return convert_item(data)
 
-    copy_id_to_id(json_data)
-    return json_data
+    return transform(json.loads(json_util.dumps(data)))
