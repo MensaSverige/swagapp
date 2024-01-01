@@ -30,19 +30,19 @@ jobs:
 
   publish-android:
     needs: prepare-data
-    uses: ./.github/workflows/reusable/publish-android.yml
+    uses: ./.github/workflows/publish-android.yml
     with:
       version: ${{ needs.prepare-data.outputs.DOCKER_TAG }}
 
   publish-website:
     needs: prepare-data
-    uses: ./.github/workflows/reusable/publish-website.yml
+    uses: ./.github/workflows/publish-website.yml
     with:
       docker_tag: ${{ needs.prepare-data.outputs.DOCKER_TAG }}
 
   publish-backend:
     needs: prepare-data
-    uses: ./.github/workflows/reusable/publish-backend.yml
+    uses: ./.github/workflows/publish-backend.yml
     with:
       docker_tag: ${{ needs.prepare-data.outputs.DOCKER_TAG }}
       commit_message: ${{ needs.prepare-data.outputs.COMMIT_MESSAGE }}
