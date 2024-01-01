@@ -10,11 +10,14 @@
         "marker": {"type": "string"},
         "latitude": {"type": "number"},
         "longitude": {"type": "number"}
-      }
+      },
+      "required": ["latitude", "longitude"],
+      "additionalProperties": false
     },
     "start": {"type": "string", "format": "date-time"},
     "end": {"type": "string", "format": "date-time"},
     "description": {"type": "string"}
   },
-  "required": ["id", "name", "location", "start"]
+  "required": ["id", "name", "start"],
+  "additionalProperties": false
 }

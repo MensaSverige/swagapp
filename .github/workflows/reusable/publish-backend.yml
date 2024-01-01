@@ -1,0 +1,82 @@
+name: Publish Backend
+
+on:
+  workflow_call:
+    inputs:
+      docker_tag:
+        required: true
+        type: string
+      commit_message:
+        required: true
+        type: string
+      commit_hash:
+        required: true
+        type: string
+
+env:
+  # Use ghcr.io for GitHub Container Registry
+  REGISTRY: ghcr.io
+  # GitHub repository as <account>/<repo>
+  IMAGE_NAME: ${{ github.repository }}/backend
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      # Needed for identity verification with sigstore/fulcio outside of PRs.
+      id-token: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r backend/requirements.txt
+
+      - name: Install database schema
+        run: |
+          cp -a schema backend/schema
+
+      - name: Run tests
+        run: |
+          cd backend
+          python -m pytest
+
+      # Install the cosign tool (for signing Docker images) except on PRs
+      - name: Install cosign
+        uses: sigstore/cosign-installer@v3.2.0
+        with:
+          cosign-release: 'v2.2.1'
+
+      # Setup Docker buildx (required for building multi-platform images)
+      - name: Setup Docker buildx
+        uses: docker/setup-buildx-action@v2
+
+      # Log into the GitHub Container Registry except on PRs
+      - name: Log into registry ${{ env.REGISTRY }}
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@28218f9b04b4f3f62068d7b6ce6ca5b26e35336c
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          file: ./backend.Dockerfile
+          push: true
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ inputs.docker_tag }}
+          build-args: |
+            GIT_COMMIT_INFO=${{ inputs.commit_message }}
+            commit_hash=${{ inputs.commit_hash }}

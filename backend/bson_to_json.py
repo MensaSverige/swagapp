@@ -4,19 +4,30 @@ import logging
 
 
 def bson_to_json(data):
-    # return json.loads(json_util.dumps(data))
-    # Convert bson to json and also recursively copy _id to id, and convert ObjectID to string
+    """
+    Convert BSON data to JSON format.
+
+    :param data: The BSON data to be converted.
+    :return: The JSON representation of the BSON data with the following modifications:
+        - Recursively copies the '_id' field to 'id'
+        - Converts ObjectID to string
+    """
     json_data = json.loads(json_util.dumps(data))
 
-    # Recursively copy _id to id
     def copy_id_to_id(json_data):
+        """
+        Recursively copies the '_id' field to 'id' in the JSON data.
+
+        :param json_data: The JSON data to be modified.
+        :type json_data: dict
+        :return: The modified JSON data.
+        :rtype: dict
+        """
         if isinstance(json_data, dict):
             if '_id' in json_data:
-                # Check if _id is a dictionary and has the $oid key
                 if isinstance(json_data['_id'], dict) and '$oid' in json_data['_id']:
                     json_data['id'] = str(json_data['_id']['$oid'])
                 else:
-                    # Handle case where _id is a simple string
                     json_data['id'] = str(json_data['_id'])
                 del json_data['_id']
             for key in json_data:
@@ -25,5 +36,29 @@ def bson_to_json(data):
             for item in json_data:
                 copy_id_to_id(item)
 
+    def extract_dates(json_data):
+        """
+        Recursively extracts the date fields from the JSON data.
+
+        :param json_data: The JSON data to be modified.
+        :type json_data: dict
+        :return: The modified JSON data.
+        :rtype: dict
+        """
+        if isinstance(json_data, dict):
+            for key in json_data:
+                if isinstance(json_data[key], dict):
+                    if '$date' in json_data[key]:
+                        json_data[key] = json_data[key]['$date']
+                    else:
+                        extract_dates(json_data[key])
+                elif isinstance(json_data[key], list):
+                    for item in json_data[key]:
+                        extract_dates(item)
+        elif isinstance(json_data, list):
+            for item in json_data:
+                extract_dates(item)
+
     copy_id_to_id(json_data)
+    extract_dates(json_data)
     return json_data

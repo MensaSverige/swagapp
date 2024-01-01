@@ -24,6 +24,7 @@ services:
 
   mongo-express:
     image: mongo-express:latest
+    ports:
       - "8082:8081"
     depends_on:
       - mongo
