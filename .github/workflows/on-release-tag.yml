@@ -66,9 +66,9 @@ jobs:
       - name: Update Kubernetes Manifest Templates
         run: |
           cd gitops-repo/swag
-          # Use the latest Docker tags for backend and website in the manifest templates
-          sed "s/VERSION/${{ needs.prepare-data.outputs.DOCKER_TAG }}/" "$file" > "${file%.tpl}"
-          # ...
+          for file in *.yaml.tpl; do
+            sed "s/VERSION/${{ needs.prepare-data.outputs.DOCKER_TAG }}/" "$file" > "${file%.tpl}"
+          done
           cd ..
           git config --global user.name 'Mikael Grön'
           git config --global user.email 'skaramicke@gmail.com'
