@@ -5,9 +5,9 @@ jest.mock('react-native-keychain', () => ({
 }));
 
 import MockAdapter from 'axios-mock-adapter';
-import apiClient from '../apiClient';
+import apiClient from '../features/common/services/apiClient';
 import Keychain from 'react-native-keychain';
-import useStore from '../store/store';
+import useStore from '../features/common/store/store';
 
 describe('apiClient', () => {
   let mock: MockAdapter;
