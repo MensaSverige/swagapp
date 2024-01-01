@@ -60,7 +60,6 @@ const EditEventForm: React.FC =() => {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const route = useRoute<EventFormProps>();
   const event = route.params.event;
-  console.log('Eventform params:', event);
 
   const theme = useTheme() as ICustomTheme;
   const styles = createStyles(theme);
@@ -114,7 +113,6 @@ const EditEventForm: React.FC =() => {
   useEffect(() => {
     // Add future fields here
     if (event && eventData) {
-      console.log('Event:', event);
       // You can only save changed events.
       setFormValid(
         nameValid &&
@@ -126,12 +124,6 @@ const EditEventForm: React.FC =() => {
             event.location?.marker !== eventData.location?.marker ||
             event.location?.latitude !== eventData.location?.latitude ||
             event.location?.longitude !== eventData.location?.longitude),
-      );
-      console.log(
-        'Event start:',
-        event.start,
-        'Event data start:',
-        eventData.start,
       );
     } else {
       setFormValid(nameValid);

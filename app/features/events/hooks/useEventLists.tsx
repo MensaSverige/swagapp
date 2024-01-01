@@ -28,7 +28,6 @@ export const useEventLists = () => {
 
     return Promise.all([fetchUserEvents(), fetchStaticEvents()])
       .then(([userEvents, staticEvents]) => {
-        console.log('Fetched data:', userEvents);
         setUserEvents(userEvents);
         setStaticEvents(staticEvents);
       })
