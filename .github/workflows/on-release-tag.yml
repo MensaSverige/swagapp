@@ -22,9 +22,9 @@ jobs:
       - name: Generate Docker tag from release date and git commit hash
         id: generate-docker-tag
         run: |
-          SHORT_SHA=$(echo $GITHUB_SHA | cut -c 1-7)"
+          SHORT_SHA="$(echo $GITHUB_SHA | cut -c 1-7)"
           TAG_NAME="${GITHUB_REF##*/}"
-          RELEASE_DATE=$TAG_NAME
+          RELEASE_DATE="$TAG_NAME"
           echo "DOCKER_TAG=$RELEASE_DATE.$SHORT_SHA" >> $GITHUB_OUTPUT
           echo "GIT_HASH=$SHORT_SHA" >> $GITHUB_OUTPUT
 
