@@ -76,7 +76,7 @@ jobs:
           context: .
           file: ./backend.Dockerfile
           push: true
-          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ inputs.docker_tag }}
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ inputs.docker_tag }},${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
           build-args: |
             GIT_COMMIT_INFO=${{ inputs.commit_message }}
             commit_hash=${{ inputs.commit_hash }}
