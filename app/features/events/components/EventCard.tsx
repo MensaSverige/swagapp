@@ -3,14 +3,13 @@ import React, {useEffect} from 'react';
 import {TouchableOpacity} from 'react-native';
 import TimeLeft from '../utilities/TimeLeft';
 import { clockForTime } from '../../map/functions/clockForTime';
-import {Event} from '../../../types/event';
+import {Event} from '../../common/types/event';
 import {isFutureUserEvent} from '../types/futureUserEvent';
 import useStore from '../../common/store/store';
-import {FontAwesomeIcon} from '@fortawesome/react-native-fontawesome';
-import {faEdit} from '@fortawesome/free-solid-svg-icons';
 import {useNavigation} from '@react-navigation/native';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {RootStackParamList} from '../../../navigation/RootStackParamList';
+import {EditButton} from '../../common/components/EditButton';
 
 function formatDateAndTime(dateTimeStr: string, startDateTimeStr?: string) {
   const datetime = new Date(dateTimeStr);
@@ -121,13 +120,10 @@ const EventCard: React.FC<{
           {open &&
           isFutureUserEvent(event) &&
           event.owner === user?.username ? (
-            <TouchableOpacity
-              onPress={() => {
+              <EditButton onPress={() => {
                 console.log('Edit event', event);
                 navigation.navigate('EventForm', {event: event});
-              }}>
-              <FontAwesomeIcon icon={faEdit} style={styles.editButton} />
-            </TouchableOpacity>
+              }}/>
           ) : (
             <Heading size="lg" isTruncated={!open}>
               {event.location?.marker || clockForTime(event.start)}
