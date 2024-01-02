@@ -56,7 +56,7 @@ jobs:
       - name: Sign App APK
         uses: r0adkll/sign-android-release@v1
         with:
-          releaseDirectory: android/app/build/outputs/apk/release
+          releaseDirectory: app/android/app/build/outputs/apk/release
           signingKeyBase64: ${{ secrets.ANDROID_SIGNING_KEY }}
           alias: ${{ secrets.ANDROID_SIGNING_ALIAS }}
           keyStorePassword: ${{ secrets.ANDROID_SIGNING_STORE_PASSWORD }}
@@ -66,7 +66,7 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: Signed App APK
-          path: android/app/build/outputs/apk/release/app-release.apk
+          path: app/android/app/build/outputs/apk/release/app-release.apk
 
       - name: Create Release
         id: create_release
@@ -85,6 +85,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./android/app/build/outputs/apk/release/app-release-unsigned-signed.apk
+          asset_path: ./app/android/app/build/outputs/apk/release/app-release-unsigned-signed.apk
           asset_name: swag-app-${{ inputs.version  }}.apk
           asset_content_type: application/vnd.android.package-archive
