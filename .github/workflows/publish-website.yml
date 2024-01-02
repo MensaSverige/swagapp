@@ -30,7 +30,7 @@ jobs:
       - name: Install cosign
         uses: sigstore/cosign-installer@v3.2.0
         with:
-          cosign-release: 'v2.2.1'
+          cosign-release: "v2.2.1"
 
       # Setup Docker buildx (required for building multi-platform images)
       - name: Setup Docker buildx
@@ -52,4 +52,4 @@ jobs:
           context: .
           file: ./website.Dockerfile
           push: true
-          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ inputs.docker_tag }}
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ inputs.docker_tag }},${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
