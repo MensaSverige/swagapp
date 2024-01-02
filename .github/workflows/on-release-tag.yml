@@ -9,6 +9,7 @@ jobs:
   prepare-data:
     runs-on: ubuntu-latest
     outputs:
+      GIT_TAG: ${{ steps.generate-docker-tag.outputs.GIT_TAG }}
       DOCKER_TAG: ${{ steps.generate-docker-tag.outputs.DOCKER_TAG }}
       COMMIT_HASH: ${{ steps.generate-docker-tag.outputs.GIT_HASH }}
       COMMIT_MESSAGE: ${{ steps.last_commit.outputs.message }}
@@ -24,14 +25,15 @@ jobs:
         run: |
           SHORT_SHA="$(echo $GITHUB_SHA | cut -c 1-7)"
           TAG_NAME="${GITHUB_REF##*/}"
-          RELEASE_DATE="$TAG_NAME"
-          echo "DOCKER_TAG=$RELEASE_DATE.$SHORT_SHA" >> $GITHUB_OUTPUT
+          echo "GIT_TAG=$TAG_NAME" >> $GITHUB_OUTPUT
+          echo "DOCKER_TAG=$TAG_NAME.$SHORT_SHA" >> $GITHUB_OUTPUT
           echo "GIT_HASH=$SHORT_SHA" >> $GITHUB_OUTPUT
 
   publish-android:
     needs: prepare-data
     uses: ./.github/workflows/publish-android.yml
     with:
+      tag: ${{ needs.prepare-data.outputs.GIT_TAG }}
       version: ${{ needs.prepare-data.outputs.DOCKER_TAG }}
     secrets: inherit
 

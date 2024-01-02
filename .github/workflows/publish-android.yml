@@ -3,6 +3,10 @@ name: Build and Release Android App
 on:
   workflow_call:
     inputs:
+      tag:
+        description: "Tag for finding release"
+        required: true
+        type: string
       version:
         required: true
         type: string
@@ -65,7 +69,7 @@ jobs:
         id: get_release
         uses: joutvhu/get-release@v1
         with:
-          tag_name: ${{ inputs.version }}
+          tag_name: ${{ inputs.tag }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
