@@ -43,7 +43,7 @@ jobs:
           node-version: 14
 
       - name: Install npm dependencies
-        run: npm install
+        run: cd app && npm install
 
       - name: Build Android App Bundle
         run: |
