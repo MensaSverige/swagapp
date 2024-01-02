@@ -1,5 +1,5 @@
 import React, {useCallback, useEffect, useState} from 'react';
-import {Dimensions, Platform} from 'react-native';
+import {Platform, TouchableOpacity} from 'react-native';
 import {Text, Button, StyleSheet, SafeAreaView} from 'react-native';
 import MapView, {Region} from 'react-native-maps';
 import {Event} from '../../common/types/event';
@@ -13,15 +13,12 @@ import {
   ScrollView,
   View,
   Spinner,
-  Switch,
   TextArea,
   useTheme,
 } from 'native-base';
-import DatePicker from 'react-native-date-picker';
 import {RouteProp, useRoute, useNavigation} from '@react-navigation/native';
-import apiClient from '../../common/services/apiClient';
 import {useEventLists} from '../hooks/useEventLists';
-import { clockForTime } from '../../map/functions/clockForTime';
+import {clockForTime} from '../../map/functions/clockForTime';
 import {RootStackParamList} from '../../../navigation/RootStackParamList';
 import EmojiSelector from 'react-native-emoji-selector';
 import EventMarker from '../../map/components/markers/EventMarker';
@@ -31,7 +28,8 @@ import Fields from '../../common/components/Fields';
 import EventCard from '../components/EventCard';
 import FutureUserEvent from '../types/futureUserEvent';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
-import { createUserEvent, updateUserEvent } from '../services/eventService';
+import {createUserEvent, updateUserEvent} from '../services/eventService';
+import {DatepickerField} from '../../common/components/DatepickerField';
 
 type EventFormProps = RouteProp<RootStackParamList, 'EventForm'>;
 
@@ -41,6 +39,7 @@ const initializeNewEvent = (region: Region): FutureUserEvent => {
   initialStartTime.setSeconds(0);
   initialStartTime.setMilliseconds(0);
   initialStartTime.setHours(initialStartTime.getHours() + 2);
+  const initialEndTime = new Date(initialStartTime.getTime() + 3600000);
   return {
     id: '',
     name: '',
@@ -51,13 +50,14 @@ const initializeNewEvent = (region: Region): FutureUserEvent => {
       longitude: region.longitude,
     },
     start: initialStartTime.toISOString(),
-    end: '',
+    end: initialEndTime.toISOString(),
     description: '',
   } as FutureUserEvent;
 };
 
-const EditEventForm: React.FC =() => {
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+const EditEventForm: React.FC = () => {
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const route = useRoute<EventFormProps>();
   const event = route.params.event;
 
@@ -81,7 +81,6 @@ const EditEventForm: React.FC =() => {
 
   // Used to check if end date has changed, for updating event length
   const [previousEnd, setPreviousEnd] = useState<string | null>(null);
-  const [endEnabled, setEndEnabled] = useState<boolean>(false);
 
   // Event data, and saving it
   const [isSaving, setIsSaving] = useState<boolean>(false);
@@ -230,31 +229,51 @@ const EditEventForm: React.FC =() => {
   const handleStartDateChange = useCallback(
     (date: Date) => {
       const datestring = date?.toISOString() || '';
-      setEventData(prevEventData => ({
-        ...prevEventData,
-        start: datestring,
-      }));
-
-      if (datestring !== previousStart && eventData.end) {
-        const newEnd = new Date(date);
-        newEnd.setHours(newEnd.getHours() + (eventLength || 0));
-        setEventData({...eventData, end: newEnd.toISOString()});
-        setPreviousStart(date?.toISOString() || '');
-      }
+      console.log('Start date changed', datestring);
+  
+      setEventData(prevEventData => {
+        // Check if the start date has actually changed
+        if (datestring !== prevEventData.start && prevEventData.end) {
+          const newEnd = new Date(date);
+          newEnd.setHours(newEnd.getHours() + (eventLength || 0));
+          
+          return {
+            ...prevEventData,
+            start: datestring,
+            end: newEnd.toISOString()
+          };
+        } else {
+          return {
+            ...prevEventData,
+            start: datestring
+          };
+        }
+      }); 
+      setPreviousStart(datestring);
     },
-    [eventData.start, eventLength, previousStart],
+    [eventLength]
   );
 
   // Calculate event length when end date changes,
   const handleEndDateChange = useCallback(
     (date: Date) => {
       const datestring = date?.toISOString() || '';
-      setEventData(prevEventData => ({
-        ...prevEventData,
-        end: datestring,
-      }));
-
-      if (datestring !== previousEnd && eventData.start) {
+      console.log('End date changed', datestring);
+  
+      setEventData(prevEventData => {
+        // Only update state if end date actually changes
+        if (datestring !== prevEventData.end) {
+          return {
+            ...prevEventData,
+            end: datestring,
+          };
+        } else {
+          return prevEventData;
+        }
+      });
+  
+      // Calculate the new length of the event
+      if (datestring !== previousEnd) {
         const newLength =
           (new Date(date).getTime() - new Date(eventData.start).getTime()) /
           3600000;
@@ -262,19 +281,8 @@ const EditEventForm: React.FC =() => {
         setPreviousEnd(datestring);
       }
     },
-    [eventData.end, eventData.start, previousEnd],
+    [eventData.start]
   );
-
-  // Set end time to an hour after start, if endEnabled becomes true and end is empty
-  useEffect(() => {
-    if (endEnabled && !eventData.end) {
-      const newEnd = new Date(eventData.start);
-      newEnd.setHours(newEnd.getHours() + 1);
-      setEventData({...eventData, end: newEnd.toISOString()});
-    } else if (!endEnabled && eventData.end) {
-      setEventData({...eventData, end: undefined});
-    }
-  }, [endEnabled]);
 
   return (
     <SafeAreaView style={[styles.viewContainer]}>
@@ -305,7 +313,7 @@ const EditEventForm: React.FC =() => {
               />
             </Field>
 
-            <Field label="Beskrivning" help="Visas i Evenemangskortet">
+            <Field label="Beskrivning">
               <TextArea
                 placeholder="Beskrivning av evenemanget"
                 value={eventData.description}
@@ -316,36 +324,17 @@ const EditEventForm: React.FC =() => {
               />
             </Field>
 
-            <Field label="Start-tid" required>
-              <DatePicker
-                style={[styles.datepicker]}
-                date={new Date(eventData?.start || Date.now())}
-                mode="datetime"
-                locale="sv"
-                is24hourSource="locale"
-                onDateChange={handleStartDateChange}
-              />
-            </Field>
+            <DatepickerField
+              label="Start"
+              date={eventData.start}
+              onDateChange={handleStartDateChange}
+            />
 
-            <Field
-              label={<Text>Sluttid</Text>}
-              labelControl={
-                <Switch
-                  isChecked={endEnabled}
-                  onToggle={() => setEndEnabled(!endEnabled)}
-                />
-              }>
-              {endEnabled && eventData?.end && (
-                <DatePicker
-                  style={[styles.datepicker]}
-                  date={new Date(eventData.end)}
-                  mode="datetime"
-                  locale="sv"
-                  is24hourSource="locale"
-                  onDateChange={handleEndDateChange}
-                />
-              )}
-            </Field>
+            <DatepickerField
+              label="Slut"
+              date={eventData.end}
+              onDateChange={handleEndDateChange}
+            />
 
             <Field label="Plats">
               <MapView
@@ -492,9 +481,6 @@ const createStyles = (theme: ICustomTheme) =>
       flex: 1,
       position: 'absolute',
       backgroundColor: theme.colors.background[500],
-    },
-    datepicker: {
-      width: Dimensions.get('window').width,
     },
     mapView: {
       width: '100%',
