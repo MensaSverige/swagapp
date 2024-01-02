@@ -13,17 +13,10 @@ jobs:
 
     steps:
       - name: Set build version
-        run: echo "BUILD_VERSION=$(date +%Y.%m.%d)-$GITHUB_RUN_NUMBER" >> $GITHUB_ENV
+        run: echo "BUILD_VERSION=${{ inputs.version }}" >> $GITHUB_ENV
 
       - name: Checkout Code
         uses: actions/checkout@v2
-
-      - name: Extract Date from Tag
-        id: date_extract
-        run: |
-          TAG_NAME="${GITHUB_REF##*/}"
-          RELEASE_DATE=$(echo $TAG_NAME | sed -e 's/Release //')
-          echo "RELEASE_DATE=$RELEASE_DATE" >> $GITHUB_ENV
 
       - name: Create .env file
         working-directory: app
@@ -41,7 +34,7 @@ jobs:
       - name: Install Node.js
         uses: actions/setup-node@v2
         with:
-          node-version: 14
+          node-version: 16
 
       - name: Install npm dependencies
         working-directory: app
@@ -60,7 +53,7 @@ jobs:
           signingKeyBase64: ${{ secrets.ANDROID_SIGNING_KEY }}
           alias: ${{ secrets.ANDROID_SIGNING_ALIAS }}
           keyStorePassword: ${{ secrets.ANDROID_SIGNING_STORE_PASSWORD }}
-          keyPassword: ${{ secrets.ANDROID_SIGNING_STORE_PASSWORD }}
+          keyPassword: ${{ secrets.ANDROID_SIGNING_KEY_PASSWORD }}
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v2
@@ -68,23 +61,20 @@ jobs:
           name: Signed App APK
           path: app/android/app/build/outputs/apk/release/app-release.apk
 
-      - name: Create Release
-        id: create_release
-        uses: actions/create-release@v1
+      - name: Get Release
+        id: get_release
+        uses: joutvhu/get-release@v1
+        with:
+          tag_name: ${{ inputs.version }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: Release ${{ inputs.version }}
-          release_name: Release ${{ inputs.version  }}
-          draft: false
-          prerelease: false
 
       - name: Upload APK to Release
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          upload_url: ${{ steps.get_release.outputs.upload_url }}
           asset_path: ./app/android/app/build/outputs/apk/release/app-release-unsigned-signed.apk
           asset_name: swag-app-${{ inputs.version  }}.apk
           asset_content_type: application/vnd.android.package-archive
