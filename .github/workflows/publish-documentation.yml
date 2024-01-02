@@ -23,10 +23,13 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r backend/requirements.txt
 
-      - name: Generate Backend Documentation
+      - name: Copy Schema to Backend
         run: |
           cp -a ./schema ./backend
-          cd docs
+
+      - name: Generate Backend Documentation
+        working-directory: ./docs
+        run: |
           sphinx-apidoc -f -o ./source ../backend
           sphinx-build -b markdown ./source ./backend
           rm -rf ../backend/schema
@@ -48,8 +51,8 @@ jobs:
           rm -rf wiki/source
 
       - name: Commit and Push Changes to Wiki
+        working-directory: ./wiki
         run: |
-          cd wiki
           git config user.name github-actions
           git config user.email github-actions@github.com
           git add .

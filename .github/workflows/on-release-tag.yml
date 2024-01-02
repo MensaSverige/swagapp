@@ -64,12 +64,15 @@ jobs:
           path: "gitops-repo"
 
       - name: Update Kubernetes Manifest Templates
+        working-directory: gitops-repo/swag
         run: |
-          cd gitops-repo/swag
           for file in *.yaml.tpl; do
             sed "s/VERSION/${{ needs.prepare-data.outputs.DOCKER_TAG }}/" "$file" > "${file%.tpl}"
           done
-          cd ..
+
+      - name: Update Kubernetes Manifest repo
+        working-directory: gitops-repo
+        run: |
           git config --global user.name 'Mikael Grön'
           git config --global user.email 'skaramicke@gmail.com'
           git add swag/
