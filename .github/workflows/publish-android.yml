@@ -26,6 +26,7 @@ jobs:
           echo "RELEASE_DATE=$RELEASE_DATE" >> $GITHUB_ENV
 
       - name: Create .env file
+        working-directory: app
         run: |
           touch .env
           echo "API_URL=https://swag.mikael.green/api" >> .env
@@ -43,11 +44,13 @@ jobs:
           node-version: 14
 
       - name: Install npm dependencies
-        run: cd app && npm install
+        working-directory: app
+        run: npm install
 
       - name: Build Android App Bundle
+        working-directory: app/android
         run: |
-          cd app/android && chmod +x ./gradlew
+          chmod +x ./gradlew
           ./gradlew assembleRelease --no-daemon -PversionName=${{ inputs.version }}
 
       - name: Sign App APK
