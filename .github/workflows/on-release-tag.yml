@@ -33,6 +33,7 @@ jobs:
     uses: ./.github/workflows/publish-android.yml
     with:
       version: ${{ needs.prepare-data.outputs.DOCKER_TAG }}
+    secrets: inherit
 
   publish-website:
     needs: prepare-data
