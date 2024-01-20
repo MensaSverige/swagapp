@@ -12,7 +12,7 @@ import {
   useTheme,
 } from 'native-base';
 import React from 'react';
-import {User} from '../../../types/user';
+import {User} from '../../common/types/user';
 import useStore from '../../common/store/store';
 import * as Keychain from 'react-native-keychain';
 import apiClient from '../../common/services/apiClient';
@@ -141,6 +141,11 @@ export const SigninForm = () => {
             autoCapitalize="none"
             keyboardType="email-address"
             isDisabled={isLoading}
+            InputRightElement={
+              <Button ml={1} bg="transparent" isDisabled>
+                <FontAwesomeIcon icon={faEye} color="transparent" />
+              </Button>
+            }
           />
           <Input
             variant="filled"
