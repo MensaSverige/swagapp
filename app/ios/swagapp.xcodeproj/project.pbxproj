@@ -485,7 +485,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
-				CURRENT_PROJECT_VERSION = 3;
+				CURRENT_PROJECT_VERSION = 4;
 				DEVELOPMENT_TEAM = M7JL6D8M57;
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = swagapp/Info.plist;
@@ -496,7 +496,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 2023.11.25;
+				MARKETING_VERSION = 2024.01.02;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"-ObjC",
@@ -516,7 +516,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
-				CURRENT_PROJECT_VERSION = 3;
+				CURRENT_PROJECT_VERSION = 4;
 				DEVELOPMENT_TEAM = M7JL6D8M57;
 				INFOPLIST_FILE = swagapp/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = SWAG;
@@ -526,7 +526,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 2023.11.25;
+				MARKETING_VERSION = 2024.01.02;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"-ObjC",
