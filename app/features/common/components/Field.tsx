@@ -1,6 +1,6 @@
 import React from 'react';
 import {FormControl, Heading, Text} from 'native-base';
-import {StyleSheet} from 'react-native';
+import {Pressable, StyleSheet} from 'react-native';
 
 interface FieldProps {
   label: React.ReactNode;
@@ -9,40 +9,44 @@ interface FieldProps {
   required?: boolean;
   disabled?: boolean;
   error?: string;
-  children: React.ReactNode;
+  children?: React.ReactNode;
+  onPress?: () => void;
 }
 
 const Field: React.FC<FieldProps> = ({
-  children,
+  children = undefined,
   label,
   labelControl,
   help,
   required,
   disabled = false,
   error,
+  onPress = undefined,
 }) => (
-  <FormControl
-    isInvalid={error !== undefined}
-    isRequired={required}
-    isDisabled={disabled}>
-    <FormControl.Label style={styles.label}>
-      <Heading size="sm">{label}</Heading>
-      {labelControl}
-    </FormControl.Label>
-    {children}
+  <Pressable onPress={onPress}>
+    <FormControl
+      isInvalid={error !== undefined}
+      isRequired={required}
+      isDisabled={disabled}>
+      <FormControl.Label style={styles.label}>
+        <Heading size="sm">{label}</Heading>
+        {labelControl}
+      </FormControl.Label>
+      {children}
 
-    {error ? (
-      <FormControl.ErrorMessage>
-        <Text>{error}</Text>
-      </FormControl.ErrorMessage>
-    ) : (
-      help && (
-        <FormControl.HelperText>
-          <Text>{help}</Text>
-        </FormControl.HelperText>
-      )
-    )}
-  </FormControl>
+      {error ? (
+        <FormControl.ErrorMessage>
+          <Text>{error}</Text>
+        </FormControl.ErrorMessage>
+      ) : (
+        help && (
+          <FormControl.HelperText>
+            <Text>{help}</Text>
+          </FormControl.HelperText>
+        )
+      )}
+    </FormControl>
+  </Pressable>
 );
 
 const styles = StyleSheet.create({

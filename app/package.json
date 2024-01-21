@@ -14,7 +14,8 @@
     "bootstrap": "yarn generate-types && yarn cc",
     "generate-types": "json2ts -i ./../schema -o ./features/common/types",
     "generate-icons": "npx icon-set-creator create ./assets/icon.jpg",
-    "cc": "rimraf node_modules/react-native-config/ios/ReactNativeConfig/GeneratedDotEnv.m"
+    "cc": "rimraf node_modules/react-native-config/ios/ReactNativeConfig/GeneratedDotEnv.m",
+    "postinstall": "patch-package"
   },
   "dependencies": {
     "@cloudflare/workers-types": "^4.20230511.0",
@@ -31,11 +32,11 @@
     "icon-set-creator": "^1.2.6",
     "json-schema-to-typescript": "^13.1.1",
     "native-base": "^3.4.28",
+    "postinstall-postinstall": "^2.1.0",
     "react": "18.2.0",
     "react-native": "0.71.8",
     "react-native-date-picker": "^4.3.5",
     "react-native-dotenv": "^3.4.9",
-    "react-native-emoji-selector": "^0.2.0",
     "react-native-keychain": "^8.1.2",
     "react-native-maps": "^1.8.0",
     "react-native-safe-area-context": "3.3.2",
@@ -61,6 +62,7 @@
     "eslint": "^8.19.0",
     "jest": "^29.7.0",
     "metro-react-native-babel-preset": "^0.77.0",
+    "patch-package": "^8.0.0",
     "prettier": "^2.4.1",
     "react-test-renderer": "^18.2.0",
     "ts-jest": "^29.1.1",
