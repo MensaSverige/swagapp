@@ -96,8 +96,18 @@ function attemptLoginWithStoredCredentials(
 }
 
 apiClient.interceptors.response.use(
-  (response: AxiosResponse) => response,
+  (response: AxiosResponse) => {
+    const store = useStore.getState();
+    store.setBackendConnection(true);
+    return response;
+  },
   (error: any) => {
+    const isNetworkError = error.message.includes('Network Error');
+    if (isNetworkError) {
+      const store = useStore.getState();
+      store.setBackendConnection(false);
+    }
+
     const originalRequest = error.config;
     if (
       error.response?.status === 401 &&
