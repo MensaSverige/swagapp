@@ -15,7 +15,7 @@ updates:
     open-pull-requests-limit: 1
     versioning-strategy: "increase"
     groups:
-       all:
+       npm:
          patterns:
            - "*"
          update-types:
@@ -32,7 +32,7 @@ updates:
     open-pull-requests-limit: 1
     versioning-strategy: "increase"
     groups:
-       all:
+       pip:
          patterns:
            - "*"
          update-types:
