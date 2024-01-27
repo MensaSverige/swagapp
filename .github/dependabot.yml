@@ -19,7 +19,6 @@ updates:
          patterns:
            - "*"
          update-types:
-           - "major"
            - "minor"
     
   - package-ecosystem: "pip"
@@ -36,5 +35,4 @@ updates:
          patterns:
            - "*"
          update-types:
-           - "major"
            - "minor"
