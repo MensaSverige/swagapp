@@ -11,7 +11,7 @@ updates:
       interval: "weekly"
     reviewers:
       - "skaramicke"
-      - "imamyble"
+      - "Imamyable"
     open-pull-requests-limit: 1
     versioning-strategy: "increase"
     
@@ -21,6 +21,6 @@ updates:
       interval: "weekly"
     reviewers:
       - "skaramicke"
-      - "imamyble"
+      - "Imamyable"
     open-pull-requests-limit: 1
     versioning-strategy: "increase"
