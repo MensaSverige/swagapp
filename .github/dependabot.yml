@@ -10,8 +10,8 @@ updates:
     schedule:
       interval: "weekly"
     reviewers:
-      - skaramicke
-      - imamyble
+      - "skaramicke"
+      - "imamyble"
     open-pull-requests-limit: 1
     versioning-strategy: "increase"
     
@@ -20,7 +20,7 @@ updates:
     schedule:
       interval: "weekly"
     reviewers:
-      - skaramicke
-      - imamyble
+      - "skaramicke"
+      - "imamyble"
     open-pull-requests-limit: 1
     versioning-strategy: "increase"
