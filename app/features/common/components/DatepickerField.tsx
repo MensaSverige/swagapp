@@ -1,7 +1,7 @@
 import React, {useState} from 'react';
 import DatePicker from 'react-native-date-picker';
 import {Dimensions, TouchableOpacity} from 'react-native';
-import {Text} from 'react-native';
+import {Text} from 'native-base';
 import {FormControl, ICustomTheme, useTheme, Heading} from 'native-base';
 import {formatDate} from '../functions/FormatDate';
 

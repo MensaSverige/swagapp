@@ -1,26 +1,26 @@
 import React, {useCallback, useEffect, useState} from 'react';
-import {Platform, TouchableOpacity} from 'react-native';
-import {Text, Button, StyleSheet, SafeAreaView} from 'react-native';
+import {Platform, TextInput} from 'react-native';
+import {Button, StyleSheet, SafeAreaView} from 'react-native';
 import MapView, {Region} from 'react-native-maps';
 import {Event} from '../../common/types/event';
 import useStore from '../../common/store/store';
 import {
   Box,
-  Center,
   ICustomTheme,
   Input,
   KeyboardAvoidingView,
   ScrollView,
-  View,
   Spinner,
+  Text,
   TextArea,
+  View,
+  ZStack,
   useTheme,
 } from 'native-base';
 import {RouteProp, useRoute, useNavigation} from '@react-navigation/native';
 import {useEventLists} from '../hooks/useEventLists';
 import {clockForTime} from '../../map/functions/clockForTime';
 import {RootStackParamList} from '../../../navigation/RootStackParamList';
-import EmojiSelector from 'react-native-emoji-selector';
 import EventMarker from '../../map/components/markers/EventMarker';
 import EventWithLocation from '../types/eventWithLocation';
 import Field from '../../common/components/Field';
@@ -95,6 +95,9 @@ const EditEventForm: React.FC = () => {
     (event && event.name !== '') || false,
   );
   const [formValid, setFormValid] = useState<boolean>(false);
+
+  // Emoji input field ref, used for text selection
+  const emojiInputRef = React.useRef<TextField | null>(null);
 
   const trimEventTexts = (e: Event) =>
     ({
@@ -177,7 +180,7 @@ const EditEventForm: React.FC = () => {
                   //apiClient.post('/user_event', timmedEventData)
                   createUserEvent(timmedEventData)
               )
-                .then(res => {
+                .then(async () => {
                   // if (res.status !== 200 && res.status !== 201) {
                   //   throw new Error(
                   //     'Det gick inte att spara evenemanget. Försök igen.',
@@ -230,28 +233,28 @@ const EditEventForm: React.FC = () => {
     (date: Date) => {
       const datestring = date?.toISOString() || '';
       console.log('Start date changed', datestring);
-  
+
       setEventData(prevEventData => {
         // Check if the start date has actually changed
         if (datestring !== prevEventData.start && prevEventData.end) {
           const newEnd = new Date(date);
           newEnd.setHours(newEnd.getHours() + (eventLength || 0));
-          
+
           return {
             ...prevEventData,
             start: datestring,
-            end: newEnd.toISOString()
+            end: newEnd.toISOString(),
           };
         } else {
           return {
             ...prevEventData,
-            start: datestring
+            start: datestring,
           };
         }
-      }); 
+      });
       setPreviousStart(datestring);
     },
-    [eventLength]
+    [eventLength],
   );
 
   // Calculate event length when end date changes,
@@ -259,7 +262,7 @@ const EditEventForm: React.FC = () => {
     (date: Date) => {
       const datestring = date?.toISOString() || '';
       console.log('End date changed', datestring);
-  
+
       setEventData(prevEventData => {
         // Only update state if end date actually changes
         if (datestring !== prevEventData.end) {
@@ -271,7 +274,7 @@ const EditEventForm: React.FC = () => {
           return prevEventData;
         }
       });
-  
+
       // Calculate the new length of the event
       if (datestring !== previousEnd) {
         const newLength =
@@ -281,7 +284,7 @@ const EditEventForm: React.FC = () => {
         setPreviousEnd(datestring);
       }
     },
-    [eventData.start]
+    [eventData.start],
   );
 
   return (
@@ -418,20 +421,51 @@ const EditEventForm: React.FC = () => {
 
             <Field
               label="Kartsymbol"
-              help="Används som kartmarkör och visas i Evenemangskortet (se nedan)">
-              <Center w={'100%'} h={'150px'}>
-                <Text style={styles.largeEmojiView}>
-                  {eventData?.location?.marker ||
-                    clockForTime(eventData?.start || Date.now().toString())}
-                </Text>
-              </Center>
-              <Button
-                title="Byt symbol"
-                onPress={() => {
-                  setEmojiPickerVisible(true);
-                }}
-              />
-            </Field>
+              help="Används som kartmarkör och visas i Evenemangskortet (se nedan)"
+              onPress={() => {
+                if (emojiInputRef.current) {
+                  emojiInputRef.current.focus();
+                }
+              }}
+              labelControl={
+                <ZStack style={styles.emojiTextFieldWrapper}>
+                  <View style={styles.emojiDisplayWrapper}>
+                    <Text style={styles.emojiDisplay}>
+                      {eventData.location?.marker ||
+                        clockForTime(eventData.start)}
+                    </Text>
+                  </View>
+                  <TextInput
+                    placeholder={clockForTime(eventData.start)}
+                    value={eventData.location?.marker}
+                    ref={emojiInputRef}
+                    onKeyPress={e => {
+                      // if non character key is pressed, return
+                      if (
+                        e.nativeEvent.key.length > 4 ||
+                        e.nativeEvent.key === ' '
+                      ) {
+                        return;
+                      }
+                      setEventData({
+                        ...eventData,
+                        location: eventData.location
+                          ? {
+                              ...eventData.location,
+                              marker: e.nativeEvent.key,
+                            }
+                          : {
+                              latitude: startRegion.latitude,
+                              longitude: startRegion.longitude,
+                              marker: e.nativeEvent.key,
+                            },
+                      });
+                    }}
+                    style={styles.emojiTextField}
+                  />
+                </ZStack>
+              }
+            />
 
             <Field label="Evenemangets kort">
               <Box style={styles.eventCardContainer}>
@@ -443,25 +477,6 @@ const EditEventForm: React.FC = () => {
             </Field>
           </Fields>
         </ScrollView>
-        {emojiPickerVisible && (
-          <View style={[styles.emojiContainer]}>
-            <EmojiSelector
-              onEmojiSelected={(emoji: string) => {
-                setEventData({
-                  ...eventData,
-                  location: eventData.location
-                    ? {...eventData.location, marker: emoji}
-                    : {
-                        latitude: startRegion.latitude,
-                        longitude: startRegion.longitude,
-                        marker: emoji,
-                      },
-                });
-                setEmojiPickerVisible(false);
-              }}
-            />
-          </View>
-        )}
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -477,11 +492,6 @@ const createStyles = (theme: ICustomTheme) =>
       flexGrow: 1,
       padding: 10,
     },
-    emojiContainer: {
-      flex: 1,
-      position: 'absolute',
-      backgroundColor: theme.colors.background[500],
-    },
     mapView: {
       width: '100%',
       aspectRatio: 4 / 3,
@@ -489,11 +499,36 @@ const createStyles = (theme: ICustomTheme) =>
       borderWidth: 1,
       borderColor: theme.colors.text[50],
     },
-    largeEmojiView: {
-      fontSize: 100,
-      textAlign: 'center',
-      color: theme.colors.text[50],
+    emojiTextFieldWrapper: {
+      width: 40,
+      height: 40,
     },
+    emojiTextField: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      width: 40,
+      height: 40,
+      fontSize: 30,
+      textAlign: 'center',
+      alignSelf: 'center',
+      opacity: 0,
+    },
+    emojiDisplayWrapper: {
+      position: 'absolute',
+      width: 40,
+      height: 40,
+      justifyContent: 'center', // Add this for vertical centering
+    },
+    emojiDisplay: {
+      fontSize: 30,
+      lineHeight: 40,
+      alignSelf: 'center', // Ensure the text itself is centered
+      color: theme.colors.text[500],
+      padding: 0,
+      margin: 0,
+    },
+
     eventCardContainer: {
       borderWidth: 1,
       borderColor: theme.colors.text[50],
