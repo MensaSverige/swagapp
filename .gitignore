@@ -1,6 +1,7 @@
 # Local files and folders
 /tmp
 .env
+/app/ios/.xcode.env.local
 
 package-lock.json
 
