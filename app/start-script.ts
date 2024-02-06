@@ -1,10 +1,13 @@
-import {exec} from 'child_process';
-import dotenv from 'dotenv';
-import fs from 'fs';
+//import {exec} from 'child_process';
+const exec = require('child_process').exec;
+//import dotenv from 'dotenv';
+const dotenv = require('dotenv');
+//import fs from 'fs';
+const fs = require('fs');
 
 const getWifiIPAddress = (): Promise<string | null> => {
   return new Promise((resolve, _) => {
-    exec('netsh interface ip show address "Wi-Fi"', (error, stdout, stderr) => {
+    exec('netsh interface ip show address "Wi-Fi"', (error: Error | null, stdout: string, stderr: string) => {
       if (error) {
         console.error(`Error: ${error.message}`);
         return resolve(null);
@@ -15,7 +18,7 @@ const getWifiIPAddress = (): Promise<string | null> => {
       }
       const ipLine = stdout
         .split('\n')
-        .find(line => line.trim().startsWith('IP Address'));
+        .find((line: string) => line.trim().startsWith('IP Address'));
       if (ipLine) {
         const ipAddress = ipLine.split(':')[1].trim();
         console.log(`Wi-Fi IP Address: ${ipAddress}`);

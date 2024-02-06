@@ -2,7 +2,7 @@ import {Box, Card, Heading, ICustomTheme, Text, useTheme} from 'native-base';
 import React, {useEffect} from 'react';
 import {TouchableOpacity} from 'react-native';
 import TimeLeft from '../utilities/TimeLeft';
-import { clockForTime } from '../../map/functions/clockForTime';
+import {clockForTime} from '../../map/functions/clockForTime';
 import {Event} from '../../common/types/event';
 import {isFutureUserEvent} from '../types/futureUserEvent';
 import useStore from '../../common/store/store';
@@ -10,55 +10,8 @@ import {useNavigation} from '@react-navigation/native';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {RootStackParamList} from '../../../navigation/RootStackParamList';
 import {EditButton} from '../../common/components/EditButton';
-
-function formatDateAndTime(dateTimeStr: string, startDateTimeStr?: string) {
-  const datetime = new Date(dateTimeStr);
-  const timePart = datetime.toLocaleTimeString('sv-SE', {
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-  const datePart = datetime.toLocaleDateString('sv-SE', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-  });
-
-  let formattedDate = '';
-
-  // Calculate the difference in days
-  const now = new Date();
-  const diff = datetime.getTime() - now.getTime();
-  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-
-  // Determine whether to show the year
-  if (days > 180) {
-    formattedDate = datePart;
-  } else {
-    formattedDate = datePart.slice(0, -5); // Remove year
-  }
-
-  // For end date, only show if different from start date
-  if (startDateTimeStr) {
-    const startDate = new Date(startDateTimeStr);
-    const startDatePart = startDate.toLocaleDateString('sv-SE', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-    });
-
-    if (startDatePart === datePart) {
-      formattedDate = ''; // Same date, don't repeat
-    }
-  }
-
-  // Time part formatting
-  if (timePart !== '00:00') {
-    // Assuming '00:00' means no specific time
-    return (formattedDate ? formattedDate + ' kl ' : '') + timePart;
-  }
-
-  return formattedDate;
-}
+import {formatDateAndTime} from '../../common/functions/FormatDateAndTime';
+import DisplayNameByUsername from '../../account/components/displayNameByUsername';
 
 const createStyles = (theme: ICustomTheme) => ({
   editButton: {
@@ -120,10 +73,12 @@ const EventCard: React.FC<{
           {open &&
           isFutureUserEvent(event) &&
           event.owner === user?.username ? (
-              <EditButton onPress={() => {
+            <EditButton
+              onPress={() => {
                 console.log('Edit event', event);
                 navigation.navigate('EventForm', {event: event});
-              }}/>
+              }}
+            />
           ) : (
             <Heading size="lg" isTruncated={!open}>
               {event.location?.marker || clockForTime(event.start)}
@@ -134,17 +89,26 @@ const EventCard: React.FC<{
           <>
             <Text mt="5">{event.description}</Text>
             {isFutureUserEvent(event) && (
-              <Heading size="sm">Värd: {event.owner}</Heading>
-            )}
-            <Box flex="1" flexDirection="row" justifyContent="space-between">
-              <Heading size="xs" mt="5">
-                {formatDateAndTime(event.start)}
-                {event.end && ' – ' + formatDateAndTime(event.end, event.start)}
+              <Heading size="sm">Värd: 
+              <DisplayNameByUsername username={event.owner} />
               </Heading>
+            )}
+            <Box flex="1" flexDirection="row" mt="5">
+              <Heading size="sm">Start:</Heading>
+              <Text> {formatDateAndTime(event.start)}</Text>
+            </Box>
+            <Box flex="1" flexDirection="row">
+              <Heading size="sm">Slut:</Heading>
+              <Text> {event.end && formatDateAndTime(event.end)}</Text>
+            </Box>
+            <Box flex="1" flexDirection="row" mt="5">
               {event.location?.description && (
-                <Heading size="xs" mt="5">
-                  {event.location?.description || ''}
+                <>
+                <Heading size="sm" >
+                  Platsbeskrivning:
                 </Heading>
+                <Text> {event.location?.description || ''}</Text>
+                </>
               )}
             </Box>
           </>
