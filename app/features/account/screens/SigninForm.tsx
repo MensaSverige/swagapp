@@ -44,9 +44,8 @@ export const SigninForm = () => {
   const [isTryingStoredCredentials, setIsTryingStoredCredentials] =
     useState(false);
 
-  const store = useStore();
-
-  const {backendConnection, user, setUser, setIsTryingToLogin} = useStore();
+  const {testMode, backendConnection, user, setUser, setIsTryingToLogin} =
+    useStore();
 
   useEffect(() => {
     if (!user && backendConnection) {
@@ -117,7 +116,7 @@ export const SigninForm = () => {
       .post('/auth', {
         username: username,
         password: password,
-        test: store.testMode,
+        test: testMode,
       })
       .then(async response => {
         if (response.status === 200) {
@@ -125,7 +124,7 @@ export const SigninForm = () => {
           const responseUser: User = data.user;
 
           if (data.access_token && data.refresh_token) {
-            store.setUser(responseUser);
+            setUser(responseUser);
             return Promise.all([
               Keychain.setGenericPassword('accessToken', data.access_token, {
                 service: 'accessToken',
