@@ -51,7 +51,6 @@ export const SigninForm = () => {
   useEffect(() => {
     if (!user && backendConnection) {
       Keychain.getAllGenericPasswordServices().then(allSavedCredentials => {
-        console.log('All saved credentials:', allSavedCredentials);
         if (
           allSavedCredentials.some(
             credential =>
@@ -62,13 +61,11 @@ export const SigninForm = () => {
         ) {
           setIsTryingStoredCredentials(true);
           setIsLoading(true);
-          console.log('Found tokens in keychain, trying to get user object');
           setIsTryingToLogin(true);
           apiClient
             .get('/user/me')
             .then(response => {
               if (response.status === 200) {
-                console.log('Got user object');
                 const userData: User = response.data;
                 setUser(userData);
               } else {
@@ -82,14 +79,12 @@ export const SigninForm = () => {
                 // Error was not Network Error, which means login failed due to invalid credentials.
                 setIsTryingStoredCredentials(false);
                 Keychain.resetGenericPassword();
-                console.log('Removed tokens from keychain');
               }
             })
             .finally(() => {
               setIsTryingToLogin(false);
             });
         } else {
-          console.log('No tokens in keychain');
           setIsTryingToLogin(false);
         }
       });
