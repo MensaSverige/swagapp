@@ -15,7 +15,8 @@
     "generate-types": "json2ts -i ./../schema -o ./features/common/types",
     "generate-icons": "npx icon-set-creator create ./assets/icon.jpg",
     "cc": "rimraf node_modules/react-native-config/ios/ReactNativeConfig/GeneratedDotEnv.m",
-    "postinstall": "patch-package"
+    "postinstall": "patch-package && yarn podinstall",
+    "podinstall": "if [[ $OSTYPE == darwin* ]]; then plutil -convert xml1 ios/swagapp/Info.plist && npx pod-install && plutil -convert xml1 ios/swagapp/Info.plist ; fi"
   },
   "dependencies": {
     "@fortawesome/fontawesome-svg-core": "^6.5.1",
