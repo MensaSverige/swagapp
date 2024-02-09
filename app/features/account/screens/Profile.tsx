@@ -28,7 +28,9 @@ const Profile: React.FC = () => {
   const styles = createStyles(theme);
 
   // Local state for form fields
-  const [showLocation, setShowLocation] = useState(user?.show_location || false);
+  const [showLocation, setShowLocation] = useState(
+    user?.show_location || false,
+  );
   const [showContactInfo, setShowContactInfo] = useState(
     user?.show_contact_info || false,
   );
@@ -50,17 +52,17 @@ const Profile: React.FC = () => {
       return;
     }
 
-    updateUser(user, showLocation, showContactInfo, contactInfo).then((returnedUser) => { 
-      setUser({
-        ...user,
-        avatar_url: returnedUser?.avatar_url,
-        show_location: returnedUser?.show_location,
+    updateUser(user, showLocation, showContactInfo, contactInfo)
+      .then(returnedUser => {
+        setUser({...user, ...returnedUser});
+      })
+      .catch(error => {
+        console.error('Error updating user', error);
+      })
+      .finally(() => {
+        setIsLoading(false);
+        setAvatarChanged(false);
       });
-    })
-    .finally(() => {
-      setIsLoading(false);
-      setAvatarChanged(false);
-    });
   };
 
   if (!user) {
