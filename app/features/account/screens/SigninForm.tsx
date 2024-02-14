@@ -81,6 +81,7 @@ export const SigninForm = () => {
               }
             })
             .finally(() => {
+              setIsLoading(false);
               setIsTryingToLogin(false);
             });
         } else {
