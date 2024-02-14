@@ -4,7 +4,6 @@ import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import {RootStackParamList} from './RootStackParamList';
 import {LoggedInTabs} from './LoggedInTabs';
 import useStore from '../features/common/store/store';
-import {LoadingScreen} from '../features/common/screens/LoadingScreen';
 import {SigninForm} from '../features/account/screens/SigninForm';
 import {ICustomTheme, useTheme} from 'native-base';
 import {NoWifiIcon} from '../features/common/components/NoWifiIcon';
@@ -15,8 +14,7 @@ import {useEffect} from 'react';
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export const RootStackNavigation = () => {
-  const {backendConnection, setBackendConnection, user, isTryingToLogin} =
-    useStore();
+  const {backendConnection, setBackendConnection, user} = useStore();
   const [checkingBackendConnection, setCheckingBackendConnection] =
     useState(false);
 
@@ -68,9 +66,7 @@ export const RootStackNavigation = () => {
                 : NoWifiIcon,
             }}>
             {() => {
-              if (isTryingToLogin) {
-                return <LoadingScreen />;
-              } else if (user === null) {
+              if (user === null) {
                 return <SigninForm />;
               } else {
                 return <LoggedInTabs />;
