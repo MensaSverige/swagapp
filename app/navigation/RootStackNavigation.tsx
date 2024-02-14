@@ -27,7 +27,7 @@ export const RootStackNavigation = () => {
       intervalId = setInterval(() => {
         setCheckingBackendConnection(true);
         apiClient
-          .get('health')
+          .get('health', {timeout: 200})
           .then(() => {
             setBackendConnection(true);
           })

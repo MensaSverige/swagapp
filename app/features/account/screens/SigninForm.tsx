@@ -62,7 +62,7 @@ export const SigninForm = () => {
           setIsLoading(true);
           setIsTryingToLogin(true);
           apiClient
-            .get('/user/me')
+            .get('/user/me', {timeout: 500})
             .then(response => {
               if (response.status === 200) {
                 const userData: User = response.data;
