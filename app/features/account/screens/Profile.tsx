@@ -22,7 +22,7 @@ import {updateUser} from '../services/userService';
 
 const Profile: React.FC = () => {
   // Get current user and token from Zustand store
-  const {user, setUser} = useStore();
+  const {user, setUser, backendConnection} = useStore();
 
   const theme = useTheme() as ICustomTheme;
   const styles = createStyles(theme);
@@ -134,7 +134,7 @@ const Profile: React.FC = () => {
             </Field>
           </Fields>
           <Fields>
-            <Button onPress={handleSave}>
+            <Button onPress={handleSave} isDisabled={!backendConnection}>
               <Text color="white">
                 Spara
                 {isLoading && (
