@@ -11,7 +11,7 @@ import {
   VStack,
   useTheme,
 } from 'native-base';
-import React from 'react';
+import React, {useEffect, useState, useRef} from 'react';
 import {User} from '../../common/types/user';
 import useStore from '../../common/store/store';
 import * as Keychain from 'react-native-keychain';
@@ -32,17 +32,70 @@ interface ErrorResponse {
 
 export const SigninForm = () => {
   const theme = useTheme();
-  const [username, setUsername] = React.useState('');
-  const [password, setPassword] = React.useState('');
-  const [passwordVisible, setPasswordVisible] = React.useState(false);
-  const [saveCredentials, setSaveCredentials] = React.useState(false);
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [passwordVisible, setPasswordVisible] = useState(false);
+  const [saveCredentials, setSaveCredentials] = useState(false);
 
-  const [showLoginError, setShowLoginError] = React.useState(false);
-  const [loginErrorText, setLoginErrorText] = React.useState('');
+  const [showLoginError, setShowLoginError] = useState(false);
+  const [loginErrorText, setLoginErrorText] = useState('');
 
-  const [isLoading, setIsLoading] = React.useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isTryingStoredCredentials, setIsTryingStoredCredentials] =
+    useState(false);
 
-  const store = useStore();
+  const {testMode, backendConnection, user, setUser, setIsTryingToLogin} =
+    useStore();
+
+  useEffect(() => {
+    if (!user && backendConnection) {
+      Keychain.getAllGenericPasswordServices().then(allSavedCredentials => {
+        if (
+          allSavedCredentials.some(
+            credential =>
+              credential === 'accessToken' ||
+              credential === 'refreshToken' ||
+              credential === 'credentials',
+          )
+        ) {
+          setIsTryingStoredCredentials(true);
+          setIsLoading(true);
+          setIsTryingToLogin(true);
+          apiClient
+            .get('/user/me', {timeout: 500})
+            .then(response => {
+              if (response.status === 200) {
+                const userData: User = response.data;
+                setUser(userData);
+              } else {
+                return response.data().then((data: any) => {
+                  throw new Error(`Could not get user object. Data: ${data}`);
+                });
+              }
+            })
+            .catch(error => {
+              if (!error.message.includes('Network Error')) {
+                // Error was not Network Error, which means login failed due to invalid credentials.
+                setIsTryingStoredCredentials(false);
+                Keychain.resetGenericPassword();
+              }
+            })
+            .finally(() => {
+              setIsLoading(false);
+              setIsTryingToLogin(false);
+            });
+        } else {
+          setIsTryingToLogin(false);
+        }
+      });
+    }
+  }, [
+    user,
+    setUser,
+    backendConnection,
+    setIsTryingToLogin,
+    setIsTryingStoredCredentials,
+  ]);
 
   const handleLogin = async () => {
     try {
@@ -64,15 +117,15 @@ export const SigninForm = () => {
       .post('/auth', {
         username: username,
         password: password,
-        test: store.testMode,
+        test: testMode,
       })
       .then(async response => {
         if (response.status === 200) {
           const data: LoginResponse = response.data;
-          const user: User = data.user;
+          const responseUser: User = data.user;
 
           if (data.access_token && data.refresh_token) {
-            store.setUser(user);
+            setUser(responseUser);
             return Promise.all([
               Keychain.setGenericPassword('accessToken', data.access_token, {
                 service: 'accessToken',
@@ -114,7 +167,17 @@ export const SigninForm = () => {
       })
       .catch(error => {
         console.error('Login error', error.message || error);
-        setLoginErrorText('Något gick fel. Försök igen senare.');
+        if (error.message.includes('Network Error')) {
+          setLoginErrorText(
+            `Det går inte att nå servern just nu. ${
+              isTryingStoredCredentials
+                ? 'Försöker igen automatiskt'
+                : 'Försök igen om en stund.'
+            }`,
+          );
+        } else {
+          setLoginErrorText('Något gick fel. Försök igen senare.');
+        }
         setShowLoginError(true);
       })
       .finally(() => {
@@ -122,7 +185,7 @@ export const SigninForm = () => {
       });
   };
 
-  const cancelRef = React.useRef(null);
+  const cancelRef = useRef(null);
 
   return (
     <Center w="100%" h="100%">
@@ -181,7 +244,10 @@ export const SigninForm = () => {
           {isLoading ? (
             <Spinner />
           ) : (
-            <Button mt={8} onPress={handleLogin}>
+            <Button
+              mt={8}
+              onPress={handleLogin}
+              isDisabled={!backendConnection}>
               {TEST_MODE ? 'Logga in' : 'Logga in i testläge'}
             </Button>
           )}
