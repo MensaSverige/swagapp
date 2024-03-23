@@ -74,7 +74,7 @@ jobs:
 
       - name: Upload APK to Release
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh release upload ${{ inputs.tag }} ${{steps.sign_app.outputs.signedReleaseFile}} --clobber
       # - name: Get Release
