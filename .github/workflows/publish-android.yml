@@ -14,7 +14,7 @@ on:
 jobs:
   build_and_release:
     runs-on: ubuntu-latest
-
+    environment: Mensa-Dev
     steps:
       - name: Set build version
         run: echo "BUILD_VERSION=${{ inputs.version }}" >> $GITHUB_ENV
