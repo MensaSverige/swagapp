@@ -46,17 +46,24 @@ jobs:
       - name: Install dependencies with Yarn
         working-directory: app
         run: yarn install
+      
+      - name: Decode Keystore
+        working-directory: app/android
+        env:
+          ANDROID_SIGNING_KEY: ${{ secrets.ANDROID_SIGNING_KEY }}
+        run: |
+          echo "$ANDROID_SIGNING_KEY" | base64 --decode > my-release-key.keystore
 
       - name: Build Android App Bundle
         working-directory: app/android
         env:
-          ANDROID_KEYSTORE: ${{ secrets.ANDROID_SIGNING_KEY }}
+          ANDROID_SIGNING_KEY_PATH: ${{ github.workspace }}/app/android/my-release-key.keystore
           KEY_ALIAS: ${{ secrets.ANDROID_SIGNING_ALIAS }}
           STORE_PASSWORD: ${{ secrets.ANDROID_SIGNING_STORE_PASSWORD }}
           KEY_PASSWORD: ${{ secrets.ANDROID_SIGNING_KEY_PASSWORD }}
         run: |
           chmod +x ./gradlew
-          ./gradlew assembleRelease -Pandroid.injected.signing.store.file=$ANDROID_KEYSTORE -Pandroid.injected.signing.store.password=$STORE_PASSWORD -Pandroid.injected.signing.key.alias=$KEY_ALIAS -Pandroid.injected.signing.key.password=$KEY_PASSWORD -PversionName=${{ inputs.version }}
+          ./gradlew assembleRelease -Pandroid.injected.signing.store.file=$ANDROID_SIGNING_KEY_PATH -Pandroid.injected.signing.store.password=$STORE_PASSWORD -Pandroid.injected.signing.key.alias=$KEY_ALIAS -Pandroid.injected.signing.key.password=$KEY_PASSWORD -PversionName=${{ inputs.version }}
    
 
       # upload release as artifact
