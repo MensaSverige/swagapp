@@ -49,34 +49,48 @@ jobs:
 
       - name: Build Android App Bundle
         working-directory: app/android
+        env:
+          ANDROID_KEYSTORE: ${{ secrets.ANDROID_SIGNING_KEY }}
+          KEY_ALIAS: ${{ secrets.ANDROID_SIGNING_ALIAS }}
+          STORE_PASSWORD: ${{ secrets.ANDROID_SIGNING_STORE_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_SIGNING_KEY_PASSWORD }}
         run: |
           chmod +x ./gradlew
-          ./gradlew assembleRelease --no-daemon -PversionName=${{ inputs.version }}
+          ./gradlew assembleRelease -Pandroid.injected.signing.store.file=$ANDROID_KEYSTORE -Pandroid.injected.signing.store.password=$STORE_PASSWORD -Pandroid.injected.signing.key.alias=$KEY_ALIAS -Pandroid.injected.signing.key.password=$KEY_PASSWORD -PversionName=${{ inputs.version }}
+   
 
-      - name: Sign App APK
-        uses: r0adkll/sign-android-release@v1
-        id: sign_app
-        with:
-          releaseDirectory: app/android/app/build/outputs/apk/release
-          signingKeyBase64: ${{ secrets.ANDROID_SIGNING_KEY }}
-          alias: ${{ secrets.ANDROID_SIGNING_ALIAS }}
-          keyStorePassword: ${{ secrets.ANDROID_SIGNING_STORE_PASSWORD }}
-          keyPassword: ${{ secrets.ANDROID_SIGNING_KEY_PASSWORD }}
-        env:
-          BUILD_TOOLS_VERSION: "34.0.0"
-
-      - name: Upload Artifact  
+      # upload release as artifact
+      - name: Upload Artifact
         uses: actions/upload-artifact@v2
         with:
-          name: Signed app bundle
-          path: ${{steps.sign_app.outputs.signedReleaseFile}}
+          name: app-release
+          path: app/android/app/build/outputs/apk/release/app-release.apk
+  
+          
+      # - name: Sign App APK
+      #   uses: r0adkll/sign-android-release@v1
+      #   id: sign_app
+      #   with:
+      #     releaseDirectory: app/android/app/build/outputs/apk/release
+      #     signingKeyBase64: ${{ secrets.ANDROID_SIGNING_KEY }}
+      #     alias: ${{ secrets.ANDROID_SIGNING_ALIAS }}
+      #     keyStorePassword: ${{ secrets.ANDROID_SIGNING_STORE_PASSWORD }}
+      #     keyPassword: ${{ secrets.ANDROID_SIGNING_KEY_PASSWORD }}
+      #   env:
+      #     BUILD_TOOLS_VERSION: "34.0.0"
+
+      # - name: Upload Artifact  
+      #   uses: actions/upload-artifact@v2
+      #   with:
+      #     name: Signed app bundle
+      #     path: ${{steps.sign_app.outputs.signedReleaseFile}}
 
 
-      - name: Upload APK to Release
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          gh release upload ${{ inputs.tag }} ${{steps.sign_app.outputs.signedReleaseFile}} --clobber
+      # - name: Upload APK to Release
+      #   env:
+      #     GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      #   run: |
+      #     gh release upload ${{ inputs.tag }} ${{steps.sign_app.outputs.signedReleaseFile}} --clobber
       # - name: Get Release
       #   id: get_release
       #   uses: joutvhu/get-release@v1
