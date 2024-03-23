@@ -4,6 +4,12 @@ on:
   push:
     tags:
       - v*
+  workflow_dispatch:
+    inputs:
+      release-tag:
+        description: "Selected release tag"
+        type: string
+        required: true
 
 permissions:
   contents: read
@@ -28,8 +34,12 @@ jobs:
       - name: Generate Docker tag from release date and git commit hash
         id: generate-docker-tag
         run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            TAG_NAME=${{ github.event.inputs.release-tag }}
+          else
+            TAG_NAME=${GITHUB_REF#refs/tags/}
+          fi
           SHORT_SHA="$(echo $GITHUB_SHA | cut -c 1-7)"
-          TAG_NAME="${GITHUB_REF##*/}"
           echo "GIT_TAG=$TAG_NAME" >> $GITHUB_OUTPUT
           echo "DOCKER_TAG=$TAG_NAME.$SHORT_SHA" >> $GITHUB_OUTPUT
           echo "GIT_HASH=$SHORT_SHA" >> $GITHUB_OUTPUT
