@@ -55,6 +55,7 @@ jobs:
 
       - name: Sign App APK
         uses: r0adkll/sign-android-release@v1
+        id: sign_app
         with:
           releaseDirectory: app/android/app/build/outputs/apk/release
           signingKeyBase64: ${{ secrets.ANDROID_SIGNING_KEY }}
@@ -64,26 +65,30 @@ jobs:
         env:
           BUILD_TOOLS_VERSION: "34.0.0"
 
-      - name: Upload Artifact
+      - name: Upload Artifact  
         uses: actions/upload-artifact@v2
         with:
-          name: Signed App APK
-          path: app/android/app/build/outputs/apk/release/app-release.apk
+          name: Signed app bundle
+          path: ${{steps.sign_app.outputs.signedReleaseFile}}
 
-      - name: Get Release
-        id: get_release
-        uses: joutvhu/get-release@v1
-        with:
-          tag_name: ${{ inputs.tag }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload APK to Release
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.get_release.outputs.upload_url }}
-          asset_path: ./app/android/app/build/outputs/apk/release/app-release-unsigned-signed.apk
-          asset_name: swag-app-${{ inputs.version  }}.apk
-          asset_content_type: application/vnd.android.package-archive
+        run: |
+          gh release upload ${{ inputs.tag }} ${{steps.sign_app.outputs.signedReleaseFile}} --clobber
+      # - name: Get Release
+      #   id: get_release
+      #   uses: joutvhu/get-release@v1
+      #   with:
+      #     tag_name: ${{ inputs.tag }}
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # - name: Upload APK to Release
+      #   uses: actions/upload-release-asset@v1
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      #   with:
+      #     upload_url: ${{ steps.get_release.outputs.upload_url }}
+      #     asset_path: ./app/android/app/build/outputs/apk/release/app-release-unsigned-signed.apk
+      #     asset_name: swag-app-${{ inputs.version  }}.apk
+      #     asset_content_type: application/vnd.android.package-archive
