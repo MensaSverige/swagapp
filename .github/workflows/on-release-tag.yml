@@ -5,6 +5,11 @@ on:
     tags:
       - v*
 
+permissions:
+  contents: read
+  packages: write
+  id-token: write
+
 jobs:
   prepare-data:
     runs-on: ubuntu-latest
