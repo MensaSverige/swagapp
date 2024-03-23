@@ -408,6 +408,41 @@ def users_showing_location():
         logging.error(f"Error in GET /users_showing_location: {str(e)}")
         return jsonify({'error': 'Internal Server Error'}), 500
 
+@app.route('/user_by_username/<string:username>', methods=['GET'])
+def get_user_by_username(username):
+    """
+    Get a user by username.
+
+    This function extracts the username from the request query parameters,
+    checks if the user exists in the database, and returns the user if the user exists.
+    If the user does not exist, an appropriate error message is returned.
+
+    Returns:
+    - A JSON response with the user and status code 200 if the user is found.
+    - A JSON response with an error message and status code 404 if the user is not found.
+    - A JSON response with an error message and status code 500 if there is an internal server error.
+
+    :returns: A JSON response containing the user.
+    :rtype: flask.Response
+    """
+
+    try:
+        logging.info(f"Getting user with username {username}")
+
+        existing_user = db.user.find_one(
+            {"username": username})
+
+        if existing_user:
+            logging.info(f"User with username {username} found")
+            return jsonify(bson_to_json(existing_user)), 200
+        else:
+            # This means that no document was found with the provided `_id`
+            logging.warning(f"No user found with username {username}")
+            return jsonify({'error': 'User not found'}), 404
+
+    except Exception as e:
+        logging.error(f"Error in GET /user_by_username: {str(e)}")
+        return jsonify({'error': 'Internal Server Error'}), 500
 
 @app.route('/update_user_location', methods=['POST'])
 def update_user_location():

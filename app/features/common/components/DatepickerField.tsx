@@ -1,9 +1,9 @@
 import React, {useState} from 'react';
 import DatePicker from 'react-native-date-picker';
 import {Dimensions, TouchableOpacity} from 'react-native';
-import {Text} from 'react-native';
+import {Text} from 'native-base';
 import {FormControl, ICustomTheme, useTheme, Heading} from 'native-base';
-import {formatDate} from '../functions/FormatDate';
+import {formatDateAndTime} from '../functions/FormatDateAndTime';
 
 interface DateFieldProps {
   label: React.ReactNode;
@@ -26,7 +26,7 @@ export const DatepickerField: React.FC<DateFieldProps> = ({
         <FormControl.Label style={[styles.datepickerField]}>
           <Heading size="sm">{label}</Heading>
           <TouchableOpacity onPress={() => setOpenDateModal(true)}>
-            <Text>{formatDate(date || '')}</Text>
+            <Text>{formatDateAndTime(date || '')}</Text>
           </TouchableOpacity>
         </FormControl.Label>
 
