@@ -40,9 +40,12 @@ jobs:
         with:
           node-version: 16
 
-      - name: Install npm dependencies
+      - name: Install Yarn
+        run: npm install -g yarn
+        
+      - name: Install dependencies with Yarn
         working-directory: app
-        run: npm install
+        run: yarn install
 
       - name: Build Android App Bundle
         working-directory: app/android
