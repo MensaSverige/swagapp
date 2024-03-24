@@ -26,7 +26,7 @@ jobs:
         working-directory: app
         run: |
           touch .env
-          echo "API_URL=https://swag.mikael.green/api" >> .env
+          echo "API_URL=https://swag.k.mikael.blue/api" >> .env
           echo "TEST_MODE=false" >> .env
 
       - name: Set up JDK 17
@@ -42,11 +42,11 @@ jobs:
 
       - name: Install Yarn
         run: npm install -g yarn
-        
+
       - name: Install dependencies with Yarn
         working-directory: app
         run: yarn install
-      
+
       - name: Decode Keystore
         working-directory: app/android
         env:
@@ -64,13 +64,12 @@ jobs:
         run: |
           chmod +x ./gradlew
           ./gradlew assembleRelease -Pandroid.injected.signing.store.file=$ANDROID_SIGNING_KEY_PATH -Pandroid.injected.signing.store.password=$STORE_PASSWORD -Pandroid.injected.signing.key.alias=$KEY_ALIAS -Pandroid.injected.signing.key.password=$KEY_PASSWORD -PversionName=${{ inputs.version }}
-   
+
       - name: Upload Artifact
         uses: actions/upload-artifact@v2
         with:
           name: app-release
           path: app/android/app/build/outputs/apk/release/app-release.apk
-
 
       - name: upload apk to release
         env:

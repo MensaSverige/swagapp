@@ -1,12 +1,12 @@
-version: '3'
+version: "3"
 services:
   website:
-    image: ghcr.io/skaramicke/swagapp/website:latest
+    image: ghcr.io/mensasverige/swagapp/website:latest
     ports:
       - "8080:80"
 
   backend:
-    image: ghcr.io/skaramicke/swagapp/backend:latest
+    image: ghcr.io/mensasverige/swagapp/backend:latest
     depends_on:
       - mongo
     volumes:

@@ -37,18 +37,22 @@
     </style>
     <script>
       window.onload = function () {
-        fetch('https://api.github.com/repos/skaramicke/swagapp/releases/latest')
-          .then(response => response.json())
-          .then(data => {
-            const apkAsset = data.assets.find(asset =>
-              asset.name.endsWith('.apk'),
+        fetch(
+          "https://api.github.com/repos/mensasverige/swagapp/releases/latest"
+        )
+          .then((response) => response.json())
+          .then((data) => {
+            const apkAsset = data.assets.find((asset) =>
+              asset.name.endsWith(".apk")
             );
             if (apkAsset) {
-              document.getElementById('apkLink').href =
+              document.getElementById("apkLink").href =
                 apkAsset.browser_download_url;
             }
           })
-          .catch(error => console.error('Error fetching the APK URL:', error));
+          .catch((error) =>
+            console.error("Error fetching the APK URL:", error)
+          );
       };
     </script>
   </head>
@@ -56,7 +60,9 @@
     <div class="container">
       <h1>SWAG App</h1>
       <div class="app">
-        <a href="https://apps.apple.com/se/app/swag-communiator/id6472608847">Ladda ner från Apple Appstore</a>
+        <a href="https://apps.apple.com/se/app/swag-communiator/id6472608847"
+          >Ladda ner från Apple Appstore</a
+        >
       </div>
       <div class="app">
         <a id="apkLink" href="#">Ladda ner Android-appen</a>
