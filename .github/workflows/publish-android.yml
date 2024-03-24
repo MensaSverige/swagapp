@@ -18,6 +18,9 @@ jobs:
     steps:
       - name: Set build version
         run: echo "BUILD_VERSION=${{ inputs.version }}" >> $GITHUB_ENV
+      
+      - name: Checkout Code
+        uses: actions/checkout@v2
 
       - name: Decode Keystore
         working-directory: app/android
@@ -25,10 +28,7 @@ jobs:
           ANDROID_UPLOAD_KEY: ${{ secrets.ANDROID_UPLOAD_KEY }}
         run: |
           echo "$ANDROID_UPLOAD_KEY" | base64 --decode > upload-key.jks
-
-      - name: Checkout Code
-        uses: actions/checkout@v2
-
+      
       - name: Create .env file
         working-directory: app
         run: |
