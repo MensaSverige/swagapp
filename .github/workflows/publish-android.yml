@@ -18,10 +18,17 @@ jobs:
     steps:
       - name: Set build version
         run: echo "BUILD_VERSION=${{ inputs.version }}" >> $GITHUB_ENV
-
+      
       - name: Checkout Code
         uses: actions/checkout@v2
 
+      - name: Decode Keystore
+        working-directory: app/android
+        env:
+          ANDROID_UPLOAD_KEY: ${{ secrets.ANDROID_UPLOAD_KEY }}
+        run: |
+          echo "$ANDROID_UPLOAD_KEY" | base64 --decode > upload-key.jks
+      
       - name: Create .env file
         working-directory: app
         run: |
@@ -46,34 +53,52 @@ jobs:
       - name: Install dependencies with Yarn
         working-directory: app
         run: yarn install
-      
-      - name: Decode Keystore
-        working-directory: app/android
-        env:
-          ANDROID_SIGNING_KEY: ${{ secrets.ANDROID_SIGNING_KEY }}
-        run: |
-          echo "$ANDROID_SIGNING_KEY" | base64 --decode > my-release-key.keystore
 
-      - name: Build Android App Bundle
+      - name: Build Android signed apk
         working-directory: app/android
         env:
-          ANDROID_SIGNING_KEY_PATH: ${{ github.workspace }}/app/android/my-release-key.keystore
-          KEY_ALIAS: ${{ secrets.ANDROID_SIGNING_ALIAS }}
+          ANDROID_UPLOAD_KEY_PATH: ${{ github.workspace }}/app/android/upload-key.jks
+          KEY_ALIAS: ${{ secrets.ANDROID_UPLOAD_ALIAS }}
           STORE_PASSWORD: ${{ secrets.ANDROID_SIGNING_STORE_PASSWORD }}
           KEY_PASSWORD: ${{ secrets.ANDROID_SIGNING_KEY_PASSWORD }}
         run: |
           chmod +x ./gradlew
-          ./gradlew assembleRelease -Pandroid.injected.signing.store.file=$ANDROID_SIGNING_KEY_PATH -Pandroid.injected.signing.store.password=$STORE_PASSWORD -Pandroid.injected.signing.key.alias=$KEY_ALIAS -Pandroid.injected.signing.key.password=$KEY_PASSWORD -PversionName=${{ inputs.version }}
-   
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v2
-        with:
-          name: app-release
-          path: app/android/app/build/outputs/apk/release/app-release.apk
+          ./gradlew bundleRelease -Pandroid.injected.signing.store.file=$ANDROID_UPLOAD_KEY_PATH -Pandroid.injected.signing.store.password=$STORE_PASSWORD -Pandroid.injected.signing.key.alias=$KEY_ALIAS -Pandroid.injected.signing.key.password=$KEY_PASSWORD -PversionName=${{ inputs.version }}
+          ./gradlew assembleRelease -Pandroid.injected.signing.store.file=$ANDROID_UPLOAD_KEY_PATH -Pandroid.injected.signing.store.password=$STORE_PASSWORD -Pandroid.injected.signing.key.alias=$KEY_ALIAS -Pandroid.injected.signing.key.password=$KEY_PASSWORD -PversionName=${{ inputs.version }}
 
-
-      - name: upload apk to release
+      - name: Upload APK to release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh release upload ${{ inputs.tag }} app/android/app/build/outputs/apk/release/app-release.apk --clobber
+
+      - name: Upload AAB to release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release upload ${{ inputs.tag }} app/android/app/build/outputs/bundle/release/app-release.aab --clobber
+      
+      - name: Build Android release bundle
+        working-directory: app/android
+        env:
+          ANDROID_UPLOAD_KEY_PATH: ${{ github.workspace }}/app/android/upload-key.jks
+          KEY_ALIAS: ${{ secrets.ANDROID_UPLOAD_ALIAS }}
+          STORE_PASSWORD: ${{ secrets.ANDROID_SIGNING_STORE_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_SIGNING_KEY_PASSWORD }}
+          SERVICE_ACCOUNT_JSON: ${{ secrets.SERVICE_ACCOUNT_JSON }}
+        run: |
+          echo "$SERVICE_ACCOUNT_JSON" > ./app/service-account.json
+          chmod +x ./gradlew
+          ./gradlew publishReleaseBundle -Pandroid.injected.signing.store.file=$ANDROID_UPLOAD_KEY_PATH -Pandroid.injected.signing.store.password=$STORE_PASSWORD -Pandroid.injected.signing.key.alias=$KEY_ALIAS -Pandroid.injected.signing.key.password=$KEY_PASSWORD -PversionName=${{ inputs.version }}
+          
+      - name: Upload release bundle
+        uses: actions/upload-artifact@v2
+        with:
+          name: app-release-bundle
+          path: app/android/app/build/outputs/bundle/release/app-release.aab
+
+      - name: upload bundle to release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release upload ${{ inputs.tag }} app/android/app/build/outputs/bundle/release/app-release.aab --clobber
