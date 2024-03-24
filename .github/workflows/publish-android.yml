@@ -84,7 +84,7 @@ jobs:
         env:
           SERVICE_ACCOUNT_JSON: ${{ secrets.SERVICE_ACCOUNT_JSON }}
         run: |
-          echo "$SERVICE_ACCOUNT_JSON" > service-account.json
+          echo "$SERVICE_ACCOUNT_JSON" > ./app/service-account.json
           chmod +x ./gradlew
           ./gradlew publishReleaseBundle  
           
