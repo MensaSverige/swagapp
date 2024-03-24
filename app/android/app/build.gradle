@@ -80,7 +80,7 @@ android {
 
     namespace "com.swagapp"
     defaultConfig {
-        applicationId "swagger"
+        applicationId "com.swagger"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
