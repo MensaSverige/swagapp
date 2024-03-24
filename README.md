@@ -1,14 +1,14 @@
 <p align="center">
-<img src="https://img.shields.io/github/v/release/skaramicke/swagapp">
-<img src="https://img.shields.io/github/issues/skaramicke/swagapp">
-<img src="https://img.shields.io/github/issues-pr/skaramicke/swagapp">
-<img src="https://img.shields.io/github/license/skaramicke/swagapp">
+<img src="https://img.shields.io/github/v/release/mensasverige/swagapp">
+<img src="https://img.shields.io/github/issues/mensasverige/swagapp">
+<img src="https://img.shields.io/github/issues-pr/mensasverige/swagapp">
+<img src="https://img.shields.io/github/license/mensasverige/swagapp">
 </p>
 
 <p align="center">
-<img src="https://github.com/skaramicke/swagapp/actions/workflows/publish-android.yml/badge.svg">
-<img src="https://github.com/skaramicke/swagapp/actions/workflows/publish-website.yml/badge.svg">
-<img src="https://github.com/skaramicke/swagapp/actions/workflows/publish-backend.yml/badge.svg">
+<img src="https://github.com/mensasverige/swagapp/actions/workflows/publish-android.yml/badge.svg">
+<img src="https://github.com/mensasverige/swagapp/actions/workflows/publish-website.yml/badge.svg">
+<img src="https://github.com/mensasverige/swagapp/actions/workflows/publish-backend.yml/badge.svg">
 </p>
 
 <h1 align="center">📱 SWAG Communicator</h1>
@@ -47,7 +47,7 @@ Managed manually by Mikael, the iOS app deployment includes steps such as screen
 
 The Python backend is the cornerstone of SWAG, orchestrating user interactions and data processing. It plays a crucial role in authentication, event management, and location services. This backend is designed to be scalable, secure, and efficient, ensuring a seamless user experience.
 
-The backend has documentation on [the wiki](https://github.com/skaramicke/swagapp/wiki/backend).
+The backend has documentation on [the wiki](https://github.com/mensasverige/swagapp/wiki/backend).
 
 **Endpoints:**
 

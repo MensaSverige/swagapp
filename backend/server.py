@@ -61,7 +61,8 @@ def health():
     commit_hash = os.getenv('GIT_COMMIT_HASH', 'Unknown')
 
     # Construct commit URL using the commit hash
-    commit_url = f"https://github.com/skaramicke/swagapp/commit/{commit_hash}"
+    commit_url = f"https://github.com/mensasverige/swagapp/commit/{
+        commit_hash}"
 
     # Return the health check response with commit information
     return jsonify({
@@ -322,7 +323,8 @@ def list_events():
         logging.info(f"Static events successfully retrieved")
 
         for event in static_events:
-            event['id'] = f"{event['name'].replace(' ', '-').lower()}-{event['start'].replace(' ', '-').lower()}"
+            event['id'] = f"{event['name'].replace(
+                ' ', '-').lower()}-{event['start'].replace(' ', '-').lower()}"
             # add location {latitude, longitude} if not present
             if 'location' not in event or 'latitude' not in event['location'] or 'longitude' not in event['location']:
                 event['location'] = {
@@ -408,6 +410,7 @@ def users_showing_location():
         logging.error(f"Error in GET /users_showing_location: {str(e)}")
         return jsonify({'error': 'Internal Server Error'}), 500
 
+
 @app.route('/user_by_username/<string:username>', methods=['GET'])
 def get_user_by_username(username):
     """
@@ -443,6 +446,7 @@ def get_user_by_username(username):
     except Exception as e:
         logging.error(f"Error in GET /user_by_username: {str(e)}")
         return jsonify({'error': 'Internal Server Error'}), 500
+
 
 @app.route('/update_user_location', methods=['POST'])
 def update_user_location():
