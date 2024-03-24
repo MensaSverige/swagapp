@@ -51,20 +51,25 @@ jobs:
         working-directory: app/android
         env:
           ANDROID_SIGNING_KEY: ${{ secrets.ANDROID_SIGNING_KEY }}
+          ANDROID_UPLOAD_KEY: ${{ secrets.ANDROID_UPLOAD_KEY }}
         run: |
           echo "$ANDROID_SIGNING_KEY" | base64 --decode > my-release-key.keystore
+          echo "$ANDROID_UPLOAD_KEY" | base64 --decode > upload-key.jks
+
+
 
       - name: Build Android signed apk
         working-directory: app/android
         env:
           ANDROID_SIGNING_KEY_PATH: ${{ github.workspace }}/app/android/my-release-key.keystore
+          ANDROID_UPLOAD_KEY_PATH: ${{ github.workspace }}/app/android/upload-key.jks
           KEY_ALIAS: ${{ secrets.ANDROID_SIGNING_ALIAS }}
           STORE_PASSWORD: ${{ secrets.ANDROID_SIGNING_STORE_PASSWORD }}
           KEY_PASSWORD: ${{ secrets.ANDROID_SIGNING_KEY_PASSWORD }}
         run: |
           chmod +x ./gradlew
-          ./gradlew bundleRelease -PversionName=${{ inputs.version }}
-          ./gradlew assembleRelease -Pandroid.injected.signing.store.file=$ANDROID_SIGNING_KEY_PATH -Pandroid.injected.signing.store.password=$STORE_PASSWORD -Pandroid.injected.signing.key.alias=$KEY_ALIAS -Pandroid.injected.signing.key.password=$KEY_PASSWORD -PversionName=${{ inputs.version }}
+          ./gradlew bundleRelease -Pandroid.injected.signing.store.file=$ANDROID_UPLOAD_KEY_PATH -Pandroid.injected.signing.store.password=$STORE_PASSWORD -Pandroid.injected.signing.key.alias=$KEY_ALIAS -Pandroid.injected.signing.key.password=$KEY_PASSWORD -PversionName=${{ inputs.version }}
+          ./gradlew assembleRelease -Pandroid.injected.signing.store.file=$ANDROID_UPLOAD_KEY_PATH -Pandroid.injected.signing.store.password=$STORE_PASSWORD -Pandroid.injected.signing.key.alias=$KEY_ALIAS -Pandroid.injected.signing.key.password=$KEY_PASSWORD -PversionName=${{ inputs.version }}
    
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v2
