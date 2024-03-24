@@ -580,7 +580,7 @@ def initialize_app():
             result = db['user'].update_one({'username': review_user}, {
                 '$set': {
                     'name': 'Reviewer',
-                    'avatar_url': 'https://swag.mikael.green/i-love-apple.png',
+                    'avatar_url': 'https://swag.k.mikael.blue/i-love-apple.png',
                 }}, upsert=True)
             logging.info(f"Ensured review user exists: {result}")
 
