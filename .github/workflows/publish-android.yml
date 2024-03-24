@@ -76,22 +76,19 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: app-release
-          path: app/android/app/build/outputs/apk/release/app-release.aab
+          path: app/android/app/build/outputs/aab/release/app-release.aab
 
-      - name: upload apk to release
+      - name: Upload APK to release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh release upload ${{ inputs.tag }} app/android/app/build/outputs/apk/release/app-release.apk --clobber
 
-
-      - name: upload aab to release
+      - name: Upload AAB to release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release upload ${{ inputs.tag }} app/android/app/build/outputs/apk/release/app-release.aab --clobber
-
-      
+          gh release upload ${{ inputs.tag }} app/android/app/build/outputs/aab/release/app-release.aab --clobber
       
       - name: Build Android release bundle
         working-directory: app/android
@@ -113,6 +110,3 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh release upload ${{ inputs.tag }} app/android/app/build/outputs/bundle/release/app-release.aab --clobber
-
-
-          
