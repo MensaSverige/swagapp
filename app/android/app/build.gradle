@@ -1,6 +1,7 @@
 apply plugin: "com.android.application"
 apply plugin: "org.jetbrains.kotlin.android"
 apply plugin: "com.facebook.react"
+apply plugin: 'com.github.triplet.play'
 //apply from: project(':react-native-config').projectDir.getPath() + "/dotenv.gradle"
 
 
@@ -119,6 +120,15 @@ dependencies {
     } else {
         implementation jscFlavor
     }
+}
+play {
+    // You must provide a service account JSON file for authentication
+    serviceAccountCredentials = file('service-account.json')
+    
+    // Default to the 'internal' track, but you can modify this as needed
+    track = 'internal'
+    
+    // Configure other publishing options here as needed
 }
 
 apply from: file("../../node_modules/@react-native-community/cli-platform-android/native_modules.gradle"); applyNativeModulesAppBuildGradle(project)
