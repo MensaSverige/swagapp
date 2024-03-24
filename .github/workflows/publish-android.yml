@@ -53,10 +53,6 @@ jobs:
       - name: Install dependencies with Yarn
         working-directory: app
         run: yarn install
-      
-      
-
-
 
       - name: Build Android signed apk
         working-directory: app/android
@@ -69,18 +65,6 @@ jobs:
           chmod +x ./gradlew
           ./gradlew bundleRelease -Pandroid.injected.signing.store.file=$ANDROID_UPLOAD_KEY_PATH -Pandroid.injected.signing.store.password=$STORE_PASSWORD -Pandroid.injected.signing.key.alias=$KEY_ALIAS -Pandroid.injected.signing.key.password=$KEY_PASSWORD -PversionName=${{ inputs.version }}
           ./gradlew assembleRelease -Pandroid.injected.signing.store.file=$ANDROID_UPLOAD_KEY_PATH -Pandroid.injected.signing.store.password=$STORE_PASSWORD -Pandroid.injected.signing.key.alias=$KEY_ALIAS -Pandroid.injected.signing.key.password=$KEY_PASSWORD -PversionName=${{ inputs.version }}
-   
-      - name: Upload APK Artifact
-        uses: actions/upload-artifact@v2
-        with:
-          name: app-release
-          path: app/android/app/build/outputs/apk/release/app-release.apk
-
-      - name: Upload AAB Artifact
-        uses: actions/upload-artifact@v2
-        with:
-          name: app-release
-          path: app/android/app/build/outputs/bundle/release/app-release.aab
 
       - name: Upload APK to release
         env:
@@ -97,11 +81,15 @@ jobs:
       - name: Build Android release bundle
         working-directory: app/android
         env:
+          ANDROID_UPLOAD_KEY_PATH: ${{ github.workspace }}/app/android/upload-key.jks
+          KEY_ALIAS: ${{ secrets.ANDROID_UPLOAD_ALIAS }}
+          STORE_PASSWORD: ${{ secrets.ANDROID_SIGNING_STORE_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_SIGNING_KEY_PASSWORD }}
           SERVICE_ACCOUNT_JSON: ${{ secrets.SERVICE_ACCOUNT_JSON }}
         run: |
           echo "$SERVICE_ACCOUNT_JSON" > ./app/service-account.json
           chmod +x ./gradlew
-          ./gradlew publishReleaseBundle  
+          ./gradlew publishReleaseBundle -Pandroid.injected.signing.store.file=$ANDROID_UPLOAD_KEY_PATH -Pandroid.injected.signing.store.password=$STORE_PASSWORD -Pandroid.injected.signing.key.alias=$KEY_ALIAS -Pandroid.injected.signing.key.password=$KEY_PASSWORD -PversionName=${{ inputs.version }}
           
       - name: Upload release bundle
         uses: actions/upload-artifact@v2
