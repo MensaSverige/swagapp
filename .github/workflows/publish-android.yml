@@ -25,9 +25,9 @@ jobs:
       - name: Decode Keystore
         working-directory: app/android
         env:
-          ANDROID_UPLOAD_KEY: ${{ secrets.ANDROID_UPLOAD_KEY }}
+          ANDROID_SIGNING_KEY: ${{ secrets.ANDROID_SIGNING_KEY }}
         run: |
-          echo "$ANDROID_UPLOAD_KEY" | base64 --decode > upload-key.jks
+          echo "$ANDROID_SIGNING_KEY" | base64 --decode > mensa-release-key.keystore
       
       - name: Create .env file
         working-directory: app
@@ -54,51 +54,38 @@ jobs:
         working-directory: app
         run: yarn install
 
-      - name: Build Android signed apk
+      - name: Build Android signed aab
         working-directory: app/android
         env:
-          ANDROID_UPLOAD_KEY_PATH: ${{ github.workspace }}/app/android/upload-key.jks
-          KEY_ALIAS: ${{ secrets.ANDROID_UPLOAD_ALIAS }}
-          STORE_PASSWORD: ${{ secrets.ANDROID_SIGNING_STORE_PASSWORD }}
-          KEY_PASSWORD: ${{ secrets.ANDROID_SIGNING_KEY_PASSWORD }}
+          ANDROID_SIGNING_KEY_PATH: ${{ github.workspace }}/app/android/mensa-release-key.keystore
+          ANDROID_SIGNING_ALIAS: ${{ secrets.ANDROID_SIGNING_ALIAS }}
+          ANDROID_SIGNING_KEY_PASSWORD: ${{ secrets.ANDROID_SIGNING_KEY_PASSWORD }}
         run: |
           chmod +x ./gradlew
-          ./gradlew bundleRelease -Pandroid.injected.signing.store.file=$ANDROID_UPLOAD_KEY_PATH -Pandroid.injected.signing.store.password=$STORE_PASSWORD -Pandroid.injected.signing.key.alias=$KEY_ALIAS -Pandroid.injected.signing.key.password=$KEY_PASSWORD -PversionName=${{ inputs.version }}
-          ./gradlew assembleRelease -Pandroid.injected.signing.store.file=$ANDROID_UPLOAD_KEY_PATH -Pandroid.injected.signing.store.password=$STORE_PASSWORD -Pandroid.injected.signing.key.alias=$KEY_ALIAS -Pandroid.injected.signing.key.password=$KEY_PASSWORD -PversionName=${{ inputs.version }}
-
-      - name: Upload APK to release
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          gh release upload ${{ inputs.tag }} app/android/app/build/outputs/apk/release/app-release.apk --clobber
+           ./gradlew assembleRelease -Pandroid.injected.signing.store.file=$ANDROID_SIGNING_KEY_PATH -Pandroid.injected.signing.store.password=$ANDROID_SIGNING_KEY_PASSWORD -Pandroid.injected.signing.key.alias=$ANDROID_SIGNING_ALIAS -Pandroid.injected.signing.key.password=$ANDROID_SIGNING_KEY_PASSWORD -PversionName=${{ inputs.version }}
 
       - name: Upload AAB to release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh release upload ${{ inputs.tag }} app/android/app/build/outputs/bundle/release/app-release.aab --clobber
-      
-      - name: Build Android release bundle
-        working-directory: app/android
-        env:
-          ANDROID_UPLOAD_KEY_PATH: ${{ github.workspace }}/app/android/upload-key.jks
-          KEY_ALIAS: ${{ secrets.ANDROID_UPLOAD_ALIAS }}
-          STORE_PASSWORD: ${{ secrets.ANDROID_SIGNING_STORE_PASSWORD }}
-          KEY_PASSWORD: ${{ secrets.ANDROID_SIGNING_KEY_PASSWORD }}
-          SERVICE_ACCOUNT_JSON: ${{ secrets.SERVICE_ACCOUNT_JSON }}
-        run: |
-          echo "$SERVICE_ACCOUNT_JSON" > ./app/service-account.json
-          chmod +x ./gradlew
-          ./gradlew publishReleaseBundle -Pandroid.injected.signing.store.file=$ANDROID_UPLOAD_KEY_PATH -Pandroid.injected.signing.store.password=$STORE_PASSWORD -Pandroid.injected.signing.key.alias=$KEY_ALIAS -Pandroid.injected.signing.key.password=$KEY_PASSWORD -PversionName=${{ inputs.version }}
-          
+
       - name: Upload release bundle
         uses: actions/upload-artifact@v2
         with:
           name: app-release-bundle
-          path: app/android/app/build/outputs/bundle/release/app-release.aab
+          path: app/android/app/build/outputs/bundle/release/app-release.aab     
 
-      - name: upload bundle to release
+      - name: Publish internal release to Google Play
+        working-directory: app/android
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ANDROID_SIGNING_KEY_PATH: ${{ github.workspace }}/app/android/mensa-release-key.keystore
+          ANDROID_SIGNING_ALIAS: ${{ secrets.ANDROID_SIGNING_ALIAS}}
+          ANDROID_SIGNING_STORE_PASSWORD: ${{ secrets.ANDROID_SIGNING_STORE_PASSWORD }}
+          GOOGLE_CLOUD_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_CLOUD_SERVICE_ACCOUNT_JSON }}
+          TRACK: internal
         run: |
-          gh release upload ${{ inputs.tag }} app/android/app/build/outputs/bundle/release/app-release.aab --clobber
+          echo "$GOOGLE_CLOUD_SERVICE_ACCOUNT_JSON" > ./app/service-account.json
+          chmod +x ./gradlew
+          ./gradlew publishReleaseBundle -Pandroid.injected.signing.store.file=$ANDROID_SIGNING_KEY_PATH -Pandroid.injected.signing.store.password=$ANDROID_SIGNING_STORE_PASSWORD -Pandroid.injected.signing.key.alias=$ANDROID_SIGNING_ALIAS -Pandroid.injected.signing.key.password=$ANDROID_SIGNING_STORE_PASSWORD -PversionName=${{ inputs.version }} -PpublishTrack=${{ env.TRACK }} -PversionCode=${{ github.run_number }}
+        

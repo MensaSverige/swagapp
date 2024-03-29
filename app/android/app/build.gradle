@@ -80,11 +80,11 @@ android {
 
     namespace "com.swagapp"
     defaultConfig {
-        applicationId "com.swagger"
+        applicationId "se.mensaswag"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
-        versionName "1.0"
+        versionCode project.hasProperty('versionCode') ? project.getProperty('versionCode').toInteger() : 1
+        versionName project.hasProperty('versionName') ? project.getProperty('versionName') : "1.0"
         //resValue "string", "api_url", project.env.get("API_URL")
     }
 
@@ -122,13 +122,11 @@ dependencies {
     }
 }
 play {
-    // You must provide a service account JSON file for authentication
+    // You must provide a service account JSON file for authentication. Visit the docs about Gooogle Cloud Credentials
     serviceAccountCredentials = file('service-account.json')
-    
-    // Default to the 'internal' track, but you can modify this as needed
-    track = 'internal'
-    
-    // Configure other publishing options here as needed
+    // Use a project property for the track, with a default value if not provided
+    track = findProperty('publishTrack') ?: 'internal'
+    releaseStatus.set(com.github.triplet.gradle.androidpublisher.ReleaseStatus.DRAFT)
 }
 
 apply from: file("../../node_modules/@react-native-community/cli-platform-android/native_modules.gradle"); applyNativeModulesAppBuildGradle(project)
