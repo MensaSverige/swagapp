@@ -44,13 +44,13 @@ jobs:
           echo "DOCKER_TAG=$TAG_NAME.$SHORT_SHA" >> $GITHUB_OUTPUT
           echo "GIT_HASH=$SHORT_SHA" >> $GITHUB_OUTPUT
 
-  publish-android:
-    needs: prepare-data
-    uses: ./.github/workflows/publish-android.yml
-    with:
-      tag: ${{ needs.prepare-data.outputs.GIT_TAG }}
-      version: ${{ needs.prepare-data.outputs.DOCKER_TAG }}
-    secrets: inherit
+  # publish-android:
+  #   needs: prepare-data
+  #   uses: ./.github/workflows/publish-android.yml
+  #   with:
+  #     tag: ${{ needs.prepare-data.outputs.GIT_TAG }}
+  #     version: ${{ needs.prepare-data.outputs.DOCKER_TAG }}
+  #   secrets: inherit
 
   publish-website:
     needs: prepare-data
