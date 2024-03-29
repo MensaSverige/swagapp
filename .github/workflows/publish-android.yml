@@ -1,15 +1,21 @@
 name: Build and Release Android App
 
 on:
-  workflow_call:
+  workflow_dispatch:
     inputs:
-      tag:
-        description: "Tag for finding release"
-        required: true
-        type: string
       version:
-        required: true
-        type: string
+          description: "Selected release version, for example 1.0.0"
+          type: string
+          required: true
+  # workflow_call:
+  #   inputs:
+  #     tag:
+  #       description: "Tag for finding release"
+  #       required: true
+  #       type: string
+  #     version:
+  #       required: true
+  #       type: string
 
 jobs:
   build_and_release:
