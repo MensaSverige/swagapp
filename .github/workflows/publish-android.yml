@@ -72,7 +72,7 @@ jobs:
           TRACK: internal
         run: |
           chmod +x ./gradlew
-           ./gradlew assembleRelease -Pandroid.injected.signing.store.file=$ANDROID_SIGNING_KEY_PATH -Pandroid.injected.signing.store.password=$ANDROID_SIGNING_STORE_PASSWORD -Pandroid.injected.signing.key.alias=$ANDROID_SIGNING_ALIAS -Pandroid.injected.signing.key.password=$ANDROID_SIGNING_STORE_PASSWORD -PversionName=${{ inputs.version }} -PpublishTrack=${{ env.TRACK }} -PversionCode=${{ github.run_number }}
+           ./gradlew bundleRelease -Pandroid.injected.signing.store.file=$ANDROID_SIGNING_KEY_PATH -Pandroid.injected.signing.store.password=$ANDROID_SIGNING_STORE_PASSWORD -Pandroid.injected.signing.key.alias=$ANDROID_SIGNING_ALIAS -Pandroid.injected.signing.key.password=$ANDROID_SIGNING_STORE_PASSWORD -PversionName=${{ inputs.version }} -PpublishTrack=${{ env.TRACK }} -PversionCode=${{ github.run_number }}
 
       # - name: Upload AAB to release
       #   env:
