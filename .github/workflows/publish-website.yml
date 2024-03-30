@@ -26,6 +26,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
+      # Convert IMAGE_NAME to lowercase
+      - name: Convert IMAGE_NAME to lowercase
+        run: echo "IMAGE_NAME=$(echo $IMAGE_NAME | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+
       # Install the cosign tool (for signing Docker images) except on PRs
       - name: Install cosign
         uses: sigstore/cosign-installer@v3.2.0

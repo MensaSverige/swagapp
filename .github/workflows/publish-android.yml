@@ -1,27 +1,34 @@
 name: Build and Release Android App
 
 on:
-  workflow_call:
+  workflow_dispatch:
     inputs:
-      tag:
-        description: "Tag for finding release"
-        required: true
-        type: string
       version:
-        required: true
-        type: string
+          description: "Selected release version, for example 1.0.0"
+          type: string
+          required: true
 
 jobs:
   build_and_release:
     runs-on: ubuntu-latest
-
+    environment: Mensa-Dev
     steps:
       - name: Set build version
         run: echo "BUILD_VERSION=${{ inputs.version }}" >> $GITHUB_ENV
-
+      
+      - name: Print run number
+        run: echo Run number is ${{ github.run_number }}
+        
       - name: Checkout Code
         uses: actions/checkout@v2
 
+      - name: Decode Keystore
+        working-directory: app/android
+        env:
+          ANDROID_SIGNING_KEY: ${{ secrets.ANDROID_SIGNING_KEY }}
+        run: |
+          echo "$ANDROID_SIGNING_KEY" | base64 --decode > mensa-release-key.keystore
+      
       - name: Create .env file
         working-directory: app
         run: |
@@ -29,56 +36,34 @@ jobs:
           echo "API_URL=https://swag.mikael.green/api" >> .env
           echo "TEST_MODE=false" >> .env
 
-      - name: Set up JDK 11
+      - name: Set up JDK 17
         uses: actions/setup-java@v2
         with:
-          java-version: "11"
+          java-version: "17"
           distribution: "adopt"
 
       - name: Install Node.js
         uses: actions/setup-node@v2
         with:
-          node-version: 16
+          node-version: 20
 
-      - name: Install npm dependencies
+      - name: Install Yarn
+        run: npm install -g yarn
+        
+      - name: Install dependencies with Yarn
         working-directory: app
-        run: npm install
+        run: yarn install
 
-      - name: Build Android App Bundle
+      - name: Publish internal release to Google Play
         working-directory: app/android
+        env:
+          ANDROID_SIGNING_KEY_PATH: ${{ github.workspace }}/app/android/mensa-release-key.keystore
+          ANDROID_SIGNING_ALIAS: ${{ secrets.ANDROID_SIGNING_ALIAS}}
+          ANDROID_SIGNING_STORE_PASSWORD: ${{ secrets.ANDROID_SIGNING_STORE_PASSWORD }}
+          GOOGLE_CLOUD_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_CLOUD_SERVICE_ACCOUNT_JSON }}
+          TRACK: internal 
         run: |
+          echo "$GOOGLE_CLOUD_SERVICE_ACCOUNT_JSON" > ./app/service-account.json
           chmod +x ./gradlew
-          ./gradlew assembleRelease --no-daemon -PversionName=${{ inputs.version }}
-
-      - name: Sign App APK
-        uses: r0adkll/sign-android-release@v1
-        with:
-          releaseDirectory: app/android/app/build/outputs/apk/release
-          signingKeyBase64: ${{ secrets.ANDROID_SIGNING_KEY }}
-          alias: ${{ secrets.ANDROID_SIGNING_ALIAS }}
-          keyStorePassword: ${{ secrets.ANDROID_SIGNING_STORE_PASSWORD }}
-          keyPassword: ${{ secrets.ANDROID_SIGNING_KEY_PASSWORD }}
-
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v2
-        with:
-          name: Signed App APK
-          path: app/android/app/build/outputs/apk/release/app-release.apk
-
-      - name: Get Release
-        id: get_release
-        uses: joutvhu/get-release@v1
-        with:
-          tag_name: ${{ inputs.tag }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Upload APK to Release
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.get_release.outputs.upload_url }}
-          asset_path: ./app/android/app/build/outputs/apk/release/app-release-unsigned-signed.apk
-          asset_name: swag-app-${{ inputs.version  }}.apk
-          asset_content_type: application/vnd.android.package-archive
+          ./gradlew publishReleaseBundle -Pandroid.injected.signing.store.file=$ANDROID_SIGNING_KEY_PATH -Pandroid.injected.signing.store.password=$ANDROID_SIGNING_STORE_PASSWORD -Pandroid.injected.signing.key.alias=$ANDROID_SIGNING_ALIAS -Pandroid.injected.signing.key.password=$ANDROID_SIGNING_STORE_PASSWORD -PversionName=${{ inputs.version }} -PpublishTrack=${{ env.TRACK }} -PversionCode=${{ github.run_number }}
+        

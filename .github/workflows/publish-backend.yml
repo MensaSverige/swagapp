@@ -32,6 +32,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
+      # Convert IMAGE_NAME to lowercase
+      - name: Convert IMAGE_NAME to lowercase
+        run: echo "IMAGE_NAME=$(echo $IMAGE_NAME | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+        
       - name: Set up Python
         uses: actions/setup-python@v2
         with:
