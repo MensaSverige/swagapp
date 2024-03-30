@@ -7,15 +7,6 @@ on:
           description: "Selected release version, for example 1.0.0"
           type: string
           required: true
-  # workflow_call:
-  #   inputs:
-  #     tag:
-  #       description: "Tag for finding release"
-  #       required: true
-  #       type: string
-  #     version:
-  #       required: true
-  #       type: string
 
 jobs:
   build_and_release:
@@ -62,29 +53,6 @@ jobs:
       - name: Install dependencies with Yarn
         working-directory: app
         run: yarn install
-
-      # - name: Build Android signed aab
-      #   working-directory: app/android
-      #   env:
-      #     ANDROID_SIGNING_KEY_PATH: ${{ github.workspace }}/app/android/mensa-release-key.keystore
-      #     ANDROID_SIGNING_ALIAS: ${{ secrets.ANDROID_SIGNING_ALIAS }}
-      #     ANDROID_SIGNING_STORE_PASSWORD: ${{ secrets.ANDROID_SIGNING_STORE_PASSWORD }}
-      #     TRACK: internal
-      #   run: |
-      #     chmod +x ./gradlew
-      #      ./gradlew bundleRelease -Pandroid.injected.signing.store.file=$ANDROID_SIGNING_KEY_PATH -Pandroid.injected.signing.store.password=$ANDROID_SIGNING_STORE_PASSWORD -Pandroid.injected.signing.key.alias=$ANDROID_SIGNING_ALIAS -Pandroid.injected.signing.key.password=$ANDROID_SIGNING_STORE_PASSWORD -PversionName=${{ inputs.version }} -PpublishTrack=${{ env.TRACK }} -PversionCode=${{ github.run_number }}
-
-      # - name: Upload AAB to release
-      #   env:
-      #     GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      #   run: |
-      #     gh release upload ${{ inputs.tag }} app/android/app/build/outputs/bundle/release/app-release.aab --clobber
-
-      # - name: Upload release bundle
-      #   uses: actions/upload-artifact@v2
-      #   with:
-      #     name: app-release-bundle
-      #     path: app/android/app/build/outputs/bundle/release/app-release.aab     
 
       - name: Publish internal release to Google Play
         working-directory: app/android
