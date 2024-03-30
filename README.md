@@ -1,14 +1,14 @@
 <p align="center">
-<img src="https://img.shields.io/github/v/release/skaramicke/swagapp">
-<img src="https://img.shields.io/github/issues/skaramicke/swagapp">
-<img src="https://img.shields.io/github/issues-pr/skaramicke/swagapp">
-<img src="https://img.shields.io/github/license/skaramicke/swagapp">
+<img src="https://img.shields.io/github/v/release/mensasverige/swagapp">
+<img src="https://img.shields.io/github/issues/mensasverige/swagapp">
+<img src="https://img.shields.io/github/issues-pr/mensasverige/swagapp">
+<img src="https://img.shields.io/github/license/mensasverige/swagapp">
 </p>
 
 <p align="center">
-<img src="https://github.com/skaramicke/swagapp/actions/workflows/publish-android.yml/badge.svg">
-<img src="https://github.com/skaramicke/swagapp/actions/workflows/publish-website.yml/badge.svg">
-<img src="https://github.com/skaramicke/swagapp/actions/workflows/publish-backend.yml/badge.svg">
+<img src="https://github.com/mensasverige/swagapp/actions/workflows/publish-android.yml/badge.svg">
+<img src="https://github.com/mensasverige/swagapp/actions/workflows/publish-website.yml/badge.svg">
+<img src="https://github.com/mensasverige/swagapp/actions/workflows/publish-backend.yml/badge.svg">
 </p>
 
 <h1 align="center">📱 SWAG Communicator</h1>
@@ -19,7 +19,7 @@ SWAG is a mobile and web application designed exclusively for Mensa Sweden membe
 
 - Cross-platform mobile application compatible with Android and iOS.
 - Robust backend services leveraging Docker for efficient deployment.
-- A dedicated website hosted at [https://swag.mikael.green](https://swag.mikael.green).
+- A dedicated website hosted at [https://swag.k.mikael.blue](https://swag.k.mikael.blue).
 
 # 1 Components
 
@@ -47,7 +47,7 @@ Managed manually by Mikael, the iOS app deployment includes steps such as screen
 
 The Python backend is the cornerstone of SWAG, orchestrating user interactions and data processing. It plays a crucial role in authentication, event management, and location services. This backend is designed to be scalable, secure, and efficient, ensuring a seamless user experience.
 
-The backend has documentation on [the wiki](https://github.com/skaramicke/swagapp/wiki/backend).
+The backend has documentation on [the wiki](https://github.com/mensasverige/swagapp/wiki/backend).
 
 **Endpoints:**
 
@@ -78,11 +78,11 @@ For more detailed information on Python backend development, refer to [Python's 
 
 ### 1.3.1 Main Website
 
-The main website ([swag.mikael.green](https://swag.mikael.green)) serves as a landing page, providing app download links for both iOS and Android users, directly linking to the App Store and the latest GitHub release, respectively.
+The main website ([swag.k.mikael.blue](https://swag.k.mikael.blue)) serves as a landing page, providing app download links for both iOS and Android users, directly linking to the App Store and the latest GitHub release, respectively.
 
 ### 1.3.2 API
 
-The website also features a proxy ([swag.mikael.green/api](https://swag.mikael.green/api)) that routes API requests to the backend service. For more information on web proxies and Nginx, see [Nginx's official documentation](https://nginx.org/en/docs/).
+The website also features a proxy ([swag.k.mikael.blue/api](https://swag.k.mikael.blue/api)) that routes API requests to the backend service. For more information on web proxies and Nginx, see [Nginx's official documentation](https://nginx.org/en/docs/).
 
 # 2 👩‍💻 Development Environment
 
@@ -128,7 +128,7 @@ Learn more about Docker Compose at [Docker's official site](https://docs.docker.
 
 ## 2.5 Website and API
 
-Access the website at [https://swag.mikael.green](https://swag.mikael.green), with the backend API under `/api/`.
+Access the website at [https://swag.k.mikael.blue](https://swag.k.mikael.blue), with the backend API under `/api/`.
 
 ### 2.5.1 Nginx Configuration
 
