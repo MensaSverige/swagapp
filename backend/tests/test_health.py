@@ -23,6 +23,6 @@ def client(app):
 #         'status': 'healthy',
 #         'commit_message': 'Unknown',  # Expected value in test environment
 #         # Expected value in test environment
-#         'commit_url': 'https://github.com/skaramicke/swagapp/commit/Unknown'
+#         'commit_url': 'https://github.com/mensasverige/swagapp/commit/Unknown'
 #     }
 #     assert response.json == expected_response
