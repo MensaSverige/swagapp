@@ -1,15 +1,18 @@
-name: Publish Backend
+name: Build and Deploy Backend Docker Image
 
 on:
   workflow_call:
     inputs:
-      docker_tag:
+      commit_hash:
         required: true
         type: string
       commit_message:
         required: true
         type: string
-      commit_hash:
+      docker_tag:
+        required: true
+        type: string
+      release_tag:
         required: true
         type: string
 
@@ -30,7 +33,9 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.release_tag }}
 
       # Convert IMAGE_NAME to lowercase
       - name: Convert IMAGE_NAME to lowercase

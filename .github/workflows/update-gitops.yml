@@ -1,0 +1,47 @@
+name: Update GitOps
+
+on:
+  workflow_call:
+    inputs:
+      release_tag:
+        required: true
+        type: string
+      docker_tag:
+        required: true
+        type: string
+      commit_message:
+        required: true
+        type: string
+
+jobs:
+  update-gitops:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+        - name: Checkout GitOps Repository
+          uses: actions/checkout@v4
+          with:
+            ref: ${{ inputs.release_tag }}
+            repository: "gronitab/gronit-cluster1"
+            token: ${{ secrets.PAT_FOR_K8S }}
+            path: "gitops-repo"
+  
+        - name: Update Kubernetes Manifest Templates
+          working-directory: gitops-repo/swag
+          run: |
+            for file in *.yaml.tpl; do
+              sed "s/VERSION/${{ inputs.docker_tag }}/" "$file" > "${file%.tpl}"
+            done
+  
+        - name: Update Kubernetes Manifest repo
+          working-directory: gitops-repo
+          run: |
+            git config --global user.name 'Mikael Grön'
+            git config --global user.email 'skaramicke@gmail.com'
+            git add swag/
+            git commit -m "Update image tags for SWAG to ${{ inputs.docker_tag }}" -m "${{ inputs.commit_message }}"
+            git push
+  

@@ -1,9 +1,12 @@
-name: Publish Website
+name: Build and Deploy Website Docker Image
 
 on:
   workflow_call:
     inputs:
       docker_tag:
+        required: true
+        type: string
+      release_tag:
         required: true
         type: string
 
@@ -24,7 +27,9 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.release_tag }}
 
       # Convert IMAGE_NAME to lowercase
       - name: Convert IMAGE_NAME to lowercase

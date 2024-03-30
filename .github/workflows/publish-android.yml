@@ -1,10 +1,16 @@
 name: Build and Release Android App
 
 on:
+  workflow_call:
+    inputs:
+      release_tag:
+        description: "Selected release tag, for example v1.0.0"
+        required: true
+        type: string
   workflow_dispatch:
     inputs:
-      version:
-          description: "Selected release version, for example 1.0.0"
+      release_tag:
+          description: "Selected release tag, for example v1.0.0"
           type: string
           required: true
 
@@ -13,14 +19,16 @@ jobs:
     runs-on: ubuntu-latest
     environment: Mensa-Dev
     steps:
-      - name: Set build version
-        run: echo "BUILD_VERSION=${{ inputs.version }}" >> $GITHUB_ENV
+      - name: Set release version by removing v-prefix from release tag
+        run: echo "RELEASE_VERSION=${{ inputs.release_tag }}".substring(1) >> $GITHUB_ENV
       
       - name: Print run number
         run: echo Run number is ${{ github.run_number }}
         
       - name: Checkout Code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.release_tag }}
 
       - name: Decode Keystore
         working-directory: app/android
@@ -62,8 +70,9 @@ jobs:
           ANDROID_SIGNING_STORE_PASSWORD: ${{ secrets.ANDROID_SIGNING_STORE_PASSWORD }}
           GOOGLE_CLOUD_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_CLOUD_SERVICE_ACCOUNT_JSON }}
           TRACK: internal 
+          RELEASE_VERSION: ${{ env.RELEASE_VERSION }}
         run: |
           echo "$GOOGLE_CLOUD_SERVICE_ACCOUNT_JSON" > ./app/service-account.json
           chmod +x ./gradlew
-          ./gradlew publishReleaseBundle -Pandroid.injected.signing.store.file=$ANDROID_SIGNING_KEY_PATH -Pandroid.injected.signing.store.password=$ANDROID_SIGNING_STORE_PASSWORD -Pandroid.injected.signing.key.alias=$ANDROID_SIGNING_ALIAS -Pandroid.injected.signing.key.password=$ANDROID_SIGNING_STORE_PASSWORD -PversionName=${{ inputs.version }} -PpublishTrack=${{ env.TRACK }} -PversionCode=${{ github.run_number }}
+          ./gradlew publishReleaseBundle -Pandroid.injected.signing.store.file=$ANDROID_SIGNING_KEY_PATH -Pandroid.injected.signing.store.password=$ANDROID_SIGNING_STORE_PASSWORD -Pandroid.injected.signing.key.alias=$ANDROID_SIGNING_ALIAS -Pandroid.injected.signing.key.password=$ANDROID_SIGNING_STORE_PASSWORD -PversionName=${{ env.RELEASE_VERSION }} -PpublishTrack=${{ env.TRACK }} -PversionCode=${{ github.run_number }}
 

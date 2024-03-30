@@ -1,4 +1,4 @@
-name: Publish Docker Images
+name: Release Version and Trigger Deployments
 
 on:
   push:
@@ -6,7 +6,7 @@ on:
       - v*
   workflow_dispatch:
     inputs:
-      release-tag:
+      release_tag:
         description: "Selected release tag"
         type: string
         required: true
@@ -35,7 +35,7 @@ jobs:
         id: generate-docker-tag
         run: |
           if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-            TAG_NAME=${{ github.event.inputs.release-tag }}
+            TAG_NAME=${{ github.event.inputs.release_tag }}
           else
             TAG_NAME=${GITHUB_REF#refs/tags/}
           fi
@@ -44,10 +44,17 @@ jobs:
           echo "DOCKER_TAG=$TAG_NAME.$SHORT_SHA" >> $GITHUB_OUTPUT
           echo "GIT_HASH=$SHORT_SHA" >> $GITHUB_OUTPUT
 
+  publish-android:
+    needs: prepare-data
+    uses: ./.github/workflows/publish-android.yml
+    with:
+      release_tag: ${{ needs.prepare-data.outputs.GIT_TAG }}
+
   publish-website:
     needs: prepare-data
     uses: ./.github/workflows/publish-website.yml
     with:
+      release_tag: ${{ needs.prepare-data.outputs.GIT_TAG }}
       docker_tag: ${{ needs.prepare-data.outputs.DOCKER_TAG }}
 
   publish-backend:
@@ -57,34 +64,13 @@ jobs:
       docker_tag: ${{ needs.prepare-data.outputs.DOCKER_TAG }}
       commit_message: ${{ needs.prepare-data.outputs.COMMIT_MESSAGE }}
       commit_hash: ${{ needs.prepare-data.outputs.COMMIT_HASH }}
+      release_tag: ${{ needs.prepare-data.outputs.GIT_TAG }}
 
   update-gitops:
     needs: [prepare-data, publish-website, publish-backend]
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      id-token: write
-
-    steps:
-      - name: Checkout GitOps Repository
-        uses: actions/checkout@v2
-        with:
-          repository: "gronitab/gronit-cluster1"
-          token: ${{ secrets.PAT_FOR_K8S }}
-          path: "gitops-repo"
-
-      - name: Update Kubernetes Manifest Templates
-        working-directory: gitops-repo/swag
-        run: |
-          for file in *.yaml.tpl; do
-            sed "s/VERSION/${{ needs.prepare-data.outputs.DOCKER_TAG }}/" "$file" > "${file%.tpl}"
-          done
-
-      - name: Update Kubernetes Manifest repo
-        working-directory: gitops-repo
-        run: |
-          git config --global user.name 'Mikael Grön'
-          git config --global user.email 'skaramicke@gmail.com'
-          git add swag/
-          git commit -m "Update image tags for SWAG to ${{ needs.prepare-data.outputs.DOCKER_TAG }}" -m "${{ needs.prepare-data.outputs.COMMIT_MESSAGE }}"
-          git push
+    uses: ./.github/workflows/update-gitops.yml
+    with:
+      release_tag: ${{ needs.prepare-data.outputs.GIT_TAG }}
+      docker_tag: ${{ needs.prepare-data.outputs.DOCKER_TAG }}
+      commit_message: ${{ needs.prepare-data.outputs.COMMIT_MESSAGE }}
+    secrets: inherit
