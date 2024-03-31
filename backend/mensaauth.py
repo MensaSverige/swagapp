@@ -35,9 +35,7 @@ def authm():
 
     logging.info(f"loginm_par: {loginm_par}")
     ##forward the call to the loginm endpoint
-    headers = {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'}
+    headers = {'Content-Type': 'application/json'}
     response = requests.post(url, json=loginm_par, headers=headers, verify=False)
     # Print the response
     logging.info(f"Text: {response.text}")
