@@ -1,7 +1,7 @@
-import json
 from flask import Blueprint, request, jsonify
-import datetime
+from datetime import datetime
 import hashlib
+import pytz
 import requests
 import logging
 
@@ -19,7 +19,7 @@ def authm():
     client = 'swagapp'
     user = data['username']
     password = data['password']
-    timestamp = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    timestamp = get_current_time()
 
     loginm_hash = [user, password, timestamp, preshared_1]
 
@@ -52,7 +52,7 @@ def authb():
     operation = 'loginb'
     user = data['username']
     password = data['password']
-    timestamp = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    timestamp = get_current_time()
 
     loginb_hash = [user, password, timestamp, preshared_2]
 
@@ -71,7 +71,7 @@ def authb():
     ##forward the call to the loginm endpoint
     headers = {
         'Content-Type': 'application/json'}
-    response = requests.post(url, data=loginb_par, headers=headers, verify=False)
+    response = requests.post(url, json=loginb_par, headers=headers, verify=False)
     # Print the response
     logging.info(f"Text: {response.text}")
 
@@ -81,10 +81,9 @@ def authb():
     #return jsonify({"message": "Login failed"}), 401 
 
 def calc_hash(strings):
-    encoded_strings = [s.encode('utf-8') for s in strings]
-    concatenated = b'\n'.join(encoded_strings)
-    logging.info(f"concatenated: {concatenated}")
-    hashed = hashlib.sha256(concatenated)
-    logging.info(f"hashed: {hashed}")
-    return hashed.hexdigest()
+    combined_string = "\n".join(strings)
+    return hashlib.sha256(combined_string.encode('utf-8')).hexdigest()
     
+def get_current_time():
+    swedish_tz = pytz.timezone('Europe/Stockholm')
+    return datetime.now(swedish_tz).strftime('%Y-%m-%d %H:%M:%S')
