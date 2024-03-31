@@ -28,15 +28,16 @@ from bson.objectid import ObjectId
 from bson.errors import InvalidId
 from functools import partial
 from token_processing import requires_auth, create_access_token, verify_refresh_token
-from auth import auth_endpoint
 from mongo import initialize_collection_from_schema
 from werkzeug.routing import Rule
 from bson_to_json import bson_to_json
+from mensaauth import auth_bp
 
 # Initialize logging
 logging.basicConfig(level=logging.INFO)
-
+logging.info(f"Server started at {datetime.datetime.now()}")
 app = Flask(__name__)
+app.register_blueprint(auth_bp)
 db = None
 client = None
 schema_dir = os.path.join(os.path.dirname(__file__), 'schema')
@@ -301,7 +302,7 @@ def delete(model_name, schema, collection, item_id, username):
         return jsonify({'error': 'Internal Server Error'}), 500
 
 
-app.add_url_rule('/auth', 'auth_endpoint', auth_endpoint, methods=['POST'])
+# app.add_url_rule('/auth', 'auth_endpoint', auth_endpoint, methods=['POST'])
 
 
 @app.route('/static_events', methods=['GET'])
