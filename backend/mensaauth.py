@@ -19,7 +19,7 @@ def authm():
     client = 'swagapp'
     user = data['username']
     password = data['password']
-    timestamp = datetime.datetime.now().isoformat()
+    timestamp = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
     loginm_hash = [user, password, timestamp, preshared_1]
 
