@@ -1,4 +1,3 @@
-Flask
 pycryptodome
 jsonschema
 pymongo
@@ -6,10 +5,12 @@ requests
 PyJWT
 gunicorn
 pytest
-Flask-Testing
 requests-mock
 cryptography
 pytz
+fastapi
+uvicorn
+sqlalchemy
 
 # Documentation
 sphinx

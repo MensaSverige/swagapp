@@ -1,6 +1,41 @@
 import apiClient from '../../common/services/apiClient';
 import {User} from '../../common/types/user';
+import * as Keychain from 'react-native-keychain';
 
+export const tryGetCurrentUser = async () => {
+  return Keychain.getAllGenericPasswordServices().then(allSavedCredentials => {
+    if (
+      allSavedCredentials.some(
+        credential =>
+          credential === 'accessToken' ||
+          credential === 'refreshToken' ||
+          credential === 'credentials',
+      )
+    ) {
+      return apiClient
+        .get('/user/me', {timeout: 500})
+        .then(response => {
+          if (response.status === 200) {
+            const userData: User = response.data;
+            return userData;
+          } else {
+            return response.data().then((data: any) => {
+              throw new Error(`Could not get user object. Data: ${data}`);
+            });
+          }
+        })
+        .catch(error => {
+          if (!error.message.includes('Network Error')) {
+            // Error was not Network Error, which means login failed due to invalid credentials.
+            Keychain.resetGenericPassword();
+          }
+          throw error;
+        });
+    } else {
+      throw new Error('No saved credentials found');
+    }
+  });
+}
 export const updateUser = async (
   user: User,
   showLocation: boolean,
