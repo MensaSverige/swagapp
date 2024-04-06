@@ -1,7 +1,8 @@
+import json
 from pymongo import MongoClient
 import logging
 from typing import Type
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 from db.models.user import User
 from sqlalchemy.orm import Session
 from db.mongo import user_collection  
@@ -43,5 +44,9 @@ def map_authresponse_to_user(response_json: dict) -> User:
             "lastName": response_json.get("lastName", None),
             "email": response_json.get("email", None),
         })
-
-    return User.model_validate_json(user_dict)
+    try:
+        user_json = json.dumps(user_dict)
+        User.model_validate_json(json.dumps(user_dict))
+        return user_dict
+    except ValidationError:
+        return None

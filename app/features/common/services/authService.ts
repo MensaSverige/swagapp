@@ -11,13 +11,15 @@ interface LoginResponse {
   interface ErrorResponse {
     message: string;
   }
-export const authenticate = async (username: string, password: string, testMode: boolean) => {
+  export interface AuthRequest {
+    username: string;
+    password: string;
+}
+export const authenticate = async (authRequest: AuthRequest, testMode: boolean) => {
+    //console.log('Authenticating', authRequest);
+    console.log('API_URL', apiClient.defaults.baseURL);
     return apiClient
-        .post('/authm', {
-            username,
-            password,
-            test: testMode,
-        })
+        .post('/authm', authRequest)
         .then(async response => {
             if (response.status === 200) {
                 const data: LoginResponse = response.data;

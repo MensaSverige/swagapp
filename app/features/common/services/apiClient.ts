@@ -10,18 +10,20 @@ const apiClient = axios.create({
 
 apiClient.interceptors.request.use(
   config => {
-    return Keychain.getGenericPassword({service: 'accessToken'})
-      .then((credentials: UserCredentials | false) => {
-        if (credentials) {
-          config.headers.Authorization = `Bearer ${credentials.password}`;
-        }
-        config.headers['Content-Type'] = 'application/json';
-        return config;
-      })
-      .catch((error: Error) => {
-        console.log('Error retrieving access token', error);
-        return config;
-      });
+    config.headers['Content-Type'] = 'application/json';
+    return config;
+    // return Keychain.getGenericPassword({service: 'accessToken'})
+    //   .then((credentials: UserCredentials | false) => {
+    //     if (credentials) {
+    //       config.headers.Authorization = `Bearer ${credentials.password}`;
+    //     }
+    //     config.headers['Content-Type'] = 'application/json';
+    //     return config;
+    //   })
+    //   .catch((error: Error) => {
+    //     console.log('Error retrieving access token', error);
+    //     return config;
+    //   });
   },
   (error: Error) => Promise.reject(error),
 );
@@ -95,31 +97,31 @@ function attemptLoginWithStoredCredentials(
     });
 }
 
-apiClient.interceptors.response.use(
-  (response: AxiosResponse) => {
-    const store = useStore.getState();
-    store.setBackendConnection(true);
-    return response;
-  },
-  (error: any) => {
-    const isNetworkError = error.message.includes('Network Error');
-    if (isNetworkError) {
-      const store = useStore.getState();
-      store.setBackendConnection(false);
-    }
+// apiClient.interceptors.response.use(
+//   (response: AxiosResponse) => {
+//     const store = useStore.getState();
+//     store.setBackendConnection(true);
+//     return response;
+//   },
+//   (error: any) => {
+//     const isNetworkError = error.message.includes('Network Error');
+//     if (isNetworkError) {
+//       const store = useStore.getState();
+//       store.setBackendConnection(false);
+//     }
 
-    const originalRequest = error.config;
-    if (
-      error.response?.status === 401 &&
-      !originalRequest._retry &&
-      !originalRequest.url.includes('/refresh_token') &&
-      !originalRequest.url.includes('/auth')
-    ) {
-      originalRequest._retry = true;
-      return refreshAccessToken(originalRequest);
-    }
-    return Promise.reject(error);
-  },
-);
+//     const originalRequest = error.config;
+//     if (
+//       error.response?.status === 401 &&
+//       !originalRequest._retry &&
+//       !originalRequest.url.includes('/refresh_token') &&
+//       !originalRequest.url.includes('/auth')
+//     ) {
+//       originalRequest._retry = true;
+//       return refreshAccessToken(originalRequest);
+//     }
+//     return Promise.reject(error);
+//   },
+// );
 
 export default apiClient;

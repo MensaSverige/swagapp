@@ -8,9 +8,16 @@ import logging
 from db.users import create_user, get_user
 from utilities import calc_hash, get_current_time
 
-LOGINM_SEED = os.getenv('LOGINM_SEED')
-LOGINB_SEED = os.getenv('LOGINB_SEED')
-EVENT_API_TOKEN = os.getenv('EVENT_API_TOKEN')
+try:
+    LOGINM_SEED = os.getenv('LOGINM_SEED')
+    LOGINB_SEED = os.getenv('LOGINB_SEED')
+    EVENT_API_TOKEN = os.getenv('EVENT_API_TOKEN')
+
+    if LOGINM_SEED is None or LOGINB_SEED is None or EVENT_API_TOKEN is None:
+        raise ValueError("One or more environment variables are not set")
+
+except ValueError as e:
+    print(f"Error: {e}")
 url = 'https://medlem.mensa.se/mensa_verify/restlogin.php'
 url2 = 'https://events.mensa.se/swag2024/info-rest/?sec_action=app-api'
 
@@ -19,7 +26,7 @@ auth_v1 = APIRouter(prefix="/v1")
 class AuthRequest(BaseModel):
     username: str
     password: str
-    test: bool = False
+
 
 class AuthResponse(BaseModel):
     token: str
@@ -27,8 +34,12 @@ class AuthResponse(BaseModel):
     isMember: bool
     userId: str
 
+@auth_v1.get("/dummy")
+def dummy_endpoint():
+    return {"message": "This is a dummy endpoint"}
+
 @auth_v1.post("/authm")
-async def authm(request: AuthRequest):
+def authm(request: AuthRequest):
     logging.info(f"request: {request}")
     logging.info(f"hash: {LOGINM_SEED}")
     client = 'swagapp'

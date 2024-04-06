@@ -4,11 +4,10 @@ import logging
 from pymongo import MongoClient
 from fastapi import FastAPI, HTTPException, Depends, Body
 from fastapi.responses import FileResponse
+from fastapi.middleware.cors import CORSMiddleware
 import datetime
 import logging
-from pymongo import MongoClient
 from api.auth import auth_v1
-
 from db.mongo import initialize_db
 
 # Initialize logging
@@ -17,6 +16,14 @@ logging.info(f"Server started at {datetime.datetime.now()}")
 
 
 app = FastAPI()
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 app.include_router(auth_v1)
 
 

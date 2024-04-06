@@ -18,34 +18,34 @@ export const RootStackNavigation = () => {
   const [checkingBackendConnection, setCheckingBackendConnection] =
     useState(false);
 
-  useEffect(() => {
-    let intervalId: ReturnType<typeof setInterval> | null = null;
+  // useEffect(() => {
+  //   let intervalId: ReturnType<typeof setInterval> | null = null;
 
-    if (!backendConnection) {
-      intervalId = setInterval(() => {
-        setCheckingBackendConnection(true);
-        apiClient
-          .get('health', {timeout: 200})
-          .then(() => {
-            setBackendConnection(true);
-          })
-          .catch(error => {
-            if (error.message.includes('Network Error')) {
-              setBackendConnection(false);
-            }
-          })
-          .finally(() => {
-            setCheckingBackendConnection(false);
-          });
-      }, 1000);
-    }
+  //   if (!backendConnection) {
+  //     intervalId = setInterval(() => {
+  //       setCheckingBackendConnection(true);
+  //       apiClient
+  //         .get('health', {timeout: 200})
+  //         .then(() => {
+  //           setBackendConnection(true);
+  //         })
+  //         .catch(error => {
+  //           if (error.message.includes('Network Error')) {
+  //             setBackendConnection(false);
+  //           }
+  //         })
+  //         .finally(() => {
+  //           setCheckingBackendConnection(false);
+  //         });
+  //     }, 1000);
+  //   }
 
-    return () => {
-      if (intervalId) {
-        clearInterval(intervalId);
-      }
-    };
-  }, [backendConnection, setBackendConnection, setCheckingBackendConnection]);
+  //   return () => {
+  //     if (intervalId) {
+  //       clearInterval(intervalId);
+  //     }
+  //   };
+  // }, [backendConnection, setBackendConnection, setCheckingBackendConnection]);
 
   const theme = useTheme() as ICustomTheme;
   return (
