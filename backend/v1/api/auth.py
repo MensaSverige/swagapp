@@ -39,7 +39,7 @@ def dummy_endpoint():
     return {"message": "This is a dummy endpoint"}
 
 @auth_v1.post("/authm")
-def authm(request: AuthRequest):
+def authm(request: AuthRequest) -> AuthResponse:
     logging.info(f"request: {request}")
     logging.info(f"hash: {LOGINM_SEED}")
     client = 'swagapp'
