@@ -17,6 +17,14 @@ export interface paths {
     /** Health */
     get: operations["health_v1_health_get"];
   };
+  "/v1/users_showing_location": {
+    /** Users Showing Location */
+    get: operations["users_showing_location_v1_users_showing_location_get"];
+  };
+  "/v1/users/me/": {
+    /** Read Users Me */
+    get: operations["read_users_me_v1_users_me__get"];
+  };
 }
 
 export type webhooks = Record<string, never>;
@@ -32,8 +40,10 @@ export interface components {
     };
     /** AuthResponse */
     AuthResponse: {
-      /** Token */
-      token: string;
+      /** Accesstoken */
+      accessToken: string;
+      /** Refreshtoken */
+      refreshToken: string;
       /** Validthrough */
       validThrough: string;
       user: components["schemas"]["User"];
@@ -178,6 +188,28 @@ export interface operations {
       200: {
         content: {
           "application/json": unknown;
+        };
+      };
+    };
+  };
+  /** Users Showing Location */
+  users_showing_location_v1_users_showing_location_get: {
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": unknown;
+        };
+      };
+    };
+  };
+  /** Read Users Me */
+  read_users_me_v1_users_me__get: {
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["User"];
         };
       };
     };

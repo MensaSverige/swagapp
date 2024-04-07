@@ -17,9 +17,9 @@ import * as Keychain from 'react-native-keychain';
 import {FontAwesomeIcon} from '@fortawesome/react-native-fontawesome';
 import {faEye, faEyeSlash} from '@fortawesome/free-solid-svg-icons';
 import {TEST_MODE} from '@env';
-import {authenticate} from '../../common/services/authService';
-import {tryGetCurrentUser} from '../services/userService';
+import {attemptLoginWithStoredCredentials, authenticate} from '../../common/services/authService';
 import { User } from '../../../api_schema/types';
+import { tryGetCurrentUser } from '../services/userService';
 
 export const SigninForm = () => {
   const theme = useTheme();
@@ -41,16 +41,16 @@ export const SigninForm = () => {
   useEffect(() => {
     if (!user && backendConnection) {
       tryGetCurrentUser()
-        .then(userData => {
-          setUser(userData);
-        })
-        .catch(error => {
-          // Handle error
-        })
-        .finally(() => {
-          setIsLoading(false);
-          setIsTryingToLogin(false);
-        });
+      .then((userData: User) => {
+        setUser(userData);
+      })
+      .catch(error => {
+        // Handle error
+      })
+      .finally(() => {
+        setIsLoading(false);
+        setIsTryingToLogin(false);
+      });
     }
   }, [
     user,

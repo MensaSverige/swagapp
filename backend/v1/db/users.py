@@ -30,7 +30,6 @@ def create_user(response_json: dict) -> User:
     user_collection.insert_one(newuser)
     return newuser
 
-
 def get_users(show_location: Optional[bool] = None) -> list[User]:
     """
     Retrieves all user documents from the MongoDB database.

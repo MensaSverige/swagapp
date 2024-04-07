@@ -1,6 +1,7 @@
 import { AuthRequest, AuthResponse, HTTPValidationError, User, ValidationError } from '../../../api_schema/types';
+import axios, {AxiosRequestConfig, AxiosResponse} from 'axios';
 import apiClient from '../../common/services/apiClient';
-
+import {UserCredentials} from 'react-native-keychain';
 import * as Keychain from 'react-native-keychain';
 
 
@@ -16,10 +17,13 @@ export const authenticate = async (username: string, password: string, testMode:
             if (response.status === 200) {
                 const data: AuthResponse = response.data;
                 console.log('Auth response', data);
-                if (data.token && data.user) {
+                if (data.accessToken && data.refreshToken && data.user) {
 
-                    await Keychain.setGenericPassword('accessToken', data.token, {
+                    await Keychain.setGenericPassword('accessToken', data.accessToken, {
                         service: 'accessToken',
+                    });
+                    await Keychain.setGenericPassword('refreshToken', data.refreshToken, {
+                        service: 'refreshToken',
                     });
 
                     if (data.user !== null && data.user !== undefined) {
@@ -29,7 +33,7 @@ export const authenticate = async (username: string, password: string, testMode:
                         throw new Error('User data is undefined');
                     }
                 } else {
-                    console.error('Received null accessToken');
+                    console.error('Received null accessToken or refreshToken');
                     throw new Error('Något gick fel. Försök igen senare.');
                 }
 
@@ -57,4 +61,21 @@ export const authenticate = async (username: string, password: string, testMode:
                 throw new Error('Något gick fel. Försök igen senare.');
             }
         });
+}
+
+export const attemptLoginWithStoredCredentials = async (): Promise<User | undefined> => {
+    return Keychain.getGenericPassword({service: 'credentials'})
+      .then((credentials: UserCredentials | false) => {
+        if (credentials) {
+            return authenticate(credentials.username, credentials.password, false);
+        }
+        throw new Error('No stored credentials');
+      })
+      .catch((error: Error) => {
+        console.error('Login with stored credentials failed', error);
+        return Promise.all([
+          Keychain.resetGenericPassword({service: 'accessToken'}),
+          Keychain.resetGenericPassword({service: 'credentials'}),
+        ]).then(() => Promise.reject('Login failed'));
+      });
 }

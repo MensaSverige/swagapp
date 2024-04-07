@@ -2,12 +2,14 @@ from pymongo import MongoClient
 import logging
 from typing import Type
 from pydantic import BaseModel
+from db.models.tokenstorage import TokenStorage
 from db.models.user import User
 
 logging.basicConfig(level=logging.INFO)
 client = MongoClient('mongo', 27017)
 db = client['swag']
 user_collection = db['user']
+tokenstorage_collection = db['tokenstorage']
 
 def initialize_db():
 
@@ -18,6 +20,7 @@ def initialize_db():
         logging.info(f"Database collections: {collections}")
         
         initialize_collection(User, db)
+        initialize_collection(TokenStorage, db)
     except Exception as e:
         logging.error("Failed to connect to the database: %s", e)
     

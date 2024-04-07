@@ -5,6 +5,8 @@ import requests
 from pydantic import BaseModel
 import requests
 import logging
+from db.external_token_storage import save_external_token
+from token_handler import create_access_token
 from db.models.user import User
 from db.users import create_user, get_user
 from utilities import calc_hash, get_current_time
@@ -30,7 +32,8 @@ class AuthRequest(BaseModel):
 
 
 class AuthResponse(BaseModel):
-    token: str
+    accessToken: str
+    refreshToken: str
     validThrough: str
     user: User
 
@@ -72,14 +75,15 @@ def authm(request: AuthRequest) -> AuthResponse:
         print("memberId not found in response")
         # handle the error as needed
 
-    mapped_response = {
-        "token": response_json["token"],
-        "validThrough": response_json["validThrough"],
-        "user": user,
-        # "isMember": response_json["type"] == "M",
-        # "userId": response_json["memberId"],
-    }
-    authresponse = AuthResponse.model_validate(mapped_response)
+    save_external_token(user.id, response_json["token"], response_json["validThrough"])
+
+    authresponse = AuthResponse(
+        accessToken=create_access_token(user.id),
+        refreshToken=response_json["token"],
+        validThrough=response_json["validThrough"],
+        user=user
+    )
+
     return authresponse
 
 
