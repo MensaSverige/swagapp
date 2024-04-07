@@ -5,6 +5,7 @@ import requests
 from pydantic import BaseModel
 import requests
 import logging
+from db.models.user import User
 from db.users import create_user, get_user
 from utilities import calc_hash, get_current_time
 
@@ -31,12 +32,7 @@ class AuthRequest(BaseModel):
 class AuthResponse(BaseModel):
     token: str
     validThrough: str
-    isMember: bool
-    userId: str
-
-@auth_v1.get("/dummy")
-def dummy_endpoint():
-    return {"message": "This is a dummy endpoint"}
+    user: User
 
 @auth_v1.post("/authm")
 def authm(request: AuthRequest) -> AuthResponse:
@@ -64,17 +60,24 @@ def authm(request: AuthRequest) -> AuthResponse:
     logging.info(f"Text: {response.text}")
     if response.status_code != 200:
         raise HTTPException(status_code=400, detail="Invalid credentials")
-    response_json = response.json()
 
-    user = get_user(response_json["memberId"])
-    if not user:
-        create_user(response_json)
+
+    response_json = response.json()
+    try:
+        memberId = response_json["memberId"]
+        user = get_user(memberId)
+        if not user:
+            user = create_user(response_json)
+    except KeyError:
+        print("memberId not found in response")
+        # handle the error as needed
 
     mapped_response = {
         "token": response_json["token"],
         "validThrough": response_json["validThrough"],
-        "isMember": response_json["type"] == "M",
-        "userId": response_json["memberId"],
+        "user": user,
+        # "isMember": response_json["type"] == "M",
+        # "userId": response_json["memberId"],
     }
     authresponse = AuthResponse.model_validate(mapped_response)
     return authresponse

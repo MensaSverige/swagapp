@@ -10,20 +10,18 @@ const apiClient = axios.create({
 
 apiClient.interceptors.request.use(
   config => {
-    config.headers['Content-Type'] = 'application/json';
-    return config;
-    // return Keychain.getGenericPassword({service: 'accessToken'})
-    //   .then((credentials: UserCredentials | false) => {
-    //     if (credentials) {
-    //       config.headers.Authorization = `Bearer ${credentials.password}`;
-    //     }
-    //     config.headers['Content-Type'] = 'application/json';
-    //     return config;
-    //   })
-    //   .catch((error: Error) => {
-    //     console.log('Error retrieving access token', error);
-    //     return config;
-    //   });
+    return Keychain.getGenericPassword({service: 'accessToken'})
+      .then((credentials: UserCredentials | false) => {
+        if (credentials) {
+          config.headers.Authorization = `Bearer ${credentials.password}`;
+        }
+        config.headers['Content-Type'] = 'application/json';
+        return config;
+      })
+      .catch((error: Error) => {
+        console.log('Error retrieving access token', error);
+        return config;
+      });
   },
   (error: Error) => Promise.reject(error),
 );

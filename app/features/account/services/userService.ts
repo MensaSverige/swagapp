@@ -1,5 +1,5 @@
 import apiClient from '../../common/services/apiClient';
-import {User} from '../../common/types/user';
+import { User } from '../../../api_schema/types';
 import * as Keychain from 'react-native-keychain';
 
 export const tryGetCurrentUser = async () => {
@@ -43,7 +43,7 @@ export const updateUser = async (
   contactInfo: string,
 ) => {
   return apiClient
-    .put('/user/' + user.id, {
+    .put('/user/' + user.userId, {
       ...user,
       show_location: showLocation,
       show_contact_info: showContactInfo,

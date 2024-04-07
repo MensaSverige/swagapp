@@ -1,5 +1,5 @@
 import {StateCreator} from 'zustand';
-import {User} from '../../common/types/user';
+import {User} from '../../../api_schema/types';
 
 export interface AccountSlice {
   user: User | null;

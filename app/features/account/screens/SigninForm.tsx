@@ -17,8 +17,9 @@ import * as Keychain from 'react-native-keychain';
 import {FontAwesomeIcon} from '@fortawesome/react-native-fontawesome';
 import {faEye, faEyeSlash} from '@fortawesome/free-solid-svg-icons';
 import {TEST_MODE} from '@env';
-import {AuthRequest, authenticate} from '../../common/services/authService';
+import {authenticate} from '../../common/services/authService';
 import {tryGetCurrentUser} from '../services/userService';
+import { User } from '../../../api_schema/types';
 
 export const SigninForm = () => {
   const theme = useTheme();
@@ -37,27 +38,27 @@ export const SigninForm = () => {
   const {testMode, backendConnection, user, setUser, setIsTryingToLogin} =
     useStore();
 
-  // useEffect(() => {
-  //   if (!user && backendConnection) {
-  //     tryGetCurrentUser()
-  //       .then(userData => {
-  //         setUser(userData);
-  //       })
-  //       .catch(error => {
-  //         // Handle error
-  //       })
-  //       .finally(() => {
-  //         setIsLoading(false);
-  //         setIsTryingToLogin(false);
-  //       });
-  //   }
-  // }, [
-  //   user,
-  //   setUser,
-  //   backendConnection,
-  //   setIsTryingToLogin,
-  //   setIsTryingStoredCredentials,
-  // ]);
+  useEffect(() => {
+    if (!user && backendConnection) {
+      tryGetCurrentUser()
+        .then(userData => {
+          setUser(userData);
+        })
+        .catch(error => {
+          // Handle error
+        })
+        .finally(() => {
+          setIsLoading(false);
+          setIsTryingToLogin(false);
+        });
+    }
+  }, [
+    user,
+    setUser,
+    backendConnection,
+    setIsTryingToLogin,
+    setIsTryingStoredCredentials,
+  ]);
 
   const handleLogin = async () => {
     try {
@@ -75,10 +76,10 @@ export const SigninForm = () => {
     }
 
     setIsLoading(true);
-    authenticate({username, password} as AuthRequest, testMode)
-      .then(() => {
-        // Handle successful authentication
-        console.log('Login successful');
+    authenticate(username, password, testMode)
+      .then((user) => {
+        if(user !== undefined) 
+          setUser(user);
       })
       .catch(error => {
         console.error('Login error', error.message || error);

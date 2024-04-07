@@ -9,6 +9,7 @@ requests-mock
 cryptography
 pytz
 fastapi
+fastapi-health
 uvicorn
 sqlalchemy
 

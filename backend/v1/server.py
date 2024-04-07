@@ -8,6 +8,8 @@ from fastapi.middleware.cors import CORSMiddleware
 import datetime
 import logging
 from api.auth import auth_v1
+from api.health import health_v1
+from api.users import users_v1
 from db.mongo import initialize_db
 
 # Initialize logging
@@ -25,6 +27,8 @@ app.add_middleware(
 )
 
 app.include_router(auth_v1)
+app.include_router(health_v1)
+app.include_router(users_v1)
 
 
 def initialize_app():

@@ -1,7 +1,7 @@
 import json
 from pymongo import MongoClient
 import logging
-from typing import Type
+from typing import Optional
 from pydantic import BaseModel, ValidationError
 from db.models.user import User
 from sqlalchemy.orm import Session
@@ -18,7 +18,7 @@ def get_user(user_id: int) -> User:
 
     return user_collection.find_one({'userId': user_id})
 
-def create_user(response_json: dict) -> None:
+def create_user(response_json: dict) -> User:
     """
     Creates a new user document in the MongoDB database
 
@@ -28,6 +28,21 @@ def create_user(response_json: dict) -> None:
     """
     newuser = map_authresponse_to_user(response_json)
     user_collection.insert_one(newuser)
+    return newuser
+
+
+def get_users(show_location: Optional[bool] = None) -> list[User]:
+    """
+    Retrieves all user documents from the MongoDB database.
+
+    :param show_location: The show_location flag to filter users by.
+    :return: The user documents.
+    """
+    query = {}
+    if show_location is not None:
+        query['show_location'] = show_location
+
+    return list(user_collection.find(query))
 
 def map_authresponse_to_user(response_json: dict) -> User:
     user_dict = {

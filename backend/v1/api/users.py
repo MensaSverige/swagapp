@@ -1,9 +1,9 @@
-# users.py
+from fastapi import APIRouter
+from db.users import get_users
 
-from flask import Blueprint, jsonify
+users_v1 = APIRouter(prefix="/v1")
 
-users_bp = Blueprint('users', __name__)
-
-@users_bp.route('/users_showing_location', methods=['GET'])
+@users_v1.get("/users_showing_location")
 def users_showing_location():
-    # Your existing code here...
+    return get_users(show_location=True)
+
