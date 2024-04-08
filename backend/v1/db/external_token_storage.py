@@ -15,7 +15,7 @@ def save_external_token(user_id: int, external_token: str, expires_at: datetime)
     # Upsert option to ensure no duplicate entries for the same user
     tokenstorage_collection.update_one(
         {"userId": user_id},
-        {"$set": token},
+        {"$set": token.model_dump()},
         upsert=True
     )
 

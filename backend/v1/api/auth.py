@@ -6,10 +6,10 @@ from pydantic import BaseModel
 import requests
 import logging
 from db.external_token_storage import save_external_token
-from token_handler import create_access_token
+from token_handler import create_access_token, create_refresh_token
 from db.models.user import User
 from db.users import create_user, get_user
-from utilities import calc_hash, get_current_time
+from utilities import calc_hash, get_current_time, get_current_time_formatted
 
 try:
     LOGINM_SEED = os.getenv('LOGINM_SEED')
@@ -44,7 +44,7 @@ def authm(request: AuthRequest) -> AuthResponse:
     client = 'swagapp'
     user = request.username
     password = request.password
-    timestamp = get_current_time()
+    timestamp = get_current_time_formatted()
 
     loginm_hash = [user, password, timestamp, LOGINM_SEED]
     hash = calc_hash(loginm_hash)
@@ -75,15 +75,14 @@ def authm(request: AuthRequest) -> AuthResponse:
         print("memberId not found in response")
         # handle the error as needed
 
-    save_external_token(user.id, response_json["token"], response_json["validThrough"])
+    logging.info(f"user: {user}")
+    save_external_token(user["userId"], response_json["token"], response_json["validThrough"])
 
     authresponse = AuthResponse(
-        accessToken=create_access_token(user.id),
-        refreshToken=response_json["token"],
-        validThrough=response_json["validThrough"],
+        accessToken=create_access_token(user["userId"]),
+        refreshToken=create_refresh_token(user["userId"]),
         user=user
     )
-
     return authresponse
 
 

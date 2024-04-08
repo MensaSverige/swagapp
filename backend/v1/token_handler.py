@@ -31,8 +31,7 @@ def get_or_create_jwt_secret():
     try:
         SECRET_KEY = os.getenv('SECRET_KEY')
         if SECRET_KEY is None:
-            raise ValueError("SECRET_KEY not set")
-        return generate_secret_key()
+            return generate_secret_key()
     except ValueError as e:
         print(f"Error: {e}")
 
