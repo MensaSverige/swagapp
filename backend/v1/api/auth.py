@@ -34,7 +34,6 @@ class AuthRequest(BaseModel):
 class AuthResponse(BaseModel):
     accessToken: str
     refreshToken: str
-    validThrough: str
     user: User
 
 @auth_v1.post("/authm")

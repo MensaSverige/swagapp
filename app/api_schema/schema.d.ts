@@ -44,8 +44,6 @@ export interface components {
       accessToken: string;
       /** Refreshtoken */
       refreshToken: string;
-      /** Validthrough */
-      validThrough: string;
       user: components["schemas"]["User"];
     };
     /** HTTPValidationError */
