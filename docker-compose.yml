@@ -19,6 +19,7 @@ services:
       LOGINM_SEED: ${LOGINM_SEED}
       LOGINB_SEED: ${LOGINB_SEED}
       EVENT_API_TOKEN: ${EVENT_API_TOKEN}
+      SECRET_KEY: "SECRET_KEY" # Change this to a random string
 
   mongo:
     image: mongo:latest
