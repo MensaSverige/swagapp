@@ -31,7 +31,12 @@ def get_or_create_jwt_secret():
     try:
         SECRET_KEY = os.getenv('SECRET_KEY')
         if SECRET_KEY is None:
-            return generate_secret_key()
+            
+            raise ValueError("SECRET_KEY environment variable not set")
+            # todo: store in config file
+            #return generate_secret_key()
+            
+        return SECRET_KEY
     except ValueError as e:
         print(f"Error: {e}")
 

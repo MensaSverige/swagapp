@@ -13,7 +13,7 @@ export const tryGetCurrentUser = async () => {
       )
     ) {
       return apiClient
-        .get('/user/me', {timeout: 500})
+        .get('/users/me', {timeout: 500})
         .then(response => {
           if (response.status === 200) {
             const userData: User = response.data;

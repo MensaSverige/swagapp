@@ -59,12 +59,12 @@ def authm(request: AuthRequest) -> AuthResponse:
     logging.info(f"loginm_par: {loginm_par}")
     headers = {'Content-Type': 'application/json'}
     response = requests.post(url, json=loginm_par, headers=headers, verify=False)
-    logging.info(f"Text: {response.text}")
     if response.status_code != 200:
         raise HTTPException(status_code=400, detail="Invalid credentials")
 
 
     response_json = response.json()
+    logging.info(f"response_json: {response_json}")
     try:
         memberId = response_json["memberId"]
         user = get_user(memberId)
