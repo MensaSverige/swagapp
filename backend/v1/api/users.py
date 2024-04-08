@@ -1,6 +1,6 @@
 import logging
 from fastapi import APIRouter, Depends, HTTPException, Request
-from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer, OAuth2PasswordBearer
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from token_handler import verify_access_token
 from db.models.user import User
 from db.users import get_user, get_users
@@ -21,7 +21,6 @@ async def validate_request(request: Request, bearer: HTTPAuthorizationCredential
             return userId
         except:
             raise HTTPException(status_code=401, detail="Unauthorized")
-        return bearer.credentials
     else:
         raise HTTPException(status_code=403, detail="Unauthorized")
 
