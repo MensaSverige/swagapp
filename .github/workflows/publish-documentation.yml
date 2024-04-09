@@ -3,7 +3,7 @@ name: Generate and Push Documentation to the GitHub repo wiki
 on:
   push:
     branches:
-      - develop
+      - main
 
 permissions:
   contents: write
