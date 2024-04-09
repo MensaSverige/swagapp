@@ -1,0 +1,11 @@
+{
+  "type": "object",
+  "properties": {
+    "id": { "type": "string" },
+    "user_event_id": { "type": "string" },
+    "user_id": { "type": "string" },
+    "created_at": { "type": "string" }
+  },
+  "required": ["id", "user_event_id", "user_id", "created_at"],
+  "additionalProperties": false
+}

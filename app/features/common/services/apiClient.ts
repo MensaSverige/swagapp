@@ -22,6 +22,8 @@ import { API_URL, API_VERSION } from '@env';
 import useStore from '../store/store';
 import { getOrRefreshAccessToken } from './authService';
 
+console.log('API_URL', API_URL);
+
 const apiClient = axios.create({
   baseURL: `${API_URL}/${API_VERSION}`,
 });

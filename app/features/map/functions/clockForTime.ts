@@ -1,5 +1,7 @@
-
-export function clockForTime(time: string) {
+export function clockForTime(time: string | Date) {
+  if (typeof time !== 'string') {
+    time = time.toISOString();
+  }
   if (!time) {
     return '🕛';
   }

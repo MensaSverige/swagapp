@@ -18,7 +18,7 @@ export const updateUser = async (
     })
     .then(
       response => {
-          return response.data;
+        return response.data;
       },
       error => {
         throw new Error(error.message || error);
@@ -29,6 +29,9 @@ export const updateUser = async (
     });
 };
 export const getUser = async (userName: string): Promise<User> => {
+  if (!userName) {
+    return Promise.reject('No username provided');
+  }
   return apiClient
     .get('/user_by_username/' + userName)
     .then(

@@ -7,11 +7,16 @@ const DisplayNameByUsername: React.FC<{username: string}> = ({username}) => {
 
   useEffect(() => {
     const fetchDisplayName = async () => {
-      const user = await getUser(username).then(user => {
-        if (user?.name) {
-          setDisplayName(user.name);
-        }
-      });
+      getUser(username)
+        .then(user => {
+          if (user?.name) {
+            setDisplayName(user.name);
+          }
+        })
+        .catch(error => {
+          console.error('Failed to get display name:', error.message || error);
+          setDisplayName('Okänd användare ⚠️');
+        });
     };
 
     fetchDisplayName();

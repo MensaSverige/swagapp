@@ -77,10 +77,17 @@ export const createEventsSlice: StateCreator<EventsSlice> = (set, get) => ({
       ],
     })),
   updateEventsWithLocation: () =>
-    set(state => ({
-      eventsWithLocation: [
-        ...state.staticEvents.filter(isEventWithLocation),
-        ...state.userEvents.filter(isUserEventWithLocation),
-      ],
-    })),
+    set(state => {
+      const eventsWithLocation: (EventWithLocation | UserEventWithLocation)[] =
+        [
+          ...(state.staticEvents.filter(
+            isEventWithLocation,
+          ) as EventWithLocation[]),
+          ...(state.userEvents.filter(
+            isUserEventWithLocation,
+          ) as UserEventWithLocation[]),
+        ];
+
+      return {eventsWithLocation};
+    }),
 });
