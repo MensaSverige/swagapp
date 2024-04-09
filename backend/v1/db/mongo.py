@@ -20,7 +20,10 @@ def initialize_db():
         logging.info(f"Database collections: {collections}")
         
         initialize_collection(User, db)
+        user_collection.create_index("userId", unique=True)
+        
         initialize_collection(TokenStorage, db)
+        tokenstorage_collection.create_index("userId", unique=True)
     except Exception as e:
         logging.error("Failed to connect to the database: %s", e)
     

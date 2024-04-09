@@ -45,11 +45,8 @@ def get_users(show_location: Optional[bool] = None) -> list[User]:
 
 def map_authresponse_to_user(response_json: dict) -> User:
     user_dict = {
-        "status": response_json["status"],
-        "token": response_json["token"],
-        "validThrough": response_json["validThrough"],
-        "isMember": response_json["type"] == "M",
         "userId": response_json["memberId"],
+        "isMember": response_json["type"] == "M",
     }
 
     if user_dict['isMember']:
@@ -60,7 +57,7 @@ def map_authresponse_to_user(response_json: dict) -> User:
         })
     try:
         user_json = json.dumps(user_dict)
-        User.model_validate_json(json.dumps(user_dict))
+        User.model_validate_json(user_json)
         return user_dict
     except ValidationError:
         return None
