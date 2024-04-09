@@ -17,9 +17,9 @@ import * as Keychain from 'react-native-keychain';
 import {FontAwesomeIcon} from '@fortawesome/react-native-fontawesome';
 import {faEye, faEyeSlash} from '@fortawesome/free-solid-svg-icons';
 import {TEST_MODE} from '@env';
-import {attemptLoginWithStoredCredentials, authenticate} from '../../common/services/authService';
-import { User } from '../../../api_schema/types';
-import { tryGetCurrentUser } from '../services/userService';
+import { authenticate, tryGetCurrentUser} from '../../common/services/authService';
+import { AuthResponse, User } from '../../../api_schema/types';
+
 
 export const SigninForm = () => {
   const theme = useTheme();
@@ -41,8 +41,9 @@ export const SigninForm = () => {
   useEffect(() => {
     if (!user && backendConnection) {
       tryGetCurrentUser()
-      .then((userData: User) => {
-        setUser(userData);
+      .then((response) => {
+        if(response !== undefined) 
+          setUser(response.user);
       })
       .catch(error => {
         // Handle error
@@ -54,10 +55,7 @@ export const SigninForm = () => {
     }
   }, [
     user,
-    setUser,
-    backendConnection,
-    setIsTryingToLogin,
-    setIsTryingStoredCredentials,
+    backendConnection
   ]);
 
   const handleLogin = async () => {
@@ -77,9 +75,9 @@ export const SigninForm = () => {
 
     setIsLoading(true);
     authenticate(username, password, testMode)
-      .then((user) => {
-        if(user !== undefined) 
-          setUser(user);
+      .then((response) => {
+        if(response !== undefined) 
+          setUser(response.user);
       })
       .catch(error => {
         console.error('Login error', error.message || error);

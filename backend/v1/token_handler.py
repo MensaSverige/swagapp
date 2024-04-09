@@ -1,8 +1,10 @@
 import configparser
+from datetime import datetime
+import logging
 import os
 from pydantic import BaseModel, Field
 from datetime import timedelta
-from utilities import get_current_time
+from utilities import get_current_time, get_time_from_timestamp
 import jwt
 from cryptography.fernet import Fernet
 
@@ -40,6 +42,17 @@ def get_or_create_jwt_secret():
     except ValueError as e:
         print(f"Error: {e}")
 
+def get_token_expiry(token: str):
+    payload = jwt.decode(token, get_or_create_jwt_secret(), algorithms=['HS256'])
+    expiry_timestamp = payload.get('exp')
+
+    if expiry_timestamp:
+        # Convert the timestamp to a datetime object
+        expiry_datetime = get_time_from_timestamp(expiry_timestamp)
+        return expiry_datetime
+    else:
+        return None
+
 def create_token(userId, expiry_delta, type):
     """
     Create a JWT token with the given userId, expiry, and type.
@@ -53,10 +66,12 @@ def create_token(userId, expiry_delta, type):
     :return: The encoded JWT token.
     :rtype: str
     """
-    exp = get_current_time() + expiry_delta
+    iat = get_current_time()
+    exp = iat + expiry_delta
+
     payload = {
         'exp': exp,
-        'iat': get_current_time(),
+        'iat': iat,
         'sub': userId,
         'type': type
     }

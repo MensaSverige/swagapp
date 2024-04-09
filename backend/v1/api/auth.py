@@ -1,12 +1,14 @@
+from datetime import datetime
 import os
 import logging
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException
 import requests
 from pydantic import BaseModel
 import requests
 import logging
+from request_filter import validate_request
 from db.external_token_storage import save_external_token
-from token_handler import create_access_token, create_refresh_token
+from token_handler import create_access_token, create_refresh_token, get_token_expiry, verify_refresh_token
 from db.models.user import User
 from db.users import create_user, get_user
 from utilities import calc_hash, get_current_time, get_current_time_formatted
@@ -34,12 +36,11 @@ class AuthRequest(BaseModel):
 class AuthResponse(BaseModel):
     accessToken: str
     refreshToken: str
+    accessTokenExpiry: datetime
     user: User
 
 @auth_v1.post("/authm")
 def authm(request: AuthRequest) -> AuthResponse:
-    logging.info(f"request: {request}")
-    logging.info(f"hash: {LOGINM_SEED}")
     client = 'swagapp'
     user = request.username
     password = request.password
@@ -72,18 +73,18 @@ def authm(request: AuthRequest) -> AuthResponse:
             user = create_user(response_json)
     except KeyError:
         print("memberId not found in response")
-        # handle the error as needed
+        raise HTTPException(status_code=400, detail="Invalid credentials")
 
-    logging.info(f"user: {user}")
     save_external_token(user["userId"], response_json["token"], response_json["validThrough"])
+    accesstoken = create_access_token(user["userId"])
 
     authresponse = AuthResponse(
-        accessToken=create_access_token(user["userId"]),
+        accessToken=accesstoken,
         refreshToken=create_refresh_token(user["userId"]),
+        accessTokenExpiry=get_token_expiry(accesstoken),
         user=user
     )
     return authresponse
-
 
 @auth_v1.post("/authb")
 async def authb(request: AuthRequest):
@@ -114,4 +115,25 @@ async def authb(request: AuthRequest):
 
     return response.json()
 
+@auth_v1.get("/users/me/", response_model=User)
+async def get_current_user(current_user: User = Depends(validate_request)):
+    return current_user
 
+@auth_v1.post("/refresh_token")
+def refresh_token(refresh_token: str) -> AuthResponse:
+    try:
+        valid, payload = verify_refresh_token(refresh_token)
+        if not valid:
+            raise HTTPException(status_code=401, detail="Unauthorized")
+        user = get_user(payload.get("sub"))
+        accesstoken = create_access_token(user["userId"])
+
+        authresponse = AuthResponse(
+            accessToken=accesstoken,
+            refreshToken=create_refresh_token(user["userId"]),
+            accessTokenExpiry=get_token_expiry(accesstoken),
+            user=user
+        )
+        return authresponse
+    except:
+        raise HTTPException(status_code=401, detail="Unauthorized")

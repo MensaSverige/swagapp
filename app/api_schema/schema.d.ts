@@ -17,13 +17,13 @@ export interface paths {
     /** Health */
     get: operations["health_v1_health_get"];
   };
+  "/v1/users/me/": {
+    /** Get Current User */
+    get: operations["get_current_user_v1_users_me__get"];
+  };
   "/v1/users_showing_location": {
     /** Users Showing Location */
     get: operations["users_showing_location_v1_users_showing_location_get"];
-  };
-  "/v1/users/me/": {
-    /** Read Users Me */
-    get: operations["read_users_me_v1_users_me__get"];
   };
 }
 
@@ -44,6 +44,11 @@ export interface components {
       accessToken: string;
       /** Refreshtoken */
       refreshToken: string;
+      /**
+       * Accesstokenexpiry
+       * Format: date-time
+       */
+      accessTokenExpiry: string;
       user: components["schemas"]["User"];
     };
     /** HTTPValidationError */
@@ -190,6 +195,17 @@ export interface operations {
       };
     };
   };
+  /** Get Current User */
+  get_current_user_v1_users_me__get: {
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["User"];
+        };
+      };
+    };
+  };
   /** Users Showing Location */
   users_showing_location_v1_users_showing_location_get: {
     responses: {
@@ -197,17 +213,6 @@ export interface operations {
       200: {
         content: {
           "application/json": unknown;
-        };
-      };
-    };
-  };
-  /** Read Users Me */
-  read_users_me_v1_users_me__get: {
-    responses: {
-      /** @description Successful Response */
-      200: {
-        content: {
-          "application/json": components["schemas"]["User"];
         };
       };
     };

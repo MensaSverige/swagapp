@@ -1,27 +1,21 @@
-import axios, {AxiosRequestConfig, AxiosResponse} from 'axios';
-import * as Keychain from 'react-native-keychain';
-import {API_URL, API_VERSION} from '@env';
+import axios, { AxiosRequestConfig, AxiosResponse } from 'axios';
+import { API_URL, API_VERSION } from '@env';
 import useStore from '../store/store';
-import {UserCredentials} from 'react-native-keychain';
+import { getOrRefreshAccessToken } from './authService';
 
 const apiClient = axios.create({
   baseURL: `${API_URL}/${API_VERSION}`,
 });
 
 apiClient.interceptors.request.use(
-  config => {
-    return Keychain.getGenericPassword({service: 'accessToken'})
-      .then((credentials: UserCredentials | false) => {
-        if (credentials) {
-          config.headers.Authorization = `Bearer ${credentials.password}`;
-        }
-        config.headers['Content-Type'] = 'application/json';
-        return config;
-      })
-      .catch((error: Error) => {
-        console.log('Error retrieving access token', error);
-        return config;
-      });
+  async (config) => {
+    try {
+      const token = await getOrRefreshAccessToken();
+      config.headers['Authorization'] = `Bearer ${token}`;
+    } catch (error) {
+      console.log('Error getting access token', error);
+    }
+    return config;
   },
   (error: Error) => Promise.reject(error),
 );
@@ -46,7 +40,6 @@ apiClient.interceptors.response.use(
       !originalRequest.url.includes('/authm')
     ) {
       originalRequest._retry = true;
-      //return refreshAccessToken(originalRequest);
     }
     return Promise.reject(error);
   },
