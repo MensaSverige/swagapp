@@ -1,99 +1,43 @@
-import axios, {AxiosRequestConfig, AxiosResponse} from 'axios';
-import * as Keychain from 'react-native-keychain';
-import {API_URL} from '@env';
+/**
+ * apiClient.ts
+ * 
+ * This service is responsible for making API requests. It exports an `apiClient` instance of axios that is configured with a base URL 
+ * composed of the API_URL and API_VERSION environment variables.
+ * 
+ * The `apiClient` instance has two interceptors:
+ * 
+ * 1. A request interceptor that tries to get or refresh the access token using the `getOrRefreshAccessToken` function from authService.ts. 
+ * If the function is successful, the interceptor adds an Authorization header with a bearer token to the request. If the function fails, 
+ * the request is made without the Authorization header.
+ * 
+ * 2. A response interceptor that updates the `backendConnection` state in the store based on the success or failure of the API request. 
+ * If a request fails due to a network error, the `backendConnection` state is set to false. If a request is successful, the `backendConnection` 
+ * state is set to true.
+ * 
+ * This service is different from the authService.ts service, which is specifically for authentication-related tasks. The apiClient.ts service 
+ * is for general API requests.
+ */
+import axios, { AxiosRequestConfig, AxiosResponse } from 'axios';
+import { API_URL, API_VERSION } from '@env';
 import useStore from '../store/store';
-import {UserCredentials} from 'react-native-keychain';
+import { getOrRefreshAccessToken } from './authService';
 
 const apiClient = axios.create({
-  baseURL: API_URL,
+  baseURL: `${API_URL}/${API_VERSION}`,
 });
 
 apiClient.interceptors.request.use(
-  config => {
-    return Keychain.getGenericPassword({service: 'accessToken'})
-      .then((credentials: UserCredentials | false) => {
-        if (credentials) {
-          config.headers.Authorization = `Bearer ${credentials.password}`;
-        }
-        config.headers['Content-Type'] = 'application/json';
-        return config;
-      })
-      .catch((error: Error) => {
-        console.log('Error retrieving access token', error);
-        return config;
-      });
+  async (config) => {
+    try {
+      const token = await getOrRefreshAccessToken();
+      config.headers['Authorization'] = `Bearer ${token}`;
+    } catch (error) {
+      console.log('Error getting access token', error);
+    }
+    return config;
   },
   (error: Error) => Promise.reject(error),
 );
-
-function refreshAccessToken(originalRequest: AxiosRequestConfig) {
-  return Keychain.getGenericPassword({service: 'refreshToken'})
-    .then((refreshTokenItem: UserCredentials | false) => {
-      if (refreshTokenItem) {
-        return apiClient
-          .post('/refresh_token', {refresh_token: refreshTokenItem.password})
-          .then((response: AxiosResponse) => {
-            if (response.status === 200) {
-              return Keychain.setGenericPassword(
-                'accessToken',
-                response.data.access_token,
-                {service: 'accessToken'},
-              ).then(() => apiClient(originalRequest));
-            }
-            throw new Error('Refresh token failed');
-          });
-      }
-      throw new Error('No refresh token');
-    })
-    .catch((error: Error) => {
-      console.log('Error while refreshing token', error);
-      return attemptLoginWithStoredCredentials(originalRequest);
-    });
-}
-
-function attemptLoginWithStoredCredentials(
-  originalRequest: AxiosRequestConfig,
-) {
-  return Keychain.getGenericPassword({service: 'credentials'})
-    .then((credentials: UserCredentials | false) => {
-      if (credentials) {
-        return apiClient
-          .post('/auth', {
-            username: credentials.username,
-            password: credentials.password,
-          })
-          .then((loginResponse: AxiosResponse) => {
-            if (loginResponse.status === 200) {
-              console.log('Login with stored credentials successful');
-              return Promise.all([
-                Keychain.setGenericPassword(
-                  'accessToken',
-                  loginResponse.data.access_token,
-                  {service: 'accessToken'},
-                ),
-                Keychain.setGenericPassword(
-                  'refreshToken',
-                  loginResponse.data.refresh_token,
-                  {service: 'refreshToken'},
-                ),
-              ]).then(() => apiClient(originalRequest));
-            }
-            throw new Error('Login failed');
-          });
-      }
-      throw new Error('No stored credentials');
-    })
-    .catch((error: Error) => {
-      console.error('Login with stored credentials failed', error);
-      const store = useStore.getState();
-      store.setUser(null);
-      return Promise.all([
-        Keychain.resetGenericPassword({service: 'accessToken'}),
-        Keychain.resetGenericPassword({service: 'refreshToken'}),
-        Keychain.resetGenericPassword({service: 'credentials'}),
-      ]).then(() => Promise.reject('Login failed'));
-    });
-}
 
 apiClient.interceptors.response.use(
   (response: AxiosResponse) => {
@@ -112,11 +56,9 @@ apiClient.interceptors.response.use(
     if (
       error.response?.status === 401 &&
       !originalRequest._retry &&
-      !originalRequest.url.includes('/refresh_token') &&
-      !originalRequest.url.includes('/auth')
+      !originalRequest.url.includes('/authm')
     ) {
       originalRequest._retry = true;
-      return refreshAccessToken(originalRequest);
     }
     return Promise.reject(error);
   },

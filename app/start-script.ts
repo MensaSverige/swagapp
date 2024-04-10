@@ -48,8 +48,17 @@ const setEnvironmentVariables = async (): Promise<void> => {
         backendURL = `http://${ipAddress}:5000`;
       }
     }
+    let API_VERSION = 'v1';
 
-    fs.writeFileSync('.env', `API_URL=${backendURL}\nTEST_MODE=${testMode}\n`);
+    process.argv.forEach((val, index) => {
+        if(val === '--apiversion' && process.argv[index + 1]) {
+            API_VERSION = process.argv[index + 1];
+        }
+    });
+
+    console.log(`API_VERSION is ${API_VERSION}`);
+
+    fs.writeFileSync('.env', `API_URL=${backendURL}\nAPI_VERSION=${API_VERSION}\nTEST_MODE=${testMode}\n`);
 
     console.log(`Using Backend URL: ${backendURL}`);
     console.log(`Test mode is set to: ${testMode}`);

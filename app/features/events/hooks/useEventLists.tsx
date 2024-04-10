@@ -1,6 +1,6 @@
 import useStore from '../../common/store/store';
 import {useCallback, useEffect, useRef, useState} from 'react';
-import {fetchStaticEvents, fetchUserEvents} from '../services/eventService';
+import {fetchExternalEvents, fetchStaticEvents, fetchUserEvents} from '../services/eventService';
 
 const DATA_STALE_INTERVAL = 1000 * 60 * 5; // 5 minutes
 
@@ -26,7 +26,7 @@ export const useEventLists = () => {
 
     setEventsRefreshing(true);
 
-    return Promise.all([fetchUserEvents(), fetchStaticEvents()])
+    return Promise.all([fetchUserEvents(), fetchStaticEvents(), fetchExternalEvents()])
       .then(([userEvents, staticEvents]) => {
         setUserEvents(userEvents);
         setStaticEvents(staticEvents);

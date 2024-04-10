@@ -16,7 +16,7 @@
     "generate-icons": "npx icon-set-creator create ./assets/icon.jpg",
     "cc": "rimraf node_modules/react-native-config/ios/ReactNativeConfig/GeneratedDotEnv.m",
     "postinstall": "patch-package && yarn podinstall",
-    "podinstall": "if [[ $OSTYPE == darwin* ]]; then plutil -convert xml1 ios/swagapp/Info.plist && npx pod-install && plutil -convert xml1 ios/swagapp/Info.plist ; fi"
+    "podinstall": "node -e \"if (process.platform === 'darwin') { require('child_process').execSync('plutil -convert xml1 ios/swagapp/Info.plist && npx pod-install && plutil -convert xml1 ios/swagapp/Info.plist', { stdio: 'inherit' }); }\""
   },
   "dependencies": {
     "@fortawesome/fontawesome-svg-core": "^6.5.1",
@@ -63,6 +63,7 @@
     "eslint": "^8.56.0",
     "jest": "^29.7.0",
     "metro-react-native-babel-preset": "^0.77.0",
+    "openapi-typescript": "^6.7.5",
     "patch-package": "^8.0.0",
     "pod-install": "^0.2.0",
     "prettier": "^2.8.8",

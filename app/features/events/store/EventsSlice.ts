@@ -14,6 +14,7 @@ export interface EventsSlice {
   userEvents: FutureUserEvent[];
   showUserEvents: boolean;
   staticEvents: FutureEvent[];
+  externalEvents: FutureEvent[];
   showStaticEvents: boolean;
   eventsRefreshing: boolean;
   eventsLastFetched: Date | null;
@@ -21,6 +22,7 @@ export interface EventsSlice {
   setUserEvents: (events: FutureUserEvent[]) => void;
   setShowUserEvents: (showUserEvents: boolean) => void;
   setStaticEvents: (events: FutureEvent[]) => void;
+  setExternalEvents: (events: FutureEvent[]) => void;
   setShowStaticEvents: (showStaticEvents: boolean) => void;
   setEventsRefreshing: (eventsRefreshing: boolean) => void;
   setEventsLastFetched: (eventsLastFetched: Date | null) => void;
@@ -34,6 +36,7 @@ export const createEventsSlice: StateCreator<EventsSlice> = (set, get) => ({
   userEvents: [],
   showUserEvents: true,
   staticEvents: [],
+  externalEvents: [],
   showStaticEvents: true,
   eventsRefreshing: false,
   eventsLastFetched: null,
@@ -50,6 +53,11 @@ export const createEventsSlice: StateCreator<EventsSlice> = (set, get) => ({
   },
   setStaticEvents: (events: FutureEvent[]) => {
     set(() => ({staticEvents: events}));
+    get().updateVisibleEvents();
+    get().updateEventsWithLocation();
+  },
+  setExternalEvents: (events: FutureEvent[]) => {
+    set(() => ({externalEvents: events}));
     get().updateVisibleEvents();
     get().updateEventsWithLocation();
   },

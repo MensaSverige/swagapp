@@ -1,0 +1,15 @@
+pymongo # MongoDB driver
+requests # HTTP requests
+PyJWT # JWT tokens
+pytest # Testing
+requests-mock # Mocking HTTP requests
+cryptography # For Fernet encryption
+pytz # Timezone support
+fastapi # FastAPI framework
+fastapi-health # Health checks for FastAPI
+uvicorn # ASGI server for FastAPI
+sqlalchemy # ORM for databases
+
+# Documentation
+sphinx
+sphinx-markdown-builder

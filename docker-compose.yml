@@ -7,7 +7,7 @@ services:
       - ./schema:/app/schema
       - ./tmp/backend.ini:/backend.ini
     working_dir: /app
-    command: bash -c "pip install -r requirements.txt && python server.py"
+    command: bash -c "pip install -r v1/requirements.txt && python v1/server.py"
     ports:
       - "5000:5000"
     depends_on:
@@ -16,6 +16,12 @@ services:
     environment:
       GIT_COMMIT_INFO: 'Commit messages are not available locally'
       GIT_COMMIT_HASH: ''
+      LOGINM_SEED: ${LOGINM_SEED}
+      LOGINB_SEED: ${LOGINB_SEED}
+      EVENT_API_TOKEN: ${EVENT_API_TOKEN}
+      SECRET_KEY: "SECRET_KEY" # Change this to a random string
+      URL_MEMBER_API: 'https://medlem.mensa.se/mensa_verify/restlogin.php'
+      URL_EVENTS_API: 'https://events.mensa.se/swag2024/info-rest/?sec_action=app-api'
 
   mongo:
     image: mongo:latest
