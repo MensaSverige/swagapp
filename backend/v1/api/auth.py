@@ -115,10 +115,6 @@ async def authb(request: AuthRequest):
 
     return response.json()
 
-@auth_v1.get("/users/me/", response_model=User)
-async def get_current_user(current_user: User = Depends(validate_request)):
-    return current_user
-
 @auth_v1.post("/refresh_token")
 def refresh_token(refresh_token: str) -> AuthResponse:
     try:

@@ -1,9 +1,37 @@
+/**
+ * authService.ts
+ * 
+ * This service is responsible for handling authentication-related tasks such as logging in and refreshing access tokens.
+ * It exports an `authenticate` function which takes a username, password, and a testMode flag, and returns a Promise that 
+ * resolves to an AuthResponse or undefined.
+ * 
+ * The `authenticate` function uses the `authClient` instance. This instance is created with a base URL that is composed of 
+ * the API_URL and API_VERSION environment variables.
+ * 
+ * This service differs from the apiClient.ts service in the following ways:
+ * 
+ * 1. The apiClient.ts service is a general-purpose service for making API requests. 
+ * It uses an instance of axios with a request interceptor that automatically adds an Authorization header with a bearer token 
+ * to every request. This token is retrieved using the `getOrRefreshAccessToken` function from authService.ts. If the token 
+ * cannot be retrieved, the request is made without the Authorization header.
+ * 
+ * 2. The apiClient.ts service also has a response interceptor that updates the `backendConnection` state in the store based on 
+ * the success or failure of the API request. If a request fails due to a network error, the `backendConnection` state is set 
+ * to false. If a request is successful, the `backendConnection` state is set to true.
+ * 
+ * 3. The apiClient.ts service handles 401 Unauthorized errors by setting a `_retry` flag on the original request and retrying 
+ * the request. This is not done in the authService.ts service.
+ * 
+ * 4. The authService.ts service is specifically for authentication-related tasks, while the apiClient.ts service is for 
+ * general API requests.
+ */
+
 import { AuthRequest, AuthResponse, HTTPValidationError, User, ValidationError } from '../../../api_schema/types';
 import axios, { AxiosResponse } from 'axios';
 import { API_URL, API_VERSION } from '@env';
-
 import { UserCredentials } from 'react-native-keychain';
 import * as Keychain from 'react-native-keychain';
+
 
 const authClient = axios.create({
     baseURL: `${API_URL}/${API_VERSION}`,
@@ -46,41 +74,6 @@ export const authenticate = async (username: string, password: string, testMode:
                 throw new Error('Något gick fel. Försök igen senare.');
             }
         });
-}
-
-export const tryGetCurrentUser = async () : Promise<AuthResponse | undefined> => {
-    return Keychain.getAllGenericPasswordServices().then(allSavedCredentials => {
-        if (
-            allSavedCredentials.some(
-                credential =>
-                    credential === 'accessToken' ||
-                    credential === 'refreshToken' ||
-                    credential === 'credentials',
-            )
-        ) {
-            return authClient
-                .get('/users/me', { timeout: 500 })
-                .then(response => {
-                    if (response.status === 200) {
-                        const authresponse: AuthResponse = response.data;
-                        return storeAndValidateAuthResponse(authresponse);
-                    } else {
-                        return response.data().then((data: any) => {
-                            throw new Error(`Could not get user object. Data: ${data}`);
-                        });
-                    }
-                })
-                .catch(error => {
-                    if (!error.message.includes('Network Error')) {
-                        // Error was not Network Error, which means login failed due to invalid credentials.
-                        Keychain.resetGenericPassword();
-                    }
-                    throw error;
-                });
-        } else {
-            throw new Error('No saved credentials found');
-        }
-    });
 }
 
 export const getOrRefreshAccessToken = async (): Promise<string> => {

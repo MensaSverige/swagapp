@@ -17,7 +17,8 @@ import * as Keychain from 'react-native-keychain';
 import {FontAwesomeIcon} from '@fortawesome/react-native-fontawesome';
 import {faEye, faEyeSlash} from '@fortawesome/free-solid-svg-icons';
 import {TEST_MODE} from '@env';
-import { authenticate, tryGetCurrentUser} from '../../common/services/authService';
+import { authenticate } from '../../common/services/authService';
+import { tryGetCurrentUser } from '../../account/services/userService';
 import { AuthResponse, User } from '../../../api_schema/types';
 
 
