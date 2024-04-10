@@ -3,7 +3,7 @@ from pymongo import MongoClient
 import logging
 from typing import Optional
 from pydantic import BaseModel, ValidationError
-from db.models.user import User
+from db.models.user import ContactInfo, ShowLocation, User, UserSettings
 from sqlalchemy.orm import Session
 from db.mongo import user_collection  
 
@@ -44,20 +44,20 @@ def get_users(show_location: Optional[bool] = None) -> list[User]:
     return list(user_collection.find(query))
 
 def map_authresponse_to_user(response_json: dict) -> User:
-    user_dict = {
-        "userId": response_json["memberId"],
-        "isMember": response_json["type"] == "M",
-    }
+    user = User(
+        userId=response_json["memberId"],
+        isMember=response_json["type"] == "M",
+        settings=UserSettings(show_location=ShowLocation.no_one, show_contact_info=False),  # Default values
+    )
 
-    if user_dict['isMember']:
-        user_dict.update({
-            "firstName": response_json.get("firstName", None),
-            "lastName": response_json.get("lastName", None),
-            "email": response_json.get("email", None),
-        })
+    if user.isMember:
+        user.firstName = response_json.get("firstName", None)
+        user.lastName = response_json.get("lastName", None)
+        user.contact_info = ContactInfo(email=response_json.get("email", None), phone=None)  # Update email
+
     try:
-        user_json = json.dumps(user_dict)
+        user_json = json.dumps(user.dict())
         User.model_validate_json(user_json)
-        return user_dict
+        return user.dict()
     except ValidationError:
         return None

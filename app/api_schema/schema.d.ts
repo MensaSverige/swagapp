@@ -13,17 +13,25 @@ export interface paths {
     /** Authb */
     post: operations["authb_v1_authb_post"];
   };
+  "/v1/refresh_token": {
+    /** Refresh Token */
+    post: operations["refresh_token_v1_refresh_token_post"];
+  };
   "/v1/health": {
     /** Health */
     get: operations["health_v1_health_get"];
   };
-  "/v1/users/me/": {
-    /** Get Current User */
-    get: operations["get_current_user_v1_users_me__get"];
+  "/v1/users/{user_id}": {
+    /** Get User By Id */
+    get: operations["get_user_by_id_v1_users__user_id__get"];
   };
   "/v1/users_showing_location": {
     /** Users Showing Location */
     get: operations["users_showing_location_v1_users_showing_location_get"];
+  };
+  "/v1/users/me/": {
+    /** Get Current User */
+    get: operations["get_current_user_v1_users_me__get"];
   };
 }
 
@@ -51,11 +59,29 @@ export interface components {
       accessTokenExpiry: string;
       user: components["schemas"]["User"];
     };
+    /** ContactInfo */
+    ContactInfo: {
+      /**
+       * Email
+       * @example johndoe@example.com
+       */
+      email?: string | null;
+      /**
+       * Phone
+       * @example +1234567890
+       */
+      phone?: string | null;
+    };
     /** HTTPValidationError */
     HTTPValidationError: {
       /** Detail */
       detail?: components["schemas"]["ValidationError"][];
     };
+    /**
+     * ShowLocation
+     * @enum {integer}
+     */
+    ShowLocation: 0 | 1 | 2 | 3 | 4;
     /** User */
     User: {
       /**
@@ -69,18 +95,23 @@ export interface components {
        * @example true
        */
       isMember?: boolean;
+      settings: components["schemas"]["UserSettings"];
       /**
-       * Show Location
-       * @default false
-       * @example true
+       * @example {
+       *   "accuracy": 10,
+       *   "latitude": 37.7749,
+       *   "longitude": -122.4194,
+       *   "timestamp": "2021-01-01"
+       * }
        */
-      show_location?: boolean;
+      location?: components["schemas"]["UserLocation"] | null;
       /**
-       * Show Contact Info
-       * @default false
-       * @example true
+       * @example {
+       *   "email": "johndoe@example.com",
+       *   "phone": "+1234567890"
+       * }
        */
-      show_contact_info?: boolean;
+      contact_info?: components["schemas"]["ContactInfo"] | null;
       /**
        * Age
        * @example 30
@@ -106,16 +137,34 @@ export interface components {
        * @example John Doe
        */
       lastName?: string | null;
+    };
+    /** UserLocation */
+    UserLocation: {
+      /** Latitude */
+      latitude: number;
+      /** Longitude */
+      longitude: number;
       /**
-       * Email
-       * @example johndoe@example.com
+       * Timestamp
+       * Format: date
        */
-      email?: string | null;
+      timestamp: string;
+      /** Accuracy */
+      accuracy: number;
+    };
+    /** UserSettings */
+    UserSettings: {
       /**
-       * Phone
-       * @example +1234567890
+       * @default 0
+       * @example 4
        */
-      phone?: string | null;
+      show_location?: components["schemas"]["ShowLocation"];
+      /**
+       * Show Contact Info
+       * @default false
+       * @example true
+       */
+      show_contact_info?: boolean;
     };
     /** ValidationError */
     ValidationError: {
@@ -184,8 +233,63 @@ export interface operations {
       };
     };
   };
+  /** Refresh Token */
+  refresh_token_v1_refresh_token_post: {
+    parameters: {
+      query: {
+        refresh_token: string;
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["AuthResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
   /** Health */
   health_v1_health_get: {
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": unknown;
+        };
+      };
+    };
+  };
+  /** Get User By Id */
+  get_user_by_id_v1_users__user_id__get: {
+    parameters: {
+      path: {
+        user_id: number;
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": unknown;
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  /** Users Showing Location */
+  users_showing_location_v1_users_showing_location_get: {
     responses: {
       /** @description Successful Response */
       200: {
@@ -202,17 +306,6 @@ export interface operations {
       200: {
         content: {
           "application/json": components["schemas"]["User"];
-        };
-      };
-    };
-  };
-  /** Users Showing Location */
-  users_showing_location_v1_users_showing_location_get: {
-    responses: {
-      /** @description Successful Response */
-      200: {
-        content: {
-          "application/json": unknown;
         };
       };
     };
