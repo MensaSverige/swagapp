@@ -1,10 +1,7 @@
 import json
-from pymongo import MongoClient
-import logging
 from typing import Optional
-from pydantic import BaseModel, ValidationError
+from pydantic import ValidationError
 from db.models.user import ContactInfo, ShowLocation, User, UserSettings
-from sqlalchemy.orm import Session
 from db.mongo import user_collection  
 
 def get_user(user_id: int) -> User:
@@ -16,7 +13,7 @@ def get_user(user_id: int) -> User:
     :return: The user document.
     """
 
-    return user_collection.find_one({'userId': user_id})
+    return user_collection.find_one({"userId": user_id})
 
 def create_user(response_json: dict) -> User:
     """

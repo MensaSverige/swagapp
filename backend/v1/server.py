@@ -1,9 +1,7 @@
 
 import datetime
 import logging
-from pymongo import MongoClient
-from fastapi import FastAPI, HTTPException, Depends, Body
-from fastapi.responses import FileResponse
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import datetime
 import logging
