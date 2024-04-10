@@ -36,7 +36,7 @@ def get_users(show_location: Optional[bool] = None) -> list[User]:
     """
     query = {}
     if show_location is not None:
-        query['show_location'] = show_location
+        query['settings.show_location'] = show_location
 
     return list(user_collection.find(query))
 
