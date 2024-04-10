@@ -9,10 +9,6 @@ export interface paths {
     /** Authm */
     post: operations["authm_v1_authm_post"];
   };
-  "/v1/authb": {
-    /** Authb */
-    post: operations["authb_v1_authb_post"];
-  };
   "/v1/refresh_token": {
     /** Refresh Token */
     post: operations["refresh_token_v1_refresh_token_post"];
@@ -32,6 +28,10 @@ export interface paths {
   "/v1/users/me/": {
     /** Get Current User */
     get: operations["get_current_user_v1_users_me__get"];
+  };
+  "/v1/external_events": {
+    /** Get Events For User */
+    get: operations["get_events_for_user_v1_external_events_get"];
   };
 }
 
@@ -72,6 +72,21 @@ export interface components {
        */
       phone?: string | null;
     };
+    /** ExternalEvent */
+    ExternalEvent: {
+      /** Eventid */
+      eventId: number;
+      /**
+       * Date
+       * Format: date
+       */
+      date: string;
+      /**
+       * Time
+       * Format: time
+       */
+      time: string;
+    };
     /** HTTPValidationError */
     HTTPValidationError: {
       /** Detail */
@@ -79,9 +94,9 @@ export interface components {
     };
     /**
      * ShowLocation
-     * @enum {integer}
+     * @enum {string}
      */
-    ShowLocation: 0 | 1 | 2 | 3 | 4;
+    ShowLocation: "no_one" | "only_members_who_share_their_own_location" | "only_members" | "everyone_who_share_their_own_location" | "everyone";
     /** User */
     User: {
       /**
@@ -155,8 +170,8 @@ export interface components {
     /** UserSettings */
     UserSettings: {
       /**
-       * @default 0
-       * @example 4
+       * @default no_one
+       * @example everyone
        */
       show_location?: components["schemas"]["ShowLocation"];
       /**
@@ -201,28 +216,6 @@ export interface operations {
       200: {
         content: {
           "application/json": components["schemas"]["AuthResponse"];
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
-    };
-  };
-  /** Authb */
-  authb_v1_authb_post: {
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["AuthRequest"];
-      };
-    };
-    responses: {
-      /** @description Successful Response */
-      200: {
-        content: {
-          "application/json": unknown;
         };
       };
       /** @description Validation Error */
@@ -306,6 +299,17 @@ export interface operations {
       200: {
         content: {
           "application/json": components["schemas"]["User"];
+        };
+      };
+    };
+  };
+  /** Get Events For User */
+  get_events_for_user_v1_external_events_get: {
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["ExternalEvent"][];
         };
       };
     };

@@ -3,6 +3,7 @@ import logging
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 import logging
+from utilities import convert_string_to_datetime
 from external.auth_api import loginm
 from db.external_token_storage import save_external_token
 from token_handler import create_access_token, create_refresh_token, get_token_expiry, verify_refresh_token
@@ -36,7 +37,7 @@ def authm(request: AuthRequest) -> AuthResponse:
         print("memberId not found in response")
         raise HTTPException(status_code=400, detail="Invalid credentials")
 
-    save_external_token(user["userId"], response["token"], response["validThrough"])
+    save_external_token(user["userId"], response["token"], convert_string_to_datetime(response["validThrough"]))
     accesstoken = create_access_token(user["userId"])
 
     authresponse = AuthResponse(

@@ -22,6 +22,25 @@ export const fetchUserEvents = async (): Promise<FutureUserEvent[]> => {
       });
   };
 
+  export const fetchExternalEvents = async (): Promise<FutureEvent[]> => {
+    return apiClient
+      .get('/external_events')
+      .then(
+        response => {
+          if (response.data) {
+            return response.data.filter(isFutureEvent);
+          }
+          return [];
+        },
+        error => {
+          throw new Error(error.message || error);
+        },
+      )
+      .catch(error => {
+        console.error('Error fetching external events:', error);
+      });
+  }
+
 export const fetchStaticEvents = async (): Promise<FutureEvent[]> => {
     return apiClient
       .get('/static_events')

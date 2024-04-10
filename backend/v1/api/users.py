@@ -12,7 +12,7 @@ async def get_user_by_id(user_id: int):
     
 
 @users_v1.get("/users_showing_location")
-def users_showing_location(current_user: str = Depends(validate_request)):
+def users_showing_location(current_user: User = Depends(validate_request)):
     return get_users(show_location=True)
 
 @users_v1.get("/users/me/", response_model=User)

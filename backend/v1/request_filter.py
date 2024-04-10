@@ -6,7 +6,7 @@ from db.users import get_user
 
 bearer_scheme = HTTPBearer()
 
-async def validate_request(bearer: HTTPAuthorizationCredentials = Depends(bearer_scheme)):
+async def validate_request(bearer: HTTPAuthorizationCredentials = Depends(bearer_scheme)): 
     if bearer:
         try:
             valid, payload = verify_access_token(bearer.credentials)
