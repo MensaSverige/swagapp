@@ -1,4 +1,4 @@
-const {getDefaultConfig, mergeConfig} = require('@react-native/metro-config');
+const { getDefaultConfig, mergeConfig } = require("@react-native/metro-config");
 
 /**
  * Metro configuration
@@ -7,13 +7,11 @@ const {getDefaultConfig, mergeConfig} = require('@react-native/metro-config');
  * @type {import('metro-config').MetroConfig}
  */
 const config = {};
-
-const crypto = require('crypto');
-const fs = require('fs');
-
-let hash = crypto.createHash('sha256');
-hash.update(fs.readFileSync('.env'));
-const cacheVersion = hash.digest('hex');
+const crypto = require("crypto");
+const fs = require("fs");
+let hash = crypto.createHash("sha256");
+hash.update(fs.readFileSync(".env"));
+const cacheVersion = hash.digest("hex");
 
 // module.exports = {
 //   transformer: {

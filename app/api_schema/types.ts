@@ -9,6 +9,17 @@ npx openapi-typescript http://{{api-url}}/openapi.json -o ./api_schema/schema.d.
 export type AuthRequest = components["schemas"]["AuthRequest"];
 export type AuthResponse = components["schemas"]["AuthResponse"];
 export type User = components["schemas"]["User"];
+//export type ShowLocation = components["schemas"]["ShowLocation"];
+//export type ShowContactInfo = components["schemas"]["ShowContactInfo"];
 export type ExternalEvent = components["schemas"]["ExternalEvent"];
 export type HTTPValidationError = components["schemas"]["HTTPValidationError"];
 export type ValidationError = components["schemas"]["ValidationError"];
+
+
+export enum ShowLocation {
+    NoOne = "no_one",
+    OnlyMembersWhoShareTheirOwnLocation = "only_members_who_share_their_own_location",
+    OnlyMembers = "only_members",
+    //EveryoneWhoShareTheirOwnLocation = "everyone_who_share_their_own_location",
+    //Everyone = "everyone"
+}

@@ -1,20 +1,15 @@
 import apiClient from '../../common/services/apiClient';
+import {ShowLocation} from '../../../api_schema/types';
 import { AuthResponse, User } from '../../../api_schema/types';
 import * as Keychain from 'react-native-keychain';
 
 
 export const updateUser = async (
   user: User,
-  showLocation: boolean,
-  showContactInfo: boolean,
-  contactInfo: string,
+
 ) => {
   return apiClient
-    .put('/user/' + user.userId, {
-      ...user,
-      show_location: showLocation,
-      show_contact_info: showContactInfo,
-      contact_info: contactInfo,
+    .put('/user/' + user.userId, {user
     })
     .then(
       response => {
