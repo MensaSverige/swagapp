@@ -360,7 +360,7 @@ export const gluestackUIConfig = createConfig({
       borderLight900: '#262626',
       borderLight950: '#171717',
 
-      backgroundLight0: '#FCFCFC',
+      backgroundLight0: '#ffffff',//'#FCFCFC',
       backgroundLight50: '#F5F5F5',
       backgroundLight100: '#F1F1F1',
       backgroundLight200: '#DBDBDB',

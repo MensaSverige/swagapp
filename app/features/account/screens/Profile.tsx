@@ -30,12 +30,12 @@ import { Platform, SafeAreaView, StyleSheet } from 'react-native';
 import { updateUser } from '../services/userService';
 import { ShowLocation } from '../../../api_schema/types';
 import {gluestackUIConfig} from '../../../gluestack-components/gluestack-ui.config';
+import { useColorMode } from '@gluestack-ui/themed';
 
 const Profile: React.FC = () => {
   // Get current user and token from Zustand store
   const { user, setUser, backendConnection } = useStore();
-
-  const theme = useTheme();
+  const colorMode = useColorMode()
   //const styles = createStyles();
 
   //Local state for form fields
@@ -83,16 +83,16 @@ const Profile: React.FC = () => {
 
   return (
     //<SafeAreaView style={styles.viewContainer}>
-    <SafeAreaView>
+    <SafeAreaView key={colorMode}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 160 : 0}>
-        <ScrollView
+        <ScrollView bg="$background0"
           w="100%"
           h="100%"
         // contentContainerStyle={styles.contentContainer}
         >
-          <HStack space="md" h="100%" flex={1} justifyContent="center" alignItems="center">
+          <HStack space="md" h="100%" bg="$background0" flex={1} justifyContent="center" alignItems="center">
 
             <Center pt={10}>
 
