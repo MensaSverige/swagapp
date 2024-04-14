@@ -1,13 +1,18 @@
 import useStore from '../../common/store/store';
 import {useCallback, useEffect, useRef, useState} from 'react';
-import {fetchExternalEvents, fetchStaticEvents, fetchUserEvents} from '../services/eventService';
+import {
+  fetchExternalEvents,
+  // fetchStaticEvents,
+  fetchUserEvents,
+} from '../services/eventService';
 
 const DATA_STALE_INTERVAL = 1000 * 60 * 5; // 5 minutes
 
 export const useEventLists = () => {
   const {
     setUserEvents,
-    setStaticEvents,
+    // setStaticEvents,
+    setExternalEvents,
     setEventsRefreshing,
     setEventsLastFetched,
     eventsRefreshing,
@@ -26,11 +31,22 @@ export const useEventLists = () => {
 
     setEventsRefreshing(true);
 
-    return Promise.all([fetchUserEvents(), fetchStaticEvents(), fetchExternalEvents()])
-      .then(([userEvents, staticEvents]) => {
-        setUserEvents(userEvents);
-        setStaticEvents(staticEvents);
-      })
+    return Promise.all([
+      fetchUserEvents(),
+      // fetchStaticEvents(),
+      fetchExternalEvents(),
+    ])
+      .then(
+        ([
+          userEvents,
+          // staticEvents,
+          external_events,
+        ]) => {
+          setUserEvents(userEvents);
+          // setStaticEvents(staticEvents);
+          setExternalEvents(external_events);
+        },
+      )
       .catch(error => {
         console.error('Error fetching data:', error);
       })
@@ -41,7 +57,8 @@ export const useEventLists = () => {
       });
   }, [
     setUserEvents,
-    setStaticEvents,
+    // setStaticEvents,
+    setExternalEvents,
     setEventsRefreshing,
     setEventsLastFetched,
     eventsRefreshing,

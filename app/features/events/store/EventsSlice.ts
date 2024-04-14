@@ -4,13 +4,13 @@ import EventWithLocation, {
 } from '../types/eventWithLocation';
 import FutureEvent from '../types/futureEvent';
 import FutureUserEvent from '../types/futureUserEvent';
-import UserEventWithLocation, {
-  isUserEventWithLocation,
-} from '../types/userEventWithLocation';
+import FutureUserEventWithLocation, {
+  isFutureUserEventWithLocation,
+} from '../types/futureUserEventWithLocation';
 
 export interface EventsSlice {
   visibleEvents: (FutureEvent | FutureUserEvent)[];
-  eventsWithLocation: (EventWithLocation | UserEventWithLocation)[];
+  eventsWithLocation: (EventWithLocation | FutureUserEventWithLocation)[];
   userEvents: FutureUserEvent[];
   showUserEvents: boolean;
   staticEvents: FutureEvent[];
@@ -78,15 +78,17 @@ export const createEventsSlice: StateCreator<EventsSlice> = (set, get) => ({
     })),
   updateEventsWithLocation: () =>
     set(state => {
-      const eventsWithLocation: (EventWithLocation | UserEventWithLocation)[] =
-        [
-          ...(state.staticEvents.filter(
-            isEventWithLocation,
-          ) as EventWithLocation[]),
-          ...(state.userEvents.filter(
-            isUserEventWithLocation,
-          ) as UserEventWithLocation[]),
-        ];
+      const eventsWithLocation: (
+        | EventWithLocation
+        | FutureUserEventWithLocation
+      )[] = [
+        ...(state.staticEvents.filter(
+          isEventWithLocation,
+        ) as EventWithLocation[]),
+        ...(state.userEvents.filter(
+          isFutureUserEventWithLocation,
+        ) as FutureUserEventWithLocation[]),
+      ];
 
       return {eventsWithLocation};
     }),

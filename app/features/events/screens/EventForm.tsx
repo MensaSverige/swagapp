@@ -27,7 +27,7 @@ import EventCard from '../components/EventCard';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {createUserEvent, updateUserEvent} from '../services/eventService';
 import {DatepickerField} from '../../common/components/DatepickerField';
-import {UserEvent} from '../../common/types/user_event';
+import {UserEvent} from '../../../api_schema/types';
 import EventWithLocation from '../types/eventWithLocation';
 import FutureUserEvent from '../types/futureUserEvent';
 
@@ -38,6 +38,8 @@ const EditEventForm: React.FC = () => {
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const route = useRoute<EventFormProps>();
   const initialEvent = route.params.event;
+
+  const user = useStore(state => state.user);
 
   // Event data
   const [eventName, setEventName] = useState<string>('');
@@ -84,7 +86,7 @@ const EditEventForm: React.FC = () => {
       // Event Object fields
       setEventName(initialEvent.name);
       setEventDescription(initialEvent.description || '');
-      setEventMaxParticipants(initialEvent.max_participants || null);
+      setEventMaxParticipants(initialEvent.maxAttendees || null);
       setEventStartDate(new Date(initialEvent.start));
       setEventEndDate(
         initialEvent.end ? new Date(initialEvent.end) : undefined,
@@ -110,7 +112,7 @@ const EditEventForm: React.FC = () => {
       setFormChanged(
         eventName !== initialEvent.name ||
           eventDescription !== initialEvent.description ||
-          eventMaxParticipants !== initialEvent.max_participants ||
+          eventMaxParticipants !== initialEvent.maxAttendees ||
           eventStartDate.toISOString() !== initialEvent.start ||
           (eventEndDate?.toISOString() || undefined) !== initialEvent.end ||
           eventLocationLatitude !== initialEvent.location?.latitude ||
@@ -143,14 +145,18 @@ const EditEventForm: React.FC = () => {
   }, [eventName, nameFieldTouched]);
 
   const saveEvent = useCallback(() => {
+    if (!user) {
+      console.error('No user found');
+      return;
+    }
     if (!formChanged) {
       return;
     }
     const event: UserEvent = {
-      id: initialEvent?.id || '',
+      id: initialEvent?.id,
       name: eventName,
       description: eventDescription,
-      max_participants: eventMaxParticipants ?? undefined,
+      maxAttendees: eventMaxParticipants ?? undefined,
       start: eventStartDate.toISOString() || '',
       end: eventEndDate?.toISOString() || undefined,
       location: {
@@ -159,10 +165,11 @@ const EditEventForm: React.FC = () => {
         description: eventLocationDescription,
         marker: eventLocationMarker,
       },
-      owner: '',
+      hosts: [],
+      userId: user?.userId,
     };
     setIsSaving(true);
-    (initialEvent
+    (initialEvent && initialEvent.id
       ? // when editing
         updateUserEvent(initialEvent.id, event)
       : // when creating
@@ -193,6 +200,7 @@ const EditEventForm: React.FC = () => {
     formChanged,
     initialEvent,
     navigation,
+    user,
   ]);
 
   useEffect(() => {

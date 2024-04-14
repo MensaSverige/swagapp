@@ -26,7 +26,7 @@ const CreateEventButton: React.FC = () => {
   };
 
   return (
-    <TouchableOpacity onPress={showEditEventForm} style={{padding: 20}}>
+    <TouchableOpacity onPress={showEditEventForm} style={{paddingRight: 20}}>
       <FontAwesomeIcon icon={faPlus} color={theme.colors.accent[500]} />
     </TouchableOpacity>
   );

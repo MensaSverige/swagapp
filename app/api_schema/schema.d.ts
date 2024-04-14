@@ -25,13 +25,55 @@ export interface paths {
     /** Users Showing Location */
     get: operations["users_showing_location_v1_users_showing_location_get"];
   };
-  "/v1/users/me/": {
+  "/v1/users/me": {
     /** Get Current User */
-    get: operations["get_current_user_v1_users_me__get"];
+    get: operations["get_current_user_v1_users_me_get"];
   };
   "/v1/external_events": {
     /** Get Events For User */
     get: operations["get_events_for_user_v1_external_events_get"];
+  };
+  "/v1/user_events/mine": {
+    /** Get Events I Own */
+    get: operations["get_events_i_own_v1_user_events_mine_get"];
+  };
+  "/v1/user_events/cohosting": {
+    /** Get Events I Host */
+    get: operations["get_events_i_host_v1_user_events_cohosting_get"];
+  };
+  "/v1/user_events/attending": {
+    /** Get Events I Attend */
+    get: operations["get_events_i_attend_v1_user_events_attending_get"];
+  };
+  "/v1/user_events": {
+    /** Get Events */
+    get: operations["get_events_v1_user_events_get"];
+    /** Create Event */
+    post: operations["create_event_v1_user_events_post"];
+  };
+  "/v1/user_events/{event_id}": {
+    /** Get Event */
+    get: operations["get_event_v1_user_events__event_id__get"];
+    /** Update Event */
+    put: operations["update_event_v1_user_events__event_id__put"];
+    /** Delete Event */
+    delete: operations["delete_event_v1_user_events__event_id__delete"];
+  };
+  "/v1/user_events/{event_id}/attend": {
+    /** Attend Event */
+    post: operations["attend_event_v1_user_events__event_id__attend_post"];
+  };
+  "/v1/user_events/{event_id}/unattend": {
+    /** Unattend Event */
+    post: operations["unattend_event_v1_user_events__event_id__unattend_post"];
+  };
+  "/v1/user_events/{event_id}/accept_cohosting": {
+    /** Accept Being Cohost */
+    post: operations["accept_being_cohost_v1_user_events__event_id__accept_cohosting_post"];
+  };
+  "/v1/user_events/{event_id}/deny_cohosting": {
+    /** Deny Being Cohost */
+    post: operations["deny_being_cohost_v1_user_events__event_id__deny_cohosting_post"];
   };
 }
 
@@ -39,6 +81,14 @@ export type webhooks = Record<string, never>;
 
 export interface components {
   schemas: {
+    /** Attendee */
+    Attendee: {
+      /**
+       * Userid
+       * @example 123
+       */
+      userId: number;
+    };
     /** AuthRequest */
     AuthRequest: {
       /** Username */
@@ -72,6 +122,111 @@ export interface components {
        */
       phone?: string | null;
     };
+    /** ExtendedUserEvent */
+    ExtendedUserEvent: {
+      /** Id */
+      id?: string;
+      /**
+       * Userid
+       * @example 123
+       */
+      userId: number;
+      /**
+       * Hosts
+       * @default []
+       * @example [
+       *   {
+       *     "userId": 123
+       *   }
+       * ]
+       */
+      hosts?: components["schemas"]["Host"][] | null;
+      /**
+       * Suggested Hosts
+       * @default []
+       * @example [
+       *   {
+       *     "userId": 123
+       *   }
+       * ]
+       */
+      suggested_hosts?: components["schemas"]["Host"][];
+      /**
+       * Name
+       * @example Event Name
+       */
+      name: string;
+      /**
+       * @example {
+       *   "latitude": 37.7749,
+       *   "longitude": -122.4194
+       * }
+       */
+      location?: components["schemas"]["Location"] | null;
+      /**
+       * Start
+       * Format: date-time
+       * @example 2021-01-01T00:00:00
+       */
+      start: string;
+      /**
+       * End
+       * @example 2021-01-01T00:00:00
+       */
+      end?: string | null;
+      /**
+       * Description
+       * @example Event Description
+       */
+      description?: string | null;
+      /**
+       * Reports
+       * @default []
+       * @example [
+       *   {
+       *     "text": "Report Text",
+       *     "user": "John Doe"
+       *   }
+       * ]
+       */
+      reports?: components["schemas"]["Report"][];
+      /**
+       * Attendees
+       * @default []
+       * @example [
+       *   {
+       *     "userId": 123
+       *   }
+       * ]
+       */
+      attendees?: components["schemas"]["Attendee"][];
+      /**
+       * Maxattendees
+       * @example 10
+       */
+      maxAttendees?: number | null;
+      /**
+       * Ownername
+       * @example John Doe
+       */
+      ownerName: string;
+      /**
+       * Hostnames
+       * @default []
+       * @example [
+       *   "John Doe"
+       * ]
+       */
+      hostNames?: string[];
+      /**
+       * Attendeenames
+       * @default []
+       * @example [
+       *   "John Doe"
+       * ]
+       */
+      attendeeNames?: string[];
+    };
     /** ExternalEvent */
     ExternalEvent: {
       /** Eventid */
@@ -92,11 +247,60 @@ export interface components {
       /** Detail */
       detail?: components["schemas"]["ValidationError"][];
     };
+    /** Host */
+    Host: {
+      /**
+       * Userid
+       * @example 123
+       */
+      userId: number;
+    };
+    /** Location */
+    Location: {
+      /**
+       * Description
+       * @example Location Description
+       */
+      description?: string | null;
+      /**
+       * Marker
+       * @example 🕑
+       */
+      marker?: string | null;
+      /**
+       * Latitude
+       * @example 37.7749
+       */
+      latitude: number;
+      /**
+       * Longitude
+       * @example -122.4194
+       */
+      longitude: number;
+    };
+    /** Report */
+    Report: {
+      /**
+       * Userid
+       * @example 123
+       */
+      userId: number;
+      /**
+       * Text
+       * @example Report Text
+       */
+      text: string;
+    };
     /**
      * ShowLocation
      * @enum {string}
      */
     ShowLocation: "no_one" | "only_members_who_share_their_own_location" | "only_members" | "everyone_who_share_their_own_location" | "everyone";
+    /** StatusResponseWithMessage */
+    StatusResponseWithMessage: {
+      /** Message */
+      message: string;
+    };
     /** User */
     User: {
       /**
@@ -152,6 +356,90 @@ export interface components {
        * @example John Doe
        */
       lastName?: string | null;
+    };
+    /** UserEvent */
+    UserEvent: {
+      /** Id */
+      id?: string;
+      /**
+       * Userid
+       * @example 123
+       */
+      userId: number;
+      /**
+       * Hosts
+       * @default []
+       * @example [
+       *   {
+       *     "userId": 123
+       *   }
+       * ]
+       */
+      hosts?: components["schemas"]["Host"][] | null;
+      /**
+       * Suggested Hosts
+       * @default []
+       * @example [
+       *   {
+       *     "userId": 123
+       *   }
+       * ]
+       */
+      suggested_hosts?: components["schemas"]["Host"][];
+      /**
+       * Name
+       * @example Event Name
+       */
+      name: string;
+      /**
+       * @example {
+       *   "latitude": 37.7749,
+       *   "longitude": -122.4194
+       * }
+       */
+      location?: components["schemas"]["Location"] | null;
+      /**
+       * Start
+       * Format: date-time
+       * @example 2021-01-01T00:00:00
+       */
+      start: string;
+      /**
+       * End
+       * @example 2021-01-01T00:00:00
+       */
+      end?: string | null;
+      /**
+       * Description
+       * @example Event Description
+       */
+      description?: string | null;
+      /**
+       * Reports
+       * @default []
+       * @example [
+       *   {
+       *     "text": "Report Text",
+       *     "user": "John Doe"
+       *   }
+       * ]
+       */
+      reports?: components["schemas"]["Report"][];
+      /**
+       * Attendees
+       * @default []
+       * @example [
+       *   {
+       *     "userId": 123
+       *   }
+       * ]
+       */
+      attendees?: components["schemas"]["Attendee"][];
+      /**
+       * Maxattendees
+       * @example 10
+       */
+      maxAttendees?: number | null;
     };
     /** UserLocation */
     UserLocation: {
@@ -293,7 +581,7 @@ export interface operations {
     };
   };
   /** Get Current User */
-  get_current_user_v1_users_me__get: {
+  get_current_user_v1_users_me_get: {
     responses: {
       /** @description Successful Response */
       200: {
@@ -310,6 +598,231 @@ export interface operations {
       200: {
         content: {
           "application/json": components["schemas"]["ExternalEvent"][];
+        };
+      };
+    };
+  };
+  /** Get Events I Own */
+  get_events_i_own_v1_user_events_mine_get: {
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["ExtendedUserEvent"][];
+        };
+      };
+    };
+  };
+  /** Get Events I Host */
+  get_events_i_host_v1_user_events_cohosting_get: {
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["ExtendedUserEvent"][];
+        };
+      };
+    };
+  };
+  /** Get Events I Attend */
+  get_events_i_attend_v1_user_events_attending_get: {
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["ExtendedUserEvent"][];
+        };
+      };
+    };
+  };
+  /** Get Events */
+  get_events_v1_user_events_get: {
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": unknown;
+        };
+      };
+    };
+  };
+  /** Create Event */
+  create_event_v1_user_events_post: {
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["UserEvent"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["ExtendedUserEvent"][];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  /** Get Event */
+  get_event_v1_user_events__event_id__get: {
+    parameters: {
+      path: {
+        event_id: string;
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["ExtendedUserEvent"][];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  /** Update Event */
+  update_event_v1_user_events__event_id__put: {
+    parameters: {
+      path: {
+        event_id: string;
+      };
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["UserEvent"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["ExtendedUserEvent"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  /** Delete Event */
+  delete_event_v1_user_events__event_id__delete: {
+    parameters: {
+      path: {
+        event_id: string;
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["StatusResponseWithMessage"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  /** Attend Event */
+  attend_event_v1_user_events__event_id__attend_post: {
+    parameters: {
+      path: {
+        event_id: number;
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["StatusResponseWithMessage"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  /** Unattend Event */
+  unattend_event_v1_user_events__event_id__unattend_post: {
+    parameters: {
+      path: {
+        event_id: number;
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["StatusResponseWithMessage"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  /** Accept Being Cohost */
+  accept_being_cohost_v1_user_events__event_id__accept_cohosting_post: {
+    parameters: {
+      path: {
+        event_id: number;
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["StatusResponseWithMessage"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  /** Deny Being Cohost */
+  deny_being_cohost_v1_user_events__event_id__deny_cohosting_post: {
+    parameters: {
+      path: {
+        event_id: number;
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["StatusResponseWithMessage"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
     };

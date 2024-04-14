@@ -10,7 +10,6 @@ import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {RootStackParamList} from '../../../navigation/RootStackParamList';
 import {EditButton} from '../../common/components/EditButton';
 import {formatDateAndTime} from '../../common/functions/FormatDateAndTime';
-import DisplayNameByUsername from '../../account/components/displayNameByUsername';
 import FutureEvent from '../types/futureEvent';
 
 const EventCard: React.FC<{
@@ -48,14 +47,12 @@ const EventCard: React.FC<{
             <TimeLeft
               comparedTo={comparisonDate}
               start={event.start !== undefined ? event.start : ''}
-              end={event.end}
+              end={event.end ?? undefined}
               long
             />
           </Box>
 
-          {open &&
-          isFutureUserEvent(event) &&
-          event.owner === user?.username ? (
+          {open && isFutureUserEvent(event) && event.userId === user?.userId ? (
             <EditButton
               onPress={() => {
                 console.log('Edit event', event);
@@ -73,28 +70,38 @@ const EventCard: React.FC<{
             <Text mt="5">{event.description}</Text>
             {isFutureUserEvent(event) && (
               <>
-                <Heading size="sm">
-                  Värd:
-                  <DisplayNameByUsername username={event.owner} />
-                </Heading>
-
                 <Box flex="1" flexDirection="row" mt="5">
-                  <Heading size="sm">Platser: </Heading>
+                  <Heading size="sm">Värdar:</Heading>
                   <Text>
-                    {event.max_participants !== undefined &&
-                      `${event.max_participants}`}
+                    {(event.hostNames && event.hostNames.length
+                      ? event.hostNames
+                      : [event.ownerName]
+                    ).join(', ')}
                   </Text>
                 </Box>
+
+                {event.maxAttendees && (
+                  <Box flex="1" flexDirection="row" mt="5">
+                    <Heading size="sm">Platser: </Heading>
+                    <Text>
+                      {`${
+                        event.maxAttendees - (event.attendees?.length || 0)
+                      } av ${event.maxAttendees}`}
+                    </Text>
+                  </Box>
+                )}
               </>
             )}
             <Box flex="1" flexDirection="row" mt="5">
               <Heading size="sm">Start:</Heading>
               <Text> {formatDateAndTime(event.start)}</Text>
             </Box>
-            <Box flex="1" flexDirection="row">
-              <Heading size="sm">Slut:</Heading>
-              <Text> {event.end && formatDateAndTime(event.end)}</Text>
-            </Box>
+            {event.end && (
+              <Box flex="1" flexDirection="row">
+                <Heading size="sm">Slut:</Heading>
+                <Text> {formatDateAndTime(event.end)}</Text>
+              </Box>
+            )}
             <Box flex="1" flexDirection="row" mt="5">
               {event.location?.description && (
                 <>

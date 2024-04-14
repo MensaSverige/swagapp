@@ -1,11 +1,11 @@
 import apiClient from '../../common/services/apiClient';
 import FutureUserEvent, {isFutureUserEvent} from '../types/futureUserEvent';
 import FutureEvent, {isFutureEvent} from '../types/futureEvent';
-import {UserEvent} from '../../common/types/user_event';
+import {UserEvent} from '../../../api_schema/types';
 
 export const fetchUserEvents = async (): Promise<FutureUserEvent[]> => {
   return apiClient
-    .get('/user_event')
+    .get('/user_events')
     .then(
       response => {
         if (response.data) {
@@ -23,24 +23,24 @@ export const fetchUserEvents = async (): Promise<FutureUserEvent[]> => {
     });
 };
 
-  export const fetchExternalEvents = async (): Promise<FutureEvent[]> => {
-    return apiClient
-      .get('/external_events')
-      .then(
-        response => {
-          if (response.data) {
-            return response.data.filter(isFutureEvent);
-          }
-          return [];
-        },
-        error => {
-          throw new Error(error.message || error);
-        },
-      )
-      .catch(error => {
-        console.error('Error fetching external events:', error);
-      });
-  }
+export const fetchExternalEvents = async (): Promise<FutureEvent[]> => {
+  return apiClient
+    .get('/external_events')
+    .then(
+      response => {
+        if (response.data) {
+          return response.data.filter(isFutureEvent);
+        }
+        return [];
+      },
+      error => {
+        throw new Error(error.message || error);
+      },
+    )
+    .catch(error => {
+      console.error('Error fetching external events:', error);
+    });
+};
 
 export const fetchStaticEvents = async (): Promise<FutureEvent[]> => {
   return apiClient
@@ -67,7 +67,7 @@ export const updateUserEvent = async (
 ): Promise<UserEvent> => {
   console.log('Updating user event:', event);
   return apiClient
-    .put(`/user_event/${eventId}`, event)
+    .put(`/user_events/${eventId}`, event)
     .then(
       response => {
         if (response.data) {
@@ -87,7 +87,7 @@ export const updateUserEvent = async (
 
 export const createUserEvent = async (event: UserEvent): Promise<UserEvent> => {
   return apiClient
-    .post('/user_event', event)
+    .post('/user_events', event)
     .then(
       response => {
         if (response.data) {

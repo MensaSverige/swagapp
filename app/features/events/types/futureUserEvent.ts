@@ -1,25 +1,36 @@
-import EventWithLocation from './eventWithLocation';
-import UserEventWithLocation from './userEventWithLocation';
 import {Event} from '../../common/types/event';
-import {isFutureEvent} from './futureEvent';
-import {UserEventWithAttendance} from './userEventWithAttendance';
+import {ExtendedUserEvent} from '../../../api_schema/types'; // Import the UserEvent class
 
-export type FutureUserEvent = UserEventWithAttendance & {
+export type FutureUserEvent = ExtendedUserEvent & {
   _isFutureUserEvent: true;
 };
 
 export function isFutureUserEvent(
-  event:
-    | Event
-    | UserEventWithAttendance
-    | EventWithLocation
-    | UserEventWithLocation,
+  event: Event | ExtendedUserEvent,
 ): event is FutureUserEvent {
-  if (!('owner' in event)) {
-    return false; // Not a user event
+  // Check if the event is a UserEvent
+  if (!(event as ExtendedUserEvent).userId) {
+    return false;
   }
 
-  return isFutureEvent(event);
+  const now = new Date();
+  const eventDate = new Date(event.start);
+  if (eventDate.getTime() > now.getTime()) {
+    return true;
+  }
+  if (event.end) {
+    const endDate = new Date(event.end);
+    if (endDate.getTime() > now.getTime()) {
+      return true;
+    }
+  } else {
+    // UserEvents without end date are shown for one hour
+    eventDate.setHours(eventDate.getHours() + 1);
+    if (eventDate.getTime() > now.getTime()) {
+      return true;
+    }
+  }
+  return false;
 }
 
 export default FutureUserEvent;
