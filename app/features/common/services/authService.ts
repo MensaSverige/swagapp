@@ -76,6 +76,41 @@ export const authenticate = async (username: string, password: string, testMode:
         });
 }
 
+export const tryGetCurrentUser = async () : Promise<AuthResponse | undefined> => {
+    return Keychain.getAllGenericPasswordServices().then(allSavedCredentials => {
+        if (
+            allSavedCredentials.some(
+                credential =>
+                    credential === 'accessToken' ||
+                    credential === 'refreshToken' ||
+                    credential === 'credentials',
+            )
+        ) {
+            return authClient
+                .get('/users/me', { timeout: 500 })
+                .then(response => {
+                    if (response.status === 200) {
+                        const authresponse: AuthResponse = response.data;
+                        return storeAndValidateAuthResponse(authresponse);
+                    } else {
+                        return response.data().then((data: any) => {
+                            throw new Error(`Could not get user object. Data: ${data}`);
+                        });
+                    }
+                })
+                .catch(error => {
+                    if (!error.message.includes('Network Error')) {
+                        // Error was not Network Error, which means login failed due to invalid credentials.
+                        Keychain.resetGenericPassword();
+                    }
+                    throw error;
+                });
+        } else {
+            throw new Error('No saved credentials found');
+        }
+    });
+  }
+
 export const getOrRefreshAccessToken = async (): Promise<string> => {
     const accessToken = await Keychain.getGenericPassword({ service: 'accessToken' })
     const accessTokenExpiry = await Keychain.getGenericPassword({ service: 'accessTokenExpiry' })
