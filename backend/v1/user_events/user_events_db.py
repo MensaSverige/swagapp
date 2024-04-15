@@ -26,9 +26,7 @@ def get_unsafe_user_event(event_id: str) -> UserEvent | None:
     :return: The user event document or None.
     """
 
-    event = user_event_collection.find_one({"id": ObjectId(event_id)})
-
-    logging.info(f"Event: {type(event)} {event}")
+    event = user_event_collection.find_one({"_id": ObjectId(event_id)})
     return UserEvent(**event) if event else None
 
 
@@ -44,7 +42,7 @@ def get_safe_user_event(event_id: str) -> ExtendedUserEvent | None:
     if not event:
         return None
 
-    return extend_user_events([make_user_event_safe(event)])[0]
+    return extend_user_event(make_user_event_safe(event))
 
 
 def update_user_event(event_id: str, user_event: UserEvent) -> bool:
