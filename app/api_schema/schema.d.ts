@@ -75,6 +75,14 @@ export interface paths {
     /** Deny Being Cohost */
     post: operations["deny_being_cohost_v1_user_events__event_id__deny_cohosting_post"];
   };
+  "/v1/dev/clear_user_events": {
+    /** Clear User Events */
+    get: operations["clear_user_events_v1_dev_clear_user_events_get"];
+  };
+  "/v1/dev/create_dummy_user_event": {
+    /** Get Dummy User Event */
+    get: operations["get_dummy_user_event_v1_dev_create_dummy_user_event_get"];
+  };
 }
 
 export type webhooks = Record<string, never>;
@@ -124,8 +132,11 @@ export interface components {
     };
     /** ExtendedUserEvent */
     ExtendedUserEvent: {
-      /** Id */
-      id?: string;
+      /**
+       * Id
+       * @example 507f191e810c19729de860ea
+       */
+      _id?: string | null;
       /**
        * Userid
        * @example 123
@@ -359,8 +370,11 @@ export interface components {
     };
     /** UserEvent */
     UserEvent: {
-      /** Id */
-      id?: string;
+      /**
+       * Id
+       * @example 507f191e810c19729de860ea
+       */
+      _id?: string | null;
       /**
        * Userid
        * @example 123
@@ -641,7 +655,7 @@ export interface operations {
       /** @description Successful Response */
       200: {
         content: {
-          "application/json": unknown;
+          "application/json": components["schemas"]["ExtendedUserEvent"][];
         };
       };
     };
@@ -657,7 +671,7 @@ export interface operations {
       /** @description Successful Response */
       200: {
         content: {
-          "application/json": components["schemas"]["ExtendedUserEvent"][];
+          "application/json": components["schemas"]["ExtendedUserEvent"];
         };
       };
       /** @description Validation Error */
@@ -679,7 +693,7 @@ export interface operations {
       /** @description Successful Response */
       200: {
         content: {
-          "application/json": components["schemas"]["ExtendedUserEvent"][];
+          "application/json": components["schemas"]["ExtendedUserEvent"];
         };
       };
       /** @description Validation Error */
@@ -743,14 +757,14 @@ export interface operations {
   attend_event_v1_user_events__event_id__attend_post: {
     parameters: {
       path: {
-        event_id: number;
+        event_id: string;
       };
     };
     responses: {
       /** @description Successful Response */
       200: {
         content: {
-          "application/json": components["schemas"]["StatusResponseWithMessage"];
+          "application/json": components["schemas"]["ExtendedUserEvent"];
         };
       };
       /** @description Validation Error */
@@ -765,7 +779,7 @@ export interface operations {
   unattend_event_v1_user_events__event_id__unattend_post: {
     parameters: {
       path: {
-        event_id: number;
+        event_id: string;
       };
     };
     responses: {
@@ -787,7 +801,7 @@ export interface operations {
   accept_being_cohost_v1_user_events__event_id__accept_cohosting_post: {
     parameters: {
       path: {
-        event_id: number;
+        event_id: string;
       };
     };
     responses: {
@@ -809,7 +823,7 @@ export interface operations {
   deny_being_cohost_v1_user_events__event_id__deny_cohosting_post: {
     parameters: {
       path: {
-        event_id: number;
+        event_id: string;
       };
     };
     responses: {
@@ -823,6 +837,28 @@ export interface operations {
       422: {
         content: {
           "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  /** Clear User Events */
+  clear_user_events_v1_dev_clear_user_events_get: {
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["StatusResponseWithMessage"];
+        };
+      };
+    };
+  };
+  /** Get Dummy User Event */
+  get_dummy_user_event_v1_dev_create_dummy_user_event_get: {
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["ExtendedUserEvent"];
         };
       };
     };

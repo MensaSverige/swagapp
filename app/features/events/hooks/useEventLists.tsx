@@ -4,7 +4,11 @@ import {
   fetchExternalEvents,
   // fetchStaticEvents,
   fetchUserEvents,
+  fetchUserEvent,
+  attendUserEvent,
+  unattendUserEvent,
 } from '../services/eventService';
+import FutureUserEvent from '../types/futureUserEvent';
 
 const DATA_STALE_INTERVAL = 1000 * 60 * 5; // 5 minutes
 
@@ -19,12 +23,34 @@ export const useEventLists = () => {
     eventsLastFetched,
     visibleEvents,
     eventsWithLocation,
+    userEvents: existingUserEvents,
   } = useStore();
 
   const [consumers, setConsumers] = useState<string[]>([]);
   const updateIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  const fetchData = useCallback(async () => {
+  const fetchEvent = useCallback(
+    async (id: string) => {
+      setEventsRefreshing(true);
+      return fetchUserEvent(id)
+        .then(event => {
+          // Replace event in user events
+          const newUserEvents = existingUserEvents.map(userEvent =>
+            userEvent.id === id ? event : userEvent,
+          );
+          setUserEvents(newUserEvents);
+        })
+        .catch(error => {
+          console.error('Error fetching data:', error);
+        })
+        .finally(() => {
+          setEventsRefreshing(false);
+        });
+    },
+    [setEventsRefreshing, setUserEvents, existingUserEvents],
+  );
+
+  const fetchAllEvents = useCallback(async () => {
     if (eventsRefreshing) {
       return;
     }
@@ -64,6 +90,32 @@ export const useEventLists = () => {
     eventsRefreshing,
   ]);
 
+  const attendEvent = useCallback(
+    async (event: FutureUserEvent) => {
+      if (event.id !== undefined) {
+        const event_id = event.id;
+        return attendUserEvent(event).then(() => {
+          return fetchEvent(event_id);
+        });
+      }
+      return Promise.reject('Event has no id');
+    },
+    [fetchEvent],
+  );
+
+  const unattendEvent = useCallback(
+    async (event: FutureUserEvent) => {
+      if (event.id !== undefined) {
+        const event_id = event.id;
+        return unattendUserEvent(event).then(() => {
+          return fetchEvent(event_id);
+        });
+      }
+      return Promise.reject('Event has no id');
+    },
+    [fetchEvent],
+  );
+
   useEffect(() => {
     if (consumers.length > 0 && !updateIntervalRef.current) {
       let timeout = 0;
@@ -77,16 +129,16 @@ export const useEventLists = () => {
       }
 
       updateIntervalRef.current = setTimeout(() => {
-        fetchData();
+        fetchAllEvents();
         updateIntervalRef.current = setInterval(() => {
-          fetchData();
+          fetchAllEvents();
         }, DATA_STALE_INTERVAL);
       }, timeout);
     } else if (consumers.length === 0 && updateIntervalRef.current) {
       clearInterval(updateIntervalRef.current);
       updateIntervalRef.current = null;
     }
-  }, [consumers, eventsLastFetched, eventsRefreshing, fetchData]);
+  }, [consumers, eventsLastFetched, eventsRefreshing, fetchAllEvents]);
 
   const subscribe: (id: string) => void = id => {
     if (!consumers.includes(id)) {
@@ -104,7 +156,10 @@ export const useEventLists = () => {
     visibleEvents,
     eventsWithLocation,
     eventsRefreshing,
-    fetchData,
+    fetchAllEvents,
+    fetchEvent,
+    attendEvent,
+    unattendEvent,
     subscribe,
     unsubscribe,
   };

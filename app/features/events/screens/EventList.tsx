@@ -41,8 +41,13 @@ const EventList: React.FC = () => {
     });
   }, [navigation]);
 
-  const {visibleEvents, eventsRefreshing, fetchData, subscribe, unsubscribe} =
-    useEventLists();
+  const {
+    visibleEvents,
+    eventsRefreshing,
+    fetchAllEvents,
+    subscribe,
+    unsubscribe,
+  } = useEventLists();
 
   React.useEffect(() => {
     subscribe('eventsView');
@@ -57,15 +62,18 @@ const EventList: React.FC = () => {
         w="100%"
         h="100%"
         refreshControl={
-          <RefreshControl refreshing={eventsRefreshing} onRefresh={fetchData} />
+          <RefreshControl
+            refreshing={eventsRefreshing}
+            onRefresh={fetchAllEvents}
+          />
         }>
         {visibleEvents.length === 0 && (
           <Center w="100%" p={10}>
             <Text>Inga evenemang hittades</Text>
           </Center>
         )}
-        {visibleEvents.map(event => (
-          <EventCard key={`event-${event.id}`} event={event} />
+        {visibleEvents.map((event, i) => (
+          <EventCard key={`event-${event.id}=${i}`} event={event} />
         ))}
       </ScrollView>
     </Center>

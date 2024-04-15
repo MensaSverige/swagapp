@@ -1,4 +1,4 @@
-import {Box, Card, Heading, Text} from 'native-base';
+import {Box, Button, Card, Heading, Text} from 'native-base';
 import React, {useEffect} from 'react';
 import {TouchableOpacity} from 'react-native';
 import TimeLeft from '../utilities/TimeLeft';
@@ -11,6 +11,7 @@ import {RootStackParamList} from '../../../navigation/RootStackParamList';
 import {EditButton} from '../../common/components/EditButton';
 import {formatDateAndTime} from '../../common/functions/FormatDateAndTime';
 import FutureEvent from '../types/futureEvent';
+import {useEventLists} from '../hooks/useEventLists';
 
 const EventCard: React.FC<{
   event: FutureEvent | FutureUserEvent;
@@ -110,11 +111,48 @@ const EventCard: React.FC<{
                 </>
               )}
             </Box>
+            {user && isFutureUserEvent(event) && (
+              <Attending event={event} userId={user.userId} />
+            )}
           </>
         )}
       </Card>
     </TouchableOpacity>
   );
+};
+
+const Attending: React.FC<{
+  event: FutureUserEvent;
+  userId: number;
+}> = ({event, userId}) => {
+  const attending = event.attendees?.some(
+    attendee => attendee.userId === userId,
+  );
+
+  const {attendEvent, unattendEvent} = useEventLists();
+
+  const handlePressAttend = () => {
+    attendEvent(event).catch(error => {
+      console.log('Could not attend event', error);
+    });
+  };
+
+  const handlePressUnattend = () => {
+    unattendEvent(event).catch(error => {
+      console.log('Could not unattend event', error);
+    });
+  };
+
+  if (attending) {
+    return <Button onPress={handlePressUnattend}>Jag kan inte.</Button>;
+  } else {
+    if (
+      !event.maxAttendees ||
+      (event.attendees && event.attendees.length < event.maxAttendees)
+    ) {
+      return <Button onPress={handlePressAttend}>Jag vill vara med!</Button>;
+    }
+  }
 };
 
 export default EventCard;

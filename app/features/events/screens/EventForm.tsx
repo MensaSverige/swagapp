@@ -69,7 +69,7 @@ const EditEventForm: React.FC = () => {
 
   // Event data, and saving it
   const [isSaving, setIsSaving] = useState<boolean>(false);
-  const {fetchData} = useEventLists();
+  const {fetchAllEvents} = useEventLists();
 
   // Field validation states
   const [nameFieldTouched, setNameFieldTouched] = useState<boolean>(false);
@@ -176,7 +176,7 @@ const EditEventForm: React.FC = () => {
         createUserEvent(event)
     )
       .then(async () => {
-        return fetchData().then(() => {
+        return fetchAllEvents().then(() => {
           navigation.goBack();
         });
       })
@@ -196,7 +196,7 @@ const EditEventForm: React.FC = () => {
     eventMaxParticipants,
     eventName,
     eventStartDate,
-    fetchData,
+    fetchAllEvents,
     formChanged,
     initialEvent,
     navigation,
@@ -223,7 +223,14 @@ const EditEventForm: React.FC = () => {
           <Button title="Spara" disabled={!formChanged} onPress={saveEvent} />
         ),
     });
-  }, [initialEvent, fetchData, formChanged, isSaving, navigation, saveEvent]);
+  }, [
+    initialEvent,
+    fetchAllEvents,
+    formChanged,
+    isSaving,
+    navigation,
+    saveEvent,
+  ]);
 
   const handleChangeStartDate = (date?: Date) => {
     if (!date) {

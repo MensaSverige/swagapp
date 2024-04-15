@@ -3,11 +3,34 @@ import FutureUserEvent, {isFutureUserEvent} from '../types/futureUserEvent';
 import FutureEvent, {isFutureEvent} from '../types/futureEvent';
 import {UserEvent} from '../../../api_schema/types';
 
+export const fetchUserEvent = async (
+  eventId: string,
+): Promise<FutureUserEvent> => {
+  return apiClient
+    .get(`/user_events/${eventId}`)
+    .then(
+      response => {
+        if (response.data) {
+          return response.data;
+        }
+        return null;
+      },
+      error => {
+        throw new Error(error.message || error);
+      },
+    )
+    .catch(error => {
+      console.error('Error fetching user event:', error);
+      throw error;
+    });
+};
+
 export const fetchUserEvents = async (): Promise<FutureUserEvent[]> => {
   return apiClient
     .get('/user_events')
     .then(
       response => {
+        console.log(response.data);
         if (response.data) {
           return response.data.filter(isFutureUserEvent);
         }
@@ -19,7 +42,7 @@ export const fetchUserEvents = async (): Promise<FutureUserEvent[]> => {
     )
     .catch(error => {
       console.error('Error fetching user events:', error);
-      throw error; // Needed to propagate the error to the caller view
+      throw error;
     });
 };
 
@@ -101,6 +124,44 @@ export const createUserEvent = async (event: UserEvent): Promise<UserEvent> => {
     )
     .catch(error => {
       console.error('Error creating user event:', error);
+      throw error; // Needed to propagate the error to the caller view
+    });
+};
+
+export const attendUserEvent = async (
+  event: FutureUserEvent,
+): Promise<boolean> => {
+  return apiClient
+    .post(`/user_events/${event.id}/attend`)
+    .then(
+      response => {
+        return response.status === 200;
+      },
+      error => {
+        throw new Error(error.message || error);
+      },
+    )
+    .catch(error => {
+      console.error('Error attending user event:', error);
+      throw error; // Needed to propagate the error to the caller view
+    });
+};
+
+export const unattendUserEvent = async (
+  event: FutureUserEvent,
+): Promise<boolean> => {
+  return apiClient
+    .post(`/user_events/${event.id}/unattend`)
+    .then(
+      response => {
+        return response.status === 200;
+      },
+      error => {
+        throw new Error(error.message || error);
+      },
+    )
+    .catch(error => {
+      console.error('Error unattending user event:', error);
       throw error; // Needed to propagate the error to the caller view
     });
 };
