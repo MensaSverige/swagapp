@@ -31,19 +31,21 @@ export const DatepickerField: React.FC<DateFieldProps> = ({
       <FormControl>
         <FormControl.Label style={[styles.datepickerField]}>
           <Heading size="sm">{label}</Heading>
-          <Column alignContent={'end'}>
+          <Column justifyContent={'right'}>
             <TouchableOpacity onPress={() => setOpenDateModal(true)}>
               <Text>{formatDateAndTime(date || '')}</Text>
             </TouchableOpacity>
             {optional && date && (
-              <Row alignItems={'center'}>
-                <Text>Ta bort</Text>
-                <Box ml={1} mr={3}>
-                  <TouchableOpacity onPress={() => onDateChange(undefined)}>
-                    <FontAwesomeIcon icon={faTrashAlt} />
-                  </TouchableOpacity>
-                </Box>
-              </Row>
+              <Box alignItems={'flex-end'}>
+                <Row alignItems={'center'}>
+                  <Text>Ta bort</Text>
+                  <Box ml={1} mr={0}>
+                    <TouchableOpacity onPress={() => onDateChange(undefined)}>
+                      <FontAwesomeIcon icon={faTrashAlt} />
+                    </TouchableOpacity>
+                  </Box>
+                </Row>
+              </Box>
             )}
           </Column>
         </FormControl.Label>
