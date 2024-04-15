@@ -1,12 +1,13 @@
+import datetime
 import logging
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from db.models.user import User
 from request_filter import validate_request
-from db.mongo import user_collection
+from db.mongo import user_collection, user_event_collection
 import user_events.user_events_db as db
-from user_events.user_events_model import UserEvent, ExtendedUserEvent
+from user_events.user_events_model import Location, UserEvent, ExtendedUserEvent
 
 user_events_v1 = APIRouter(prefix="/v1")
 
@@ -20,6 +21,44 @@ def get_user_name_by_id(user_id: int) -> str:
 
 class StatusResponseWithMessage(BaseModel):
     message: str
+
+
+@user_events_v1.get("/dev/clear_user_events",
+                    response_model=StatusResponseWithMessage)
+async def clear_user_events():
+    user_event_collection.delete_many({})
+    return {"message": "User events cleared"}
+
+
+@user_events_v1.get("/dev/create_dummy_user_event",
+                    response_model=ExtendedUserEvent)
+async def get_dummy_user_event():
+    # Generate dummy user event
+    dummy_user = {
+        'userId': 1337,
+        'firstName': "Dummy",
+        'lastName': "User",
+        'email': "dummy@user.com",
+    }
+    user_collection.update_one({"userId": dummy_user['userId']},
+                               {"$set": dummy_user},
+                               upsert=True)
+    dummy_event = {
+        'userId': 1337,
+        'name': "Dummy Event",
+        'description': "This is a dummy event",
+        'start': datetime.datetime.now() + datetime.timedelta(hours=20),
+        'end': datetime.datetime.now() + datetime.timedelta(hours=25),
+        'maxAttendees': 10,
+    }
+    result = user_event_collection.insert_one(dummy_event)
+
+    event = db.get_safe_user_event(str(result.inserted_id))
+    if not event:
+        raise HTTPException(status_code=404,
+                            detail="Event not created. Insert ID: " +
+                            str(result.inserted_id))
+    return event
 
 
 ### Listing the user's own events ###
