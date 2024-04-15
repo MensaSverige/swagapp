@@ -83,6 +83,10 @@ export interface paths {
     /** Get Dummy User Event */
     get: operations["get_dummy_user_event_v1_dev_create_dummy_user_event_get"];
   };
+  "/v1/dev/create_my_dummy_event": {
+    /** Create My Dummy Event */
+    get: operations["create_my_dummy_event_v1_dev_create_my_dummy_event_get"];
+  };
 }
 
 export type webhooks = Record<string, never>;
@@ -136,7 +140,7 @@ export interface components {
        * Id
        * @example 507f191e810c19729de860ea
        */
-      _id?: string | null;
+      id?: string | null;
       /**
        * Userid
        * @example 123
@@ -854,6 +858,17 @@ export interface operations {
   };
   /** Get Dummy User Event */
   get_dummy_user_event_v1_dev_create_dummy_user_event_get: {
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["ExtendedUserEvent"];
+        };
+      };
+    };
+  };
+  /** Create My Dummy Event */
+  create_my_dummy_event_v1_dev_create_my_dummy_event_get: {
     responses: {
       /** @description Successful Response */
       200: {
