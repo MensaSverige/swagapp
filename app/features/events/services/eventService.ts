@@ -165,3 +165,23 @@ export const unattendUserEvent = async (
       throw error; // Needed to propagate the error to the caller view
     });
 };
+
+export const removeAttendeeFromUserEvent = async (
+  eventId: string,
+  userId: number,
+): Promise<boolean> => {
+  return apiClient
+    .delete(`/user_events/${eventId}/attendees/${userId}`)
+    .then(
+      response => {
+        return response.status === 200;
+      },
+      error => {
+        throw new Error(error.message || error);
+      },
+    )
+    .catch(error => {
+      console.error('Error removing attendee from user event:', error);
+      throw error; // Needed to propagate the error to the caller view
+    });
+};

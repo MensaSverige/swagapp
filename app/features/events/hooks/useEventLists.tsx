@@ -7,6 +7,7 @@ import {
   fetchUserEvent,
   attendUserEvent,
   unattendUserEvent,
+  removeAttendeeFromUserEvent,
 } from '../services/eventService';
 import FutureUserEvent from '../types/futureUserEvent';
 
@@ -92,26 +93,39 @@ export const useEventLists = () => {
 
   const attendEvent = useCallback(
     async (event: FutureUserEvent) => {
-      if (event.id !== undefined) {
-        const event_id = event.id;
-        return attendUserEvent(event).then(() => {
-          return fetchEvent(event_id);
-        });
-      }
-      return Promise.reject('Event has no id');
+      return attendUserEvent(event).then(() => {
+        if (event.id && event.id !== undefined) {
+          return fetchEvent(event.id);
+        }
+        return Promise.reject('Event suddenly has no id');
+      });
     },
     [fetchEvent],
   );
 
   const unattendEvent = useCallback(
     async (event: FutureUserEvent) => {
-      if (event.id !== undefined) {
-        const event_id = event.id;
-        return unattendUserEvent(event).then(() => {
-          return fetchEvent(event_id);
-        });
+      return unattendUserEvent(event).then(() => {
+        if (event.id && event.id !== undefined) {
+          return fetchEvent(event.id);
+        }
+        return Promise.reject('Event has no id');
+      });
+    },
+    [fetchEvent],
+  );
+
+  const removeAttendee = useCallback(
+    async (event: FutureUserEvent, userId: number) => {
+      if (!event.id) {
+        return Promise.reject('Event has no id');
       }
-      return Promise.reject('Event has no id');
+      return removeAttendeeFromUserEvent(event.id, userId).then(() => {
+        if (event.id && event.id !== undefined) {
+          return fetchEvent(event.id);
+        }
+        return Promise.reject('Event has no id');
+      });
     },
     [fetchEvent],
   );
@@ -160,6 +174,7 @@ export const useEventLists = () => {
     fetchEvent,
     attendEvent,
     unattendEvent,
+    removeAttendee,
     subscribe,
     unsubscribe,
   };

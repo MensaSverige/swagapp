@@ -153,7 +153,7 @@ const EditEventForm: React.FC = () => {
       return;
     }
     const event: UserEvent = {
-      id: initialEvent?.id,
+      _id: initialEvent?.id,
       name: eventName,
       description: eventDescription,
       maxAttendees: eventMaxParticipants ?? undefined,

@@ -94,26 +94,13 @@ async def update_event(event_id: str,
     if event.userId != current_user['userId']:
         raise HTTPException(status_code=403, detail="Unauthorized")
     if event.userId != updated_event.userId:
+        logging.error(f"Event owner user ID cannot be changed: {event_id}")
         raise HTTPException(status_code=400,
-                            detail="Event ID cannot be changed")
+                            detail="Event owner user ID cannot be changed")
 
-    # TODO: Allow the following updates for admin users:
-
-    # Check if there are any added hosts or attendees, which is not allowed
-    for host in updated_event.hosts:
-        if host not in event.hosts:
-            raise HTTPException(
-                status_code=400,
-                detail=
-                "Cannot directly add new hosts to event, only remove. Did you mean to use suggested_hosts?"
-            )
-
-    if updated_event.attendees != event.attendees:
-        raise HTTPException(
-            status_code=400,
-            detail=
-            "Cannot modify attendees directly. Users can only attend/unattend themselves."
-        )
+    updated_event.reports = event.reports
+    updated_event.hosts = event.hosts
+    updated_event.attendees = event.attendees
 
     updated = db.update_user_event(event_id, updated_event)
     if not updated:
@@ -186,6 +173,27 @@ async def unattend_event(event_id: str,
         raise HTTPException(status_code=500, detail="Failed to unattend event")
 
     return {"message": "User is no longer attending the event"}
+
+
+## Event owners and hosts can remove attendees
+@user_events_v1.delete("/user_events/{event_id}/attendees/{attendee_id}",
+                       response_model=StatusResponseWithMessage)
+async def remove_attendee(event_id: str,
+                          attendee_id: int,
+                          current_user: dict = Depends(validate_request)):
+    event = db.get_safe_user_event(event_id)
+    if not event:
+        raise HTTPException(status_code=404, detail="Event not found")
+    if event.userId != current_user['userId'] and current_user[
+            'userId'] not in event.hosts:
+        raise HTTPException(status_code=403, detail="Unauthorized")
+
+    updates = db.remove_attendee_from_user_event(event_id, attendee_id)
+    if not updates:
+        raise HTTPException(status_code=500,
+                            detail="Failed to remove attendee")
+
+    return {"message": "Attendee removed from the event"}
 
 
 ### Host operations ###
