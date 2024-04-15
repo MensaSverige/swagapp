@@ -1,5 +1,6 @@
 import datetime
 import logging
+import os
 from pydantic.v1.json import ENCODERS_BY_TYPE
 from bson import ObjectId
 from fastapi import FastAPI
@@ -35,6 +36,10 @@ app.include_router(health_v1)
 app.include_router(users_v1)
 app.include_router(events_v1)
 app.include_router(user_events_v1)
+
+if os.getenv("ENABLE_DEV_ENDPOINTS") == "true":
+    from dev.user_events import dev_user_events
+    app.include_router(dev_user_events)
 
 
 def initialize_app():
