@@ -1,11 +1,10 @@
 import React, {useState} from 'react';
 import DatePicker from 'react-native-date-picker';
 import {Dimensions, TouchableOpacity} from 'react-native';
-import {Box, Column, Row, Text} from 'native-base';
+import {Box, Column, Text} from 'native-base';
 import {FormControl, ICustomTheme, useTheme, Heading} from 'native-base';
 import {formatDateAndTime} from '../functions/FormatDateAndTime';
-import {faTrashAlt} from '@fortawesome/free-solid-svg-icons';
-import {FontAwesomeIcon} from '@fortawesome/react-native-fontawesome';
+import {SmallDeleteButton} from './SmallDeleteButton';
 
 interface DateFieldProps {
   label: React.ReactNode;
@@ -37,14 +36,7 @@ export const DatepickerField: React.FC<DateFieldProps> = ({
             </TouchableOpacity>
             {optional && date && (
               <Box alignItems={'flex-end'}>
-                <Row alignItems={'center'}>
-                  <Text>Ta bort</Text>
-                  <Box ml={1} mr={0}>
-                    <TouchableOpacity onPress={() => onDateChange(undefined)}>
-                      <FontAwesomeIcon icon={faTrashAlt} />
-                    </TouchableOpacity>
-                  </Box>
-                </Row>
+                <SmallDeleteButton onPress={() => onDateChange(undefined)} />
               </Box>
             )}
           </Column>
