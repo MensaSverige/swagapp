@@ -38,7 +38,7 @@ app.include_router(events_v1)
 app.include_router(user_events_v1)
 
 if os.getenv("ENABLE_DEV_ENDPOINTS") == "true":
-    from dev.user_events import dev_user_events
+    from dev.user_events_dev_api import dev_user_events
     app.include_router(dev_user_events)
 
 
