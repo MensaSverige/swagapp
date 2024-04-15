@@ -1,4 +1,5 @@
 import datetime
+import os
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from db.mongo import user_collection, user_event_collection
@@ -48,4 +49,44 @@ async def get_dummy_user_event():
         raise HTTPException(status_code=404,
                             detail="Event not created. Insert ID: " +
                             str(result.inserted_id))
+    return event
+
+
+@dev_user_events.get("/dev/create_my_dummy_event",
+                     response_model=ExtendedUserEvent)
+async def create_my_dummy_event():
+
+    dummy_user = {
+        'userId': 1337,
+        'firstName': "Dummy",
+        'lastName': "User",
+        'email': "dummy@user.com",
+    }
+    user_collection.update_one({"userId": dummy_user['userId']},
+                               {"$set": dummy_user},
+                               upsert=True)
+
+    userId = os.getenv('MY_USER_ID')
+
+    dummy_event = {
+        'userId': userId,
+        'name': "My Dummy Event",
+        'description':
+        "This is a dummy event for the dev running the server (you)",
+        'start': datetime.datetime.now() + datetime.timedelta(hours=20),
+        'end': datetime.datetime.now() + datetime.timedelta(hours=25),
+        'maxAttendees': 10,
+        'attendees': [{
+            'userId': 1337
+        }]
+    }
+    result = user_event_collection.insert_one(dummy_event)
+
+    event = get_safe_user_event(str(result.inserted_id))
+
+    if not event:
+        raise HTTPException(status_code=404,
+                            detail="Event not created. Insert ID: " +
+                            str(result.inserted_id))
+
     return event

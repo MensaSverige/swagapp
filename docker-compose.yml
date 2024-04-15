@@ -23,6 +23,7 @@ services:
       URL_MEMBER_API: 'https://medlem.mensa.se/mensa_verify/restlogin.php'
       URL_EVENTS_API: 'https://events.mensa.se/swag2024/info-rest/?sec_action=app-api'
       ENABLE_DEV_ENDPOINTS: 'true'
+      MY_USER_ID: ${MY_USER_ID}
 
   mongo:
     image: mongo:latest
