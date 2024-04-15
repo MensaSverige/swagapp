@@ -370,6 +370,10 @@ def remove_report_from_user_event(event_id: str, user_id: int) -> bool:
 ### Utilities ###
 
 
+def extend_user_event(event: UserEvent) -> ExtendedUserEvent:
+    return extend_user_events([event])[0]
+
+
 def extend_user_events(events: List[UserEvent]) -> List[ExtendedUserEvent]:
 
     # Fetch user IDs

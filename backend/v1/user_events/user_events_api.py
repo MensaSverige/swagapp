@@ -110,7 +110,7 @@ async def update_event(event_id: str,
         logging.error(f"Failed to update event: {event_id}")
         raise HTTPException(status_code=500, detail="Failed to update event")
 
-    return db.make_safe_user_event(updated_event)
+    return db.extend_user_event(db.make_user_event_safe(updated_event))
 
 
 # Delete

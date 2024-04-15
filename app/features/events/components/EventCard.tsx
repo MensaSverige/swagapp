@@ -105,7 +105,7 @@ const EventCard: React.FC<{
             <Box flex="1" flexDirection="row" mt="5">
               {event.location?.description && (
                 <>
-                  <Heading size="sm">Platsbeskrivning:</Heading>
+                  <Heading size="sm">Plats:</Heading>
                   <Text> {event.location?.description || ''}</Text>
                 </>
               )}
