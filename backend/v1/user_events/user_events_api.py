@@ -1,13 +1,12 @@
-import datetime
 import logging
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from db.models.user import User
 from request_filter import validate_request
-from db.mongo import user_collection, user_event_collection
+from db.mongo import user_collection
 import user_events.user_events_db as db
-from user_events.user_events_model import Location, UserEvent, ExtendedUserEvent
+from user_events.user_events_model import UserEvent, ExtendedUserEvent
 
 user_events_v1 = APIRouter(prefix="/v1")
 
@@ -51,23 +50,33 @@ async def get_events_i_attend(current_user: dict = Depends(validate_request)):
 
 
 # Create
-@user_events_v1.post("/user_events", response_model=List[ExtendedUserEvent])
+@user_events_v1.post("/user_events", response_model=ExtendedUserEvent)
 async def create_event(event: UserEvent,
                        current_user: dict = Depends(validate_request)):
     event.userId = current_user['userId']
 
     created_event_id = db.create_user_event(event)
+    if not created_event_id:
+        logging.error("Failed to create event")
+        raise HTTPException(status_code=500, detail="Failed to create event")
+
     event = db.get_safe_user_event(created_event_id)
+    if not event:
+        logging.error("Failed to load created event")
+        raise HTTPException(status_code=500,
+                            detail="Failed to load created event")
+
     return event
 
 
 # Read
 @user_events_v1.get("/user_events/{event_id}",
-                    response_model=List[ExtendedUserEvent])
+                    response_model=ExtendedUserEvent)
 async def get_event(event_id: str):
     event = db.get_safe_user_event(event_id)
     if not event:
-        raise HTTPException(status_code=404, detail="Event not found")
+        raise HTTPException(status_code=404,
+                            detail="Event not found for id" + event_id)
     return event
 
 
@@ -133,10 +142,9 @@ async def delete_event(event_id: str,
 
 
 ### List all future events ###
-@user_events_v1.get("/user_events")
+@user_events_v1.get("/user_events", response_model=List[ExtendedUserEvent])
 async def get_events(_: User = Depends(validate_request)):
-    events = db.get_safe_future_user_events()
-    return events
+    return db.get_safe_future_user_events()
 
 
 ### Attendee operations ###
@@ -144,8 +152,8 @@ async def get_events(_: User = Depends(validate_request)):
 
 ## Attend an event
 @user_events_v1.post("/user_events/{event_id}/attend",
-                     response_model=StatusResponseWithMessage)
-async def attend_event(event_id: int,
+                     response_model=ExtendedUserEvent)
+async def attend_event(event_id: str,
                        current_user: dict = Depends(validate_request)):
     event = db.get_safe_user_event(event_id)
     if not event:
@@ -157,13 +165,13 @@ async def attend_event(event_id: int,
     if not updates:
         raise HTTPException(status_code=500, detail="Failed to attend event")
 
-    return {"message": "User is now attending the event"}
+    return db.get_safe_user_event(event_id)
 
 
 ## Unattend an event
 @user_events_v1.post("/user_events/{event_id}/unattend",
                      response_model=StatusResponseWithMessage)
-async def unattend_event(event_id: int,
+async def unattend_event(event_id: str,
                          current_user: dict = Depends(validate_request)):
     event = db.get_safe_user_event(event_id)
     if not event:
@@ -186,7 +194,7 @@ async def unattend_event(event_id: int,
 ## Accept invitation to cohost an event
 @user_events_v1.post("/user_events/{event_id}/accept_cohosting",
                      response_model=StatusResponseWithMessage)
-async def accept_being_cohost(event_id: int,
+async def accept_being_cohost(event_id: str,
                               current_user: dict = Depends(validate_request)):
     event = db.get_safe_user_event(event_id)
     if not event:
@@ -210,7 +218,7 @@ async def accept_being_cohost(event_id: int,
 ## Deny an invitation to cohost an event
 @user_events_v1.post("/user_events/{event_id}/deny_cohosting",
                      response_model=StatusResponseWithMessage)
-async def deny_being_cohost(event_id: int,
+async def deny_being_cohost(event_id: str,
                             current_user: dict = Depends(validate_request)):
     event = db.get_safe_user_event(event_id)
     if not event:

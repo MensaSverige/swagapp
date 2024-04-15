@@ -60,7 +60,7 @@ def update_user_event(event_id: str, user_event: UserEvent) -> bool:
     if not event:
         return 0
 
-    result = user_event_collection.update_one({"id": ObjectId(event_id)},
+    result = user_event_collection.update_one({"_id": ObjectId(event_id)},
                                               {"$set": event.model_dump()})
     return result.acknowledged and result.matched_count > 0
 
@@ -72,7 +72,7 @@ def delete_user_event(event_id: str) -> bool:
     :param event_id: The event ID.
     :return: The number of deleted documents.
     """
-    result = user_event_collection.delete_one({"id": ObjectId(event_id)})
+    result = user_event_collection.delete_one({"_id": ObjectId(event_id)})
     return result.acknowledged
 
 
@@ -95,7 +95,9 @@ def get_unsafe_future_user_events() -> list[UserEvent]:
         }]
     }
 
-    return [UserEvent(**event) for event in user_event_collection.find(query)]
+    return [
+        UserEvent(**event) for event in list(user_event_collection.find(query))
+    ]
 
 
 def get_safe_future_user_events() -> list[ExtendedUserEvent]:
@@ -197,7 +199,7 @@ def add_attendee_to_user_event(event_id: str, user_id: int) -> bool:
             event["attendees"]) >= event["max_attendees"]:
         return 0
     result = user_event_collection.update_one(
-        {"id": ObjectId(event_id)},
+        {"_id": ObjectId(event_id)},
         {"$addToSet": {
             "attendees": {
                 "userId": user_id
@@ -215,7 +217,7 @@ def remove_attendee_from_user_event(event_id: str, user_id: int) -> bool:
     :return: The number of modified documents.
     """
     result = user_event_collection.update_one(
-        {"id": ObjectId(event_id)},
+        {"_id": ObjectId(event_id)},
         {"$pull": {
             "attendees": {
                 "userId": user_id
@@ -261,7 +263,7 @@ def add_user_as_host_to_user_event(event_id: str, user_id: int) -> bool:
     :param user_id: The ID of the user to add.
     :return: The number of modified documents.
     """
-    result = user_event_collection.update_one({"id": ObjectId(event_id)}, {
+    result = user_event_collection.update_one({"_id": ObjectId(event_id)}, {
         "$addToSet": {
             "hosts": {
                 "userId": user_id
@@ -285,7 +287,7 @@ def remove_user_from_hosts_of_user_event(event_id: str, user_id: int) -> bool:
     :return: The number of modified documents.
     """
     result = user_event_collection.update_one(
-        {"id": ObjectId(event_id)}, {"$pull": {
+        {"_id": ObjectId(event_id)}, {"$pull": {
             "hosts": {
                 "userId": user_id
             }
@@ -303,7 +305,7 @@ def remove_user_host_invitation_from_user_event(event_id: str,
     :return: The number of modified documents.
     """
     result = user_event_collection.update_one(
-        {"id": ObjectId(event_id)},
+        {"_id": ObjectId(event_id)},
         {"$pull": {
             "suggested_hosts": {
                 "userId": user_id
@@ -327,7 +329,8 @@ def add_or_update_report_on_user_event(event_id: str, user_id: int,
     """
 
     result = user_event_collection.update_one(
-        {"id": ObjectId(event_id)}, {"$set": {
+        {"_id": ObjectId(event_id)},
+        {"$set": {
             "reports.$[elem].text": report
         }},
         array_filters=[{
@@ -336,7 +339,7 @@ def add_or_update_report_on_user_event(event_id: str, user_id: int,
 
     if result.modified_count == 0:
         result = user_event_collection.update_one(
-            {"id": ObjectId(event_id)},
+            {"_id": ObjectId(event_id)},
             {"$addToSet": {
                 "reports": {
                     "userId": user_id,
@@ -356,7 +359,7 @@ def remove_report_from_user_event(event_id: str, user_id: int) -> bool:
     :return: The number of modified documents.
     """
     result = user_event_collection.update_one(
-        {"id": ObjectId(event_id)},
+        {"_id": ObjectId(event_id)},
         {"$pull": {
             "reports": {
                 "userId": user_id

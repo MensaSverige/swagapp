@@ -1,8 +1,7 @@
 from datetime import datetime
 from pydantic import BaseModel, Field
-from typing import Callable, List, Optional
-from shared.model import Model
-from pymongo.collection import Collection
+from shared.model_with_id import ModelWithId
+from typing import Annotated, Any, List, Optional
 
 
 class Attendee(BaseModel):
@@ -25,7 +24,7 @@ class Location(BaseModel):
     longitude: float = Field(..., example=-122.4194)
 
 
-class UserEvent(Model):
+class UserEvent(ModelWithId):
     userId: int = Field(..., example=123)
     hosts: Optional[List[Host]] = Field([], example=[{"userId": 123}])
     suggested_hosts: List[Host] = Field([], example=[{"userId": 123}])
