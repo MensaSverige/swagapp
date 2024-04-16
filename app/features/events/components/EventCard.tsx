@@ -70,7 +70,6 @@ const EventCard: React.FC<{
           {open && isFutureUserEvent(event) && event.userId === user?.userId ? (
             <EditButton
               onPress={() => {
-                console.log('Edit event', event);
                 navigation.navigate('EventForm', {event: event});
               }}
             />
@@ -156,7 +155,7 @@ const Attending: React.FC<{
     setChangingAttendance(true);
     attendEvent(event)
       .catch(error => {
-        console.log('Could not attend event', error);
+        console.error('Could not attend event', error);
       })
       .finally(() => {
         setChangingAttendance(false);
@@ -167,7 +166,7 @@ const Attending: React.FC<{
     setChangingAttendance(true);
     unattendEvent(event)
       .catch(error => {
-        console.log('Could not unattend event', error);
+        console.error('Could not unattend event', error);
       })
       .finally(() => {
         setChangingAttendance(false);

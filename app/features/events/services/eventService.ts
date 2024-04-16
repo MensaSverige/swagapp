@@ -30,7 +30,6 @@ export const fetchUserEvents = async (): Promise<FutureUserEvent[]> => {
     .get('/user_events')
     .then(
       response => {
-        console.log(response.data);
         if (response.data) {
           return response.data.filter(isFutureUserEvent);
         }
