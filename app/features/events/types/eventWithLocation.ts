@@ -1,16 +1,17 @@
 import {LatLng} from 'react-native-maps';
 import FutureEvent, {isFutureEvent} from './futureEvent';
+import FutureUserEvent from './futureUserEvent';
 
 type LocationWithDescription = LatLng & {
   description?: string;
 };
 
-type EventWithLocation = FutureEvent & {
+type EventWithLocation = (FutureEvent | FutureUserEvent) & {
   location: LocationWithDescription;
 };
 
 export function isEventWithLocation(
-  event: FutureEvent,
+  event: FutureEvent | FutureUserEvent,
 ): event is EventWithLocation {
   return (
     isFutureEvent(event) &&

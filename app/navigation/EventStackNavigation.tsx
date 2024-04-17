@@ -1,9 +1,15 @@
-import {createNativeStackNavigator, NativeStackNavigationOptions} from '@react-navigation/native-stack';
+import React from 'react';
+import {
+  createNativeStackNavigator,
+  NativeStackNavigationOptions,
+} from '@react-navigation/native-stack';
 import EventForm from '../features/events/screens/EventForm';
 import EventList from '../features/events/screens/EventList';
 
 const EventStack = createNativeStackNavigator();
-export const EventStackNavigator: React.FC<{ screenOptions: NativeStackNavigationOptions }> = ({ screenOptions }) => {
+export const EventStackNavigator: React.FC<{
+  screenOptions: NativeStackNavigationOptions;
+}> = ({screenOptions}) => {
   return (
     <EventStack.Navigator screenOptions={screenOptions}>
       <EventStack.Screen
@@ -23,4 +29,4 @@ export const EventStackNavigator: React.FC<{ screenOptions: NativeStackNavigatio
       />
     </EventStack.Navigator>
   );
-}
+};

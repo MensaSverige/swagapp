@@ -1,36 +1,79 @@
 import useStore from '../../common/store/store';
 import {useCallback, useEffect, useRef, useState} from 'react';
-import {fetchExternalEvents, fetchStaticEvents, fetchUserEvents} from '../services/eventService';
+import {
+  fetchExternalEvents,
+  // fetchStaticEvents,
+  fetchUserEvents,
+  fetchUserEvent,
+  attendUserEvent,
+  unattendUserEvent,
+  removeAttendeeFromUserEvent,
+} from '../services/eventService';
+import FutureUserEvent from '../types/futureUserEvent';
 
 const DATA_STALE_INTERVAL = 1000 * 60 * 5; // 5 minutes
 
 export const useEventLists = () => {
   const {
     setUserEvents,
-    setStaticEvents,
+    // setStaticEvents,
+    setExternalEvents,
     setEventsRefreshing,
     setEventsLastFetched,
     eventsRefreshing,
     eventsLastFetched,
     visibleEvents,
     eventsWithLocation,
+    userEvents: existingUserEvents,
   } = useStore();
 
   const [consumers, setConsumers] = useState<string[]>([]);
   const updateIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  const fetchData = useCallback(async () => {
+  const fetchEvent = useCallback(
+    async (id: string) => {
+      setEventsRefreshing(true);
+      return fetchUserEvent(id)
+        .then(event => {
+          // Replace event in user events
+          const newUserEvents = existingUserEvents.map(userEvent =>
+            userEvent.id === id ? event : userEvent,
+          );
+          setUserEvents(newUserEvents);
+        })
+        .catch(error => {
+          console.error('Error fetching data:', error);
+        })
+        .finally(() => {
+          setEventsRefreshing(false);
+        });
+    },
+    [setEventsRefreshing, setUserEvents, existingUserEvents],
+  );
+
+  const fetchAllEvents = useCallback(async () => {
     if (eventsRefreshing) {
       return;
     }
 
     setEventsRefreshing(true);
 
-    return Promise.all([fetchUserEvents(), fetchStaticEvents(), fetchExternalEvents()])
-      .then(([userEvents, staticEvents]) => {
-        setUserEvents(userEvents);
-        setStaticEvents(staticEvents);
-      })
+    return Promise.all([
+      fetchUserEvents(),
+      // fetchStaticEvents(),
+      fetchExternalEvents(),
+    ])
+      .then(
+        ([
+          userEvents,
+          // staticEvents,
+          external_events,
+        ]) => {
+          setUserEvents(userEvents);
+          // setStaticEvents(staticEvents);
+          setExternalEvents(external_events);
+        },
+      )
       .catch(error => {
         console.error('Error fetching data:', error);
       })
@@ -41,11 +84,51 @@ export const useEventLists = () => {
       });
   }, [
     setUserEvents,
-    setStaticEvents,
+    // setStaticEvents,
+    setExternalEvents,
     setEventsRefreshing,
     setEventsLastFetched,
     eventsRefreshing,
   ]);
+
+  const attendEvent = useCallback(
+    async (event: FutureUserEvent) => {
+      return attendUserEvent(event).then(() => {
+        if (event.id && event.id !== undefined) {
+          return fetchEvent(event.id);
+        }
+        return Promise.reject('Event suddenly has no id');
+      });
+    },
+    [fetchEvent],
+  );
+
+  const unattendEvent = useCallback(
+    async (event: FutureUserEvent) => {
+      return unattendUserEvent(event).then(() => {
+        if (event.id && event.id !== undefined) {
+          return fetchEvent(event.id);
+        }
+        return Promise.reject('Event has no id');
+      });
+    },
+    [fetchEvent],
+  );
+
+  const removeAttendee = useCallback(
+    async (event: FutureUserEvent, userId: number) => {
+      if (!event.id) {
+        return Promise.reject('Event has no id');
+      }
+      return removeAttendeeFromUserEvent(event.id, userId).then(() => {
+        if (event.id && event.id !== undefined) {
+          return fetchEvent(event.id);
+        }
+        return Promise.reject('Event has no id');
+      });
+    },
+    [fetchEvent],
+  );
 
   useEffect(() => {
     if (consumers.length > 0 && !updateIntervalRef.current) {
@@ -60,16 +143,16 @@ export const useEventLists = () => {
       }
 
       updateIntervalRef.current = setTimeout(() => {
-        fetchData();
+        fetchAllEvents();
         updateIntervalRef.current = setInterval(() => {
-          fetchData();
+          fetchAllEvents();
         }, DATA_STALE_INTERVAL);
       }, timeout);
     } else if (consumers.length === 0 && updateIntervalRef.current) {
       clearInterval(updateIntervalRef.current);
       updateIntervalRef.current = null;
     }
-  }, [consumers, eventsLastFetched, eventsRefreshing, fetchData]);
+  }, [consumers, eventsLastFetched, eventsRefreshing, fetchAllEvents]);
 
   const subscribe: (id: string) => void = id => {
     if (!consumers.includes(id)) {
@@ -87,7 +170,11 @@ export const useEventLists = () => {
     visibleEvents,
     eventsWithLocation,
     eventsRefreshing,
-    fetchData,
+    fetchAllEvents,
+    fetchEvent,
+    attendEvent,
+    unattendEvent,
+    removeAttendee,
     subscribe,
     unsubscribe,
   };
