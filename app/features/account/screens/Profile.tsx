@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import {
   KeyboardAvoidingView, Center,
   Input,
-  Button,
   VStack,
   Text,
   Image,
@@ -17,9 +16,13 @@ import {
   AvatarFallbackText,
   AvatarImage,
   Box,
-  View
+  View,
+  useColorMode,
+  Heading,
+  InputField,
+  ButtonText,
+  ButtonIcon,
 } from '@gluestack-ui/themed';
-import { User } from 'lucide-react-native';
 import { faPlus, faUser } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import useStore from '../../common/store/store';
@@ -29,27 +32,18 @@ import Fields from '../../common/components/Fields';
 import { Platform, SafeAreaView, StyleSheet } from 'react-native';
 import { updateUser } from '../services/userService';
 import { ShowLocation } from '../../../api_schema/types';
-import {gluestackUIConfig} from '../../../gluestack-components/gluestack-ui.config';
-import { useColorMode } from '@gluestack-ui/themed';
+import { gluestackUIConfig } from '../../../gluestack-components/gluestack-ui.config';
+import { Picker } from '@react-native-picker/picker';
+import { Button } from '../../../gluestack-components';
 
 const Profile: React.FC = () => {
   // Get current user and token from Zustand store
   const { user, setUser, backendConnection } = useStore();
+  const [formState, setFormState] = useState(user);
   const colorMode = useColorMode()
-  //const styles = createStyles();
-
-  //Local state for form fields
-  const [showLocation, setShowLocation] = useState(
-    user?.settings.show_location || ShowLocation.NoOne,
-  );
-  const [showContactInfo, setShowContactInfo] = useState(
-    user?.settings.show_contact_info || false,
-  );
-  const [email, setEmail] = useState(user?.contact_info?.email || '');
-  const [phone, setPhone] = useState(user?.contact_info?.phone || '');
+  const styles = createStyles();
 
   const [isLoading, setIsLoading] = useState(false);
-  const [avararChanged, setAvatarChanged] = useState(false);
 
   const handleLogout = () => {
     Keychain.resetGenericPassword({ service: 'credentials' });
@@ -63,7 +57,6 @@ const Profile: React.FC = () => {
     if (!user) {
       return;
     }
-
     // updateUser(user)
     //   .then(returnedUser => {
     //     setUser({ ...user, ...returnedUser });
@@ -87,13 +80,14 @@ const Profile: React.FC = () => {
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 160 : 0}>
+
         <ScrollView bg="$background0"
           w="100%"
           h="100%"
-        // contentContainerStyle={styles.contentContainer}
+          contentContainerStyle={styles.contentContainer}
         >
-          <HStack space="md" h="100%" bg="$background0" flex={1} justifyContent="center" alignItems="center">
 
+          <VStack space="md" h="100%" bg="$background0" flex={1} justifyContent="center" alignItems="center">
             <Center pt={10}>
 
               {user.avatar_url ? (
@@ -105,7 +99,7 @@ const Profile: React.FC = () => {
                 />
               ) : (
                 <View style={{
-                  backgroundColor: gluestackUIConfig.tokens.colors.blue700, 
+                  backgroundColor: gluestackUIConfig.tokens.colors.blue700,
                   borderRadius: 80,
                   width: 160,
                   height: 160,
@@ -136,90 +130,85 @@ const Profile: React.FC = () => {
                   color={gluestackUIConfig.tokens.colors.blue700}
                 />
               </View>
+
             </Center>
-          </HStack>
+            <Heading> {user.firstName} {user.lastName}</Heading>
 
+          </VStack>
 
-        </ScrollView>
-        {/* <ScrollView
-          w="100%"
-          h="100%"
-          // contentContainerStyle={styles.contentContainer}
-          >
-          <Center pt={10}>
-            {!avararChanged && user.avatar_url && (
-              <Image
-                source={{ uri: user.avatar_url }}
-                alt="Profile image"
-                size="md"
-                borderRadius={100}
-              />
-            )}
-          </Center> */}
-        {/* 
-          <Fields heading="Profilbild">
-            <Field
-              label="Adress till profilbild"
-              help="Visas på kartan och i evenemang du skapar">
-              <Input
-                placeholder="https://example.com/avatar.png"
-                value={user.avatar_url || ''}
-                onChangeText={(avatar_url: string) => {
-                  setUser({ ...user, avatar_url });
-                  setAvatarChanged(true);
-                }}
-              />
+          <Fields heading="Kontaktuppgifter">
+            <Field label="E-post ">
+              <Input>
+                <InputField
+                  placeholder="E-post"
+                  value={user?.contact_info?.email || ''}
+                  onChangeText={(contact_info: string) => {
+                    if (!formState) {
+                      return;
+                    }
+                    setFormState({
+                      ...formState,
+                      contact_info: {
+                        ...formState.contact_info,
+                        email: contact_info,
+                      },
+                    });
+
+                  }}
+                />
+              </Input>
             </Field>
-          </Fields> */}
+            <Field label="Telefonnummer">
+              <Input>
+                <InputField
+                  placeholder="07x-xxxxxxx"
+                  value={user?.contact_info?.phone || ''}
+                  onChangeText={(contact_info: string) => {
+                    if (!formState) {
+                      return;
+                    }
+                    setFormState({
+                      ...formState,
+                      contact_info: {
+                        ...formState.contact_info,
+                        phone: contact_info,
+                      },
+                    });
 
-        {/* <Fields heading="Kartan">
-            <Field label="Visa position" help="Visa din position på kartan">
-              <Switch
-                isChecked={showLocation}
-                onToggle={show_location => {
-                  setShowLocation(show_location);
-                }}
-                accessibilityLabel="Visa min position på kartan"
-              />
+                  }}
+                />
+              </Input>
             </Field>
-            <Select>
-              <SelectTrigger variant="outline" size="md">
-                <SelectInput placeholder="Select option" />
-                <SelectIcon mr="$3">
-                  <Icon as={ChevronDownIcon} />
-                </SelectIcon>
-              </SelectTrigger>
-              <SelectPortal>
-                <SelectBackdrop />
-                <SelectContent>
-                  <SelectDragIndicatorWrapper>
-                    <SelectDragIndicator />
-                  </SelectDragIndicatorWrapper>
+          </Fields>
 
-                </SelectContent>
-              </SelectPortal>
-            </Select>
+          <Fields heading="Kartan">
+            <Field label="Visa mina platsuppgifter för">
+              <Picker
+                selectedValue={formState?.settings?.show_location}
+                onValueChange={(itemValue, itemIndex) => {
+                  if (!formState || !formState.settings) {
+                    return;
+                  }
+                  setFormState({
+                    ...formState,
+                    settings: {
+                      ...formState.settings,
+                      show_location: itemValue,
+                    },
+                  })
+                }
 
-            <Field label="Visa kontaktuppgift">
-              <Switch
-                isChecked={showContactInfo}
-                onToggle={show_contact_info => {
-                  setShowContactInfo(show_contact_info);
-                }}
-                accessibilityLabel="Visa mina kontaktuppgifter på kartan"
-              />
+                }
+              >
+                <Picker.Item label="Ingen" value="no_one" />
+                <Picker.Item label="Andra som visar sin position" value="only_members_who_share_their_own_location" />
+                <Picker.Item label="Alla" value="only_members" />
+                {/* <Picker.Item label="Everyone Who Share Their Own Location" value="everyone_who_share_their_own_location" />
+    <Picker.Item label="Everyone" value="everyone" /> */}
+              </Picker>
             </Field>
-            <Field label="Kontaktuppgifter ">
-              <Input
-                placeholder="E-post"
-                value={user?.contact_info?.email || ''}
-                onChangeText={(contact_info: string) => {
-                  setContactInfo(contact_info);
-                }}
-              />
-            </Field>
-          </Fields> */}
-        {/* <Fields>
+          </Fields>
+{/* 
             <Button onPress={handleSave} isDisabled={!backendConnection}>
               <Text color="white">
                 Spara
@@ -233,30 +222,42 @@ const Profile: React.FC = () => {
                 )}
               </Text>
             </Button>
-          </Fields> */}
-        {/* <VStack mt={10}>
-            <Text>Du är inloggad som {user.firstName} {user.lastName}</Text>
-            <Button size="sm" onPress={() => handleLogout()}>
+
+         */}
+         
+        <Button size="md" variant="solid" action="primary" isDisabled={false} isFocusVisible={false}  >
+          <ButtonText>Spara 
+          {isLoading && (
+                  <Spinner
+                    color="white"
+                    top="10"
+                    size="small"
+                    accessibilityLabel="Sparar..."
+                  />
+                )}
+          </ButtonText>
+          {/* <ButtonIcon as={AddIcon} /> */}
+        </Button>
+      
+        </ScrollView>
+        {/* <Button size="sm" onPress={() => handleLogout()}>
               <Text color="white">Logga ut</Text>
-            </Button>
-          </VStack>
-        </ScrollView> */}
+            </Button> */}
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
 };
 
-//const createStyles = (theme: ICustomTheme) =>
-// const createStyles = () =>
-//   StyleSheet.create({
-//     viewContainer: {
-//       flex: 1,
-//       //backgroundColor: theme.colors.background[500],
-//     },
-//     contentContainer: {
-//       padding: 10,
-//       flexGrow: 1,
-//     },
-//   });
+
+const createStyles = () =>
+  StyleSheet.create({
+    viewContainer: {
+      flex: 1,
+    },
+    contentContainer: {
+      padding: 10,
+      flexGrow: 1,
+    },
+  });
 
 export default Profile;

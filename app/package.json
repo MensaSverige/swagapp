@@ -27,6 +27,7 @@
     "@gluestack-ui/themed": "^1.1.22",
     "@gluestack-ui/themed-native-base": "^0.1.107-alpha2",
     "@react-native-community/geolocation": "^3.1.0",
+    "@react-native-picker/picker": "^2.7.5",
     "@react-navigation/bottom-tabs": "^6.5.11",
     "@react-navigation/native": "^6.1.9",
     "@react-navigation/native-stack": "^6.9.16",
