@@ -9,6 +9,8 @@ npx openapi-typescript http://{{api-url}}/openapi.json -o ./api_schema/schema.d.
 export type AuthRequest = components["schemas"]["AuthRequest"];
 export type AuthResponse = components["schemas"]["AuthResponse"];
 export type User = components["schemas"]["User"];
+export type UserUpdate = components["schemas"]["UserUpdate"];
+export type UserLocation = components["schemas"]["UserLocation"];
 //export type ShowLocation = components["schemas"]["ShowLocation"];
 //export type ShowContactInfo = components["schemas"]["ShowContactInfo"];
 export type ExternalEvent = components["schemas"]["ExternalEvent"];

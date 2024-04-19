@@ -21,13 +21,21 @@ export interface paths {
     /** Get User By Id */
     get: operations["get_user_by_id_v1_users__user_id__get"];
   };
-  "/v1/users_showing_location": {
+  "/v1/users/location": {
     /** Users Showing Location */
-    get: operations["users_showing_location_v1_users_showing_location_get"];
+    get: operations["users_showing_location_v1_users_location_get"];
+  };
+  "/v1/users/me/location": {
+    /** Update User Location */
+    put: operations["update_user_location_v1_users_me_location_put"];
   };
   "/v1/users/me/": {
     /** Get Current User */
     get: operations["get_current_user_v1_users_me__get"];
+  };
+  "/v1/users/me": {
+    /** Update Current User */
+    put: operations["update_current_user_v1_users_me_put"];
   };
   "/v1/external_events": {
     /** Get Events For User */
@@ -159,11 +167,8 @@ export interface components {
       latitude: number;
       /** Longitude */
       longitude: number;
-      /**
-       * Timestamp
-       * Format: date
-       */
-      timestamp: string;
+      /** Timestamp */
+      timestamp: string | null;
       /** Accuracy */
       accuracy: number;
     };
@@ -175,11 +180,33 @@ export interface components {
        */
       show_location?: components["schemas"]["ShowLocation"];
       /**
-       * Show Contact Info
+       * Show Email
        * @default false
        * @example true
        */
-      show_contact_info?: boolean;
+      show_email?: boolean;
+      /**
+       * Show Phone
+       * @default false
+       * @example true
+       */
+      show_phone?: boolean;
+    };
+    /** UserUpdate */
+    UserUpdate: {
+      settings: components["schemas"]["UserSettings"];
+      /**
+       * @example {
+       *   "email": "johndoe@example.com",
+       *   "phone": "+1234567890"
+       * }
+       */
+      contact_info?: components["schemas"]["ContactInfo"] | null;
+      /**
+       * Slogan
+       * @example Live and Let Live
+       */
+      slogan?: string | null;
     };
     /** ValidationError */
     ValidationError: {
@@ -282,12 +309,34 @@ export interface operations {
     };
   };
   /** Users Showing Location */
-  users_showing_location_v1_users_showing_location_get: {
+  users_showing_location_v1_users_location_get: {
     responses: {
       /** @description Successful Response */
       200: {
         content: {
-          "application/json": unknown;
+          "application/json": components["schemas"]["User"][];
+        };
+      };
+    };
+  };
+  /** Update User Location */
+  update_user_location_v1_users_me_location_put: {
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["UserLocation"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["User"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
     };
@@ -299,6 +348,28 @@ export interface operations {
       200: {
         content: {
           "application/json": components["schemas"]["User"];
+        };
+      };
+    };
+  };
+  /** Update Current User */
+  update_current_user_v1_users_me_put: {
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["UserUpdate"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["User"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
     };

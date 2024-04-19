@@ -11,12 +11,12 @@ type UserWithLocation = User & {
 
 export function isUserWithLocation(user: User): user is UserWithLocation {
   return (
-    // user.location !== undefined &&
-    // user.location.latitude !== undefined &&
-    // user.location.latitude !== 0 &&
-    // user.location.longitude !== undefined &&
-    // user.location.longitude !== 0
-    false
+    user.location !== undefined &&
+    user.location !== null &&
+    user.location.latitude !== undefined &&
+    user.location.latitude !== 0 &&
+    user.location.longitude !== undefined &&
+    user.location.longitude !== 0
   );
 }
 

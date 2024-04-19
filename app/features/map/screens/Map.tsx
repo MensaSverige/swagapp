@@ -1,4 +1,4 @@
-import React, {useEffect, useRef} from 'react';
+import React, { useEffect, useRef } from 'react';
 import {
   Dimensions,
   Linking,
@@ -6,6 +6,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   ScrollView,
+  Pressable,
 } from 'react-native';
 import ReactNativeMapView from 'react-native-maps';
 import {
@@ -24,8 +25,8 @@ import useRequestLocationPermission from '../hooks/useRequestLocationPermission'
 import useGetUsersShowingLocation from '../hooks/useGetUsersShowingLocation';
 import lightMapstyle from '../styles/light';
 import darkMapstyle from '../styles/dark';
-import {faUser, faLocation} from '@fortawesome/free-solid-svg-icons';
-import {FontAwesomeIcon} from '@fortawesome/react-native-fontawesome';
+import { faUser, faLocation } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import TimeLeft from '../../events/utilities/TimeLeft';
 
 const createStyles = (theme: ITheme) =>
@@ -54,7 +55,7 @@ const createStyles = (theme: ITheme) =>
       backgroundColor: `${theme.colors.background[500]}99`,
       borderRadius: 10,
       shadowColor: 'black',
-      shadowOffset: {width: 3, height: 3},
+      shadowOffset: { width: 3, height: 3 },
       shadowOpacity: 0.5,
       shadowRadius: 5,
       paddingHorizontal: 10,
@@ -84,7 +85,7 @@ const createStyles = (theme: ITheme) =>
       padding: 10,
       borderRadius: 10,
       shadowColor: 'black',
-      shadowOffset: {width: 3, height: 3},
+      shadowOffset: { width: 3, height: 3 },
       shadowOpacity: 0.5,
       shadowRadius: 5,
     },
@@ -113,7 +114,7 @@ const MapView: React.FC = () => {
   const theme = useTheme();
   const mapRef = useRef<ReactNativeMapView | null>(null);
   const scrollViewRef = useRef<ScrollView | null>(null);
-  const {region, usersShowingLocation} = useStore();
+  const { region, usersShowingLocation } = useStore();
   const [mapIndex, setMapIndex] = React.useState(0);
   const [comparisonDate, setComparisonDate] = React.useState(new Date());
   const [followsUserLocation, setFollowsUserLocation] = React.useState(true);
@@ -139,7 +140,7 @@ const MapView: React.FC = () => {
     }
     setMapIndex(index);
     setFollowsUserLocation(false);
-    const {latitude, longitude} = usersShowingLocation[index].location;
+    const { latitude, longitude } = usersShowingLocation[index].location;
     mapRef.current?.animateToRegion(
       {
         latitude,
@@ -152,7 +153,7 @@ const MapView: React.FC = () => {
     const x =
       mapIndex * (styles.infoCard.width + 10) -
       (screenWidth - styles.infoCard.width) / 2; // Calculate the x position
-    scrollViewRef.current?.scrollTo({x, animated: true});
+    scrollViewRef.current?.scrollTo({ x, animated: true });
   };
 
   const scrollViewStyle = {
@@ -203,13 +204,13 @@ const MapView: React.FC = () => {
           {usersShowingLocation &&
             usersShowingLocation.map(u => (
               <UserMarker
-                key={`user-marker-${u.username}-${(
-                  usersShowingLocation[mapIndex].username === u.username
+                key={`user-marker-${u.userId}-${(
+                  usersShowingLocation[mapIndex].userId === u.userId
                 ).toString()}`}
                 user={u}
                 zIndex={100}
                 highlighted={
-                  usersShowingLocation[mapIndex].username === u.username
+                  usersShowingLocation[mapIndex].userId === u.userId
                 }
                 onPress={() => {
                   focusOnUserAtIndex(usersShowingLocation.indexOf(u));
@@ -256,15 +257,15 @@ const MapView: React.FC = () => {
               usersShowingLocation.map(u => (
                 <TouchableOpacity
                   activeOpacity={1}
-                  key={`user-card-${u.username}`}
+                  key={`user-card-${u.userId}`}
                   onPress={() => {
                     focusOnUserAtIndex(usersShowingLocation.indexOf(u));
                   }}
                   style={styles.infoCard}>
                   {u.avatar_url ? (
                     <Image
-                      alt={`Bild på ${u.name}`}
-                      source={{uri: u.avatar_url}}
+                      alt={`Bild på ${u.userId}`}
+                      source={{ uri: u.avatar_url }}
                       style={styles.infoImage}
                     />
                   ) : (
@@ -278,16 +279,17 @@ const MapView: React.FC = () => {
                     />
                   )}
                   <Box style={styles.infoTextWrapper}>
-                    <Text style={styles.infoTitle}>{u.name}</Text>
+                    <Text style={styles.infoTitle}>{u.firstName} {u.lastName}</Text>
                     {u.location?.timestamp && (
                       <TimeLeft
                         comparedTo={comparisonDate}
                         start={u.location.timestamp}
                       />
                     )}
-                    {u.show_contact_info && (
-                      <ContactButton
-                        contactInfo={u.contact_info}
+                    {(u.settings.show_email || u.settings.show_phone) && (
+                      <ContactCard
+                        email={u.contact_info?.email || undefined}
+                        phone={u.contact_info?.phone || undefined}
                         style={styles.infoContactButton}
                       />
                     )}
@@ -301,37 +303,39 @@ const MapView: React.FC = () => {
   );
 };
 
-const ContactButton: React.FC<{
-  contactInfo: string | undefined;
+const ContactCard: React.FC<{
+  email: string | undefined;
+  phone: string | undefined;
   style: any;
-}> = ({contactInfo, style}) => {
-  if (!contactInfo || contactInfo.trim() === '') {
+}> = ({ email, phone, style }) => {
+  if ((!email || email.trim() === '') && (!phone || phone.trim() === '')) {
     return null;
   }
 
-  let type = '';
-  if (contactInfo.replace('-', '').match(/^[0-9]*$/)) {
-    type = 'phone';
-  } else if (
-    contactInfo.match(/^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/)
-  ) {
-    type = 'email';
-  } else {
-    return <Text>{contactInfo}</Text>;
-  }
+
   return (
-    <Button
-      size="xs"
-      style={style}
-      onPress={() => {
-        if (type === 'phone') {
-          Linking.openURL(`tel:${contactInfo}`);
-        } else if (type === 'email') {
-          Linking.openURL(`mailto:${contactInfo}`);
+    <View>
+      {email && email.trim() !== '' && (
+      <Pressable
+        style={style}
+        onPress={() => {
+          Linking.openURL(`mailto:${email}`);
         }
-      }}>
-      {contactInfo}
-    </Button>
+        }>
+        {email}
+      </Pressable>
+      )}
+      {phone && phone.trim() !== '' && (
+      <Pressable
+        style={style}
+        onPress={() => {
+          Linking.openURL(`tel:${phone}`);
+        }}>
+        {phone}
+      </Pressable>
+      )}
+    </View>
+
   );
 };
 

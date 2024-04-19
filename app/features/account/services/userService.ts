@@ -1,27 +1,24 @@
 import apiClient from '../../common/services/apiClient';
-import {ShowLocation} from '../../../api_schema/types';
+import { ShowLocation, UserUpdate } from '../../../api_schema/types';
 import { AuthResponse, User } from '../../../api_schema/types';
 import * as Keychain from 'react-native-keychain';
 
 
 export const updateUser = async (
-  user: User,
-
-) => {
+  userUpdate: UserUpdate
+): Promise<User> => {
+  console.log('updating user', userUpdate)
   return apiClient
-    .put('/user/' + user.userId, {user
-    })
+    .put('/users/me', userUpdate)
     .then(
       response => {
-          return response.data;
+        console.log('user updated', response.data)
+        return response.data; 
       },
       error => {
         throw new Error(error.message || error);
       },
     )
-    .catch(error => {
-      console.error('Failed to update profile:', error.message || error);
-    });
 };
 export const getUser = async (userName: string): Promise<User> => {
   return apiClient

@@ -1,9 +1,16 @@
 import React from 'react';
 import {FormControl, Heading, Text} from 'native-base';
 import {Pressable, StyleSheet} from 'react-native';
+import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
+import { IconProp } from '@fortawesome/fontawesome-svg-core';
+import { config } from '../../../gluestack-components/gluestack-ui.config';
 
+
+const colors = config.tokens.colors;
 interface FieldProps {
   label: React.ReactNode;
+  labelIcon?: IconProp;
+  labelIconColor?: string;
   labelControl?: React.ReactNode;
   help?: string;
   required?: boolean;
@@ -16,6 +23,8 @@ interface FieldProps {
 const Field: React.FC<FieldProps> = ({
   children = undefined,
   label,
+  labelIcon,
+  labelIconColor,
   labelControl,
   help,
   required,
@@ -31,6 +40,12 @@ const Field: React.FC<FieldProps> = ({
       <FormControl.Label style={styles.label}>
         <Heading size="sm">{label}</Heading>
         {labelControl}
+        {labelIcon && <FontAwesomeIcon
+                  icon={labelIcon}
+                  size={24}
+                  color={labelIconColor ? labelIconColor : colors.primary500}
+                />}
+
       </FormControl.Label>
       {children}
 

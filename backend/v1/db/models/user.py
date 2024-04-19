@@ -1,13 +1,14 @@
 from enum import Enum
 from pydantic import BaseModel, Field
 from typing import Optional
-from datetime import date
+from datetime import datetime
+from utilities import get_current_time
 
 class UserLocation(BaseModel):
     latitude: float
     longitude: float
-    timestamp: date
-    accuracy: float  # Accuracy in meters
+    timestamp: Optional[datetime]
+    accuracy: int  # Accuracy in meters
 
 class ShowLocation(str, Enum):
     no_one = 'no_one'
@@ -21,7 +22,8 @@ class ShowLocation(str, Enum):
     
 class UserSettings(BaseModel):
     show_location: ShowLocation = Field(default=ShowLocation.no_one, example=ShowLocation.everyone)
-    show_contact_info: bool = Field(default=False, example=True)
+    show_email: bool = Field(default=False, example=True)
+    show_phone: bool = Field(default=False, example=True)
 
     def dict(self):
         return {
@@ -64,3 +66,9 @@ class User(BaseModel):
             "firstName": self.firstName,
             "lastName": self.lastName
         }
+
+
+class UserUpdate(BaseModel):
+    settings: UserSettings
+    contact_info: Optional[ContactInfo] = Field(None, example={"email": "johndoe@example.com", "phone": "+1234567890"})
+    slogan: Optional[str] = Field(None, example="Live and Let Live")

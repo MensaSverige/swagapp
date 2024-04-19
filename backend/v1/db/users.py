@@ -15,6 +15,18 @@ def get_user(user_id: int) -> User:
 
     return user_collection.find_one({"userId": user_id})
 
+def update_user(user_id: int, user: User) -> User:
+    """
+    Updates a user document in the MongoDB database.
+
+    :param user_id: The user ID.
+    :param user: The user document.
+    :param db: The MongoDB database object.
+    :return: The user document.
+    """
+    user_collection.update_one({"userId": user_id}, {"$set": user})
+    return user
+
 def create_user(response_json: dict) -> User:
     """
     Creates a new user document in the MongoDB database
@@ -27,7 +39,7 @@ def create_user(response_json: dict) -> User:
     user_collection.insert_one(newuser)
     return newuser
 
-def get_users(show_location: Optional[bool] = None) -> list[User]:
+def get_users(show_location: Optional[ShowLocation] = None) -> list[User]:
     """
     Retrieves all user documents from the MongoDB database.
 
