@@ -30,7 +30,6 @@ apiClient.interceptors.request.use(
   async (config) => {
     try {
       const token = await getOrRefreshAccessToken();
-      config.headers['Content-Type'] = 'application/json';
       config.headers['Authorization'] = `Bearer ${token}`;
     } catch (error) {
       console.log('Error getting access token', error);

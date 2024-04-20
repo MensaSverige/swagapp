@@ -19,6 +19,7 @@ import { faEye, faEyeSlash } from "@fortawesome/free-solid-svg-icons";
 import { TEST_MODE } from "@env";
 import { authenticate, tryGetCurrentUser } from "../../common/services/authService";
 import { AuthResponse, User } from "../../../api_schema/types";
+import { set } from "@gluestack-style/react";
 export const SigninForm = () => {
   const theme = useTheme();
   const [username, setUsername] = useState("");
@@ -30,13 +31,18 @@ export const SigninForm = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isTryingStoredCredentials, setIsTryingStoredCredentials] =
     useState(false);
-  const { testMode, backendConnection, user, setUser, setIsTryingToLogin } =
+  const { testMode, backendConnection, user, setUser, setSelectedUserId, setIsTryingToLogin } =
     useStore();
   useEffect(() => {
     if (!user && backendConnection) {
       tryGetCurrentUser()
         .then((response) => {
-          if (response?.user !== undefined) setUser(response.user);
+          if (response?.user !== undefined) {
+            setUser(response.user);
+            if (response.user.settings.show_location !== "NO_ONE")
+              setSelectedUserId(response.user.userId);
+            console.log("signinform")
+          }
         })
         .catch((error) => {
           // Handle error

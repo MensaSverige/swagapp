@@ -8,5 +8,9 @@ export const createNetworkStatusSlice: StateCreator<
   NetworkStatusSlice
 > = set => ({
   backendConnection: true,
-  setBackendConnection: backendConnection => set({backendConnection}),
+  setBackendConnection: (backendConnection) => (state: NetworkStatusSlice) => {
+    if (state.backendConnection !== backendConnection) {
+      state.backendConnection = backendConnection;
+    }
+  },
 });

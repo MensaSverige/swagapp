@@ -13,6 +13,7 @@ const useUserLocation = () => {
   const intervalRef = useRef<NodeJS.Timeout>();
 
   useEffect(() => {
+    console.log('useUserLocation rerunning');
     // Make sure there is only one interval running
     if (intervalRef.current) {
       clearInterval(intervalRef.current);
@@ -32,7 +33,7 @@ const useUserLocation = () => {
             longitude !== undefined
           ) {
             setUserLocation(latitude, longitude);
-            if (user.settings.show_location !== "no_one") {
+            if (user.settings.show_location !== "NO_ONE") {
               const locationUpdateData: UserLocation = {
                   latitude: latitude,
                   longitude: longitude,
@@ -52,7 +53,7 @@ const useUserLocation = () => {
 
     fetchLocation();
     intervalRef.current = setInterval(fetchLocation, locationUpdateInterval);
-  }, [locationUpdateInterval, hasLocationPermission, setUserLocation, user]);
+  }, [locationUpdateInterval, hasLocationPermission, user?.settings.show_location]);
 };
 
 export default useUserLocation;

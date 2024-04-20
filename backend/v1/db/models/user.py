@@ -11,35 +11,22 @@ class UserLocation(BaseModel):
     accuracy: int  # Accuracy in meters
 
 class ShowLocation(str, Enum):
-    no_one = 'no_one'
-    only_members_who_share_their_own_location = 'only_members_who_share_their_own_location'
-    only_members = 'only_members'
-    everyone_who_share_their_own_location = 'everyone_who_share_their_own_location'
-    everyone = 'everyone'
+    NO_ONE = 'NO_ONE'
+    ALL_MEMBERS_WHO_SHARE_THEIR_OWN_LOCATION = 'ALL_MEMBERS_WHO_SHARE_THEIR_OWN_LOCATION'
+    ALL_MEMBERS = 'ALL_MEMBERS'
+    EVERYONE_WHO_SHARE_THEIR_OWN_LOCATION = 'EVERYONE_WHO_SHARE_THEIR_OWN_LOCATION'
+    EVERYONE = 'EVERYONE'
 
-    def dict(self):
-        return self.value
     
 class UserSettings(BaseModel):
-    show_location: ShowLocation = Field(default=ShowLocation.no_one, example=ShowLocation.everyone)
+    show_location: ShowLocation = Field(default=ShowLocation.NO_ONE, example=ShowLocation.EVERYONE)
     show_email: bool = Field(default=False, example=True)
     show_phone: bool = Field(default=False, example=True)
 
-    def dict(self):
-        return {
-            "show_location": self.show_location.value,
-            "show_contact_info": self.show_contact_info
-        }
 
 class ContactInfo(BaseModel):
     email: Optional[str] = Field(None, example="johndoe@example.com")
     phone: Optional[str] = Field(None, example="+1234567890")
-
-    def dict(self):
-        return {
-            "email": self.email,
-            "phone": self.phone
-        }
 
 class User(BaseModel):
     userId: int = Field(..., example=123)
@@ -52,20 +39,6 @@ class User(BaseModel):
     avatar_url: Optional[str] = Field(None, example="https://example.com/avatar.jpg")
     firstName: Optional[str] = Field(None, example="John Doe")
     lastName: Optional[str] = Field(None, example="John Doe")
-
-    def dict(self):
-        return {
-            "userId": self.userId,
-            "isMember": self.isMember,
-            "settings": self.settings.dict(),
-            "location": self.location.dict() if self.location else None,
-            "contact_info": self.contact_info.dict() if self.contact_info else None,
-            "age": self.age,
-            "slogan": self.slogan,
-            "avatar_url": self.avatar_url,
-            "firstName": self.firstName,
-            "lastName": self.lastName
-        }
 
 
 class UserUpdate(BaseModel):

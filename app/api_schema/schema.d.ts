@@ -21,9 +21,9 @@ export interface paths {
     /** Get User By Id */
     get: operations["get_user_by_id_v1_users__user_id__get"];
   };
-  "/v1/users/location": {
-    /** Users Showing Location */
-    get: operations["users_showing_location_v1_users_location_get"];
+  "/v1/users": {
+    /** Get Users */
+    get: operations["get_users_v1_users_get"];
   };
   "/v1/users/me/location": {
     /** Update User Location */
@@ -104,7 +104,7 @@ export interface components {
      * ShowLocation
      * @enum {string}
      */
-    ShowLocation: "no_one" | "only_members_who_share_their_own_location" | "only_members" | "everyone_who_share_their_own_location" | "everyone";
+    ShowLocation: "NO_ONE" | "ALL_MEMBERS_WHO_SHARE_THEIR_OWN_LOCATION" | "ALL_MEMBERS" | "EVERYONE_WHO_SHARE_THEIR_OWN_LOCATION" | "EVERYONE";
     /** User */
     User: {
       /**
@@ -175,8 +175,8 @@ export interface components {
     /** UserSettings */
     UserSettings: {
       /**
-       * @default no_one
-       * @example everyone
+       * @default NO_ONE
+       * @example EVERYONE
        */
       show_location?: components["schemas"]["ShowLocation"];
       /**
@@ -308,13 +308,24 @@ export interface operations {
       };
     };
   };
-  /** Users Showing Location */
-  users_showing_location_v1_users_location_get: {
+  /** Get Users */
+  get_users_v1_users_get: {
+    parameters: {
+      query?: {
+        show_location?: boolean;
+      };
+    };
     responses: {
       /** @description Successful Response */
       200: {
         content: {
           "application/json": components["schemas"]["User"][];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
     };

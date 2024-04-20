@@ -7,10 +7,11 @@ import { UserLocation } from '../../../api_schema/types';
 
 export const getUserLocations = async (): Promise<UserWithLocation[]> => {
   return apiClient
-    .get('/users/location')
+  .get('/users', { params: { show_location: true } })
     .then(
       response => {
         if (response.data) {
+          console.log('fetching new user locations');
           return response.data.filter(isUserWithLocation);
         }
         return [];

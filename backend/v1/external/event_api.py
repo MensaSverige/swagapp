@@ -2,7 +2,7 @@ import requests
 import logging
 from fastapi import HTTPException
 from db.external_token_storage import get_external_token
-from external.env_constants import LOGINM_SEED, URL_EVENTS_API
+from env_constants import LOGINM_SEED, URL_EVENTS_API
 from utilities import calc_hash, get_current_time_formatted
 from pydantic import BaseModel
 from datetime import date, time

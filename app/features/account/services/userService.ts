@@ -1,5 +1,5 @@
 import apiClient from '../../common/services/apiClient';
-import { ShowLocation, UserUpdate } from '../../../api_schema/types';
+import { UserUpdate } from '../../../api_schema/types';
 import { AuthResponse, User } from '../../../api_schema/types';
 import * as Keychain from 'react-native-keychain';
 

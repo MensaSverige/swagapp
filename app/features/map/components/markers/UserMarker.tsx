@@ -1,32 +1,38 @@
-import React from 'react';
-import {Image, StyleSheet} from 'react-native';
-import {Marker} from 'react-native-maps';
+import React, { useEffect } from 'react';
+import { Image, StyleSheet } from 'react-native';
+import { Marker } from 'react-native-maps';
 import UserWithLocation from '../../types/userWithLocation';
-import {ICustomTheme, View, useTheme} from 'native-base';
-import {faUser} from '@fortawesome/free-solid-svg-icons';
-import {FontAwesomeIcon} from '@fortawesome/react-native-fontawesome';
+import { ICustomTheme, View, useTheme } from 'native-base';
+import { faUser } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 
 const UserMarker: React.FC<{
   user: UserWithLocation;
   zIndex: number;
   highlighted: boolean;
   onPress: () => void;
-}> = ({user, zIndex, highlighted, onPress}) => {
+}> = ({ user, zIndex, highlighted, onPress }) => {
+  useEffect(() => {
+    console.log('UserMarker re-rendered');
+  });
+
   const theme = useTheme() as ICustomTheme;
   const styles = createStyles(theme);
+  const markerStyle = [styles.marker, ...[highlighted && styles.markerHighlighted]]//highlighted ? styles.markerHighlighted : styles.marker;
   return (
     <Marker
+      tracksViewChanges={false}
       coordinate={{
         latitude: user.location.latitude,
         longitude: user.location.longitude,
       }}
-      anchor={{x: 0.5, y: 0.5}}
+      anchor={{ x: 0.5, y: 0.5 }}
       zIndex={zIndex}
       onPress={onPress}>
       <View
-        style={[styles.marker, ...[highlighted && styles.markerHighlighted]]}>
+        style={markerStyle}>
         {user.avatar_url ? (
-          <Image source={{uri: user.avatar_url}} style={styles.avatar} />
+          <Image source={{ uri: user.avatar_url }} style={styles.avatar} />
         ) : (
           <FontAwesomeIcon
             icon={faUser}
@@ -35,17 +41,6 @@ const UserMarker: React.FC<{
           />
         )}
       </View>
-      {/* <Callout>
-        <View style={styles.callout}>
-          <Heading>{user.name}</Heading>
-          {user.avatar_url && (
-            <Image
-              source={{uri: user.avatar_url}}
-              style={styles.callout_avatar}
-            />
-          )}
-        </View>
-      </Callout> */}
     </Marker>
   );
 };
@@ -85,4 +80,7 @@ const createStyles = (theme: ICustomTheme) =>
     },
   });
 
-export default UserMarker;
+export default React.memo(UserMarker, (prevProps, nextProps) => {
+  // Only re-render if the highlighted prop has changed
+  return prevProps.highlighted === nextProps.highlighted;
+});

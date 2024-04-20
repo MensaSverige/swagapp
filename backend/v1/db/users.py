@@ -39,7 +39,7 @@ def create_user(response_json: dict) -> User:
     user_collection.insert_one(newuser)
     return newuser
 
-def get_users(show_location: Optional[ShowLocation] = None) -> list[User]:
+def get_users(show_location: Optional[bool] = None) -> list[User]:
     """
     Retrieves all user documents from the MongoDB database.
 
@@ -48,15 +48,23 @@ def get_users(show_location: Optional[ShowLocation] = None) -> list[User]:
     """
     query = {}
     if show_location is not None:
-        query['settings.show_location'] = show_location
+        query = {'settings.show_location': {'$ne': ShowLocation.NO_ONE.value}}
+    return list(user_collection.find(query))
 
+def get_users_showing_location() -> list[User]:
+    """
+    Retrieves all user documents from the MongoDB database where ShowLocation is not no_one.
+
+    :return: The user documents.
+    """
+    query = {"settings.show_location": {"$ne": ShowLocation.NO_ONE.value}}
     return list(user_collection.find(query))
 
 def map_authresponse_to_user(response_json: dict) -> User:
     user = User(
         userId=response_json["memberId"],
         isMember=response_json["type"] == "M",
-        settings=UserSettings(show_location=ShowLocation.no_one, show_contact_info=False),  # Default values
+        settings=UserSettings(),  # Default values
     )
 
     if user.isMember:
@@ -65,8 +73,8 @@ def map_authresponse_to_user(response_json: dict) -> User:
         user.contact_info = ContactInfo(email=response_json.get("email", None), phone=None)  # Update email
 
     try:
-        user_json = json.dumps(user.dict())
+        user_json = json.dumps(user.model_dump())
         User.model_validate_json(user_json)
-        return user.dict()
+        return user.model_dump()
     except ValidationError:
         return None

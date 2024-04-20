@@ -58,7 +58,7 @@ const Profile: React.FC = () => {
     settings: {
       show_email: user?.settings?.show_email || false,
       show_phone: user?.settings?.show_phone || false,
-      show_location: user?.settings?.show_location || 'no_one',
+      show_location: user?.settings?.show_location || 'NO_ONE',
     },
   });
   const [formState, setFormState] = useState<UserUpdate>(getFormStateFromUser(user as User));
@@ -69,7 +69,7 @@ const Profile: React.FC = () => {
   const styles = createStyles();
 
   const [isLoading, setIsLoading] = useState(false);
-  const [locationSwitch, setLocationSwitch] = useState<boolean>(formState?.settings?.show_location === 'no_one' ? false : true);
+  const [locationSwitch, setLocationSwitch] = useState<boolean>(formState?.settings?.show_location === 'NO_ONE' ? false : true);
   const [isEditing, setIsEditing] = useState(false);
 
   const handleFocus = () => {
@@ -305,7 +305,7 @@ const Profile: React.FC = () => {
                         ...formState,
                         settings: {
                           ...formState.settings,
-                          show_location: 'only_members_who_share_their_own_location',
+                          show_location: 'ALL_MEMBERS_WHO_SHARE_THEIR_OWN_LOCATION',
                         },
                       });
                     } else {
@@ -313,7 +313,7 @@ const Profile: React.FC = () => {
                         ...formState,
                         settings: {
                           ...formState.settings,
-                          show_location: 'no_one',
+                          show_location: 'NO_ONE',
                         },
                       });
                     }

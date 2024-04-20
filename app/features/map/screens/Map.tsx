@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Dimensions,
   Linking,
@@ -28,6 +28,7 @@ import darkMapstyle from '../styles/dark';
 import { faUser, faLocation } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import TimeLeft from '../../events/utilities/TimeLeft';
+import ContactCard from '../components/ContactCard';
 
 const createStyles = (theme: ITheme) =>
   StyleSheet.create({
@@ -114,18 +115,20 @@ const MapView: React.FC = () => {
   const theme = useTheme();
   const mapRef = useRef<ReactNativeMapView | null>(null);
   const scrollViewRef = useRef<ScrollView | null>(null);
-  const { region, usersShowingLocation } = useStore();
-  const [mapIndex, setMapIndex] = React.useState(0);
-  const [comparisonDate, setComparisonDate] = React.useState(new Date());
-  const [followsUserLocation, setFollowsUserLocation] = React.useState(true);
-
+  const { region, usersShowingLocation, selectedUserId, setSelectedUserId } = useStore();
+  const [focusedContactCard, setFocusedContactCard] = React.useState(usersShowingLocation.findIndex(u => u.userId === selectedUserId));
   useEffect(() => {
-    const interval = setInterval(() => {
-      setComparisonDate(new Date());
-    }, 1000);
+    console.log('Map re-rendered');
+  });
+  
+  const selectedUserKey = useMemo(() => {
+    if (selectedUserId) {
+      return `user-marker-${selectedUserId}-${Math.random()}`;
+    }
+    return '';
+  }, [selectedUserId]);
 
-    return () => clearInterval(interval);
-  }, []);
+  const [followsUserLocation, setFollowsUserLocation] = React.useState(true);
 
   const screenWidth = Dimensions.get('window').width;
 
@@ -134,27 +137,31 @@ const MapView: React.FC = () => {
   useRequestLocationPermission();
   useGetUsersShowingLocation();
 
-  const focusOnUserAtIndex = (index: number) => {
-    if (!usersShowingLocation || usersShowingLocation.length <= index) {
+  const focusOnUser = (userId: number) => {
+    if (!usersShowingLocation) {
       return;
     }
-    setMapIndex(index);
-    setFollowsUserLocation(false);
-    const { latitude, longitude } = usersShowingLocation[index].location;
-    mapRef.current?.animateToRegion(
-      {
-        latitude,
-        longitude,
-        latitudeDelta: region.latitudeDelta,
-        longitudeDelta: region.longitudeDelta,
-      },
-      350,
-    );
+    setFollowsUserLocation(false)
+    const loc = usersShowingLocation.find(u => u.userId === userId)?.location;
+    const index = usersShowingLocation.findIndex(u => u.userId === userId);
+    setFocusedContactCard(index);
+    if (loc) {
+      mapRef.current?.animateToRegion(
+        {
+          latitude: loc.latitude,
+          longitude: loc.longitude,
+          latitudeDelta: region.latitudeDelta,
+          longitudeDelta: region.longitudeDelta,
+        },
+        350,
+      );
+    }
+    setSelectedUserId(userId);
     const x =
-      mapIndex * (styles.infoCard.width + 10) -
+      index * (styles.infoCard.width + 10) -
       (screenWidth - styles.infoCard.width) / 2; // Calculate the x position
     scrollViewRef.current?.scrollTo({ x, animated: true });
-  };
+  }
 
   const scrollViewStyle = {
     ...styles.infoScrollViewContent,
@@ -186,6 +193,7 @@ const MapView: React.FC = () => {
           }}
           onPanDrag={() => {
             setFollowsUserLocation(false);
+            setSelectedUserId(null);
           }}
           mapPadding={{
             top: 10,
@@ -204,16 +212,12 @@ const MapView: React.FC = () => {
           {usersShowingLocation &&
             usersShowingLocation.map(u => (
               <UserMarker
-                key={`user-marker-${u.userId}-${(
-                  usersShowingLocation[mapIndex].userId === u.userId
-                ).toString()}`}
+                key={u.userId === selectedUserId ? selectedUserKey : `user-marker-${u.userId}`}
                 user={u}
                 zIndex={100}
-                highlighted={
-                  usersShowingLocation[mapIndex].userId === u.userId
-                }
+                highlighted={selectedUserId === u.userId}
                 onPress={() => {
-                  focusOnUserAtIndex(usersShowingLocation.indexOf(u));
+                  focusOnUser(u.userId);
                 }}
               />
             ))}
@@ -259,7 +263,7 @@ const MapView: React.FC = () => {
                   activeOpacity={1}
                   key={`user-card-${u.userId}`}
                   onPress={() => {
-                    focusOnUserAtIndex(usersShowingLocation.indexOf(u));
+                    focusOnUser(u.userId);
                   }}
                   style={styles.infoCard}>
                   {u.avatar_url ? (
@@ -279,20 +283,10 @@ const MapView: React.FC = () => {
                     />
                   )}
                   <Box style={styles.infoTextWrapper}>
-                    <Text style={styles.infoTitle}>{u.firstName} {u.lastName}</Text>
-                    {u.location?.timestamp && (
-                      <TimeLeft
-                        comparedTo={comparisonDate}
-                        start={u.location.timestamp}
-                      />
-                    )}
-                    {(u.settings.show_email || u.settings.show_phone) && (
                       <ContactCard
-                        email={u.contact_info?.email || undefined}
-                        phone={u.contact_info?.phone || undefined}
-                        style={styles.infoContactButton}
+                        user={u}
+                        isSelected={selectedUserId === u.userId}
                       />
-                    )}
                   </Box>
                 </TouchableOpacity>
               ))}
@@ -300,42 +294,6 @@ const MapView: React.FC = () => {
         </View>
       </Box>
     </Center>
-  );
-};
-
-const ContactCard: React.FC<{
-  email: string | undefined;
-  phone: string | undefined;
-  style: any;
-}> = ({ email, phone, style }) => {
-  if ((!email || email.trim() === '') && (!phone || phone.trim() === '')) {
-    return null;
-  }
-
-
-  return (
-    <View>
-      {email && email.trim() !== '' && (
-      <Pressable
-        style={style}
-        onPress={() => {
-          Linking.openURL(`mailto:${email}`);
-        }
-        }>
-        {email}
-      </Pressable>
-      )}
-      {phone && phone.trim() !== '' && (
-      <Pressable
-        style={style}
-        onPress={() => {
-          Linking.openURL(`tel:${phone}`);
-        }}>
-        {phone}
-      </Pressable>
-      )}
-    </View>
-
   );
 };
 

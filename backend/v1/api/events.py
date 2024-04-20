@@ -4,7 +4,7 @@ from external.event_api import ExternalEvent, get_external_events
 from db.models.user import User
 from request_filter import validate_request
 from db.users import get_user, get_users
-from external.env_constants import LOGINM_SEED, URL_MEMBER_API
+from env_constants import LOGINM_SEED, URL_MEMBER_API
 
 events_v1 = APIRouter(prefix="/v1")
 
