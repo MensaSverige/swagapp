@@ -7,12 +7,15 @@ from typing import Type
 from pydantic import BaseModel
 from db.models.tokenstorage import TokenStorage
 from db.models.user import User
+from user_events.user_events_model import UserEvent
 
 logging.basicConfig(level=logging.INFO)
 client = MongoClient('mongo', 27017)
 db = client['swag']
 user_collection = db['user']
 tokenstorage_collection = db['tokenstorage']
+user_event_collection = db['userevents']
+
 
 def initialize_db():
 
@@ -21,12 +24,15 @@ def initialize_db():
         #list all collections
         collections = db.list_collection_names()
         logging.info(f"Database collections: {collections}")
-        
+
         initialize_collection(User, db)
         user_collection.create_index("userId", unique=True)
-        
+
         initialize_collection(TokenStorage, db)
         tokenstorage_collection.create_index("userId", unique=True)
+
+        initialize_collection(UserEvent, db)
+
 
         # Check if in local test mode
         if TEST_MODE.lower() == 'true':
@@ -43,7 +49,7 @@ def initialize_db():
 
     except Exception as e:
         logging.error("Failed to connect to the database: %s", e)
-    
+
 
 def initialize_collection(model: Type[BaseModel], db):
     """
@@ -52,7 +58,8 @@ def initialize_collection(model: Type[BaseModel], db):
     :param model: Pydantic model class.
     :param db: The MongoDB database object.
     """
-    model_name = model.__name__.lower()  # Derive collection name from the model class name, convert to lowercase
+    # Derive collection name from the model class name, convert to lowercase
+    model_name = model.__name__.lower()
     if model_name not in db.list_collection_names():
         logging.info(f"Creating collection: {model_name}")
         db.create_collection(model_name)

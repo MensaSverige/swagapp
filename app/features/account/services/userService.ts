@@ -13,7 +13,6 @@ export const updateUser = async (
     .put('/users/me', userUpdate)
     .then(
       response => {
-        console.log('user updated', response.data)
         return response.data;
       },
       error => {
@@ -45,6 +44,9 @@ export const tryGetCurrentUser = async (): Promise<AuthResponse | undefined> => 
 }
 
 export const getUser = async (userName: string): Promise<User> => {
+  if (!userName) {
+    return Promise.reject('No username provided');
+  }
   return apiClient
     .get('/user_by_username/' + userName)
     .then(

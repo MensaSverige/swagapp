@@ -18,6 +18,7 @@ export interface UserEvent {
   start: string;
   end?: string;
   description?: string;
+  max_participants?: number;
   reports?: {
     user?: string;
     text: string;

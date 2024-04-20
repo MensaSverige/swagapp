@@ -1,8 +1,7 @@
 import React, {useCallback, useEffect, useState} from 'react';
-import {Platform, TextInput} from 'react-native';
-import {Button, StyleSheet, SafeAreaView} from 'react-native';
-import MapView, {Region} from 'react-native-maps';
-import {Event} from '../../common/types/event';
+import {Button, Platform, TextInput} from 'react-native';
+import {StyleSheet, SafeAreaView} from 'react-native';
+import MapView from 'react-native-maps';
 import useStore from '../../common/store/store';
 import {
   Box,
@@ -22,126 +21,186 @@ import {useEventLists} from '../hooks/useEventLists';
 import {clockForTime} from '../../map/functions/clockForTime';
 import {RootStackParamList} from '../../../navigation/RootStackParamList';
 import EventMarker from '../../map/components/markers/EventMarker';
-import EventWithLocation from '../types/eventWithLocation';
 import Field from '../../common/components/Field';
 import Fields from '../../common/components/Fields';
 import EventCard from '../components/EventCard';
-import FutureUserEvent from '../types/futureUserEvent';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {createUserEvent, updateUserEvent} from '../services/eventService';
 import {DatepickerField} from '../../common/components/DatepickerField';
+import {UserEvent} from '../../../api_schema/types';
+import EventWithLocation from '../types/eventWithLocation';
+import FutureUserEvent from '../types/futureUserEvent';
 
 type EventFormProps = RouteProp<RootStackParamList, 'EventForm'>;
-
-const initializeNewEvent = (region: Region): FutureUserEvent => {
-  const initialStartTime = new Date(Date.now());
-  initialStartTime.setMinutes(0);
-  initialStartTime.setSeconds(0);
-  initialStartTime.setMilliseconds(0);
-  initialStartTime.setHours(initialStartTime.getHours() + 2);
-  const initialEndTime = new Date(initialStartTime.getTime() + 3600000);
-  return {
-    id: '',
-    name: '',
-    location: {
-      description: '',
-      marker: '',
-      latitude: region.latitude,
-      longitude: region.longitude,
-    },
-    start: initialStartTime.toISOString(),
-    end: initialEndTime.toISOString(),
-    description: '',
-  } as FutureUserEvent;
-};
 
 const EditEventForm: React.FC = () => {
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const route = useRoute<EventFormProps>();
-  const event = route.params.event;
+  const initialEvent = route.params.event;
+
+  const user = useStore(state => state.user);
+
+  // Event data
+  const [eventName, setEventName] = useState<string>('');
+  const [eventDescription, setEventDescription] = useState<string>('');
+  const [eventMaxParticipants, setEventMaxParticipants] = useState<
+    number | null
+  >(null);
+  const [eventStartDate, setEventStartDate] = useState<Date>(new Date());
+  const [eventEndDate, setEventEndDate] = useState<Date | undefined>(undefined);
+  const [eventLocationLatitude, setEventLocationLatitude] = useState<number>(0);
+  const [eventLocationLongitude, setEventLocationLongitude] =
+    useState<number>(0);
+  const [eventLocationDescription, setEventLocationDescription] =
+    useState<string>('');
+  const [eventLocationMarker, setEventLocationMarker] = useState<string>('');
 
   const theme = useTheme() as ICustomTheme;
   const styles = createStyles(theme);
-
   const startRegion = useStore(state => state.region);
-
-  const [emojiPickerVisible, setEmojiPickerVisible] = useState<boolean>(false);
-
-  const [mapRegion, setMapRegion] = useState({
-    latitude: startRegion.latitude,
-    longitude: startRegion.longitude,
+  const [mapRegionDeltas, setMapRegionDeltas] = useState<{
+    latitudeDelta: number;
+    longitudeDelta: number;
+  }>({
     latitudeDelta: 0.01,
     longitudeDelta: 0.01,
   });
 
-  // These two are used for updating end date when start date changes
-  const [eventLength, setEventLength] = useState<number | null>(null);
-  const [previousStart, setPreviousStart] = useState<string | null>(null);
-
-  // Used to check if end date has changed, for updating event length
-  const [previousEnd, setPreviousEnd] = useState<string | null>(null);
-
   // Event data, and saving it
   const [isSaving, setIsSaving] = useState<boolean>(false);
-  const {fetchData} = useEventLists();
-  const [eventData, setEventData] = useState<Event>(
-    event ? {...event} : initializeNewEvent(startRegion),
-  );
+  const {fetchAllEvents} = useEventLists();
 
   // Field validation states
-  const [nameFieldEdited, setNameFieldEdited] = useState<boolean>(false);
+  const [nameFieldTouched, setNameFieldTouched] = useState<boolean>(false);
   const [nameValid, setNameValid] = useState<boolean>(
-    (event && event.name !== '') || false,
+    (initialEvent && initialEvent.name !== '') || false,
   );
-  const [formValid, setFormValid] = useState<boolean>(false);
+  const [formChanged, setFormChanged] = useState<boolean>(false);
 
   // Emoji input field ref, used for text selection
-  const emojiInputRef = React.useRef<TextField | null>(null);
+  const emojiInputRef = React.useRef<TextInput | null>(null);
 
-  const trimEventTexts = (e: Event) =>
-    ({
-      ...e,
-      name: e.name.trim(),
-      description: e.description?.trim() || undefined,
-      location: {
-        ...e.location,
-        description: e.location?.description?.trim(),
-        marker: e.location?.marker?.trim(),
-      },
-    } as Event);
+  useEffect(() => {
+    if (initialEvent) {
+      // Event Object fields
+      setEventName(initialEvent.name);
+      setEventDescription(initialEvent.description || '');
+      setEventMaxParticipants(initialEvent.maxAttendees || null);
+      setEventStartDate(new Date(initialEvent.start));
+      setEventEndDate(
+        initialEvent.end ? new Date(initialEvent.end) : undefined,
+      );
+      setEventLocationLatitude(
+        initialEvent.location?.latitude || startRegion.latitude,
+      );
+      setEventLocationLongitude(
+        initialEvent.location?.longitude || startRegion.longitude,
+      );
+      setEventLocationDescription(initialEvent.location?.description || '');
+      setEventLocationMarker(initialEvent.location?.marker || '');
+    } else {
+      setEventLocationLatitude(startRegion.latitude);
+      setEventLocationLongitude(startRegion.longitude);
+    }
+  }, [initialEvent, startRegion.latitude, startRegion.longitude]);
 
   // Validate form
   useEffect(() => {
-    // Add future fields here
-    if (event && eventData) {
+    if (initialEvent) {
       // You can only save changed events.
-      setFormValid(
-        nameValid &&
-          (event.name !== eventData.name ||
-            event.description !== eventData.description ||
-            event.start !== eventData.start ||
-            event.end !== eventData.end ||
-            event.location?.description !== eventData.location?.description ||
-            event.location?.marker !== eventData.location?.marker ||
-            event.location?.latitude !== eventData.location?.latitude ||
-            event.location?.longitude !== eventData.location?.longitude),
+      setFormChanged(
+        eventName !== initialEvent.name ||
+          eventDescription !== initialEvent.description ||
+          eventMaxParticipants !== initialEvent.maxAttendees ||
+          eventStartDate.toISOString() !== initialEvent.start ||
+          (eventEndDate?.toISOString() || undefined) !== initialEvent.end ||
+          eventLocationLatitude !== initialEvent.location?.latitude ||
+          eventLocationLongitude !== initialEvent.location?.longitude ||
+          eventLocationDescription !== initialEvent.location?.description ||
+          eventLocationMarker !== initialEvent.location?.marker,
       );
     } else {
-      setFormValid(nameValid);
+      setFormChanged(eventName !== '');
     }
   }, [
-    event,
-    eventData,
-    eventData.description,
-    eventData.end,
-    eventData.location?.description,
-    eventData.location?.latitude,
-    eventData.location?.longitude,
-    eventData.location?.marker,
-    eventData.name,
-    eventData.start,
+    initialEvent,
     nameValid,
+    eventName,
+    eventDescription,
+    eventMaxParticipants,
+    eventStartDate,
+    eventEndDate,
+    eventLocationLatitude,
+    eventLocationLongitude,
+    eventLocationDescription,
+    eventLocationMarker,
+  ]);
+
+  // Validate individual fields
+  useEffect(() => {
+    if (nameFieldTouched) {
+      setNameValid(eventName.trim() !== '');
+    }
+  }, [eventName, nameFieldTouched]);
+
+  const saveEvent = useCallback(() => {
+    if (!user) {
+      console.error('No user found');
+      return;
+    }
+    if (!formChanged) {
+      return;
+    }
+    const event: UserEvent = {
+      _id: initialEvent?.id,
+      name: eventName,
+      description: eventDescription,
+      maxAttendees: eventMaxParticipants ?? undefined,
+      start: eventStartDate.toISOString() || '',
+      end: eventEndDate?.toISOString() || undefined,
+      location: {
+        latitude: eventLocationLatitude,
+        longitude: eventLocationLongitude,
+        description: eventLocationDescription,
+        marker: eventLocationMarker,
+      },
+      hosts: [],
+      userId: user?.userId,
+    };
+    setIsSaving(true);
+    (initialEvent && initialEvent.id
+      ? // when editing
+        updateUserEvent(initialEvent.id, event)
+      : // when creating
+        createUserEvent(event)
+    )
+      .then(async () => {
+        return fetchAllEvents().then(() => {
+          navigation.goBack();
+        });
+      })
+      .catch(err => {
+        console.error('Error', err);
+      })
+      .finally(() => {
+        setIsSaving(false);
+      });
+  }, [
+    eventDescription,
+    eventEndDate,
+    eventLocationDescription,
+    eventLocationLatitude,
+    eventLocationLongitude,
+    eventLocationMarker,
+    eventMaxParticipants,
+    eventName,
+    eventStartDate,
+    fetchAllEvents,
+    formChanged,
+    initialEvent,
+    navigation,
+    user,
   ]);
 
   useEffect(() => {
@@ -161,131 +220,33 @@ const EditEventForm: React.FC = () => {
         isSaving ? (
           <Spinner />
         ) : (
-          <Button
-            title="Spara"
-            disabled={!formValid}
-            onPress={() => {
-              if (!formValid) {
-                return;
-              }
-              const timmedEventData = trimEventTexts(eventData);
-              console.log('Saving event:', timmedEventData);
-              console.log('Event:', event);
-              setIsSaving(true);
-              (event
-                ? // when editing
-                  //apiClient.put(`/user_event/${event.id}`, timmedEventData)
-                  updateUserEvent(event.id, timmedEventData)
-                : // when creating
-                  //apiClient.post('/user_event', timmedEventData)
-                  createUserEvent(timmedEventData)
-              )
-                .then(async () => {
-                  // if (res.status !== 200 && res.status !== 201) {
-                  //   throw new Error(
-                  //     'Det gick inte att spara evenemanget. Försök igen.',
-                  //   );
-                  // }
-                  return fetchData().then(() => {
-                    navigation.goBack();
-                  });
-                })
-                .catch(err => {
-                  console.error('Error', err);
-                })
-                .finally(() => {
-                  setIsSaving(false);
-                });
-            }}
-          />
+          <Button title="Spara" disabled={!formChanged} onPress={saveEvent} />
         ),
     });
-  }, [event, eventData, fetchData, formValid, isSaving, navigation]);
+  }, [
+    initialEvent,
+    fetchAllEvents,
+    formChanged,
+    isSaving,
+    navigation,
+    saveEvent,
+  ]);
 
-  useEffect(() => {
-    if (event) {
-      setEventData(event);
-      setMapRegion({
-        latitude: event.location?.latitude || startRegion.latitude,
-        longitude: event.location?.longitude || startRegion.longitude,
-        latitudeDelta: 0.01,
-        longitudeDelta: 0.01,
-      });
-    } else {
-      const newEvent = initializeNewEvent(startRegion);
-      setEventData(newEvent);
+  const handleChangeStartDate = (date?: Date) => {
+    if (!date) {
+      return; // should not happen
     }
-  }, [event]);
-
-  useEffect(() => {
-    setEventData({
-      ...eventData,
-      location: {
-        ...eventData.location,
-        latitude: startRegion.latitude,
-        longitude: startRegion.longitude,
-      },
-    });
-  }, [startRegion.latitude, startRegion.longitude]);
-
-  // Adjust end date when start date changes
-  const handleStartDateChange = useCallback(
-    (date: Date) => {
-      const datestring = date?.toISOString() || '';
-      console.log('Start date changed', datestring);
-
-      setEventData(prevEventData => {
-        // Check if the start date has actually changed
-        if (datestring !== prevEventData.start && prevEventData.end) {
-          const newEnd = new Date(date);
-          newEnd.setHours(newEnd.getHours() + (eventLength || 0));
-
-          return {
-            ...prevEventData,
-            start: datestring,
-            end: newEnd.toISOString(),
-          };
-        } else {
-          return {
-            ...prevEventData,
-            start: datestring,
-          };
-        }
-      });
-      setPreviousStart(datestring);
-    },
-    [eventLength],
-  );
-
-  // Calculate event length when end date changes,
-  const handleEndDateChange = useCallback(
-    (date: Date) => {
-      const datestring = date?.toISOString() || '';
-      console.log('End date changed', datestring);
-
-      setEventData(prevEventData => {
-        // Only update state if end date actually changes
-        if (datestring !== prevEventData.end) {
-          return {
-            ...prevEventData,
-            end: datestring,
-          };
-        } else {
-          return prevEventData;
-        }
-      });
-
-      // Calculate the new length of the event
-      if (datestring !== previousEnd) {
-        const newLength =
-          (new Date(date).getTime() - new Date(eventData.start).getTime()) /
-          3600000;
-        setEventLength(newLength);
-        setPreviousEnd(datestring);
-      }
-    },
-    [eventData.start],
-  );
+    let startDateDelta = 0;
+    const newStartDate = new Date(date);
+    const previousStartDateDate = new Date(eventStartDate);
+    startDateDelta = newStartDate.getTime() - previousStartDateDate.getTime();
+    setEventStartDate(date);
+    if (eventEndDate && startDateDelta !== 0) {
+      const newEndDate = new Date(eventEndDate || date);
+      // If end date is set, move it the same amount of time as start date
+      setEventEndDate(new Date(newEndDate.getTime() + startDateDelta));
+    }
+  };
 
   return (
     <SafeAreaView style={[styles.viewContainer]}>
@@ -298,20 +259,17 @@ const EditEventForm: React.FC = () => {
               label="Titel"
               required
               error={
-                nameFieldEdited && !nameValid
+                nameFieldTouched && !nameValid
                   ? 'Titeln får inte vara tom.'
                   : undefined
               }>
               <Input
                 type={'text'}
                 placeholder="Evenemangets titel"
-                value={eventData.name}
-                onChangeText={(text: string) => {
-                  setEventData({...eventData, name: text});
-                  setNameValid(text.trim().length > 0);
-                }}
+                value={eventName}
+                onChangeText={setEventName}
                 onBlur={() => {
-                  setNameFieldEdited(true);
+                  setNameFieldTouched(true);
                 }}
               />
             </Field>
@@ -319,79 +277,73 @@ const EditEventForm: React.FC = () => {
             <Field label="Beskrivning">
               <TextArea
                 placeholder="Beskrivning av evenemanget"
-                value={eventData.description}
-                onChangeText={(text: string) =>
-                  setEventData({...eventData, description: text})
-                }
+                value={eventDescription}
+                onChangeText={setEventDescription}
                 autoCompleteType={'off'}
+              />
+            </Field>
+
+            <Field label="Antal deltagare">
+              <Input
+                type={'number'}
+                placeholder="Lämna tomt för obegränsat antal deltagare"
+                value={eventMaxParticipants?.toString() || ''}
+                onChangeText={(value: string) => {
+                  if (value === '') {
+                    setEventMaxParticipants(null);
+                  } else {
+                    setEventMaxParticipants(parseInt(value, 10));
+                  }
+                }}
               />
             </Field>
 
             <DatepickerField
               label="Start"
-              date={eventData.start}
-              onDateChange={handleStartDateChange}
+              date={eventStartDate}
+              onDateChange={handleChangeStartDate}
             />
 
             <DatepickerField
               label="Slut"
-              date={eventData.end}
-              onDateChange={handleEndDateChange}
+              date={eventEndDate || undefined}
+              minimumDate={eventStartDate}
+              optional
+              onDateChange={setEventEndDate}
             />
 
             <Field label="Plats">
               <MapView
                 style={styles.mapView}
                 region={{
-                  ...mapRegion,
-                  latitude:
-                    eventData.location?.latitude || startRegion.latitude,
-                  longitude:
-                    eventData.location?.longitude || startRegion.longitude,
+                  latitude: eventLocationLatitude,
+                  longitude: eventLocationLongitude,
+                  ...mapRegionDeltas,
                 }}
                 onRegionChangeComplete={region => {
-                  setEventData({
-                    ...eventData,
-                    location: {
-                      ...eventData.location,
-                      latitude: region.latitude,
-                      longitude: region.longitude,
-                    },
+                  setEventLocationLatitude(region.latitude);
+                  setEventLocationLongitude(region.longitude);
+                  setMapRegionDeltas({
+                    latitudeDelta: region.latitudeDelta,
+                    longitudeDelta: region.longitudeDelta,
                   });
-                  setMapRegion(region);
                 }}>
                 <EventMarker
                   hasCallout={false}
                   event={
-                    ({
-                      ...eventData,
-                      name: eventData?.name?.trim() || 'Exempel',
+                    {
+                      name: eventName.trim() || 'Exempel',
+                      start: eventStartDate.toISOString(),
+                      end: eventEndDate?.toISOString() || undefined,
                       location: {
-                        ...eventData.location,
-                        latitude:
-                          eventData.location?.latitude || startRegion.latitude,
+                        latitude: eventLocationLatitude || startRegion.latitude,
                         longitude:
-                          eventData.location?.longitude ||
-                          startRegion.longitude,
+                          eventLocationLongitude || startRegion.longitude,
                         description:
-                          eventData.location?.description?.trim() ||
-                          'Exempeladress 42',
-                        marker:
-                          eventData.location?.marker ||
-                          clockForTime(Date.now().toString()),
+                          eventLocationDescription || 'Exempeladress 42',
+                        marker: eventLocationMarker || clockForTime(new Date()),
                       },
-                    } as EventWithLocation) ||
-                    ({
-                      name: 'Exempel',
-                      start: Date.now().toString(),
-                      end: '',
-                      location: {
-                        latitude: startRegion.latitude,
-                        longitude: startRegion.longitude,
-                        description: 'Exempeladress 42',
-                        marker: clockForTime(Date.now().toString()),
-                      },
-                    } as EventWithLocation)
+                    } as EventWithLocation
                   }
                 />
               </MapView>
@@ -403,19 +355,8 @@ const EditEventForm: React.FC = () => {
               <Input
                 type={'text'}
                 placeholder="Exempeladress 42"
-                value={eventData.location?.description}
-                onChangeText={(text: string) =>
-                  setEventData({
-                    ...eventData,
-                    location: eventData.location
-                      ? {...eventData.location, description: text}
-                      : {
-                          latitude: startRegion.latitude,
-                          longitude: startRegion.longitude,
-                          description: text,
-                        },
-                  })
-                }
+                value={eventLocationDescription}
+                onChangeText={setEventLocationDescription}
               />
             </Field>
 
@@ -431,13 +372,12 @@ const EditEventForm: React.FC = () => {
                 <ZStack style={styles.emojiTextFieldWrapper}>
                   <View style={styles.emojiDisplayWrapper}>
                     <Text style={styles.emojiDisplay}>
-                      {eventData.location?.marker ||
-                        clockForTime(eventData.start)}
+                      {eventLocationMarker || clockForTime(eventStartDate)}
                     </Text>
                   </View>
                   <TextInput
-                    placeholder={clockForTime(eventData.start)}
-                    value={eventData.location?.marker}
+                    placeholder={clockForTime(eventStartDate)}
+                    value={eventLocationMarker || ''}
                     ref={emojiInputRef}
                     onKeyPress={e => {
                       // if non character key is pressed, return
@@ -447,19 +387,7 @@ const EditEventForm: React.FC = () => {
                       ) {
                         return;
                       }
-                      setEventData({
-                        ...eventData,
-                        location: eventData.location
-                          ? {
-                              ...eventData.location,
-                              marker: e.nativeEvent.key,
-                            }
-                          : {
-                              latitude: startRegion.latitude,
-                              longitude: startRegion.longitude,
-                              marker: e.nativeEvent.key,
-                            },
-                      });
+                      setEventLocationMarker(e.nativeEvent.key);
                     }}
                     style={styles.emojiTextField}
                   />
@@ -470,7 +398,20 @@ const EditEventForm: React.FC = () => {
             <Field label="Evenemangets kort">
               <Box style={styles.eventCardContainer}>
                 <EventCard
-                  event={eventData as EventWithLocation}
+                  event={
+                    {
+                      id: '',
+                      name: eventName,
+                      start: eventStartDate.toISOString(),
+                      end: eventEndDate?.toISOString() || undefined,
+                      location: {
+                        latitude: eventLocationLatitude,
+                        longitude: eventLocationLongitude,
+                        description: eventLocationDescription,
+                        marker: eventLocationMarker,
+                      },
+                    } as FutureUserEvent
+                  }
                   initiallyOpen
                 />
               </Box>

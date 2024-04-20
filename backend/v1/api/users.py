@@ -8,6 +8,7 @@ from db.users import get_user,  get_users_showing_location, update_user
 
 users_v1 = APIRouter(prefix="/v1")
 
+
 @users_v1.get("/users/{user_id}")
 async def get_user_by_id(user_id: int):
     user = get_user(user_id)
@@ -29,7 +30,8 @@ async def update_user_location(location: UserLocation, current_user: dict = Depe
 
     return update_user(current_user['userId'], current_user)
 
-@users_v1.get("/users/me/", response_model=User)
+
+@users_v1.get("/users/me", response_model=User)
 async def get_current_user(current_user: User = Depends(validate_request)):
     return current_user
 
