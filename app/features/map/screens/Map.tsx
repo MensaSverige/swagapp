@@ -1,12 +1,10 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import {
   Dimensions,
-  Linking,
   Platform,
   StyleSheet,
   TouchableOpacity,
   ScrollView,
-  Pressable,
 } from 'react-native';
 import ReactNativeMapView, { PanDragEvent } from 'react-native-maps';
 import {
@@ -14,8 +12,6 @@ import {
   Button,
   Center,
   ITheme,
-  Image,
-  Text,
   View,
   useTheme,
 } from 'native-base';
@@ -25,23 +21,14 @@ import useRequestLocationPermission from '../hooks/useRequestLocationPermission'
 import useGetUsersShowingLocation from '../hooks/useGetUsersShowingLocation';
 import lightMapstyle from '../styles/light';
 import darkMapstyle from '../styles/dark';
-import { faUser, faLocation } from '@fortawesome/free-solid-svg-icons';
+import { faLocation } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
-import TimeLeft from '../../events/utilities/TimeLeft';
 import ContactCard from '../components/ContactCard';
 
 const createStyles = (theme: ITheme) =>
   StyleSheet.create({
     map: {
       ...StyleSheet.absoluteFillObject,
-    },
-    refreshIndicatorsWrapper: {
-      position: 'absolute',
-      top: 0,
-      right: 0,
-      left: 0,
-      alignItems: 'center',
-      zIndex: 1,
     },
     mapControlsWrapper: {
       position: 'absolute',
@@ -90,25 +77,6 @@ const createStyles = (theme: ITheme) =>
       shadowOpacity: 0.5,
       shadowRadius: 5,
     },
-    infoImage: {
-      borderRadius: 3,
-      width: 80,
-      height: 100,
-    },
-    infoTextWrapper: {
-      flex: 1,
-      alignContent: 'flex-start',
-      height: '100%',
-      paddingHorizontal: 10,
-    },
-    infoTitle: {
-      fontSize: 16,
-      fontWeight: 'bold',
-      color: theme.colors.text[500],
-    },
-    infoContactButton: {
-      padding: 3,
-    },
   });
 
 const MapView: React.FC = () => {
@@ -120,7 +88,7 @@ const MapView: React.FC = () => {
   useEffect(() => {
     console.log('Map re-rendered');
   });
-  
+
   const selectedUserKey = useMemo(() => {
     if (selectedUserId) {
       return `user-marker-${selectedUserId}-${Math.random()}`;
@@ -204,10 +172,7 @@ const MapView: React.FC = () => {
           mapPadding={{
             top: 10,
             right: 10,
-            bottom:
-              styles.infoImage.height +
-              styles.infoCard.padding * 2 +
-              styles.infoScrollViewContent.padding,
+            bottom: 10,
             left: 10,
           }}
           customMapStyle={
@@ -272,28 +237,11 @@ const MapView: React.FC = () => {
                     focusOnUser(u.userId);
                   }}
                   style={styles.infoCard}>
-                  {u.avatar_url ? (
-                    <Image
-                      alt={`Bild på ${u.userId}`}
-                      source={{ uri: u.avatar_url }}
-                      style={styles.infoImage}
-                    />
-                  ) : (
-                    <FontAwesomeIcon
-                      icon={faUser}
-                      size={Math.min(
-                        styles.infoImage.width,
-                        styles.infoImage.height,
-                      )}
-                      color={theme.colors.secondary[500]}
-                    />
-                  )}
-                  <Box style={styles.infoTextWrapper}>
                       <ContactCard
                         user={u}
                         isSelected={selectedUserId === u.userId}
                       />
-                  </Box>
+
                 </TouchableOpacity>
               ))}
           </ScrollView>

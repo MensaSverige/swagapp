@@ -1,10 +1,7 @@
 import React, { useEffect } from 'react';
-import { Image, StyleSheet } from 'react-native';
 import { Marker } from 'react-native-maps';
 import UserWithLocation from '../../types/userWithLocation';
-import { ICustomTheme, View, useTheme } from 'native-base';
-import { faUser } from '@fortawesome/free-solid-svg-icons';
-import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
+import UserAvatar from '../UserAvatar';
 
 const UserMarker: React.FC<{
   user: UserWithLocation;
@@ -16,9 +13,7 @@ const UserMarker: React.FC<{
     console.log('UserMarker re-rendered');
   });
 
-  const theme = useTheme() as ICustomTheme;
-  const styles = createStyles(theme);
-  const markerStyle = [styles.marker, ...[highlighted && styles.markerHighlighted]]//highlighted ? styles.markerHighlighted : styles.marker;
+  const markerSize = highlighted ? 'xl' : 'lg';
   return (
     <Marker
       tracksViewChanges={false}
@@ -29,56 +24,15 @@ const UserMarker: React.FC<{
       anchor={{ x: 0.5, y: 0.5 }}
       zIndex={zIndex}
       onPress={onPress}>
-      <View
-        style={markerStyle}>
-        {user.avatar_url ? (
-          <Image source={{ uri: user.avatar_url }} style={styles.avatar} />
-        ) : (
-          <FontAwesomeIcon
-            icon={faUser}
-            size={24}
-            color={theme.colors.text[500]}
-          />
-        )}
-      </View>
+      <UserAvatar
+        firstName={user.firstName}
+        lastName={user.lastName}
+        avatar_url={user.avatar_url}
+        avatarSize={markerSize}
+      />
     </Marker>
   );
 };
-
-const createStyles = (theme: ICustomTheme) =>
-  StyleSheet.create({
-    marker: {
-      width: 50,
-      height: 50,
-      borderRadius: 50,
-      borderWidth: 2,
-      borderColor: theme.colors.text[500],
-      overflow: 'hidden',
-      justifyContent: 'center',
-      alignItems: 'center',
-      backgroundColor: theme.colors.background[500],
-    },
-    markerHighlighted: {
-      width: 90,
-      height: 90,
-    },
-    avatar: {
-      width: '100%',
-      height: '100%',
-      borderRadius: 90, // again, half of the width/height
-    },
-    callout: {
-      gap: 10,
-      width: 200,
-      height: 200,
-      justifyContent: 'center',
-      alignItems: 'center',
-    },
-    callout_avatar: {
-      width: 196,
-      height: 160,
-    },
-  });
 
 export default React.memo(UserMarker, (prevProps, nextProps) => {
   // Only re-render if the highlighted prop has changed
