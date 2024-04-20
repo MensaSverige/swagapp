@@ -76,40 +76,6 @@ export const authenticate = async (username: string, password: string, testMode:
         });
 }
 
-export const tryGetCurrentUser = async () : Promise<AuthResponse | undefined> => {
-    return Keychain.getAllGenericPasswordServices().then(allSavedCredentials => {
-        if (
-            allSavedCredentials.some(
-                credential =>
-                    credential === 'accessToken' ||
-                    credential === 'refreshToken' ||
-                    credential === 'credentials',
-            )
-        ) {
-            return authClient
-                .get('/users/me', { timeout: 500 })
-                .then(response => {
-                    if (response.status === 200) {
-                        const authresponse: AuthResponse = response.data;
-                        return storeAndValidateAuthResponse(authresponse);
-                    } else {
-                        return response.data().then((data: any) => {
-                            throw new Error(`Could not get user object. Data: ${data}`);
-                        });
-                    }
-                })
-                .catch(error => {
-                    if (!error.message.includes('Network Error')) {
-                        // Error was not Network Error, which means login failed due to invalid credentials.
-                        Keychain.resetGenericPassword();
-                    }
-                    throw error;
-                });
-        } else {
-            throw new Error('No saved credentials found');
-        }
-    });
-  }
 
 export const getOrRefreshAccessToken = async (): Promise<string> => {
     const accessToken = await Keychain.getGenericPassword({ service: 'accessToken' })
@@ -118,11 +84,10 @@ export const getOrRefreshAccessToken = async (): Promise<string> => {
 
     if (accessToken && accessTokenExpiry && refreshToken) {
         const tokenExpiryDate = new Date(accessTokenExpiry.password);
-        console.log('Access token expiry', tokenExpiryDate);
-        console.log('Current time', new Date());
         if (new Date() > new Date(tokenExpiryDate.getTime() - 60 * 1000)) { // refresh 60 seconds before expiry
             try {
                 const newAccessToken = await refreshAccessToken(refreshToken.password);
+                console.log('Refreshed access token');
                 return newAccessToken;
             } catch (error) {
                 console.log('Error refreshing access token', error);
@@ -165,9 +130,7 @@ export const attemptLoginWithStoredCredentials = async (): Promise<AuthResponse 
         .catch((error: Error) => {
             console.error('Login with stored credentials failed', error);
             return Promise.all([
-                Keychain.resetGenericPassword({ service: 'accessToken' }),
                 Keychain.resetGenericPassword({ service: 'credentials' }),
-                Keychain.resetGenericPassword({ service: 'accessTokenExpiry' }),
             ]).then(() => Promise.reject('Login failed'));
         });
 }

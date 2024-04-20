@@ -8,7 +8,7 @@ import {
   ScrollView,
   Pressable,
 } from 'react-native';
-import ReactNativeMapView from 'react-native-maps';
+import ReactNativeMapView, { PanDragEvent } from 'react-native-maps';
 import {
   Box,
   Button,
@@ -168,6 +168,15 @@ const MapView: React.FC = () => {
     paddingHorizontal: Platform.OS === 'android' ? 10 : 0,
   };
 
+  function onPanDrag(event: PanDragEvent): void {
+    if (followsUserLocation !== false) {
+      setFollowsUserLocation(false);
+    }
+    if (selectedUserId !== null) {
+      setSelectedUserId(null);
+    }
+  }
+
   return (
     <Center w="100%" h="100%">
       <Box safeArea flex={1} w="100%" mx="auto">
@@ -191,10 +200,7 @@ const MapView: React.FC = () => {
               );
             }
           }}
-          onPanDrag={() => {
-            setFollowsUserLocation(false);
-            setSelectedUserId(null);
-          }}
+          onPanDrag={onPanDrag}
           mapPadding={{
             top: 10,
             right: 10,

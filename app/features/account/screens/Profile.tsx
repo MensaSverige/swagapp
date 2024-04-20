@@ -79,12 +79,6 @@ const Profile: React.FC = () => {
   const handleBlur = () => {
     setIsEditing(false);
   };
-  const handleLogout = () => {
-    Keychain.resetGenericPassword({ service: 'credentials' });
-    Keychain.resetGenericPassword({ service: 'refreshToken' });
-    Keychain.resetGenericPassword({ service: 'accessToken' });
-    setUser(null);
-  };
 
   useEffect(() => {
     
