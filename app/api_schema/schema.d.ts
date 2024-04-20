@@ -31,9 +31,7 @@ export interface paths {
   };
   "/v1/users/me": {
     /** Get Current User */
-    get: operations["get_current_user_v1_users_me__get"];
-  };
-  "/v1/users/me": {
+    get: operations["get_current_user_v1_users_me_get"];
     /** Update Current User */
     put: operations["update_current_user_v1_users_me_put"];
   };
@@ -74,6 +72,10 @@ export interface paths {
   "/v1/user_events/{event_id}/unattend": {
     /** Unattend Event */
     post: operations["unattend_event_v1_user_events__event_id__unattend_post"];
+  };
+  "/v1/user_events/{event_id}/attendees/{attendee_id}": {
+    /** Remove Attendee */
+    delete: operations["remove_attendee_v1_user_events__event_id__attendees__attendee_id__delete"];
   };
   "/v1/user_events/{event_id}/accept_cohosting": {
     /** Accept Being Cohost */
@@ -319,6 +321,11 @@ export interface components {
      * @enum {string}
      */
     ShowLocation: "NO_ONE" | "ALL_MEMBERS_WHO_SHARE_THEIR_OWN_LOCATION" | "ALL_MEMBERS" | "EVERYONE_WHO_SHARE_THEIR_OWN_LOCATION" | "EVERYONE";
+    /** StatusResponseWithMessage */
+    StatusResponseWithMessage: {
+      /** Message */
+      message: string;
+    };
     /** User */
     User: {
       /**
@@ -861,6 +868,29 @@ export interface operations {
     parameters: {
       path: {
         event_id: string;
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["StatusResponseWithMessage"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  /** Remove Attendee */
+  remove_attendee_v1_user_events__event_id__attendees__attendee_id__delete: {
+    parameters: {
+      path: {
+        event_id: string;
+        attendee_id: number;
       };
     };
     responses: {
