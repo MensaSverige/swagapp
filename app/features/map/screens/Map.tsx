@@ -23,6 +23,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import ContactCard from '../components/ContactCard';
 import { getFullUrl } from '../../common/functions/GetFullUrl';
 import UserWithLocation from '../types/userWithLocation';
+import { useFocusEffect } from '@react-navigation/native';
 
 const createStyles = (theme: ITheme) =>
   StyleSheet.create({
@@ -78,7 +79,15 @@ const MapView: React.FC = () => {
       .catch((error) => console.log("Failed to load images", error));
 
   }, []);
+  useFocusEffect(
+    React.useCallback(() => {
+      const onUnfocus = () => {
+        setShowContactCard(false);
+      };
 
+      return onUnfocus;
+    }, [])
+  );
   const [followsUserLocation, setFollowsUserLocation] = React.useState(true);
 
   const styles = createStyles(theme);
