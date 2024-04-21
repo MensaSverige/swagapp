@@ -138,6 +138,7 @@ export const resetUserCredentials = async (): Promise<boolean> => {
         Keychain.resetGenericPassword({ service: 'refreshToken' }),
         Keychain.resetGenericPassword({ service: 'accessToken' }),
         Keychain.resetGenericPassword({ service: 'credentials' }),
+        Keychain.resetGenericPassword({ service: 'accessTokenExpiry' }),
     ])
     .then(() => true)
 }
