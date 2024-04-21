@@ -20,6 +20,31 @@ export const updateUser = async (
       },
     )
 };
+
+export const uploadAvatar = async (uri: string): Promise<string> => {
+  const formData = new FormData();
+  formData.append('avatar', {
+    uri: uri,
+    name: 'avatar.jpg',
+    type: 'image/jpeg',
+  });
+  return apiClient
+    .post('/users/me/avatar', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
+    .then(
+      response => {
+        return response.data.avatar_url;
+      },
+      error => {
+        throw new Error(error.message || error);
+      },
+    )
+    .catch(error => {
+      console.error('Failed to upload avatar:', error.message || error);
+    });
+}
+
 export const tryGetCurrentUser = async (): Promise<AuthResponse | undefined> => {
   return apiClient
     .get('/users/me', { timeout: 500 })
