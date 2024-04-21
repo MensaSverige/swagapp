@@ -25,7 +25,7 @@ export const RootStackNavigation = () => {
       intervalId = setInterval(() => {
         setCheckingBackendConnection(true);
         apiClient
-          .get('health', {timeout: 200})
+          .get('/health', {timeout: 200})
           .then(() => {
             setBackendConnection(true);
           })
@@ -49,7 +49,7 @@ export const RootStackNavigation = () => {
 
   const theme = useTheme() as ICustomTheme;
   return (
-    <>
+    <>  
       <NavigationContainer>
         <Stack.Navigator initialRouteName="Start">
           <Stack.Screen

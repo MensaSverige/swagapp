@@ -4,6 +4,7 @@ import logging
 import os
 from pydantic import BaseModel, Field
 from datetime import timedelta
+from env_constants import SECRET_KEY
 from utilities import get_current_time, get_time_from_timestamp
 import jwt
 from cryptography.fernet import Fernet
@@ -31,13 +32,6 @@ def get_or_create_jwt_secret():
     :rtype: str
     """
     try:
-        SECRET_KEY = os.getenv('SECRET_KEY')
-        if SECRET_KEY is None:
-            
-            raise ValueError("SECRET_KEY environment variable not set")
-            # todo: store in config file
-            #return generate_secret_key()
-            
         return SECRET_KEY
     except ValueError as e:
         print(f"Error: {e}")

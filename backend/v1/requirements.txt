@@ -9,6 +9,7 @@ fastapi # FastAPI framework
 fastapi-health # Health checks for FastAPI
 uvicorn # ASGI server for FastAPI
 sqlalchemy # ORM for databases
+faker # Fake data generator
 
 # Documentation
 sphinx

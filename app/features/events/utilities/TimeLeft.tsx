@@ -1,7 +1,7 @@
 import {Text} from 'native-base';
 import React from 'react';
 
-const timeUntil = (
+export const timeUntil = (
   comparedTo: Date,
   dateTimeStr: string,
   long: boolean = false,

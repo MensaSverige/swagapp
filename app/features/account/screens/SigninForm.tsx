@@ -10,88 +10,76 @@ import {
   Text,
   VStack,
   useTheme,
-} from 'native-base';
-import React, {useEffect, useState, useRef} from 'react';
-import useStore from '../../common/store/store';
-import * as Keychain from 'react-native-keychain';
-import {FontAwesomeIcon} from '@fortawesome/react-native-fontawesome';
-import {faEye, faEyeSlash} from '@fortawesome/free-solid-svg-icons';
-import {TEST_MODE} from '@env';
-import { authenticate } from '../../common/services/authService';
-import { tryGetCurrentUser } from '../../account/services/userService';
-import { AuthResponse, User } from '../../../api_schema/types';
-
-
+} from "native-base";
+import React, { useEffect, useState, useRef } from "react";
+import useStore from "../../common/store/store";
+import * as Keychain from "react-native-keychain";
+import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
+import { faEye, faEyeSlash } from "@fortawesome/free-solid-svg-icons";
+import { TEST_MODE } from "@env";
+import { authenticate} from "../../common/services/authService";
+import { tryGetCurrentUser } from "../services/userService";
 export const SigninForm = () => {
   const theme = useTheme();
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [saveCredentials, setSaveCredentials] = useState(false);
-
   const [showLoginError, setShowLoginError] = useState(false);
-  const [loginErrorText, setLoginErrorText] = useState('');
-
+  const [loginErrorText, setLoginErrorText] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isTryingStoredCredentials, setIsTryingStoredCredentials] =
     useState(false);
-
-  const {testMode, backendConnection, user, setUser, setIsTryingToLogin} =
+  const { testMode, backendConnection, user, setUser, setSelectedUserId, setIsTryingToLogin } =
     useStore();
-
   useEffect(() => {
     if (!user && backendConnection) {
+      setIsLoading(true);
       tryGetCurrentUser()
-      .then((response) => {
-        if(response !== undefined) 
-          setUser(response.user);
-      })
-      .catch(error => {
-        // Handle error
-      })
-      .finally(() => {
-        setIsLoading(false);
-        setIsTryingToLogin(false);
-      });
+        .then((response) => {
+          if (response?.user !== undefined) {
+            setUser(response.user);
+            if (response.user.settings.show_location !== "NO_ONE")
+              setSelectedUserId(response.user.userId);
+            console.log("signinform")
+          }
+        })
+        .catch((error) => {
+          // Handle error
+        })
+        .finally(() => {
+          setIsLoading(false);
+          setIsTryingToLogin(false);
+        });
     }
-  }, [
-    user,
-    backendConnection
-  ]);
-
+  }, [user, backendConnection]);
   const handleLogin = async () => {
     try {
       if (saveCredentials) {
         Keychain.setGenericPassword(username, password, {
-          service: 'credentials',
+          service: "credentials",
         });
       }
     } catch (error) {
-      console.error('Save credentials error', error);
+      console.error("Save credentials error", error);
       setLoginErrorText(
-        'Något gick fel. Kunde inte spara dina inloggningsuppgifter.',
+        "Något gick fel. Kunde inte spara dina inloggningsuppgifter.",
       );
       setShowLoginError(true);
     }
-
     setIsLoading(true);
     authenticate(username, password, testMode)
       .then((response) => {
-        if(response !== undefined) 
-          setUser(response.user);
+        if (response !== undefined) setUser(response.user);
       })
-      .catch(error => {
-        console.error('Login error', error.message || error);
-        if (error.message.includes('Network Error')) {
+      .catch((error) => {
+        console.error("Login error", error.message || error);
+        if (error.message.includes("Network Error")) {
           setLoginErrorText(
-            `Det går inte att nå servern just nu. ${
-              isTryingStoredCredentials
-                ? 'Försöker igen automatiskt'
-                : 'Försök igen om en stund.'
-            }`,
+            `Det går inte att nå servern just nu. ${isTryingStoredCredentials ? "Försöker igen automatiskt" : "Försök igen om en stund."}`,
           );
         } else {
-          setLoginErrorText('Något gick fel. Försök igen senare.');
+          setLoginErrorText("Något gick fel. Försök igen senare.");
         }
         setShowLoginError(true);
       })
@@ -99,9 +87,7 @@ export const SigninForm = () => {
         setIsLoading(false);
       });
   };
-
   const cancelRef = useRef(null);
-
   return (
     <Center w="100%" h="100%">
       <Box safeArea flex={1} p={10} w="100%" mx="auto">
@@ -128,7 +114,7 @@ export const SigninForm = () => {
           <Input
             variant="filled"
             placeholder="Lösenord"
-            type={passwordVisible ? 'text' : 'password'}
+            type={passwordVisible ? "text" : "password"}
             value={password}
             onChangeText={setPassword}
             isDisabled={isLoading}
@@ -138,7 +124,8 @@ export const SigninForm = () => {
                 bg="transparent"
                 roundedLeft={0}
                 roundedRight="md"
-                onPress={() => setPasswordVisible(!passwordVisible)}>
+                onPress={() => setPasswordVisible(!passwordVisible)}
+              >
                 {passwordVisible ? (
                   <FontAwesomeIcon
                     icon={faEyeSlash}
@@ -162,8 +149,9 @@ export const SigninForm = () => {
             <Button
               mt={8}
               onPress={handleLogin}
-              isDisabled={!backendConnection}>
-              {TEST_MODE ? 'Logga in' : 'Logga in i testläge'}
+              isDisabled={!backendConnection}
+            >
+              {TEST_MODE ? "Logga in" : "Logga in i testläge"}
             </Button>
           )}
         </VStack>
@@ -172,7 +160,8 @@ export const SigninForm = () => {
           isOpen={showLoginError}
           onClose={() => {
             setShowLoginError(false);
-          }}>
+          }}
+        >
           <AlertDialog.Content>
             <AlertDialog.Header>Fel vid inloggning</AlertDialog.Header>
             <AlertDialog.Body>{loginErrorText}</AlertDialog.Body>

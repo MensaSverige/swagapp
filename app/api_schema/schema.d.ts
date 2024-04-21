@@ -21,13 +21,19 @@ export interface paths {
     /** Get User By Id */
     get: operations["get_user_by_id_v1_users__user_id__get"];
   };
-  "/v1/users_showing_location": {
-    /** Users Showing Location */
-    get: operations["users_showing_location_v1_users_showing_location_get"];
+  "/v1/users": {
+    /** Get Users */
+    get: operations["get_users_v1_users_get"];
+  };
+  "/v1/users/me/location": {
+    /** Update User Location */
+    put: operations["update_user_location_v1_users_me_location_put"];
   };
   "/v1/users/me": {
     /** Get Current User */
     get: operations["get_current_user_v1_users_me_get"];
+    /** Update Current User */
+    put: operations["update_current_user_v1_users_me_put"];
   };
   "/v1/external_events": {
     /** Get Events For User */
@@ -66,6 +72,10 @@ export interface paths {
   "/v1/user_events/{event_id}/unattend": {
     /** Unattend Event */
     post: operations["unattend_event_v1_user_events__event_id__unattend_post"];
+  };
+  "/v1/user_events/{event_id}/attendees/{attendee_id}": {
+    /** Remove Attendee */
+    delete: operations["remove_attendee_v1_user_events__event_id__attendees__attendee_id__delete"];
   };
   "/v1/user_events/{event_id}/accept_cohosting": {
     /** Accept Being Cohost */
@@ -310,7 +320,7 @@ export interface components {
      * ShowLocation
      * @enum {string}
      */
-    ShowLocation: "no_one" | "only_members_who_share_their_own_location" | "only_members" | "everyone_who_share_their_own_location" | "everyone";
+    ShowLocation: "NO_ONE" | "ALL_MEMBERS_WHO_SHARE_THEIR_OWN_LOCATION" | "ALL_MEMBERS" | "EVERYONE_WHO_SHARE_THEIR_OWN_LOCATION" | "EVERYONE";
     /** StatusResponseWithMessage */
     StatusResponseWithMessage: {
       /** Message */
@@ -465,27 +475,46 @@ export interface components {
       latitude: number;
       /** Longitude */
       longitude: number;
-      /**
-       * Timestamp
-       * Format: date
-       */
-      timestamp: string;
+      /** Timestamp */
+      timestamp: string | null;
       /** Accuracy */
       accuracy: number;
     };
     /** UserSettings */
     UserSettings: {
       /**
-       * @default no_one
-       * @example everyone
+       * @default NO_ONE
+       * @example EVERYONE
        */
       show_location?: components["schemas"]["ShowLocation"];
       /**
-       * Show Contact Info
+       * Show Email
        * @default false
        * @example true
        */
-      show_contact_info?: boolean;
+      show_email?: boolean;
+      /**
+       * Show Phone
+       * @default false
+       * @example true
+       */
+      show_phone?: boolean;
+    };
+    /** UserUpdate */
+    UserUpdate: {
+      settings: components["schemas"]["UserSettings"];
+      /**
+       * @example {
+       *   "email": "johndoe@example.com",
+       *   "phone": "+1234567890"
+       * }
+       */
+      contact_info?: components["schemas"]["ContactInfo"] | null;
+      /**
+       * Slogan
+       * @example Live and Let Live
+       */
+      slogan?: string | null;
     };
     /** ValidationError */
     ValidationError: {
@@ -587,13 +616,46 @@ export interface operations {
       };
     };
   };
-  /** Users Showing Location */
-  users_showing_location_v1_users_showing_location_get: {
+  /** Get Users */
+  get_users_v1_users_get: {
+    parameters: {
+      query?: {
+        show_location?: boolean;
+      };
+    };
     responses: {
       /** @description Successful Response */
       200: {
         content: {
-          "application/json": unknown;
+          "application/json": components["schemas"]["User"][];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  /** Update User Location */
+  update_user_location_v1_users_me_location_put: {
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["UserLocation"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["User"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
     };
@@ -605,6 +667,28 @@ export interface operations {
       200: {
         content: {
           "application/json": components["schemas"]["User"];
+        };
+      };
+    };
+  };
+  /** Update Current User */
+  update_current_user_v1_users_me_put: {
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["UserUpdate"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["User"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
     };
@@ -784,6 +868,29 @@ export interface operations {
     parameters: {
       path: {
         event_id: string;
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["StatusResponseWithMessage"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  /** Remove Attendee */
+  remove_attendee_v1_user_events__event_id__attendees__attendee_id__delete: {
+    parameters: {
+      path: {
+        event_id: string;
+        attendee_id: number;
       };
     };
     responses: {

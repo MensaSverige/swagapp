@@ -1,4 +1,7 @@
 from pymongo import MongoClient
+import os
+from env_constants import TEST_MODE
+from db.test_data import generate_fake_users
 import logging
 from typing import Type
 from pydantic import BaseModel
@@ -29,6 +32,20 @@ def initialize_db():
         tokenstorage_collection.create_index("userId", unique=True)
 
         initialize_collection(UserEvent, db)
+
+
+        # Check if in local test mode
+        if TEST_MODE.lower() == 'true':
+            #first clear the collections
+            user_collection.delete_many({})
+            tokenstorage_collection.delete_many({})
+            logging.info("Cleared all collections.")
+
+            # Generate and add fake users to the database
+            fake_users = generate_fake_users(10)  # Generate 10 fake users
+            logging.info("Adding fake users to the database.")
+            user_collection.insert_many([user.model_dump() for user in fake_users])
+
 
     except Exception as e:
         logging.error("Failed to connect to the database: %s", e)

@@ -1,20 +1,17 @@
-import React, {useEffect, useRef} from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import {
   Dimensions,
-  Linking,
   Platform,
   StyleSheet,
   TouchableOpacity,
   ScrollView,
 } from 'react-native';
-import ReactNativeMapView from 'react-native-maps';
+import ReactNativeMapView, { PanDragEvent } from 'react-native-maps';
 import {
   Box,
   Button,
   Center,
   ITheme,
-  Image,
-  Text,
   View,
   useTheme,
 } from 'native-base';
@@ -24,22 +21,14 @@ import useRequestLocationPermission from '../hooks/useRequestLocationPermission'
 import useGetUsersShowingLocation from '../hooks/useGetUsersShowingLocation';
 import lightMapstyle from '../styles/light';
 import darkMapstyle from '../styles/dark';
-import {faUser, faLocation} from '@fortawesome/free-solid-svg-icons';
-import {FontAwesomeIcon} from '@fortawesome/react-native-fontawesome';
-import TimeLeft from '../../events/utilities/TimeLeft';
+import { faLocation } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
+import ContactCard from '../components/ContactCard';
 
 const createStyles = (theme: ITheme) =>
   StyleSheet.create({
     map: {
       ...StyleSheet.absoluteFillObject,
-    },
-    refreshIndicatorsWrapper: {
-      position: 'absolute',
-      top: 0,
-      right: 0,
-      left: 0,
-      alignItems: 'center',
-      zIndex: 1,
     },
     mapControlsWrapper: {
       position: 'absolute',
@@ -54,7 +43,7 @@ const createStyles = (theme: ITheme) =>
       backgroundColor: `${theme.colors.background[500]}99`,
       borderRadius: 10,
       shadowColor: 'black',
-      shadowOffset: {width: 3, height: 3},
+      shadowOffset: { width: 3, height: 3 },
       shadowOpacity: 0.5,
       shadowRadius: 5,
       paddingHorizontal: 10,
@@ -84,28 +73,9 @@ const createStyles = (theme: ITheme) =>
       padding: 10,
       borderRadius: 10,
       shadowColor: 'black',
-      shadowOffset: {width: 3, height: 3},
+      shadowOffset: { width: 3, height: 3 },
       shadowOpacity: 0.5,
       shadowRadius: 5,
-    },
-    infoImage: {
-      borderRadius: 3,
-      width: 80,
-      height: 100,
-    },
-    infoTextWrapper: {
-      flex: 1,
-      alignContent: 'flex-start',
-      height: '100%',
-      paddingHorizontal: 10,
-    },
-    infoTitle: {
-      fontSize: 16,
-      fontWeight: 'bold',
-      color: theme.colors.text[500],
-    },
-    infoContactButton: {
-      padding: 3,
     },
   });
 
@@ -113,18 +83,20 @@ const MapView: React.FC = () => {
   const theme = useTheme();
   const mapRef = useRef<ReactNativeMapView | null>(null);
   const scrollViewRef = useRef<ScrollView | null>(null);
-  const {region, usersShowingLocation} = useStore();
-  const [mapIndex, setMapIndex] = React.useState(0);
-  const [comparisonDate, setComparisonDate] = React.useState(new Date());
-  const [followsUserLocation, setFollowsUserLocation] = React.useState(true);
-
+  const { region, usersShowingLocation, selectedUserId, setSelectedUserId } = useStore();
+  const [focusedContactCard, setFocusedContactCard] = React.useState(usersShowingLocation.findIndex(u => u.userId === selectedUserId));
   useEffect(() => {
-    const interval = setInterval(() => {
-      setComparisonDate(new Date());
-    }, 1000);
+    console.log('Map re-rendered');
+  });
 
-    return () => clearInterval(interval);
-  }, []);
+  const selectedUserKey = useMemo(() => {
+    if (selectedUserId) {
+      return `user-marker-${selectedUserId}-${Math.random()}`;
+    }
+    return '';
+  }, [selectedUserId]);
+
+  const [followsUserLocation, setFollowsUserLocation] = React.useState(true);
 
   const screenWidth = Dimensions.get('window').width;
 
@@ -133,32 +105,45 @@ const MapView: React.FC = () => {
   useRequestLocationPermission();
   useGetUsersShowingLocation();
 
-  const focusOnUserAtIndex = (index: number) => {
-    if (!usersShowingLocation || usersShowingLocation.length <= index) {
+  const focusOnUser = (userId: number) => {
+    if (!usersShowingLocation) {
       return;
     }
-    setMapIndex(index);
-    setFollowsUserLocation(false);
-    const {latitude, longitude} = usersShowingLocation[index].location;
-    mapRef.current?.animateToRegion(
-      {
-        latitude,
-        longitude,
-        latitudeDelta: region.latitudeDelta,
-        longitudeDelta: region.longitudeDelta,
-      },
-      350,
-    );
+    setFollowsUserLocation(false)
+    const loc = usersShowingLocation.find(u => u.userId === userId)?.location;
+    const index = usersShowingLocation.findIndex(u => u.userId === userId);
+    setFocusedContactCard(index);
+    if (loc) {
+      mapRef.current?.animateToRegion(
+        {
+          latitude: loc.latitude,
+          longitude: loc.longitude,
+          latitudeDelta: region.latitudeDelta,
+          longitudeDelta: region.longitudeDelta,
+        },
+        350,
+      );
+    }
+    setSelectedUserId(userId);
     const x =
-      mapIndex * (styles.infoCard.width + 10) -
+      index * (styles.infoCard.width + 10) -
       (screenWidth - styles.infoCard.width) / 2; // Calculate the x position
-    scrollViewRef.current?.scrollTo({x, animated: true});
-  };
+    scrollViewRef.current?.scrollTo({ x, animated: true });
+  }
 
   const scrollViewStyle = {
     ...styles.infoScrollViewContent,
     paddingHorizontal: Platform.OS === 'android' ? 10 : 0,
   };
+
+  function onPanDrag(event: PanDragEvent): void {
+    if (followsUserLocation !== false) {
+      setFollowsUserLocation(false);
+    }
+    if (selectedUserId !== null) {
+      setSelectedUserId(null);
+    }
+  }
 
   return (
     <Center w="100%" h="100%">
@@ -183,16 +168,11 @@ const MapView: React.FC = () => {
               );
             }
           }}
-          onPanDrag={() => {
-            setFollowsUserLocation(false);
-          }}
+          onPanDrag={onPanDrag}
           mapPadding={{
             top: 10,
             right: 10,
-            bottom:
-              styles.infoImage.height +
-              styles.infoCard.padding * 2 +
-              styles.infoScrollViewContent.padding,
+            bottom: 10,
             left: 10,
           }}
           customMapStyle={
@@ -203,16 +183,12 @@ const MapView: React.FC = () => {
           {usersShowingLocation &&
             usersShowingLocation.map(u => (
               <UserMarker
-                key={`user-marker-${u.username}-${(
-                  usersShowingLocation[mapIndex].username === u.username
-                ).toString()}`}
+                key={u.userId === selectedUserId ? selectedUserKey : `user-marker-${u.userId}`}
                 user={u}
                 zIndex={100}
-                highlighted={
-                  usersShowingLocation[mapIndex].username === u.username
-                }
+                highlighted={selectedUserId === u.userId}
                 onPress={() => {
-                  focusOnUserAtIndex(usersShowingLocation.indexOf(u));
+                  focusOnUser(u.userId);
                 }}
               />
             ))}
@@ -256,82 +232,22 @@ const MapView: React.FC = () => {
               usersShowingLocation.map(u => (
                 <TouchableOpacity
                   activeOpacity={1}
-                  key={`user-card-${u.username}`}
+                  key={`user-card-${u.userId}`}
                   onPress={() => {
-                    focusOnUserAtIndex(usersShowingLocation.indexOf(u));
+                    focusOnUser(u.userId);
                   }}
                   style={styles.infoCard}>
-                  {u.avatar_url ? (
-                    <Image
-                      alt={`Bild på ${u.name}`}
-                      source={{uri: u.avatar_url}}
-                      style={styles.infoImage}
-                    />
-                  ) : (
-                    <FontAwesomeIcon
-                      icon={faUser}
-                      size={Math.min(
-                        styles.infoImage.width,
-                        styles.infoImage.height,
-                      )}
-                      color={theme.colors.secondary[500]}
-                    />
-                  )}
-                  <Box style={styles.infoTextWrapper}>
-                    <Text style={styles.infoTitle}>{u.name}</Text>
-                    {u.location?.timestamp && (
-                      <TimeLeft
-                        comparedTo={comparisonDate}
-                        start={u.location.timestamp}
+                      <ContactCard
+                        user={u}
+                        isSelected={selectedUserId === u.userId}
                       />
-                    )}
-                    {u.show_contact_info && (
-                      <ContactButton
-                        contactInfo={u.contact_info}
-                        style={styles.infoContactButton}
-                      />
-                    )}
-                  </Box>
+
                 </TouchableOpacity>
               ))}
           </ScrollView>
         </View>
       </Box>
     </Center>
-  );
-};
-
-const ContactButton: React.FC<{
-  contactInfo: string | undefined;
-  style: any;
-}> = ({contactInfo, style}) => {
-  if (!contactInfo || contactInfo.trim() === '') {
-    return null;
-  }
-
-  let type = '';
-  if (contactInfo.replace('-', '').match(/^[0-9]*$/)) {
-    type = 'phone';
-  } else if (
-    contactInfo.match(/^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/)
-  ) {
-    type = 'email';
-  } else {
-    return <Text>{contactInfo}</Text>;
-  }
-  return (
-    <Button
-      size="xs"
-      style={style}
-      onPress={() => {
-        if (type === 'phone') {
-          Linking.openURL(`tel:${contactInfo}`);
-        } else if (type === 'email') {
-          Linking.openURL(`mailto:${contactInfo}`);
-        }
-      }}>
-      {contactInfo}
-    </Button>
   );
 };
 

@@ -3,8 +3,8 @@ import Geolocation from '@react-native-community/geolocation';
 import {useEffect, useRef} from 'react';
 import {
   updateUserLocation,
-  LocationUpdateData,
 } from '../services/locationService';
+import { UserLocation } from '../../../api_schema/types';
 
 const useUserLocation = () => {
   const {user, locationUpdateInterval, hasLocationPermission, setUserLocation} =
@@ -13,6 +13,7 @@ const useUserLocation = () => {
   const intervalRef = useRef<NodeJS.Timeout>();
 
   useEffect(() => {
+    console.log('useUserLocation rerunning');
     // Make sure there is only one interval running
     if (intervalRef.current) {
       clearInterval(intervalRef.current);
@@ -27,25 +28,24 @@ const useUserLocation = () => {
           const {latitude, longitude} = position.coords;
           if (
             user &&
-            user.username !== undefined &&
+            user.userId !== undefined &&
             latitude !== undefined &&
             longitude !== undefined
           ) {
             setUserLocation(latitude, longitude);
-            if (user.show_location) {
-              const locationUpdateData: LocationUpdateData = {
-                username: user.username,
-                location: {
+            if (user.settings.show_location !== "NO_ONE") {
+              const locationUpdateData: UserLocation = {
                   latitude: latitude,
                   longitude: longitude,
-                },
+                  timestamp: null,
+                  accuracy: position.coords.accuracy,
               };
               updateUserLocation(locationUpdateData);
             }
           }
         },
         e => {
-          console.error('Geolocation.getCurrentPosition error: ', e);
+          //console.error('Geolocation.getCurrentPosition error: ', e);
         },
         {enableHighAccuracy: true, timeout: 15000, maximumAge: 10000},
       );
@@ -53,7 +53,7 @@ const useUserLocation = () => {
 
     fetchLocation();
     intervalRef.current = setInterval(fetchLocation, locationUpdateInterval);
-  }, [locationUpdateInterval, hasLocationPermission, setUserLocation, user]);
+  }, [locationUpdateInterval, hasLocationPermission, user?.settings.show_location]);
 };
 
 export default useUserLocation;

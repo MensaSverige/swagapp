@@ -1,7 +1,7 @@
 import requests
 import logging
 from fastapi import HTTPException
-from external.env_constants import LOGINM_SEED, URL_MEMBER_API
+from env_constants import LOGINM_SEED, URL_MEMBER_API
 from utilities import calc_hash, get_current_time_formatted
 
 

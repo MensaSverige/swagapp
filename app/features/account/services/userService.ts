@@ -1,21 +1,16 @@
 import apiClient from '../../common/services/apiClient';
+import { UserUpdate } from '../../../api_schema/types';
 import { AuthResponse, User } from '../../../api_schema/types';
 import * as Keychain from 'react-native-keychain';
+import { attemptLoginWithStoredCredentials } from '../../common/services/authService';
 
 
 export const updateUser = async (
-  user: User,
-  showLocation: boolean,
-  showContactInfo: boolean,
-  contactInfo: string,
-) => {
+  userUpdate: UserUpdate
+): Promise<User> => {
+  console.log('updating user', userUpdate)
   return apiClient
-    .put('/user/' + user.userId, {
-      ...user,
-      show_location: showLocation,
-      show_contact_info: showContactInfo,
-      contact_info: contactInfo,
-    })
+    .put('/users/me', userUpdate)
     .then(
       response => {
         return response.data;
@@ -24,10 +19,30 @@ export const updateUser = async (
         throw new Error(error.message || error);
       },
     )
-    .catch(error => {
-      console.error('Failed to update profile:', error.message || error);
-    });
 };
+export const tryGetCurrentUser = async (): Promise<AuthResponse | undefined> => {
+  return apiClient
+    .get('/users/me', { timeout: 500 })
+    .then(response => {
+      if (response.status === 200) {
+        const authresponse: AuthResponse = response.data;
+        return storeAndValidateAuthResponse(authresponse);
+      } else {
+        return response.data().then((data: any) => {
+          throw new Error(`Could not get user object. Data: ${data}`);
+        });
+      }
+    })
+    .catch(error => {
+      if (!error.message.includes('Network Error')) {
+        // Error was not Network Error, which means login failed due to invalid token.
+        // Attempt to login with stored credentials.
+        return attemptLoginWithStoredCredentials();
+      }
+    });
+
+}
+
 export const getUser = async (userName: string): Promise<User> => {
   if (!userName) {
     return Promise.reject('No username provided');
@@ -51,41 +66,8 @@ export const getUser = async (userName: string): Promise<User> => {
     });
 };
 
-export const tryGetCurrentUser = async () : Promise<AuthResponse | undefined> => {
-  return Keychain.getAllGenericPasswordServices().then(allSavedCredentials => {
-      if (
-          allSavedCredentials.some(
-              credential =>
-                  credential === 'accessToken' ||
-                  credential === 'refreshToken' ||
-                  credential === 'credentials',
-          )
-      ) {
-          return apiClient
-              .get('/users/me', { timeout: 500 })
-              .then(response => {
-                  if (response.status === 200) {
-                      const authresponse: AuthResponse = response.data;
-                      return storeAndValidateAuthResponse(authresponse);
-                  } else {
-                      return response.data().then((data: any) => {
-                          throw new Error(`Could not get user object. Data: ${data}`);
-                      });
-                  }
-              })
-              .catch(error => {
-                  if (!error.message.includes('Network Error')) {
-                      // Error was not Network Error, which means login failed due to invalid credentials.
-                      Keychain.resetGenericPassword();
-                  }
-                  throw error;
-              });
-      } else {
-          throw new Error('No saved credentials found');
-      }
-  });
-}
-function storeAndValidateAuthResponse(authresponse: { accessToken: string; refreshToken: string; accessTokenExpiry: string; user: { userId: number; isMember?: boolean | undefined; show_location?: boolean | undefined; show_contact_info?: boolean | undefined; age?: number | null | undefined; slogan?: string | null | undefined; avatar_url?: string | null | undefined; firstName?: string | null | undefined; lastName?: string | null | undefined; email?: string | null | undefined; phone?: string | null | undefined; }; }): any {
+
+function storeAndValidateAuthResponse(authresponse: { accessToken: string; refreshToken: string; accessTokenExpiry: string; user: { userId: number; isMember?: boolean | undefined; settings: { show_location?: "NO_ONE" | "ALL_MEMBERS_WHO_SHARE_THEIR_OWN_LOCATION" | "ALL_MEMBERS" | "EVERYONE_WHO_SHARE_THEIR_OWN_LOCATION" | "EVERYONE" | undefined; show_email?: boolean | undefined; show_phone?: boolean | undefined; }; location?: { latitude: number; longitude: number; timestamp: string | null; accuracy: number; } | null | undefined; contact_info?: { email?: string | null | undefined; phone?: string | null | undefined; } | null | undefined; age?: number | null | undefined; slogan?: string | null | undefined; avatar_url?: string | null | undefined; firstName?: string | null | undefined; lastName?: string | null | undefined; }; }): any {
   throw new Error('Function not implemented.');
 }
 

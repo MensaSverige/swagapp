@@ -9,8 +9,10 @@ npx openapi-typescript http://{{api-url}}/openapi.json -o ./api_schema/schema.d.
 export type AuthRequest = components['schemas']['AuthRequest'];
 export type AuthResponse = components['schemas']['AuthResponse'];
 export type User = components['schemas']['User'];
-export type ExternalEvent = components['schemas']['ExternalEvent'];
-export type HTTPValidationError = components['schemas']['HTTPValidationError'];
-export type ValidationError = components['schemas']['ValidationError'];
 export type UserEvent = components['schemas']['UserEvent'];
 export type ExtendedUserEvent = components['schemas']['ExtendedUserEvent'];
+export type UserUpdate = components["schemas"]["UserUpdate"];
+export type UserLocation = components["schemas"]["UserLocation"];
+export type ExternalEvent = components["schemas"]["ExternalEvent"];
+export type HTTPValidationError = components["schemas"]["HTTPValidationError"];
+export type ValidationError = components["schemas"]["ValidationError"];

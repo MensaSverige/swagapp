@@ -76,6 +76,7 @@ export const authenticate = async (username: string, password: string, testMode:
         });
 }
 
+
 export const getOrRefreshAccessToken = async (): Promise<string> => {
     const accessToken = await Keychain.getGenericPassword({ service: 'accessToken' })
     const accessTokenExpiry = await Keychain.getGenericPassword({ service: 'accessTokenExpiry' })
@@ -83,11 +84,10 @@ export const getOrRefreshAccessToken = async (): Promise<string> => {
 
     if (accessToken && accessTokenExpiry && refreshToken) {
         const tokenExpiryDate = new Date(accessTokenExpiry.password);
-        console.log('Access token expiry', tokenExpiryDate);
-        console.log('Current time', new Date());
         if (new Date() > new Date(tokenExpiryDate.getTime() - 60 * 1000)) { // refresh 60 seconds before expiry
             try {
                 const newAccessToken = await refreshAccessToken(refreshToken.password);
+                console.log('Refreshed access token');
                 return newAccessToken;
             } catch (error) {
                 console.log('Error refreshing access token', error);
@@ -130,9 +130,7 @@ export const attemptLoginWithStoredCredentials = async (): Promise<AuthResponse 
         .catch((error: Error) => {
             console.error('Login with stored credentials failed', error);
             return Promise.all([
-                Keychain.resetGenericPassword({ service: 'accessToken' }),
                 Keychain.resetGenericPassword({ service: 'credentials' }),
-                Keychain.resetGenericPassword({ service: 'accessTokenExpiry' }),
             ]).then(() => Promise.reject('Login failed'));
         });
 }

@@ -1,21 +1,17 @@
 import {User} from '../../common/types/user';
 import apiClient from '../../common/services/apiClient';
 import UserWithLocation, {isUserWithLocation} from '../types/userWithLocation';
+import { UserLocation } from '../../../api_schema/types';
 
-export interface LocationUpdateData {
-  username: string;
-  location: {
-    latitude: number;
-    longitude: number;
-  };
-}
+
 
 export const getUserLocations = async (): Promise<UserWithLocation[]> => {
   return apiClient
-    .get('/users_showing_location')
+  .get('/users', { params: { show_location: true } })
     .then(
       response => {
         if (response.data) {
+          console.log('fetching new user locations');
           return response.data.filter(isUserWithLocation);
         }
         return [];
@@ -29,9 +25,10 @@ export const getUserLocations = async (): Promise<UserWithLocation[]> => {
     });
 };
 
-export const updateUserLocation = async (data: LocationUpdateData) => {
+export const updateUserLocation = async (data: UserLocation) => {
+  console.log('Updating location:', data);
   return apiClient
-    .post('/update_user_location', JSON.stringify(data))
+    .put('/users/me/location', data)
     .then(
       () => {
         console.log('Location updated successfully');
