@@ -1,6 +1,7 @@
 import {Region} from 'react-native-maps';
 import UserWithLocation from '../types/userWithLocation';
 import {StateCreator} from 'zustand';
+
 interface Location {
   longitude: number;
   latitude: number;
@@ -12,12 +13,12 @@ export interface LocationSlice {
   region: Region;
   showlocation: boolean;
   usersShowingLocation: UserWithLocation[];
-  selectedUserId: number | null;
+  selectedUser: UserWithLocation | null;
   setUsersShowingLocation: (users: UserWithLocation[]) => void;
   setHasLocationPermission: (hasLocationPermission: boolean) => void;
   setRegion: (region: Region) => void;
   setUserLocation: (longitude: number, latitude: number) => void;
-  setSelectedUserId: (user: number | null) => void;
+  setSelectedUser: (user: UserWithLocation | null) => void;
 }
 
 export const createLocationSlice: StateCreator<LocationSlice> = (set, get) => ({
@@ -35,7 +36,7 @@ export const createLocationSlice: StateCreator<LocationSlice> = (set, get) => ({
   },
   showlocation: false,
   usersShowingLocation: [],
-  selectedUserId: null,
+  selectedUser: null,
   setUsersShowingLocation: usersShowingLocation => set({usersShowingLocation}),
   setHasLocationPermission: hasLocationPermission =>
     set({hasLocationPermission}),
@@ -48,5 +49,5 @@ export const createLocationSlice: StateCreator<LocationSlice> = (set, get) => ({
         latitude,
       },
     })),
-  setSelectedUserId: selectedUserId => set({selectedUserId}),
+  setSelectedUser: user => set({selectedUser: user}),
 });

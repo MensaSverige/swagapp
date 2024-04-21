@@ -1,13 +1,9 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  Dimensions,
-  Platform,
   StyleSheet,
-  TouchableOpacity,
-  ScrollView,
   Image,
 } from 'react-native';
-import ReactNativeMapView, { PanDragEvent } from 'react-native-maps';
+import ReactNativeMapView from 'react-native-maps';
 import {
   Box,
   Button,
@@ -26,7 +22,7 @@ import { faLocation } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import ContactCard from '../components/ContactCard';
 import { getFullUrl } from '../../common/functions/GetFullUrl';
-import { set } from '@gluestack-style/react';
+import UserWithLocation from '../types/userWithLocation';
 
 const createStyles = (theme: ITheme) =>
   StyleSheet.create({
@@ -52,110 +48,76 @@ const createStyles = (theme: ITheme) =>
       paddingHorizontal: 10,
       paddingVertical: 10,
     },
-    infoWrapper: {
-      position: 'absolute',
-      bottom: 0,
-      left: 0,
-      right: 0,
-      zIndex: 1,
-      backgroundColor: 'transparent',
-    },
-    infoScrollView: {
-      backgroundColor: 'transparent',
-    },
-    infoScrollViewContent: {
-      backgroundColor: 'transparent',
-      padding: 10,
-      gap: 10,
-    },
-    infoCard: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      backgroundColor: theme.colors.background[500],
-      width: 330,
-      padding: 10,
-      borderRadius: 10,
-      shadowColor: 'black',
-      shadowOffset: { width: 3, height: 3 },
-      shadowOpacity: 0.5,
-      shadowRadius: 5,
-    },
   });
 
 const MapView: React.FC = () => {
   const theme = useTheme();
   const mapRef = useRef<ReactNativeMapView | null>(null);
-  const scrollViewRef = useRef<ScrollView | null>(null);
-  const { region, usersShowingLocation, selectedUserId, setSelectedUserId } = useStore();
-  const [focusedContactCard, setFocusedContactCard] = React.useState(usersShowingLocation.findIndex(u => u.userId === selectedUserId));
+  const { region, usersShowingLocation, selectedUser, setSelectedUser } = useStore();
+  const [showContactCard, setShowContactCard] = useState(false);
   const [isImagesLoaded, setIsImagesLoaded] = useState(false);
 
   // Prefetch images so they are ready to be displayed
   useEffect(() => {
+    console.log('Loading images');
     setIsImagesLoaded(false);
-    usersShowingLocation.forEach(user => {
-      if (user.avatar_url) {
-        Image.prefetch(getFullUrl(user.avatar_url));
-      }
-    });
-    setIsImagesLoaded(true);
-  }, [usersShowingLocation]);
 
-  const selectedUserKey = useMemo(() => {
-    if (selectedUserId) {
-      return `user-marker-${selectedUserId}-${Math.random()}`;
-    }
-    return '';
-  }, [selectedUserId]);
+    const loadImages = usersShowingLocation.map(user => {
+      if (user.avatar_url) {
+        return Image.prefetch(getFullUrl(user.avatar_url));
+      }
+      return Promise.resolve();
+    });
+
+    Promise.all(loadImages)
+      .then(() => {
+        setIsImagesLoaded(true);
+        console.log('Images loaded');
+      })
+      .catch((error) => console.log("Failed to load images", error));
+
+  }, []);
 
   const [followsUserLocation, setFollowsUserLocation] = React.useState(true);
-
-  const screenWidth = Dimensions.get('window').width;
 
   const styles = createStyles(theme);
 
   useRequestLocationPermission();
   useGetUsersShowingLocation();
 
-  const focusOnUser = (userId: number) => {
+  const onClose = useMemo(() => () => {
+    setShowContactCard(false);
+    setSelectedUser(null);
+  }, [selectedUser, showContactCard]);
+
+  const focusOnUser = (user: UserWithLocation) => {
+    setSelectedUser(user);
+    setShowContactCard(true);
     if (!usersShowingLocation) {
       return;
     }
     setFollowsUserLocation(false)
-    const loc = usersShowingLocation.find(u => u.userId === userId)?.location;
-    const index = usersShowingLocation.findIndex(u => u.userId === userId);
-    setFocusedContactCard(index);
-    if (loc) {
+    if (user.location) {
       mapRef.current?.animateToRegion(
         {
-          latitude: loc.latitude,
-          longitude: loc.longitude,
+          latitude: user.location.latitude,
+          longitude: user.location.longitude,
           latitudeDelta: region.latitudeDelta,
           longitudeDelta: region.longitudeDelta,
         },
         350,
       );
     }
-    setSelectedUserId(userId);
-    const x =
-      index * (styles.infoCard.width + 10) -
-      (screenWidth - styles.infoCard.width) / 2; // Calculate the x position
-    scrollViewRef.current?.scrollTo({ x, animated: true });
   }
 
-  const scrollViewStyle = {
-    ...styles.infoScrollViewContent,
-    paddingHorizontal: Platform.OS === 'android' ? 10 : 0,
-  };
-
-  function onPanDrag(event: PanDragEvent): void {
+  const resetSelectedUser = useMemo(() => () => {
     if (followsUserLocation !== false) {
       setFollowsUserLocation(false);
     }
-    if (selectedUserId !== null) {
-      setSelectedUserId(null);
+    if (selectedUser !== null) {
+      setSelectedUser(null);
     }
-  }
+  }, [followsUserLocation, selectedUser]);
 
   return (
     <Center w="100%" h="100%">
@@ -180,7 +142,8 @@ const MapView: React.FC = () => {
               );
             }
           }}
-          onPanDrag={onPanDrag}
+          onPanDrag={resetSelectedUser}
+          onPress={resetSelectedUser}
           mapPadding={{
             top: 10,
             right: 10,
@@ -192,15 +155,15 @@ const MapView: React.FC = () => {
               ? darkMapstyle
               : lightMapstyle
           }>
-          {usersShowingLocation &&
+          {usersShowingLocation && isImagesLoaded &&
             usersShowingLocation.map(u => (
               <UserMarker
-                key={u.userId === selectedUserId ? selectedUserKey : `user-marker-${u.userId}`}
+                imageLoaded={isImagesLoaded}
                 user={u}
                 zIndex={100}
-                highlighted={selectedUserId === u.userId}
+                highlighted={selectedUser?.userId === u.userId}
                 onPress={() => {
-                  focusOnUser(u.userId);
+                  focusOnUser(u);
                 }}
               />
             ))}
@@ -223,42 +186,15 @@ const MapView: React.FC = () => {
             />
           </Button>
         </View>
-        <View style={styles.infoWrapper}>
-          <ScrollView
-            ref={scrollViewRef}
-            horizontal
-            pagingEnabled
-            scrollEventThrottle={1}
-            showsHorizontalScrollIndicator={true}
-            snapToInterval={styles.infoCard.width + 10}
-            snapToAlignment={'center'}
-            contentInset={{
-              top: 0,
-              left: 10,
-              bottom: 0,
-              right: 10,
-            }}
-            style={styles.infoScrollView}
-            contentContainerStyle={scrollViewStyle}>
-            {usersShowingLocation &&
-              usersShowingLocation.map(u => (
-                <TouchableOpacity
-                  activeOpacity={1}
-                  key={`user-card-${u.userId}`}
-                  onPress={() => {
-                    focusOnUser(u.userId);
-                  }}
-                  style={styles.infoCard}>
-                  <ContactCard
-                    user={u}
-                    isSelected={selectedUserId === u.userId}
-                  />
-
-                </TouchableOpacity>
-              ))}
-          </ScrollView>
-        </View>
       </Box>
+      {selectedUser && showContactCard &&
+        <ContactCard
+          key={selectedUser.userId}
+          user={selectedUser}
+          showCard={showContactCard}
+          onClose={onClose}
+        />
+      }
     </Center>
   );
 };

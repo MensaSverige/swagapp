@@ -9,11 +9,11 @@ fake = Faker()
 
 def generate_fake_users(n: int) -> List[User]:
     users = []
-    for _ in range(n):
+    for i in range(n):
         lat, long = generate_random_lat_long(59.26925456856207, 15.20632088460749, 0.01)
         user = User(
-            userId=fake.random_int(min=1, max=1000),
-            isMember=fake.boolean(),
+            userId=int(f"{i}{random.randint(100, 999)}"),
+            isMember=True,
             settings=UserSettings(
                 show_location=fake.random_element(elements=(ShowLocation.ALL_MEMBERS, ShowLocation.ALL_MEMBERS_WHO_SHARE_THEIR_OWN_LOCATION, ShowLocation.NO_ONE)),
                 show_email=fake.boolean(),
