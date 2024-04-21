@@ -127,18 +127,17 @@ export const attemptLoginWithStoredCredentials = async (): Promise<AuthResponse 
         })
         .catch((error: Error) => {
             console.error('Login with stored credentials failed', error);
-            return Promise.all([
-                Keychain.resetGenericPassword({ service: 'credentials' }),
-            ]).then(() => Promise.reject('Login failed'));
+            return Keychain.resetGenericPassword({ service: 'credentials' })
+            .then(() => Promise.reject('Login failed'));
         });
 }
 
 export const resetUserCredentials = async (): Promise<boolean> => {
     return Promise.all([
-        Keychain.resetGenericPassword({ service: 'refreshToken' }),
         Keychain.resetGenericPassword({ service: 'accessToken' }),
-        Keychain.resetGenericPassword({ service: 'credentials' }),
         Keychain.resetGenericPassword({ service: 'accessTokenExpiry' }),
+        Keychain.resetGenericPassword({ service: 'credentials' }),
+        Keychain.resetGenericPassword({ service: 'refreshToken' }),
     ])
     .then(() => true)
 }
@@ -148,11 +147,11 @@ export const storeAndValidateAuthResponse = async (authresponse: AuthResponse): 
         await Keychain.setGenericPassword('accessToken', authresponse.accessToken, {
             service: 'accessToken',
         });
-        await Keychain.setGenericPassword('refreshToken', authresponse.refreshToken, {
-            service: 'refreshToken',
-        });
         await Keychain.setGenericPassword('accessTokenExpiry', authresponse.accessTokenExpiry.toString(), {
             service: 'accessTokenExpiry',
+        });
+        await Keychain.setGenericPassword('refreshToken', authresponse.refreshToken, {
+            service: 'refreshToken',
         });
 
         if (authresponse.user !== null && authresponse.user !== undefined) {
