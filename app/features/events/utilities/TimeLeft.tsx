@@ -1,4 +1,4 @@
-import {Text} from 'native-base';
+import { Text } from 'native-base';
 import React from 'react';
 
 export const timeUntil = (
@@ -17,34 +17,28 @@ export const timeUntil = (
 
   if (!long) {
     if (days > 0) {
-      return `${days}d`;
+      return `${days} ${days > 1 ? 'dagar' : 'dag'}`;
     } else if (hours > 0) {
-      return `${hours}t`;
+      return `${hours} ${hours !== 1 ? 'timmar' : 'timme'}`;
     } else if (minutes > 0) {
-      return `${minutes}m`;
+      return `${minutes} ${minutes !== 1 ? 'minuter' : 'minut'}`;
     } else {
-      return `${seconds}s`;
+      return `${seconds} ${seconds !== 1 ? 'sekunder' : 'sekund'}`;
     }
   } else {
     // Show all units that are not zero
     let timeLeft = '';
     if (days !== 0) {
-      timeLeft += `${days} dag${days > 1 ? 'ar' : ''}`;
+      timeLeft += `${days} ${days > 1 ? 'dagar' : 'dag'}`;
     }
     if (hours > 0) {
-      timeLeft += `${timeLeft === '' ? '' : ', '}${hours} timma${
-        hours !== 1 ? 'r' : ''
-      }`;
+      timeLeft += `${timeLeft === '' ? '' : ', '}${hours} ${hours !== 1 ? 'timmar' : 'timme'}`;
     }
     if (minutes > 0) {
-      timeLeft += `${timeLeft === '' ? '' : ', '}${minutes} minut${
-        minutes !== 1 ? 'er' : ''
-      }`;
+      timeLeft += `${timeLeft === '' ? '' : ', '}${minutes} ${minutes !== 1 ? 'minuter' : 'minut'}`;
     }
     if (hours === 0 && minutes < 10) {
-      timeLeft += `${timeLeft === '' ? '' : ', '}${seconds} sekund${
-        seconds !== 1 ? 'er' : ''
-      }`;
+      timeLeft += `${timeLeft === '' ? '' : ', '}${seconds} ${seconds !== 1 ? 'sekunder' : 'sekund'}`;
     }
     return timeLeft;
   }
@@ -55,7 +49,7 @@ const TimeLeft: React.FC<{
   start: string;
   end?: string;
   long?: boolean;
-}> = ({comparedTo, start, end, long}) => {
+}> = ({ comparedTo, start, end, long }) => {
   let text = '';
   if (new Date(start) > new Date()) {
     text = `om ${timeUntil(comparedTo, start, long ?? false)}`;
