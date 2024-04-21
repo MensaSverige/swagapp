@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { HStack, VStack, Heading, Pressable, Text, Modal, ModalContent, ModalHeader, ModalCloseButton, ModalBody, ModalFooter, Icon, CloseIcon } from '../../../gluestack-components';
+import { HStack, VStack, Heading, Pressable, Text, Modal, ModalContent, ModalCloseButton, ModalBody, Icon, CloseIcon } from '../../../gluestack-components';
 import { Linking } from 'react-native';
 import UserWithLocation from '../types/userWithLocation';
 import { timeUntil } from '../../events/utilities/TimeLeft';
 import { gluestackUIConfig } from '../../../gluestack-components/gluestack-ui.config';
 import UserAvatar, { getOnlineStatusColor } from './UserAvatar';
+import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
+import { faEnvelope, faPhone } from '@fortawesome/free-solid-svg-icons';
 
 type ContactCardProps = {
     user: UserWithLocation;
@@ -46,42 +48,47 @@ const ContactCard: React.FC<ContactCardProps> = ({ user, showCard, onClose }) =>
             }}
         >
             <ModalContent>
-  
-                <ModalBody>
-                <ModalCloseButton style={{ alignItems: 'flex-end' }}>
+
+                <ModalBody >
+                    <ModalCloseButton style={{ alignItems: 'flex-end' }}>
                         <Icon as={CloseIcon} />
                     </ModalCloseButton>
-                    <HStack space="xl">
-                        
+                    <HStack space="xl" >
+
                         <UserAvatar firstName={user.firstName} lastName={user.lastName} avatar_url={user.avatar_url} onlineStatus={user.onlineStatus} />
-                        <VStack>
+                        <VStack style={{ flex: 1 }}>
                             <Heading size="sm" color={gluestackUIConfig.tokens.colors.primary200} >{user.firstName} {user.lastName}</Heading>
                             {user.location.timestamp &&
                                 <Text color={getOnlineStatusColor(user.onlineStatus)}>{timeUntil(comparisonDate, user.location.timestamp, true)} sedan</Text>
                             }
-                            {user.contact_info?.email && user.contact_info.email.trim() !== '' && (
-                                <Pressable
-                                    onPress={() => {
-                                        Linking.openURL(`mailto:${user.contact_info?.email}`);
-                                    }}
-                                >
-                                    <Text>{user.contact_info.email} </Text>
-                                </Pressable>
-                            )}
+
+                            <HStack space="xl" style={{ flex: 1, marginTop: 10, marginBottom: 20, marginRight: 30, alignItems: 'center', justifyContent: 'flex-end' }}>
                             {user.contact_info?.phone && user.contact_info.phone.trim() !== '' && (
-                                <Pressable
-                                    onPress={() => {
-                                        Linking.openURL(`tel:${user.contact_info?.phone}`);
-                                    }}
-                                >
-                                    <Text>{user.contact_info.phone}</Text>
-                                </Pressable>
-                            )}
+                                    <Pressable
+                                        style={{ marginRight: 10 }}
+                                        onPress={() => {
+                                            Linking.openURL(`tel:${user.contact_info?.phone}`);
+                                        }}
+                                    >
+                                        <FontAwesomeIcon icon={faPhone} size={24} color={gluestackUIConfig.tokens.colors.warmGray300} />
+                                    </Pressable>
+                                )}
+                                {user.contact_info?.email && user.contact_info.email.trim() !== '' && (
+                                    <Pressable
+                                        
+                                        onPress={() => {
+                                            Linking.openURL(`mailto:${user.contact_info?.email}`);
+                                        }}
+                                    >
+                                        <FontAwesomeIcon icon={faEnvelope} size={28} color={gluestackUIConfig.tokens.colors.warmGray300} />
+                                    </Pressable>
+                                )}
+
+
+                            </HStack>
                         </VStack>
                     </HStack>
                 </ModalBody>
-                <ModalFooter>
-                </ModalFooter>
             </ModalContent>
         </Modal>
     );
