@@ -54,6 +54,7 @@ const MapView: React.FC = () => {
   const theme = useTheme();
   const mapRef = useRef<ReactNativeMapView | null>(null);
   const { region, usersShowingLocation, selectedUser, setSelectedUser } = useStore();
+  const [visibleRegion, setVisibleRegion] = useState(region);
   const [showContactCard, setShowContactCard] = useState(false);
   const [isImagesLoaded, setIsImagesLoaded] = useState(false);
 
@@ -142,6 +143,7 @@ const MapView: React.FC = () => {
               );
             }
           }}
+          onRegionChangeComplete={setVisibleRegion}
           onPanDrag={resetSelectedUser}
           onPress={resetSelectedUser}
           mapPadding={{
@@ -156,17 +158,25 @@ const MapView: React.FC = () => {
               : lightMapstyle
           }>
           {usersShowingLocation && isImagesLoaded &&
-            usersShowingLocation.map(u => (
-              <UserMarker
-                imageLoaded={isImagesLoaded}
-                user={u}
-                zIndex={100}
-                highlighted={selectedUser?.userId === u.userId}
-                onPress={() => {
-                  focusOnUser(u);
-                }}
-              />
-            ))}
+            usersShowingLocation
+              .filter(u =>
+                u.location.latitude >= visibleRegion.latitude - visibleRegion.latitudeDelta * 5 &&
+                u.location.latitude <= visibleRegion.latitude + visibleRegion.latitudeDelta * 5 &&
+                u.location.longitude >= visibleRegion.longitude - visibleRegion.longitudeDelta * 5 &&
+                u.location.longitude <= visibleRegion.longitude + visibleRegion.longitudeDelta * 5
+              )
+              .map(u => (
+                <UserMarker
+                  key={u.userId}
+                  imageLoaded={isImagesLoaded}
+                  user={u}
+                  zIndex={100}
+                  highlighted={selectedUser?.userId === u.userId}
+                  onPress={() => {
+                    focusOnUser(u);
+                  }}
+                />
+              ))}
         </ReactNativeMapView>
         <View style={styles.mapControlsWrapper}>
           <Button
