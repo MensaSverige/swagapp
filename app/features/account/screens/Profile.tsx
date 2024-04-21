@@ -11,30 +11,19 @@ import {
   Text,
   Image,
   ScrollView,
-  Switch,
-  Spinner,
-  Icon,
-  Select, SelectBackdrop, SelectContent, SelectDragIndicator, SelectDragIndicatorWrapper, SelectIcon, SelectInput, SelectItem, SelectPortal, SelectTrigger, ChevronDownIcon,
-  HStack,
-  Avatar,
-  AvatarFallbackText,
-  AvatarImage,
-  Box,
   View,
   Heading,
   InputField,
-  ButtonText,
-  ButtonIcon,
   Card,
   useToast,
+  Divider,
 } from '../../../gluestack-components';
-import { faPlus, faUser, faEye, faEyeSlash } from '@fortawesome/free-solid-svg-icons';
+import { faPlus, faUser } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import useStore from '../../common/store/store';
-import * as Keychain from 'react-native-keychain';
 import Field from '../../common/components/Field';
 import Fields from '../../common/components/Fields';
-import { Platform, SafeAreaView, StyleSheet } from 'react-native';
+import { ActivityIndicator, Platform, SafeAreaView, StyleSheet } from 'react-native';
 import { updateUser } from '../services/userService';
 import { User, UserUpdate } from '../../../api_schema/types';
 import { gluestackUIConfig } from '../../../gluestack-components/gluestack-ui.config';
@@ -45,11 +34,10 @@ import ShowSettingsLabelIcon from '../../common/components/ShowSettingsLabelIcon
 import AutosaveSuccessToast from '../../common/components/AutosaveSuccessToast';
 import AutosaveErrorToast from '../../common/components/AutosaveErrorToast';
 import AutosaveToast from '../../common/components/AutosaveToast';
-
+import { resetUserCredentials } from '../../common/services/authService';
 
 const Profile: React.FC = () => {
-  // Get current user and token from Zustand store
-  const { user, setUser, backendConnection } = useStore();
+  const { user, setUser } = useStore();
   const getFormStateFromUser = (user: User) => ({
     contact_info: {
       email: user?.contact_info?.email || '',
@@ -64,7 +52,6 @@ const Profile: React.FC = () => {
   const [formState, setFormState] = useState<UserUpdate>(getFormStateFromUser(user as User));
 
   const colorMode = useColorMode()
-  const theme = useTheme();
   const toast = useToast();
   const styles = createStyles();
 
@@ -80,8 +67,20 @@ const Profile: React.FC = () => {
     setIsEditing(false);
   };
 
+  function handleLogout(): void {
+    setIsLoading(true);
+    resetUserCredentials().then(() => {
+      setUser(null);
+    })
+      .catch((error) => console.error('Error logging out', error)
+      ).finally(() => {
+        setIsLoading(false);
+      }
+      );
+  }
+
   useEffect(() => {
-    
+
     if (!formState || isEditing) {
       return;
     }
@@ -140,12 +139,13 @@ const Profile: React.FC = () => {
         .finally(() => {
         });
     }, 1000); // Delay of 1 second
-    
+
   }
 
   if (!user) {
     return null;
   }
+
 
   return (
     //<SafeAreaView style={styles.viewContainer}>
@@ -338,11 +338,13 @@ const Profile: React.FC = () => {
                 )}
               </Card>
             </Fields>
+            <Divider style={{ marginTop: 20, marginBottom: 10 }} />
+            <Button size="sm" action="primary" onPress={() => handleLogout()}>
+              <Text color="white">Logga ut</Text>
+              <ActivityIndicator size="small" color="white" animating={isLoading} />
+            </Button>
           </VStack>
         </ScrollView>
-        {/* <Button size="sm" onPress={() => handleLogout()}>
-              <Text color="white">Logga ut</Text>
-            </Button> */}
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
