@@ -3,6 +3,7 @@ import logging
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 import logging
+from db.review_users import check_review_user_creds
 from utilities import convert_string_to_datetime
 from external.auth_api import loginm
 from db.external_token_storage import save_external_token
@@ -11,6 +12,7 @@ from db.models.user import User
 from db.users import create_user, get_user
 
 auth_v1 = APIRouter(prefix="/v1")
+
 
 class AuthRequest(BaseModel):
     username: str
@@ -23,9 +25,13 @@ class AuthResponse(BaseModel):
     accessTokenExpiry: datetime
     user: User
 
+
 @auth_v1.post("/authm")
 def authm(request: AuthRequest) -> AuthResponse:
-    response = loginm(request.username, request.password)
+    response = check_review_user_creds(request.username, request.password)
+
+    if not response:
+        response = loginm(request.username, request.password)
 
     logging.info(f"response_json: {response}")
     try:
@@ -37,16 +43,17 @@ def authm(request: AuthRequest) -> AuthResponse:
         print("memberId not found in response")
         raise HTTPException(status_code=400, detail="Invalid credentials")
 
-    save_external_token(user["userId"], response["token"], convert_string_to_datetime(response["validThrough"]))
+    save_external_token(user["userId"], response["token"],
+                        convert_string_to_datetime(response["validThrough"]))
     accesstoken = create_access_token(user["userId"])
 
     authresponse = AuthResponse(
         accessToken=accesstoken,
         refreshToken=create_refresh_token(user["userId"]),
         accessTokenExpiry=get_token_expiry(accesstoken),
-        user=user
-    )
+        user=user)
     return authresponse
+
 
 @auth_v1.post("/refresh_token")
 def refresh_token(refresh_token: str) -> AuthResponse:
@@ -61,8 +68,7 @@ def refresh_token(refresh_token: str) -> AuthResponse:
             accessToken=accesstoken,
             refreshToken=create_refresh_token(user["userId"]),
             accessTokenExpiry=get_token_expiry(accesstoken),
-            user=user
-        )
+            user=user)
         return authresponse
     except:
         raise HTTPException(status_code=401, detail="Unauthorized")

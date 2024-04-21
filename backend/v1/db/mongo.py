@@ -1,5 +1,4 @@
 from pymongo import MongoClient
-import os
 from env_constants import TEST_MODE
 from db.test_data import generate_fake_users
 import logging
@@ -8,6 +7,7 @@ from pydantic import BaseModel
 from db.models.tokenstorage import TokenStorage
 from db.models.user import User
 from user_events.user_events_model import UserEvent
+from db.review_users import review_users
 
 logging.basicConfig(level=logging.INFO)
 client = MongoClient('mongo', 27017)
@@ -33,7 +33,6 @@ def initialize_db():
 
         initialize_collection(UserEvent, db)
 
-
         # Check if in local test mode
         if TEST_MODE.lower() == 'true':
             #first clear the collections
@@ -44,8 +43,17 @@ def initialize_db():
             # Generate and add fake users to the database
             fake_users = generate_fake_users(10)  # Generate 10 fake users
             logging.info("Adding fake users to the database.")
-            user_collection.insert_many([user.model_dump() for user in fake_users])
+            user_collection.insert_many(
+                [user.model_dump() for user in fake_users])
 
+        # Ensure review users exist
+        if not review_users:
+            logging.info("No review users found. Adding default review users.")
+        else:
+            logging.info("Review users found.")
+            for review_user in review_users:
+                user_collection.insert_one(review_user.model_dump(),
+                                           upsert=True)
 
     except Exception as e:
         logging.error("Failed to connect to the database: %s", e)

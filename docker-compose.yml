@@ -25,6 +25,9 @@ services:
       ENABLE_DEV_ENDPOINTS: 'true'
       MY_USER_ID: ${MY_USER_ID}
       TEST_MODE: 'true'
+      APPLE_REVIEW_USER: apple@apple.com
+      GOOGLE_REVIEW_USER: google@google.com
+      REVIEW_USER_PASSWORD: some-nice-password # Different in production
 
   mongo:
     image: mongo:latest
