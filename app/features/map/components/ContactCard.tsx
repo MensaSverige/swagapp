@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { HStack, VStack, Heading, Pressable, Text, Modal, ModalContent, ModalCloseButton, ModalBody, Icon, CloseIcon } from '../../../gluestack-components';
-import { Linking } from 'react-native';
+import { Linking, Platform } from 'react-native';
 import UserWithLocation from '../types/userWithLocation';
 import { timeUntil } from '../../events/utilities/TimeLeft';
 import { gluestackUIConfig } from '../../../gluestack-components/gluestack-ui.config';
 import UserAvatar, { getOnlineStatusColor } from './UserAvatar';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
-import { faEnvelope, faPhone } from '@fortawesome/free-solid-svg-icons';
+import { faDiamondTurnRight, faEnvelope, faLocationArrow, faMap, faPhone } from '@fortawesome/free-solid-svg-icons';
 
 type ContactCardProps = {
     user: UserWithLocation;
@@ -63,19 +63,19 @@ const ContactCard: React.FC<ContactCardProps> = ({ user, showCard, onClose }) =>
                             }
 
                             <HStack space="xl" style={{ flex: 1, marginTop: 10, marginBottom: 20, marginRight: 30, alignItems: 'center', justifyContent: 'flex-end' }}>
-                            {user.contact_info?.phone && user.contact_info.phone.trim() !== '' && (
+                                {user.contact_info?.phone && user.contact_info.phone.trim() !== '' && (
                                     <Pressable
                                         style={{ marginRight: 10 }}
                                         onPress={() => {
                                             Linking.openURL(`tel:${user.contact_info?.phone}`);
                                         }}
                                     >
-                                        <FontAwesomeIcon icon={faPhone} size={24} color={gluestackUIConfig.tokens.colors.warmGray300} />
+                                        <FontAwesomeIcon icon={faPhone} size={24} color={gluestackUIConfig.tokens.colors.green500} />
                                     </Pressable>
                                 )}
                                 {user.contact_info?.email && user.contact_info.email.trim() !== '' && (
                                     <Pressable
-                                        
+                                    style={{ marginRight: 10 }}
                                         onPress={() => {
                                             Linking.openURL(`mailto:${user.contact_info?.email}`);
                                         }}
@@ -84,7 +84,22 @@ const ContactCard: React.FC<ContactCardProps> = ({ user, showCard, onClose }) =>
                                     </Pressable>
                                 )}
 
-
+                                {user.location && (
+                                    <Pressable
+                                        onPress={() => {
+                                            const url = Platform.select({
+                                                ios: `maps:0,0?q=${user.location.latitude},${user.location.longitude}`,
+                                                android: `geo:0,0?q=${user.location.latitude},${user.location.longitude}`
+                                            });
+                                            if (!url) {
+                                                return;
+                                            }
+                                            Linking.openURL(url);
+                                        }}
+                                    >
+                                        <FontAwesomeIcon icon={faDiamondTurnRight} size={28} color={gluestackUIConfig.tokens.colors.blue400} />
+                                    </Pressable>
+                                )}
                             </HStack>
                         </VStack>
                     </HStack>
