@@ -35,6 +35,10 @@ export interface paths {
     /** Update Current User */
     put: operations["update_current_user_v1_users_me_put"];
   };
+  "/v1/users/me/avatar": {
+    /** Update User Avatar */
+    post: operations["update_user_avatar_v1_users_me_avatar_post"];
+  };
   "/v1/external_events": {
     /** Get Events For User */
     get: operations["get_events_for_user_v1_external_events_get"];
@@ -130,6 +134,14 @@ export interface components {
        */
       accessTokenExpiry: string;
       user: components["schemas"]["User"];
+    };
+    /** Body_update_user_avatar_v1_users_me_avatar_post */
+    Body_update_user_avatar_v1_users_me_avatar_post: {
+      /**
+       * File
+       * Format: binary
+       */
+      file: string;
     };
     /** ContactInfo */
     ContactInfo: {
@@ -676,6 +688,28 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": components["schemas"]["UserUpdate"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["User"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  /** Update User Avatar */
+  update_user_avatar_v1_users_me_avatar_post: {
+    requestBody: {
+      content: {
+        "multipart/form-data": components["schemas"]["Body_update_user_avatar_v1_users_me_avatar_post"];
       };
     };
     responses: {

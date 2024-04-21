@@ -1,10 +1,11 @@
-import React, { useEffect, useMemo, useRef } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Dimensions,
   Platform,
   StyleSheet,
   TouchableOpacity,
   ScrollView,
+  Image,
 } from 'react-native';
 import ReactNativeMapView, { PanDragEvent } from 'react-native-maps';
 import {
@@ -24,6 +25,8 @@ import darkMapstyle from '../styles/dark';
 import { faLocation } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import ContactCard from '../components/ContactCard';
+import { getFullUrl } from '../../common/functions/GetFullUrl';
+import { set } from '@gluestack-style/react';
 
 const createStyles = (theme: ITheme) =>
   StyleSheet.create({
@@ -85,9 +88,18 @@ const MapView: React.FC = () => {
   const scrollViewRef = useRef<ScrollView | null>(null);
   const { region, usersShowingLocation, selectedUserId, setSelectedUserId } = useStore();
   const [focusedContactCard, setFocusedContactCard] = React.useState(usersShowingLocation.findIndex(u => u.userId === selectedUserId));
+  const [isImagesLoaded, setIsImagesLoaded] = useState(false);
+
+  // Prefetch images so they are ready to be displayed
   useEffect(() => {
-    console.log('Map re-rendered');
-  });
+    setIsImagesLoaded(false);
+    usersShowingLocation.forEach(user => {
+      if (user.avatar_url) {
+        Image.prefetch(getFullUrl(user.avatar_url));
+      }
+    });
+    setIsImagesLoaded(true);
+  }, [usersShowingLocation]);
 
   const selectedUserKey = useMemo(() => {
     if (selectedUserId) {
@@ -237,10 +249,10 @@ const MapView: React.FC = () => {
                     focusOnUser(u.userId);
                   }}
                   style={styles.infoCard}>
-                      <ContactCard
-                        user={u}
-                        isSelected={selectedUserId === u.userId}
-                      />
+                  <ContactCard
+                    user={u}
+                    isSelected={selectedUserId === u.userId}
+                  />
 
                 </TouchableOpacity>
               ))}

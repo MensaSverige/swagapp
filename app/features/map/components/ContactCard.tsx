@@ -4,7 +4,7 @@ import { Linking } from 'react-native';
 import UserWithLocation from '../types/userWithLocation';
 import { timeUntil } from '../../events/utilities/TimeLeft';
 import { gluestackUIConfig } from '../../../gluestack-components/gluestack-ui.config';
-import UserAvatar from './UserAvatar';
+import UserAvatar, {getOnlineStatusColor } from './UserAvatar';
 
 type ContactCardProps = {
     user: UserWithLocation;
@@ -34,12 +34,12 @@ const ContactCard: React.FC<ContactCardProps> = ({ user, isSelected }) => {
     }
     return (
         <HStack space="md">
-            <UserAvatar firstName={user.firstName} lastName={user.lastName} avatar_url={user.avatar_url} />
+            <UserAvatar firstName={user.firstName} lastName={user.lastName} avatar_url={user.avatar_url} onlineStatus={user.onlineStatus} />
 
             <VStack>
                 <Heading size="sm" color={gluestackUIConfig.tokens.colors.primary200} >{user.firstName} {user.lastName}</Heading>
                 {user.location.timestamp &&
-                    <Text>{timeUntil(comparisonDate, user.location.timestamp)} sedan</Text>
+                    <Text color={getOnlineStatusColor(user.onlineStatus)}>{timeUntil(comparisonDate, user.location.timestamp, true)} sedan</Text>
                 }
                 {user.contact_info?.email && user.contact_info.email.trim() !== '' && (
                     <Pressable

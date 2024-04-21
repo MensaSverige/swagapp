@@ -1,7 +1,9 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Marker } from 'react-native-maps';
 import UserWithLocation from '../../types/userWithLocation';
 import UserAvatar from '../UserAvatar';
+import { Image } from 'react-native';
+import { getFullUrl } from '../../../common/functions/GetFullUrl';
 
 const UserMarker: React.FC<{
   user: UserWithLocation;
@@ -9,10 +11,6 @@ const UserMarker: React.FC<{
   highlighted: boolean;
   onPress: () => void;
 }> = ({ user, zIndex, highlighted, onPress }) => {
-  useEffect(() => {
-    console.log('UserMarker re-rendered');
-  });
-
   const markerSize = highlighted ? 'xl' : 'lg';
   return (
     <Marker
@@ -29,12 +27,15 @@ const UserMarker: React.FC<{
         lastName={user.lastName}
         avatar_url={user.avatar_url}
         avatarSize={markerSize}
+        onlineStatus={user.onlineStatus}
       />
     </Marker>
   );
 };
 
 export default React.memo(UserMarker, (prevProps, nextProps) => {
-  // Only re-render if the highlighted prop has changed
-  return prevProps.highlighted === nextProps.highlighted;
+  // Only re-render if the highlighted prop, avatar_url or onlineStatus has changed
+  return prevProps.highlighted === nextProps.highlighted &&
+    JSON.stringify(prevProps.user.avatar_url) === JSON.stringify(nextProps.user.avatar_url) &&
+    prevProps.user.onlineStatus === nextProps.user.onlineStatus;
 });

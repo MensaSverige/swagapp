@@ -5,10 +5,12 @@ type LocationWithDescription = LatLng & {
   description?: string;
 };
 
+export type OnlineStatus = 'online' | 'away' | 'offline';
+
 type UserWithLocation = User & {
   location: LocationWithDescription;
+  onlineStatus: OnlineStatus;
 };
-
 export function isUserWithLocation(user: User): user is UserWithLocation {
   return (
     user.location !== undefined &&
@@ -19,5 +21,23 @@ export function isUserWithLocation(user: User): user is UserWithLocation {
     user.location.longitude !== 0
   );
 }
+
+export function calculateOnlineStatus(timestamp: string | null): OnlineStatus {
+  if (!timestamp) {
+    return 'offline';
+  }
+  const now = Date.now();
+  const tenMinutesAgo = new Date(now - 10 * 60 * 1000);
+  const sixtyMinutesAgo = new Date(now - 60 * 60 * 1000);
+
+  if (timestamp && new Date(timestamp) > tenMinutesAgo) {
+    return 'online';
+  } else if (timestamp && new Date(timestamp) > sixtyMinutesAgo) {
+    return 'away';
+  } else {
+    return 'offline';
+  }
+}
+
 
 export default UserWithLocation;
