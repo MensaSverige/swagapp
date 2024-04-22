@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import useStore from '../../common/store/store';
 import { FilterProps, filterUsers, defaultFilter } from '../store/LocationSlice';
-import { Button, Card, Heading, Input, InputField, Modal, ModalBackdrop, ModalBody, ModalCloseButton, ModalContent, ModalHeader, Pressable, VStack, View, Text } from '../../../gluestack-components';
+import { Button, Card, Heading, HStack, Input, InputField, Modal, ModalBackdrop, ModalBody, ModalCloseButton, ModalContent, ModalHeader, Pressable, VStack, View, Text } from '../../../gluestack-components';
 import Slider from '@react-native-community/slider';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faClose,  faSearch } from '@fortawesome/free-solid-svg-icons';
@@ -18,10 +18,22 @@ export const FilterMarkersComponent: React.FC<FilterMarkersProps> = ({ showFilte
     const [filter, setFilter] = useState<FilterProps>(userFilter);
     const [numberOfUsers, setNumberOfUsers] = useState(filteredUsers.length);
 
-    const handleFilter = () => {
+    useEffect(() => {
+        // Update the number of users showing location when the filtersettings is shown
+        setNumberOfUsers(filterUsers(usersShowingLocation, filter).length);
+        setFilter(userFilter);
+    }, [showFilterView]);
+
+    const saveFilter = () => {
         setUserFilter(filter);
         onClose();
     };
+
+    const cancelFilter = () => {
+        setFilter(userFilter);
+        onClose();
+    };
+
     const setFilterAndCalculateNumberOfUsers = (filter: FilterProps) => {
         setFilter(filter);
         const num = filterUsers(usersShowingLocation, filter).length;
@@ -40,7 +52,7 @@ export const FilterMarkersComponent: React.FC<FilterMarkersProps> = ({ showFilte
                     value={filter.name}
                     
                     onChangeText={(value) => setFilterAndCalculateNumberOfUsers({ ...filter, name: value })}
-                    onEndEditing={handleFilter}
+                    onEndEditing={saveFilter}
                 />
                 {filter.name && (
 
@@ -55,12 +67,12 @@ export const FilterMarkersComponent: React.FC<FilterMarkersProps> = ({ showFilte
             <Modal
                 isOpen={showFilterView}
                 onClose={() => {
-                    handleFilter();
+                    cancelFilter();
                 }}
                 finalFocusRef={ref}
                 size='lg'
             >
-                <ModalBackdrop />
+                <ModalBackdrop bg="$coolGray500" />
                 <ModalContent >
                     <ModalHeader>
                         <Heading size="lg" color={config.tokens.colors.primary200} >Filter</Heading>
@@ -89,17 +101,29 @@ export const FilterMarkersComponent: React.FC<FilterMarkersProps> = ({ showFilte
 
                             </Card>
                             <Text>Visar {numberOfUsers} personer </Text>
-
+                            <HStack space="lg" h="100%" flex={1} justifyContent="space-evenly" paddingBottom={20} >
                             <Button
+                                size="md"
+                                variant="outline"
+                                action="secondary"
+                                isDisabled={false}
+                                isFocusVisible={false}
+                                onPress={() => setFilterAndCalculateNumberOfUsers({ ...defaultFilter, showHoursAgo: 24 })}                            >
+                            <ButtonText>Nollställ filter </ButtonText>
+                            </Button>
+
+                            <Button 
+                                style={{ right: 10 }}
                                 size="md"
                                 variant="solid"
                                 action="primary"
                                 isDisabled={false}
                                 isFocusVisible={false}
-                                onPress={() => setFilterAndCalculateNumberOfUsers(defaultFilter)}
+                                onPress={saveFilter}
                             >
-                                <ButtonText>Nollställ filter </ButtonText>
+                                <ButtonText>Spara</ButtonText>
                             </Button>
+                            </HStack>
                         </VStack>
                     </ModalBody>
                 </ModalContent>
