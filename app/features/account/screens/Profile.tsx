@@ -1,44 +1,24 @@
 import React, { useEffect, useState } from 'react';
 import {
   useColorMode,
-  useTheme,
 } from '@gluestack-ui/themed';
 import {
-  Button,
-  KeyboardAvoidingView, Center,
+  KeyboardAvoidingView,
   Input,
   VStack,
   Text,
-  Image,
   ScrollView,
-  Switch,
-  Spinner,
-  Icon,
-  Select, SelectBackdrop, SelectContent, SelectDragIndicator, SelectDragIndicatorWrapper, SelectIcon, SelectInput, SelectItem, SelectPortal, SelectTrigger, ChevronDownIcon,
-  HStack,
-  Avatar,
-  AvatarFallbackText,
-  AvatarImage,
-  Box,
-  View,
   Heading,
   InputField,
-  ButtonText,
-  ButtonIcon,
   Card,
   useToast,
-  Pressable,
 } from '../../../gluestack-components';
-import { faPlus, faUser, faEye, faEyeSlash } from '@fortawesome/free-solid-svg-icons';
-import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import useStore from '../../common/store/store';
-import * as Keychain from 'react-native-keychain';
 import Field from '../../common/components/Field';
 import Fields from '../../common/components/Fields';
 import { Platform, SafeAreaView, StyleSheet } from 'react-native';
 import { updateUser } from '../services/userService';
 import { User, UserUpdate } from '../../../api_schema/types';
-import { gluestackUIConfig } from '../../../gluestack-components/gluestack-ui.config';
 import { Picker } from '@react-native-picker/picker';
 import SettingsSwitchField from '../../common/components/SettingsSwitchField';
 import ShowSettingsLabelIconColor from '../../common/components/ShowSettingsLabelIconColor';
@@ -46,7 +26,6 @@ import ShowSettingsLabelIcon from '../../common/components/ShowSettingsLabelIcon
 import AutosaveSuccessToast from '../../common/components/AutosaveSuccessToast';
 import AutosaveErrorToast from '../../common/components/AutosaveErrorToast';
 import AutosaveToast from '../../common/components/AutosaveToast';
-import { selectImage } from '../../common/components/selectImage';
 import ProfileEditAvatar from '../../common/components/ProfileEditAvatar';
 
 
@@ -66,8 +45,7 @@ const Profile: React.FC = () => {
   });
   const [formState, setFormState] = useState<UserUpdate>(getFormStateFromUser(user as User));
 
-  const colorMode = useColorMode()
-  const theme = useTheme();
+  const colorMode = useColorMode();
   const toast = useToast();
   const styles = createStyles();
 

@@ -17,21 +17,21 @@ type UserAvatarProps = {
 export const getOnlineStatusColor = (status: OnlineStatus) => {
     switch (status) {
       case 'online':
-        return gluestackUIConfig.tokens.colors.green300;
+        return gluestackUIConfig.tokens.colors.green200;
       case 'away':
         return gluestackUIConfig.tokens.colors.amber200;
       default:
-        return gluestackUIConfig.tokens.colors.warmGray500;
+        return gluestackUIConfig.tokens.colors.coolGray600;
     }
   };
   
 
 const UserAvatar: React.FC<UserAvatarProps> = ({ firstName, lastName, avatar_url, avatarSize, onlineStatus }) => {
-    const onlineStatusColor = onlineStatus ? getOnlineStatusColor(onlineStatus) : gluestackUIConfig.tokens.colors.coolGray200;
+    const onlineStatusColor = onlineStatus ? getOnlineStatusColor(onlineStatus) : gluestackUIConfig.tokens.colors.coolGray600;
     return (
         <Avatar
             size={avatarSize || "lg"}
-            bgColor={gluestackUIConfig.tokens.colors.backgroundDarkMuted}
+            bg='$background50'
             borderColor={onlineStatusColor}
             borderWidth={2}
             style={{ justifyContent: 'center', alignItems: 'center' }}

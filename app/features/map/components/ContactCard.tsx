@@ -47,8 +47,9 @@ const ContactCard: React.FC<ContactCardProps> = ({ user, showCard, onClose }) =>
                 bottom: 60,
             }}
         >
-            <ModalContent>
-
+            <ModalContent
+                bg="$background50"
+            >
                 <ModalBody >
                     <ModalCloseButton style={{ alignItems: 'flex-end' }}>
                         <Icon as={CloseIcon} />
@@ -75,12 +76,12 @@ const ContactCard: React.FC<ContactCardProps> = ({ user, showCard, onClose }) =>
                                 )}
                                 {user.contact_info?.email && user.contact_info.email.trim() !== '' && (
                                     <Pressable
-                                    style={{ marginRight: 10 }}
+                                        style={{ marginRight: 10 }}
                                         onPress={() => {
                                             Linking.openURL(`mailto:${user.contact_info?.email}`);
                                         }}
                                     >
-                                        <FontAwesomeIcon icon={faEnvelope} size={28} color={gluestackUIConfig.tokens.colors.warmGray300} />
+                                        <FontAwesomeIcon icon={faEnvelope} size={28} color={gluestackUIConfig.tokens.colors.warmGray400} />
                                     </Pressable>
                                 )}
 
@@ -110,6 +111,6 @@ const ContactCard: React.FC<ContactCardProps> = ({ user, showCard, onClose }) =>
 };
 
 export default React.memo(ContactCard, (prevProps, nextProps) => {
-    // Only re-render if the isSelected prop has changed
+    // Only re-render if the showCard or colorMode prop has changed
     return prevProps.showCard === nextProps.showCard;
 });

@@ -6,7 +6,24 @@ interface Location {
   longitude: number;
   latitude: number;
 }
+export interface FilterProps {
+   name?: string, 
+   showHoursAgo?: number
+}
+export const filterUsers = (users: UserWithLocation[], userFilter: FilterProps) => {
+  const filterTime = new Date();
+  filterTime.setHours(filterTime.getHours() - (userFilter.showHoursAgo ?? 0));
+  return users.filter(user =>
+    (!userFilter.name || `${user.firstName} ${user.lastName}`.toLowerCase().includes(userFilter.name.toLowerCase())) &&
+    (!userFilter.showHoursAgo || (user.location?.timestamp && new Date(user.location.timestamp).getTime() >= filterTime.getTime())) 
+  );
+};
 export interface LocationSlice {
+  userFilter: FilterProps
+  filteredUsers: UserWithLocation[];
+  setUserFilter: (filter: FilterProps) => void;
+  setFilteredUsers: (name?: string, locationTimestamp?: Date) => void;
+
   currentLocation: Location;
   hasLocationPermission: boolean;
   locationUpdateInterval: number;
@@ -22,6 +39,19 @@ export interface LocationSlice {
 }
 
 export const createLocationSlice: StateCreator<LocationSlice> = (set, get) => ({
+  userFilter: { name: undefined, showHoursAgo:8, timestamp: undefined },
+  filteredUsers: [],
+  setUserFilter: (filter) => {
+    set({ userFilter: filter }),
+    get().setFilteredUsers();
+  },
+  setFilteredUsers: () => {
+    const { userFilter, usersShowingLocation } = get();
+    console.log('Filtering users:', userFilter);
+    const filteredUsers = filterUsers(usersShowingLocation, userFilter);
+    console.log('Filtered users:', filteredUsers.length);
+    set({ filteredUsers });
+  },
   currentLocation: {
     longitude: 0,
     latitude: 0,
@@ -37,7 +67,10 @@ export const createLocationSlice: StateCreator<LocationSlice> = (set, get) => ({
   showlocation: false,
   usersShowingLocation: [],
   selectedUser: null,
-  setUsersShowingLocation: usersShowingLocation => set({usersShowingLocation}),
+  setUsersShowingLocation: usersShowingLocation => { 
+    set({usersShowingLocation}),
+    get().setFilteredUsers();
+  },
   setHasLocationPermission: hasLocationPermission =>
     set({hasLocationPermission}),
   setRegion: region => set({region}),

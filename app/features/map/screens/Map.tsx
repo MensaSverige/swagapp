@@ -5,27 +5,29 @@ import {
 } from 'react-native';
 import ReactNativeMapView from 'react-native-maps';
 import {
-  Box,
   Button,
-  Center,
-  ITheme,
   View,
-  useTheme,
-} from 'native-base';
+  SafeAreaView
+} from '../../../gluestack-components';
 import UserMarker from '../components/markers/UserMarker';
 import useStore from '../../common/store/store';
 import useRequestLocationPermission from '../hooks/useRequestLocationPermission';
 import useGetUsersShowingLocation from '../hooks/useGetUsersShowingLocation';
 import lightMapstyle from '../styles/light';
 import darkMapstyle from '../styles/dark';
-import { faLocation } from '@fortawesome/free-solid-svg-icons';
+import { faFilter, faLocation } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import ContactCard from '../components/ContactCard';
 import { getFullUrl } from '../../common/functions/GetFullUrl';
 import UserWithLocation from '../types/userWithLocation';
 import { useFocusEffect } from '@react-navigation/native';
+import { FilterMarkersComponent } from '../components/FilterMarkers';
+import IncognitoInfo from '../components/IncognitoInfo';
+import { config } from '../../../gluestack-components/gluestack-ui.config';
+import { useColorMode } from '@gluestack-ui/themed';
+import { VStack } from 'native-base';
 
-const createStyles = (theme: ITheme) =>
+const createStyles = () =>
   StyleSheet.create({
     map: {
       ...StyleSheet.absoluteFillObject,
@@ -33,14 +35,17 @@ const createStyles = (theme: ITheme) =>
     mapControlsWrapper: {
       position: 'absolute',
       alignItems: 'flex-end',
-      top: 10,
+      top: 50,
       right: 10,
       left: 10,
       zIndex: 1,
       backgroundColor: 'transparent',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 10,
     },
     mapControlsButton: {
-      backgroundColor: `${theme.colors.background[500]}99`,
+      backgroundColor: `$background0`,
       borderRadius: 10,
       shadowColor: 'black',
       shadowOffset: { width: 3, height: 3 },
@@ -52,11 +57,12 @@ const createStyles = (theme: ITheme) =>
   });
 
 const MapView: React.FC = () => {
-  const theme = useTheme();
+  const colorMode = useColorMode();
   const mapRef = useRef<ReactNativeMapView | null>(null);
-  const { region, usersShowingLocation, selectedUser, setSelectedUser } = useStore();
+  const { region, usersShowingLocation, filteredUsers, selectedUser, userFilter, setSelectedUser, setFilteredUsers } = useStore();
   const [visibleRegion, setVisibleRegion] = useState(region);
   const [showContactCard, setShowContactCard] = useState(false);
+  const [showFilter, setshowFilter] = useState(false);
   const [isImagesLoaded, setIsImagesLoaded] = useState(false);
 
   // Prefetch images so they are ready to be displayed
@@ -64,7 +70,7 @@ const MapView: React.FC = () => {
     console.log('Loading images');
     setIsImagesLoaded(false);
 
-    const loadImages = usersShowingLocation.map(user => {
+    const loadImages = filteredUsers.map(user => {
       if (user.avatar_url) {
         return Image.prefetch(getFullUrl(user.avatar_url));
       }
@@ -78,7 +84,7 @@ const MapView: React.FC = () => {
       })
       .catch((error) => console.log("Failed to load images", error));
 
-  }, []);
+  }, [userFilter]);
   useFocusEffect(
     React.useCallback(() => {
       const onUnfocus = () => {
@@ -90,7 +96,7 @@ const MapView: React.FC = () => {
   );
   const [followsUserLocation, setFollowsUserLocation] = React.useState(true);
 
-  const styles = createStyles(theme);
+  const styles = createStyles();
 
   useRequestLocationPermission();
   useGetUsersShowingLocation();
@@ -120,6 +126,12 @@ const MapView: React.FC = () => {
     }
   }
 
+  const openFilter = () => {
+    setShowContactCard(false);
+    setSelectedUser(null);
+    setshowFilter(true);
+  };
+
   const resetSelectedUser = useMemo(() => () => {
     if (followsUserLocation !== false) {
       setFollowsUserLocation(false);
@@ -127,14 +139,65 @@ const MapView: React.FC = () => {
     if (selectedUser !== null) {
       setSelectedUser(null);
     }
-  }, [followsUserLocation, selectedUser]);
+    setShowContactCard(false);
+    setshowFilter(false);
+
+  }, [followsUserLocation, selectedUser, showContactCard, showFilter]);
+
+  useEffect(() => {
+    if (!filteredUsers || filteredUsers.length === 0) {
+      return;
+    }
+    if (userFilter.name === undefined && userFilter.showHoursAgo === undefined) {
+      return;
+    }
+    resetSelectedUser();
+    setShowContactCard(false);
+
+    const latitudes = filteredUsers.map(user => user.location.latitude);
+    const longitudes = filteredUsers.map(user => user.location.longitude);
+
+    const minLat = Math.min(...latitudes);
+    const maxLat = Math.max(...latitudes);
+    const minLong = Math.min(...longitudes);
+    const maxLong = Math.max(...longitudes);
+
+    const midLat = (minLat + maxLat) / 2;
+    const midLong = (minLong + maxLong) / 2;
+
+    const deltaLat = (maxLat - minLat) * 1.2;
+    const deltaLong = (maxLong - minLong) * 1.2;
+
+    mapRef.current?.animateToRegion({
+      latitude: midLat,
+      longitude: midLong,
+      latitudeDelta: deltaLat,
+      longitudeDelta: deltaLong,
+    });
+  }, [userFilter]);
 
   return (
-    <Center w="100%" h="100%">
-      <Box safeArea flex={1} w="100%" mx="auto">
+    <SafeAreaView flex={1} key={colorMode}>
+      <VStack flex={1}>
+        {selectedUser && showContactCard &&
+          <ContactCard
+            key={`${selectedUser.userId}-${colorMode}`}
+            user={selectedUser}
+            showCard={showContactCard}
+            onClose={onClose} />}
+
+        <FilterMarkersComponent
+          showFilterView={showFilter}
+          onClose={
+            () => {
+              setshowFilter(false);
+            }
+          } />
+
         <ReactNativeMapView
           ref={mapRef}
-          style={styles.map}
+          style={{ flex: 1 }}
+          //style={styles.map}
           showsUserLocation={true}
           initialRegion={region}
           followsUserLocation={followsUserLocation}
@@ -148,7 +211,7 @@ const MapView: React.FC = () => {
                   latitudeDelta: region.latitudeDelta,
                   longitudeDelta: region.longitudeDelta,
                 },
-                350,
+                350
               );
             }
           }}
@@ -161,33 +224,39 @@ const MapView: React.FC = () => {
             bottom: 10,
             left: 10,
           }}
-          customMapStyle={
-            theme.config.initialColorMode === 'dark'
-              ? darkMapstyle
-              : lightMapstyle
-          }>
-          {usersShowingLocation && isImagesLoaded &&
-            usersShowingLocation
-              .filter(u =>
-                u.location.latitude >= visibleRegion.latitude - visibleRegion.latitudeDelta * 5 &&
+          customMapStyle={colorMode === 'dark'
+            ? darkMapstyle
+            : lightMapstyle}>
+          {filteredUsers && isImagesLoaded &&
+            filteredUsers
+              .filter(u => u.location.latitude >= visibleRegion.latitude - visibleRegion.latitudeDelta * 5 &&
                 u.location.latitude <= visibleRegion.latitude + visibleRegion.latitudeDelta * 5 &&
                 u.location.longitude >= visibleRegion.longitude - visibleRegion.longitudeDelta * 5 &&
                 u.location.longitude <= visibleRegion.longitude + visibleRegion.longitudeDelta * 5
               )
               .map(u => (
                 <UserMarker
-                  key={u.userId}
+                  key={`${u.userId}-${colorMode}`}
                   imageLoaded={isImagesLoaded}
                   user={u}
                   zIndex={100}
                   highlighted={selectedUser?.userId === u.userId}
                   onPress={() => {
                     focusOnUser(u);
-                  }}
-                />
+                  }} />
               ))}
         </ReactNativeMapView>
         <View style={styles.mapControlsWrapper}>
+          <Button
+            style={styles.mapControlsButton}
+            variant="solid"
+            onPress={openFilter}>
+            <FontAwesomeIcon
+              icon={faFilter}
+              size={30}
+              color={userFilter && (userFilter.name || userFilter.showHoursAgo !== 24) ? config.tokens.colors.primary300 : config.tokens.colors.coolGray400}
+            />
+          </Button>
           <Button
             style={styles.mapControlsButton}
             variant="solid"
@@ -197,24 +266,15 @@ const MapView: React.FC = () => {
             <FontAwesomeIcon
               icon={faLocation}
               size={30}
-              color={
-                followsUserLocation
-                  ? theme.colors.primary[500]
-                  : theme.colors.secondary[100]
-              }
+              color={followsUserLocation
+                ? config.tokens.colors.primary300
+                : config.tokens.colors.coolGray400}
             />
           </Button>
         </View>
-      </Box>
-      {selectedUser && showContactCard &&
-        <ContactCard
-          key={selectedUser.userId}
-          user={selectedUser}
-          showCard={showContactCard}
-          onClose={onClose}
-        />
-      }
-    </Center>
+      </VStack>
+      <IncognitoInfo />
+    </SafeAreaView>
   );
 };
 

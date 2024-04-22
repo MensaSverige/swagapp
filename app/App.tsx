@@ -5,7 +5,7 @@ import {getTheme} from './theme';
 import SplashScreen from 'react-native-splash-screen';
 import useUserLocation from './features/map/hooks/useUserLocation';
 import {RootStackNavigation} from './navigation/RootStackNavigation';
-import { GluestackUIProvider } from '@gluestack-ui/themed';
+import { GluestackUIProvider } from './gluestack-components';
 import { gluestackUIConfig } from './gluestack-components/gluestack-ui.config';
 import { COLORMODES } from '@gluestack-style/react/lib/typescript/types';
 
