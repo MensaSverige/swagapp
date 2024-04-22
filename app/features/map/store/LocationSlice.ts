@@ -10,6 +10,12 @@ export interface FilterProps {
    name?: string, 
    showHoursAgo?: number
 }
+
+export const defaultFilter: FilterProps = { 
+  name: undefined, 
+  showHoursAgo: 8 
+};
+
 export const filterUsers = (users: UserWithLocation[], userFilter: FilterProps) => {
   const filterTime = new Date();
   filterTime.setHours(filterTime.getHours() - (userFilter.showHoursAgo ?? 0));
@@ -39,7 +45,7 @@ export interface LocationSlice {
 }
 
 export const createLocationSlice: StateCreator<LocationSlice> = (set, get) => ({
-  userFilter: { name: undefined, showHoursAgo:8, timestamp: undefined },
+  userFilter: defaultFilter,
   filteredUsers: [],
   setUserFilter: (filter) => {
     set({ userFilter: filter }),

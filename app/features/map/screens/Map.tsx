@@ -34,13 +34,11 @@ const createStyles = () =>
     },
     mapControlsWrapper: {
       position: 'absolute',
-      alignItems: 'flex-end',
       top: 50,
       right: 10,
-      left: 10,
       zIndex: 1,
       backgroundColor: 'transparent',
-      display: 'flex',
+      width: 50,
       flexDirection: 'column',
       gap: 10,
     },
@@ -174,7 +172,7 @@ const MapView: React.FC = () => {
       latitudeDelta: deltaLat,
       longitudeDelta: deltaLong,
     });
-  }, [userFilter]);
+  }, [userFilter, isImagesLoaded]);
 
   return (
     <SafeAreaView flex={1} key={colorMode}>

@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import useStore from '../../common/store/store';
-import { FilterProps, filterUsers } from '../store/LocationSlice';
+import { FilterProps, filterUsers, defaultFilter } from '../store/LocationSlice';
 import { Button, Card, Heading, Input, InputField, Modal, ModalBackdrop, ModalBody, ModalCloseButton, ModalContent, ModalHeader, Pressable, VStack, View, Text } from '../../../gluestack-components';
 import Slider from '@react-native-community/slider';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faClose,  faSearch } from '@fortawesome/free-solid-svg-icons';
 import { config } from '../../../gluestack-components/gluestack-ui.config';
-import { ButtonText, useColorMode } from '@gluestack-ui/themed';
+import { ButtonText } from '@gluestack-ui/themed';
 
 type FilterMarkersProps = {
     showFilterView: boolean;
@@ -96,7 +96,7 @@ export const FilterMarkersComponent: React.FC<FilterMarkersProps> = ({ showFilte
                                 action="primary"
                                 isDisabled={false}
                                 isFocusVisible={false}
-                                onPress={() => setFilterAndCalculateNumberOfUsers({ name: '', showHoursAgo: 24 })}
+                                onPress={() => setFilterAndCalculateNumberOfUsers(defaultFilter)}
                             >
                                 <ButtonText>Nollställ filter </ButtonText>
                             </Button>
