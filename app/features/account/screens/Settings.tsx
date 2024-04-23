@@ -29,7 +29,7 @@ import AutosaveToast from '../../common/components/AutosaveToast';
 import ProfileEditAvatar from '../../common/components/ProfileEditAvatar';
 
 
-const Profile: React.FC = () => {
+const UserSettings: React.FC = () => {
   // Get current user and token from Zustand store
   const { user, setUser, backendConnection } = useStore();
   const getFormStateFromUser = (user: User) => ({
@@ -303,4 +303,4 @@ const createStyles = () =>
     },
   });
 
-export default Profile;
+export default UserSettings;
