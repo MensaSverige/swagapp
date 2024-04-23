@@ -4,7 +4,7 @@ import { FilterProps, filterUsers, defaultFilter } from '../store/LocationSlice'
 import { Button, Card, Heading, HStack, Input, InputField, Modal, ModalBackdrop, ModalBody, ModalCloseButton, ModalContent, ModalHeader, Pressable, VStack, View, Text } from '../../../gluestack-components';
 import Slider from '@react-native-community/slider';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
-import { faClose,  faSearch } from '@fortawesome/free-solid-svg-icons';
+import { faClose, faSearch } from '@fortawesome/free-solid-svg-icons';
 import { config } from '../../../gluestack-components/gluestack-ui.config';
 import { ButtonText } from '@gluestack-ui/themed';
 
@@ -45,12 +45,12 @@ export const FilterMarkersComponent: React.FC<FilterMarkersProps> = ({ showFilte
             <Input bg="$background50"
                 borderWidth={0}
                 borderRadius={0}
-                style={{ paddingTop: 4}}
+                style={{ paddingTop: 4 }}
             >
                 <FontAwesomeIcon icon={faSearch} size={28} style={{ marginTop: 4, color: config.tokens.colors.blue400 }} />
                 <InputField
                     value={filter.name}
-                    
+
                     onChangeText={(value) => setFilterAndCalculateNumberOfUsers({ ...filter, name: value })}
                     onEndEditing={saveFilter}
                 />
@@ -60,7 +60,7 @@ export const FilterMarkersComponent: React.FC<FilterMarkersProps> = ({ showFilte
                         style={{ marginRight: 10 }}
                         onPress={() => setFilterAndCalculateNumberOfUsers({ ...filter, name: '' })}
                     >
-                        <FontAwesomeIcon icon={faClose} size={28} style={{ marginTop: 5, color: config.tokens.colors.blue400 }}/>
+                        <FontAwesomeIcon icon={faClose} size={28} style={{ marginTop: 5, color: config.tokens.colors.blue400 }} />
                     </Pressable>
                 )}
             </Input>
@@ -84,7 +84,9 @@ export const FilterMarkersComponent: React.FC<FilterMarkersProps> = ({ showFilte
                         <VStack space="lg" h="100%" flex={1}>
 
                             <Card size="sm" variant="elevated" m="$0">
-                                <Text>Online senaste {filter.showHoursAgo || 1} timmarna</Text>
+                                <Text>Online senaste <Text color="$numberLiteral">
+                                    {filter.showHoursAgo || 1}
+                                </Text> timmarna</Text>
                                 <Slider
                                     style={{ height: 40 }}
                                     value={filter.showHoursAgo}
@@ -100,29 +102,31 @@ export const FilterMarkersComponent: React.FC<FilterMarkersProps> = ({ showFilte
                                 />
 
                             </Card>
-                            <Text>Visar {numberOfUsers} personer </Text>
+                            <Text>Visar <Text color="$numberLiteral">{numberOfUsers}</Text> personer </Text>
                             <HStack space="lg" h="100%" flex={1} justifyContent="space-evenly" paddingBottom={20} >
-                            <Button
-                                size="md"
-                                variant="outline"
-                                action="secondary"
-                                isDisabled={false}
-                                isFocusVisible={false}
-                                onPress={() => setFilterAndCalculateNumberOfUsers({ ...defaultFilter, showHoursAgo: 24 })}                            >
-                            <ButtonText>Nollställ filter </ButtonText>
-                            </Button>
+                                <Button
+                                    size="md"
+                                    variant="outline"
+                                    action="secondary"                                 
+                                    borderColor="$stringLiteral"
+                                    isDisabled={false}
+                                    isFocusVisible={false}
+                                    onPress={() => setFilterAndCalculateNumberOfUsers({ ...defaultFilter, showHoursAgo: 24 })}                            >
+                                    <ButtonText color='$stringLiteral'>Nollställ filter </ButtonText>
+                                </Button>
 
-                            <Button 
-                                style={{ right: 10 }}
-                                size="md"
-                                variant="solid"
-                                action="primary"
-                                isDisabled={false}
-                                isFocusVisible={false}
-                                onPress={saveFilter}
-                            >
-                                <ButtonText>Spara</ButtonText>
-                            </Button>
+                                <Button
+                                    style={{ right: 10 }}
+                                    size="md"
+                                    variant="solid"
+                                    action="primary"
+                                    backgroundColor="$vscode_const"
+                                    isDisabled={false}
+                                    isFocusVisible={false}
+                                    onPress={saveFilter}
+                                >
+                                    <ButtonText>Spara</ButtonText>
+                                </Button>
                             </HStack>
                         </VStack>
                     </ModalBody>

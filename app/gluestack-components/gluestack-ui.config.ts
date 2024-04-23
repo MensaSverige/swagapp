@@ -407,6 +407,21 @@ export const gluestackUIConfig = createConfig({
       backgroundDarkMuted: '#252526',
       white: '#FFFFFF',
       black: '#000000',
+
+      //vscode colors
+      newOperator: '#AF00DB',
+      stringLiteral:'#a31515',
+      customLiteral: '#795E26',
+      numberLiteral: '#098658',
+
+      //types declaration and references, TS grammar specific",
+      typeDeclaration: "#267f99",
+
+      //Variable and parameter name",
+			vscode_var: '#001080',
+
+      vscode_const: '#0070C1'
+
     },
     space: {
       'px': '1px',
@@ -746,8 +761,24 @@ export const gluestackUIConfig = createConfig({
         backgroundSuccess: '#1C2B21',
         backgroundInfo: '#1A282E',
         backgroundMuted: '#252526',
-      },
+
+       //vscode colors
+      newOperator: '#C586C0',
+      stringLiteral:'#ce9178',
+      customLiteral: '#DCDCAA',
+      numberLiteral: '#b5cea8',
+
+
+      //types declaration and references, TS grammar specific",
+      typeDeclaration: "#4EC9B0",
+
+      //Variable and parameter name",
+			vscode_var: '#9CDCFE',
+
+      vscode_const: '#4FC1FF'
     },
+  }, 
+
   },
   plugins: [new AnimationResolver(MotionAnimationDriver)],
 });
