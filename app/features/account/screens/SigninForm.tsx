@@ -30,7 +30,7 @@ export const SigninForm = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isTryingStoredCredentials, setIsTryingStoredCredentials] =
     useState(false);
-  const { testMode, backendConnection, user, setUser, setSelectedUserId, setIsTryingToLogin } =
+  const { testMode, backendConnection, user, setUser, setIsTryingToLogin } =
     useStore();
   useEffect(() => {
     if (!user && backendConnection) {
@@ -39,9 +39,6 @@ export const SigninForm = () => {
         .then((response) => {
           if (response?.user !== undefined) {
             setUser(response.user);
-            if (response.user.settings.show_location !== "NO_ONE")
-              setSelectedUserId(response.user.userId);
-            console.log("signinform")
           }
         })
         .catch((error) => {
