@@ -35,7 +35,7 @@ const CreateEventButton: React.FC = () => {
       isDisabled={false}
       isFocusVisible={false}
       onPress={showEditEventForm}>
-      <ButtonText style={{ textAlign: 'center' }}>Skapa händelse</ButtonText>
+      <ButtonText style={{ textAlign: 'center' }}>Skapa event</ButtonText>
     </Button>
 
   );
@@ -73,7 +73,7 @@ const EventList: React.FC = () => {
 
         {visibleEvents.length === 0 && (
           <Center w="100%" p={10}>
-            <Text>Inga händelser hittades</Text>
+            <Text>Inga spontana event hittades</Text>
           </Center>
         )}
         {visibleEvents.map((event, i) => (
