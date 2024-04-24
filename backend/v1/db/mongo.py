@@ -52,10 +52,10 @@ def initialize_db():
             logging.info("Cleared all collections.")
 
             # Generate and add fake users to the database
-            fake_users = generate_fake_users(10)  # Generate 10 fake users
-            logging.info("Adding fake users to the database.")
-            user_collection.insert_many(
-                [user.model_dump() for user in fake_users])
+            # fake_users = generate_fake_users(10)  # Generate 10 fake users
+            # logging.info("Adding fake users to the database.")
+            # user_collection.insert_many(
+            #     [user.model_dump() for user in fake_users])
 
         # Ensure review users exist, if configured
         if not review_users:
