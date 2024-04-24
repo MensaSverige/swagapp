@@ -8,8 +8,10 @@ from db.models.tokenstorage import TokenStorage
 from db.models.user import User
 from user_events.user_events_model import UserEvent
 from db.models.external_events import ExternalEventDetails
+from db.review_users import review_users
 
 logging.basicConfig(level=logging.INFO)
+
 
 def get_collection_name(model_type):
     return model_type.__name__.lower()
@@ -42,7 +44,6 @@ def initialize_db():
 
         initialize_collection(UserEvent, db)
 
-
         # Check if in local test mode
         if TEST_MODE.lower() == 'true':
             #first clear the collections
@@ -51,9 +52,20 @@ def initialize_db():
             logging.info("Cleared all collections.")
 
             # Generate and add fake users to the database
-            # fake_users = generate_fake_users(300)  # Generate fake users
+            # fake_users = generate_fake_users(10)  # Generate 10 fake users
             # logging.info("Adding fake users to the database.")
-            # user_collection.insert_many([user.model_dump() for user in fake_users])      
+            # user_collection.insert_many(
+            #     [user.model_dump() for user in fake_users])
+
+        # Ensure review users exist, if configured
+        if not review_users:
+            logging.info("No review users found. Adding default review users.")
+        else:
+            logging.info("Review users found.")
+            for review_user in review_users:
+                user_collection.update_one({"userId": review_user.userId},
+                                           {"$set": review_user.model_dump()},
+                                           upsert=True)
 
     except Exception as e:
         logging.error("Failed to connect to the database: %s", e)
