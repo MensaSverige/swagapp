@@ -19,35 +19,40 @@ as the current time.
 The `get_current_time` function returns the current time as a timezone-aware datetime object.
 """
 from datetime import datetime
-from db.models.tokenstorage import TokenStorage
-from db.mongo import tokenstorage_collection
-from utilities import convert_to_tz_aware, get_current_time
+from v1.db.models.tokenstorage import TokenStorage
+from v1.db.mongo import tokenstorage_collection
+from v1.utilities import convert_to_tz_aware, get_current_time
 
-def save_external_token(user_id: int, external_token: str, expires_at: datetime):
+
+def save_external_token(user_id: int, external_token: str,
+                        expires_at: datetime):
     token = TokenStorage.model_validate({
-        "userId": user_id,
-        "externalAccessToken": external_token,
-        "createdAt": convert_to_tz_aware(get_current_time()),
-        "expiresAt": convert_to_tz_aware(expires_at)
+        "userId":
+        user_id,
+        "externalAccessToken":
+        external_token,
+        "createdAt":
+        convert_to_tz_aware(get_current_time()),
+        "expiresAt":
+        convert_to_tz_aware(expires_at)
     })
 
     tokenjson = token.model_dump()
 
     # Upsert option to ensure no duplicate entries for the same user
-    tokenstorage_collection.update_one(
-        {"userId": tokenjson["userId"]},
-        {"$set": tokenjson},
-        upsert=True
-    )
+    tokenstorage_collection.update_one({"userId": tokenjson["userId"]},
+                                       {"$set": tokenjson},
+                                       upsert=True)
+
 
 def get_external_token(user_id: int):
     token_info = tokenstorage_collection.find_one({"userId": user_id})
     if not token_info:
         # TODO: Token is expired or not found, request new token
         return None
-    
+
     expires_at_tz_aware = convert_to_tz_aware(token_info['expiresAt'])
     created_at_tz_aware = convert_to_tz_aware(token_info['createdAt'])
-    
+
     if expires_at_tz_aware > get_current_time():
         return token_info['externalAccessToken']

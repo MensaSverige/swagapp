@@ -1,7 +1,8 @@
 import logging
-from db.models.external_events import ExternalEventDetails
-from typing import List, Optional
-from db.mongo import external_event_collection
+from typing import List
+from v1.db.models.external_events import ExternalEventDetails
+from v1.db.mongo import external_event_collection
+
 
 def store_external_event_details(events: List[ExternalEventDetails]):
     """
@@ -28,7 +29,8 @@ def store_external_event_details(events: List[ExternalEventDetails]):
         logging.error(f"Failed to insert/update events: {e}")
 
 
-def get_stored_external_event_details(event_ids: List[int]) -> List[ExternalEventDetails]:
+def get_stored_external_event_details(
+        event_ids: List[int]) -> List[ExternalEventDetails]:
     """
     Retrieves external event details from the MongoDB database.
 
@@ -36,7 +38,12 @@ def get_stored_external_event_details(event_ids: List[int]) -> List[ExternalEven
     :return: The external event details.
     """
     try:
-        return [ExternalEventDetails(**event) for event in external_event_collection.find({'eventId': {'$in': event_ids}})]
+        return [
+            ExternalEventDetails(**event) for event in
+            external_event_collection.find({'eventId': {
+                '$in': event_ids
+            }})
+        ]
     except Exception as e:
         logging.error(f"Failed to retrieve events: {e}")
         return []

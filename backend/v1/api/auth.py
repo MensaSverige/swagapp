@@ -3,13 +3,13 @@ import logging
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 import logging
-from utilities import convert_string_to_datetime
-from db.review_users import check_review_user_creds
-from external.auth_api import loginm
-from db.external_token_storage import save_external_token
-from token_handler import create_access_token, create_refresh_token, get_token_expiry, verify_refresh_token
-from db.models.user import User
-from db.users import create_user, get_user
+from v1.db.review_users import check_review_user_creds
+from v1.utilities import convert_string_to_datetime
+from v1.external.auth_api import loginm
+from v1.db.external_token_storage import save_external_token
+from v1.token_handler import create_access_token, create_refresh_token, get_token_expiry, verify_refresh_token
+from v1.db.models.user import User
+from v1.db.users import create_user, get_user
 
 auth_v1 = APIRouter(prefix="/v1")
 

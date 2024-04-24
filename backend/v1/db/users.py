@@ -1,8 +1,9 @@
 import json
 from typing import Optional
 from pydantic import ValidationError
-from db.models.user import ContactInfo, ShowLocation, User, UserSettings
-from db.mongo import user_collection  
+from v1.db.models.user import ContactInfo, ShowLocation, User, UserSettings
+from v1.db.mongo import user_collection
+
 
 def get_user(user_id: int) -> User:
     """
@@ -14,6 +15,7 @@ def get_user(user_id: int) -> User:
     """
 
     return user_collection.find_one({"userId": user_id})
+
 
 def update_user(user_id: int, user: User) -> User:
     """
@@ -27,6 +29,7 @@ def update_user(user_id: int, user: User) -> User:
     user_collection.update_one({"userId": user_id}, {"$set": user})
     return user
 
+
 def create_user(response_json: dict) -> User:
     """
     Creates a new user document in the MongoDB database
@@ -38,6 +41,7 @@ def create_user(response_json: dict) -> User:
     newuser = map_authresponse_to_user(response_json)
     user_collection.insert_one(newuser)
     return newuser
+
 
 def get_users(show_location: Optional[bool] = None) -> list[User]:
     """
@@ -51,6 +55,7 @@ def get_users(show_location: Optional[bool] = None) -> list[User]:
         query = {'settings.show_location': {'$ne': ShowLocation.NO_ONE.value}}
     return list(user_collection.find(query))
 
+
 def get_users_showing_location() -> list[User]:
     """
     Retrieves all user documents from the MongoDB database where ShowLocation is not no_one.
@@ -59,6 +64,7 @@ def get_users_showing_location() -> list[User]:
     """
     query = {"settings.show_location": {"$ne": ShowLocation.NO_ONE.value}}
     return list(user_collection.find(query))
+
 
 def map_authresponse_to_user(response_json: dict) -> User:
     user = User(
@@ -70,7 +76,8 @@ def map_authresponse_to_user(response_json: dict) -> User:
     if user.isMember:
         user.firstName = response_json.get("firstName", None)
         user.lastName = response_json.get("lastName", None)
-        user.contact_info = ContactInfo(email=response_json.get("email", None), phone=None)  # Update email
+        user.contact_info = ContactInfo(email=response_json.get("email", None),
+                                        phone=None)  # Update email
 
     try:
         user_json = json.dumps(user.model_dump())

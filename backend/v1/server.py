@@ -8,14 +8,14 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import datetime
 import logging
-from api.auth import auth_v1
-from api.health import health_v1
-from api.users import users_v1
-from api.events import events_v1
-from external.event_site_news import get_event_site_news
-from external.event_api import get_external_event_details
-from user_events.user_events_api import user_events_v1
-from db.mongo import initialize_db
+from v1.api.auth import auth_v1
+from v1.api.health import health_v1
+from v1.api.users import users_v1
+from v1.api.events import events_v1
+from v1.external.event_site_news import get_event_site_news
+from v1.external.event_api import get_external_event_details
+from v1.user_events.user_events_api import user_events_v1
+from v1.db.mongo import initialize_db
 
 # Initialize logging
 logging.basicConfig(level=logging.INFO)
@@ -42,7 +42,7 @@ app.include_router(user_events_v1)
 app.mount("/static/img", StaticFiles(directory="/static/img"), name="static")
 
 if os.getenv("ENABLE_DEV_ENDPOINTS") == "true":
-    from dev.user_events_dev_api import dev_user_events
+    from v1.dev.user_events_dev_api import dev_user_events
     app.include_router(dev_user_events)
 
 
@@ -55,8 +55,8 @@ def initialize_app():
     get_event_site_news()
 
 
+initialize_app()  # uvicorn does not run the __main__ block below.
 
 if __name__ == "__main__":
     import uvicorn
-    initialize_app()
     uvicorn.run(app, host="0.0.0.0", port=5000)

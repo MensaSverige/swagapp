@@ -1,9 +1,8 @@
 from datetime import datetime
-import logging
 from typing import List
 from bson import ObjectId
-from user_events.user_events_model import ExtendedUserEvent, UserEvent
-from db.mongo import user_event_collection, user_collection
+from v1.user_events.user_events_model import ExtendedUserEvent, UserEvent
+from v1.db.mongo import user_event_collection, user_collection
 
 
 def create_user_event(user_event: dict) -> ObjectId:
