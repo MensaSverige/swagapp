@@ -1,9 +1,9 @@
 import logging
 from datetime import datetime, timedelta
 from typing import List
-from token_handler import create_token
-from env_constants import APPLE_REVIEW_USER, GOOGLE_REVIEW_USER, REVIEW_PASSWORD
-from db.models.user import ContactInfo, ShowLocation, User, UserSettings
+from v1.token_handler import create_token
+from v1.env_constants import APPLE_REVIEW_USER, GOOGLE_REVIEW_USER, REVIEW_PASSWORD
+from v1.db.models.user import ContactInfo, ShowLocation, User, UserSettings
 
 apple_review_user_id = 1
 google_review_user_id = 2
