@@ -48,7 +48,7 @@ jobs:
     needs: prepare-data
     uses: ./.github/workflows/publish-android.yml
     with:
-      release_tag: ${{ needs.prepare-data.outputs.GIT_TAG }}
+      release_tag: ${{ needs.prepare-data.outputs.TAG_NAME }}
 
   publish-website:
     needs: prepare-data
