@@ -44,8 +44,8 @@ export interface paths {
     get: operations["get_events_for_user_v1_external_events_booked_get"];
   };
   "/v1/external_events/news": {
-    /** Get Event Site News */
-    get: operations["get_event_site_news_v1_external_events_news_get"];
+    /** Get News From Event Site */
+    get: operations["get_news_from_event_site_v1_external_events_news_get"];
   };
   "/v1/user_events/mine": {
     /** Get Events I Own */
@@ -800,8 +800,8 @@ export interface operations {
       };
     };
   };
-  /** Get Event Site News */
-  get_event_site_news_v1_external_events_news_get: {
+  /** Get News From Event Site */
+  get_news_from_event_site_v1_external_events_news_get: {
     responses: {
       /** @description Successful Response */
       200: {
