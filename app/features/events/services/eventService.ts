@@ -1,7 +1,7 @@
 import apiClient from '../../common/services/apiClient';
 import FutureUserEvent, {isFutureUserEvent} from '../types/futureUserEvent';
 import FutureEvent, {isFutureEvent} from '../types/futureEvent';
-import {UserEvent} from '../../../api_schema/types';
+import {ExternalEventDetails, News, UserEvent} from '../../../api_schema/types';
 
 export const fetchUserEvent = async (
   eventId: string,
@@ -45,13 +45,14 @@ export const fetchUserEvents = async (): Promise<FutureUserEvent[]> => {
     });
 };
 
-export const fetchExternalEvents = async (): Promise<FutureEvent[]> => {
+export const fetchExternalEvents = async (): Promise<ExternalEventDetails[]> => {
   return apiClient
-    .get('/external_events')
+    .get('/external_events/booked')
     .then(
       response => {
         if (response.data) {
-          return response.data.filter(isFutureEvent);
+          console.log('External events:', response.data);
+          return response.data;
         }
         return [];
       },
@@ -63,6 +64,28 @@ export const fetchExternalEvents = async (): Promise<FutureEvent[]> => {
       console.error('Error fetching external events:', error);
     });
 };
+
+
+export const fetchNews = async (): Promise<News[]> => {
+  return apiClient
+    .get('/external_events/news')
+    .then(
+      response => {
+        if (response.data) {
+          console.log('News:', response.data);
+          return response.data;
+        }
+        return [];
+      },
+      error => {
+        throw new Error(error.message || error);
+      },
+    )
+    .catch(error => {
+      console.error('Error fetching news:', error);
+    });
+};
+
 
 export const fetchStaticEvents = async (): Promise<FutureEvent[]> => {
   return apiClient

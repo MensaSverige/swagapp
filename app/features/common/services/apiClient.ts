@@ -27,14 +27,17 @@ const apiClient = axios.create({
 });
 
 apiClient.interceptors.request.use(
-  async config => {
-    try {
-      const token = await getOrRefreshAccessToken();
-      config.headers.Authorization = `Bearer ${token}`;
-    } catch (error) {
-      console.log('Error getting access token', error);
-    }
-    return config;
+  config => {
+    return getOrRefreshAccessToken()
+      .then(token => {
+        console.log('Token', token);
+        config.headers.Authorization = `Bearer ${token}`;
+        return config;
+      })
+      .catch(error => {
+        console.log('Error getting access token', error);
+        return Promise.reject(error);
+      });
   },
   (error: Error) => Promise.reject(error),
 );

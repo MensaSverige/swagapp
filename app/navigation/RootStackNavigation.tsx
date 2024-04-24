@@ -1,6 +1,6 @@
 import React, {useState} from 'react';
-import {NavigationContainer} from '@react-navigation/native';
-import {createNativeStackNavigator} from '@react-navigation/native-stack';
+import {NavigationContainer, useNavigation} from '@react-navigation/native';
+import {NativeStackNavigationProp, createNativeStackNavigator} from '@react-navigation/native-stack';
 import {RootStackParamList} from './RootStackParamList';
 import {LoggedInTabs} from './LoggedInTabs';
 import useStore from '../features/common/store/store';
@@ -12,6 +12,10 @@ import apiClient from '../features/common/services/apiClient';
 import {useEffect} from 'react';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
+
+export function useSwagNavigation() {
+  return useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+}
 
 export const RootStackNavigation = () => {
   const {backendConnection, setBackendConnection, user} = useStore();

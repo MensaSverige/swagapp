@@ -42,11 +42,12 @@ def save_external_token(user_id: int, external_token: str, expires_at: datetime)
 
 def get_external_token(user_id: int):
     token_info = tokenstorage_collection.find_one({"userId": user_id})
+    if not token_info:
+        # TODO: Token is expired or not found, request new token
+        return None
+    
     expires_at_tz_aware = convert_to_tz_aware(token_info['expiresAt'])
     created_at_tz_aware = convert_to_tz_aware(token_info['createdAt'])
     
-    if token_info and expires_at_tz_aware > get_current_time():
+    if expires_at_tz_aware > get_current_time():
         return token_info['externalAccessToken']
-    else:
-        # TODO: Token is expired or not found, request new token
-        return None

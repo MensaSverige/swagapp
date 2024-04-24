@@ -1,6 +1,6 @@
-import React, {useCallback, useEffect, useState} from 'react';
-import {Button, Platform, TextInput} from 'react-native';
-import {StyleSheet, SafeAreaView} from 'react-native';
+import React, { useCallback, useEffect, useState } from 'react';
+import { Button, Platform, TextInput } from 'react-native';
+import { StyleSheet, SafeAreaView } from 'react-native';
 import MapView from 'react-native-maps';
 import useStore from '../../common/store/store';
 import {
@@ -16,18 +16,18 @@ import {
   ZStack,
   useTheme,
 } from 'native-base';
-import {RouteProp, useRoute, useNavigation} from '@react-navigation/native';
-import {useEventLists} from '../hooks/useEventLists';
-import {clockForTime} from '../../map/functions/clockForTime';
-import {RootStackParamList} from '../../../navigation/RootStackParamList';
+import { RouteProp, useRoute, useNavigation } from '@react-navigation/native';
+import { useEventLists } from '../hooks/useEventLists';
+import { clockForTime } from '../../map/functions/clockForTime';
+import { RootStackParamList } from '../../../navigation/RootStackParamList';
 import EventMarker from '../../map/components/markers/EventMarker';
 import Field from '../../common/components/Field';
 import Fields from '../../common/components/Fields';
 import EventCard from '../components/EventCard';
-import {NativeStackNavigationProp} from '@react-navigation/native-stack';
-import {createUserEvent, updateUserEvent} from '../services/eventService';
-import {DatepickerField} from '../../common/components/DatepickerField';
-import {UserEvent} from '../../../api_schema/types';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { createUserEvent, updateUserEvent } from '../services/eventService';
+import { DatepickerField } from '../../common/components/DatepickerField';
+import { UserEvent } from '../../../api_schema/types';
 import EventWithLocation from '../types/eventWithLocation';
 import FutureUserEvent from '../types/futureUserEvent';
 
@@ -69,7 +69,7 @@ const EditEventForm: React.FC = () => {
 
   // Event data, and saving it
   const [isSaving, setIsSaving] = useState<boolean>(false);
-  const {fetchAllEvents} = useEventLists();
+  const { fetchAllEvents } = useEventLists();
 
   // Field validation states
   const [nameFieldTouched, setNameFieldTouched] = useState<boolean>(false);
@@ -111,14 +111,14 @@ const EditEventForm: React.FC = () => {
       // You can only save changed events.
       setFormChanged(
         eventName !== initialEvent.name ||
-          eventDescription !== initialEvent.description ||
-          eventMaxParticipants !== initialEvent.maxAttendees ||
-          eventStartDate.toISOString() !== initialEvent.start ||
-          (eventEndDate?.toISOString() || undefined) !== initialEvent.end ||
-          eventLocationLatitude !== initialEvent.location?.latitude ||
-          eventLocationLongitude !== initialEvent.location?.longitude ||
-          eventLocationDescription !== initialEvent.location?.description ||
-          eventLocationMarker !== initialEvent.location?.marker,
+        eventDescription !== initialEvent.description ||
+        eventMaxParticipants !== initialEvent.maxAttendees ||
+        eventStartDate.toISOString() !== initialEvent.start ||
+        (eventEndDate?.toISOString() || undefined) !== initialEvent.end ||
+        eventLocationLatitude !== initialEvent.location?.latitude ||
+        eventLocationLongitude !== initialEvent.location?.longitude ||
+        eventLocationDescription !== initialEvent.location?.description ||
+        eventLocationMarker !== initialEvent.location?.marker,
       );
     } else {
       setFormChanged(eventName !== '');
@@ -171,9 +171,9 @@ const EditEventForm: React.FC = () => {
     setIsSaving(true);
     (initialEvent && initialEvent.id
       ? // when editing
-        updateUserEvent(initialEvent.id, event)
+      updateUserEvent(initialEvent.id, event)
       : // when creating
-        createUserEvent(event)
+      createUserEvent(event)
     )
       .then(async () => {
         return fetchAllEvents().then(() => {

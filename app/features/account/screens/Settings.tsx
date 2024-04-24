@@ -32,7 +32,7 @@ import { resetUserCredentials } from '../../common/services/authService';
 import ProfileEditAvatar from '../../common/components/ProfileEditAvatar';
 
 
-const Profile: React.FC = () => {
+const UserSettings: React.FC = () => {
   const { user, setUser } = useStore();
   const getFormStateFromUser = (user: User) => ({
     contact_info: {
@@ -62,7 +62,7 @@ const Profile: React.FC = () => {
   const handleBlur = () => {
     setIsEditing(false);
   };
-
+  
   function handleLogout(): void {
     setIsLoading(true);
     resetUserCredentials().then(() => {
@@ -76,6 +76,7 @@ const Profile: React.FC = () => {
   }
 
   useEffect(() => {
+
     if (!formState || isEditing) {
       return;
     }
@@ -318,4 +319,4 @@ const createStyles = () =>
     },
   });
 
-export default Profile;
+export default UserSettings;

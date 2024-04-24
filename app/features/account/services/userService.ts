@@ -49,10 +49,9 @@ export const uploadAvatar = async (uri: string): Promise<User> => {
 export const tryGetCurrentUser = async (): Promise<AuthResponse | undefined> => {
   return apiClient
     .get('/users/me', { timeout: 500 })
-    .then(response => {
+    .then(response => { 
       if (response.status === 200) {
-        const authresponse: AuthResponse = response.data;
-        return storeAndValidateAuthResponse(authresponse);
+        return storeAndValidateAuthResponse(response.data);
       } else {
         return response.data().then((data: any) => {
           throw new Error(`Could not get user object. Data: ${data}`);

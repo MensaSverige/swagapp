@@ -84,7 +84,7 @@ export const FilterMarkersComponent: React.FC<FilterMarkersProps> = ({ showFilte
                         <VStack space="lg" h="100%" flex={1}>
 
                             <Card size="sm" variant="elevated" m="$0">
-                                <Text>Online senaste <Text color="$numberLiteral">
+                                <Text>Online senaste <Text color="$vscode_numberLiteral">
                                     {filter.showHoursAgo || 1}
                                 </Text> timmarna</Text>
                                 <Slider
@@ -102,17 +102,17 @@ export const FilterMarkersComponent: React.FC<FilterMarkersProps> = ({ showFilte
                                 />
 
                             </Card>
-                            <Text>Visar <Text color="$numberLiteral">{numberOfUsers}</Text> personer </Text>
+                            <Text>Visar <Text color="$vscode_numberLiteral">{numberOfUsers}</Text> personer </Text>
                             <HStack space="lg" h="100%" flex={1} justifyContent="space-evenly" paddingBottom={20} >
                                 <Button
                                     size="md"
                                     variant="outline"
                                     action="secondary"                                 
-                                    borderColor="$stringLiteral"
+                                    borderColor="$vscode_stringLiteral"
                                     isDisabled={false}
                                     isFocusVisible={false}
                                     onPress={() => setFilterAndCalculateNumberOfUsers({ ...defaultFilter, showHoursAgo: 24 })}                            >
-                                    <ButtonText color='$stringLiteral'>Nollställ filter </ButtonText>
+                                    <ButtonText color='$vscode_stringLiteral'>Nollställ filter </ButtonText>
                                 </Button>
 
                                 <Button
