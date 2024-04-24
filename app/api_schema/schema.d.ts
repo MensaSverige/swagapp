@@ -39,9 +39,13 @@ export interface paths {
     /** Update User Avatar */
     post: operations["update_user_avatar_v1_users_me_avatar_post"];
   };
-  "/v1/external_events": {
+  "/v1/external_events/booked": {
     /** Get Events For User */
-    get: operations["get_events_for_user_v1_external_events_get"];
+    get: operations["get_events_for_user_v1_external_events_booked_get"];
+  };
+  "/v1/external_events/news": {
+    /** Get Event Site News */
+    get: operations["get_event_site_news_v1_external_events_news_get"];
   };
   "/v1/user_events/mine": {
     /** Get Events I Own */
@@ -143,6 +147,17 @@ export interface components {
        */
       file: string;
     };
+    /** Category */
+    Category: {
+      /** Code */
+      code: string;
+      /** Text */
+      text: string;
+      /** Colortext */
+      colorText: string;
+      /** Colorbackground */
+      colorBackground: string;
+    };
     /** ContactInfo */
     ContactInfo: {
       /**
@@ -155,6 +170,19 @@ export interface components {
        * @example +1234567890
        */
       phone?: string | null;
+    };
+    /** EventSiteNews */
+    EventSiteNews: {
+      /** Date */
+      date: string;
+      /** Time */
+      time: string;
+      /** Title */
+      title?: string | null;
+      /** Description */
+      description: string;
+      /** By */
+      by: string;
     };
     /** ExtendedUserEvent */
     ExtendedUserEvent: {
@@ -264,20 +292,54 @@ export interface components {
        */
       attendeeNames?: string[];
     };
-    /** ExternalEvent */
-    ExternalEvent: {
+    /** ExternalEventDetails */
+    ExternalEventDetails: {
       /** Eventid */
       eventId: number;
-      /**
-       * Date
-       * Format: date
-       */
-      date: string;
-      /**
-       * Time
-       * Format: time
-       */
-      time: string;
+      /** Eventdate */
+      eventDate?: string | null;
+      /** Starttime */
+      startTime: string;
+      /** Endtime */
+      endTime: string;
+      /** Titel */
+      titel?: string | null;
+      /** Description */
+      description: string;
+      /** Speaker */
+      speaker: string;
+      /** Location */
+      location: string;
+      /** Locationinfo */
+      locationInfo?: string | null;
+      /** Mapurl */
+      mapUrl?: string | null;
+      /** Admins */
+      admins?: string[] | null;
+      /** Isfree */
+      isFree: boolean;
+      /** Price */
+      price: number;
+      /** Islimited */
+      isLimited: boolean;
+      /** Stock */
+      stock: number;
+      /** Showbooked */
+      showBooked: boolean;
+      /** Booked */
+      booked: number;
+      /** Datebookingstart */
+      dateBookingStart?: string | null;
+      /** Datebookingend */
+      dateBookingEnd?: string | null;
+      /** Categories */
+      categories?: components["schemas"]["Category"][] | null;
+      /** Imageurl150 */
+      imageUrl150?: string | null;
+      /** Imageurl300 */
+      imageUrl300?: string | null;
+      /** Eventurl */
+      eventUrl: string;
     };
     /** HTTPValidationError */
     HTTPValidationError: {
@@ -728,12 +790,23 @@ export interface operations {
     };
   };
   /** Get Events For User */
-  get_events_for_user_v1_external_events_get: {
+  get_events_for_user_v1_external_events_booked_get: {
     responses: {
       /** @description Successful Response */
       200: {
         content: {
-          "application/json": components["schemas"]["ExternalEvent"][];
+          "application/json": components["schemas"]["ExternalEventDetails"][];
+        };
+      };
+    };
+  };
+  /** Get Event Site News */
+  get_event_site_news_v1_external_events_news_get: {
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["EventSiteNews"][];
         };
       };
     };

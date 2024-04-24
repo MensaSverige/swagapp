@@ -7,4 +7,5 @@ export type RootStackParamList = {
   EventForm: {event: FutureUserEvent | null};
   LoggedIn: undefined;
   UserSettings: undefined;
+  News: undefined;
 };

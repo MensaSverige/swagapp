@@ -1,4 +1,4 @@
-import { Button, ICustomTheme, theme, useTheme } from 'native-base';
+import { Button, HStack, ICustomTheme, theme, useTheme } from 'native-base';
 import React, { useEffect, useState } from 'react';
 import MapView from '../features/map/screens/Map';
 import UserSettings from '../features/account/screens/Settings';
@@ -10,17 +10,22 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { RootStackParamList } from './RootStackParamList';
 import { Pressable } from '../gluestack-components';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
-import { faGear } from '@fortawesome/free-solid-svg-icons';
+import { faCircleInfo, faGear, faInfo } from '@fortawesome/free-solid-svg-icons';
 import { config } from '../gluestack-components/gluestack-ui.config';
 import { StyleSheet } from 'react-native';
 import { useColorMode } from '@gluestack-ui/themed';
 import ExternalEvents from '../features/events/screens/ExternalEvents';
+import NewsScreen from '../features/common/screens/NewsScreen';
 
-const createStyles1 = (theme: any) =>
+const createStyles1 = (theme: any, colorMode: string) =>
 
   StyleSheet.create({
     settingsIcon: {
-      color: theme.vscode_const,
+      color: theme.primary500,
+      right: 10
+    },
+    InfoIcon: {
+      color: colorMode === 'dark' ? theme.vscode_var : theme.info300,
       right: 10
     },
     tabBarStyle: { backgroundColor: theme.background0 },
@@ -36,11 +41,11 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export const LoggedInTabs = () => {
   const colorMode = useColorMode();
-  const [styles, setStyles] = useState(createStyles1(colorMode));
+  const [styles, setStyles] = useState(createStyles1(config.tokens.colors,colorMode));
 
   useEffect(() => {
     const theme = colorMode === 'dark' ? config.themes.dark.colors : config.tokens.colors
-    setStyles(createStyles1(theme));
+    setStyles(createStyles1(theme, colorMode));
   }, [colorMode]);
   const screenOptions = {
     tabBarStyle: {
@@ -58,13 +63,21 @@ export const LoggedInTabs = () => {
 
   const defaultHeaderOptions = {
     headerRight: () => (
+<HStack space={2} alignItems="center" paddingRight={2}>
+      <Pressable
+      style={{ marginRight: 10 }}
+      onPress={() => navigation.navigate('News')}
+    >
+      <FontAwesomeIcon icon={faCircleInfo} size={28} style={styles.InfoIcon} />
+    </Pressable>
+
       <Pressable
         style={{ marginRight: 10 }}
         onPress={() => navigation.navigate('UserSettings')}
       >
         <FontAwesomeIcon icon={faGear} size={28} style={styles.settingsIcon} />
       </Pressable>
-
+</HStack>
     ),
   };
 
@@ -93,7 +106,7 @@ export const LoggedInTabs = () => {
               name="EventNavigator"
               options={{
                 ...defaultHeaderOptions,
-                title: 'Händelser',
+                title: 'Spontant',
                 tabBarIcon: EventsIcon,
               }}>
               {() => <EventStackNavigator screenOptions={screenOptions} />}
@@ -107,6 +120,14 @@ export const LoggedInTabs = () => {
         options={{
           ...screenOptions,
           title: "Inställningar"
+        }}
+      />
+      <Stack.Screen
+        name="News"
+        component={NewsScreen}
+        options={{
+          ...screenOptions,
+          title: "Nyheter"
         }}
       />
     </Stack.Navigator>
