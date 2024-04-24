@@ -39,6 +39,10 @@ jobs:
         run: |
           echo "$ANDROID_SIGNING_KEY" | base64 --decode > mensa-release-key.keystore
       
+      - name: Verify keystore file
+        working-directory: app/android
+        run: ls -la
+        
       - name: Create .env file
         working-directory: app
         run: |
