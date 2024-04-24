@@ -20,7 +20,7 @@ jobs:
     environment: Mensa-Dev
     steps:
       - name: Set release version by removing v-prefix from release tag
-        run: echo "RELEASE_VERSION=${{ inputs.release_tag }}".substring(1) >> $GITHUB_ENV
+        run: echo "RELEASE_VERSION=${{ inputs.release_tag:1 }}" >> $GITHUB_ENV
       
       - name: Print run number
         run: echo Run number is ${{ github.run_number }}
