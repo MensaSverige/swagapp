@@ -55,7 +55,8 @@ def initialize_app():
     get_event_site_news()
 
 
+initialize_app()  # uvicorn does not run the __main__ block below.
+
 if __name__ == "__main__":
     import uvicorn
-    initialize_app()
     uvicorn.run(app, host="0.0.0.0", port=5000)
