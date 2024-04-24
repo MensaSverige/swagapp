@@ -26,12 +26,11 @@
  * general API requests.
  */
 
-import { AuthRequest, AuthResponse, HTTPValidationError, User, ValidationError } from '../../../api_schema/types';
+import { AuthRequest, AuthResponse, HTTPValidationError, ValidationError } from '../../../api_schema/types';
 import axios, { AxiosResponse } from 'axios';
 import { API_URL, API_VERSION } from '@env';
 import { UserCredentials } from 'react-native-keychain';
 import * as Keychain from 'react-native-keychain';
-
 
 const authClient = axios.create({
     baseURL: `${API_URL}/${API_VERSION}`,
@@ -75,7 +74,6 @@ export const authenticate = async (username: string, password: string, testMode:
             }
         });
 }
-
 
 export const getOrRefreshAccessToken = async (): Promise<string> => {
     const accessToken = await Keychain.getGenericPassword({ service: 'accessToken' })
@@ -129,22 +127,31 @@ export const attemptLoginWithStoredCredentials = async (): Promise<AuthResponse 
         })
         .catch((error: Error) => {
             console.error('Login with stored credentials failed', error);
-            return Promise.all([
-                Keychain.resetGenericPassword({ service: 'credentials' }),
-            ]).then(() => Promise.reject('Login failed'));
+            return Keychain.resetGenericPassword({ service: 'credentials' })
+            .then(() => Promise.reject('Login failed'));
         });
 }
 
-const storeAndValidateAuthResponse = async (authresponse: AuthResponse): Promise<AuthResponse | undefined> => {
+export const resetUserCredentials = async (): Promise<boolean> => {
+    return Promise.all([
+        Keychain.resetGenericPassword({ service: 'accessToken' }),
+        Keychain.resetGenericPassword({ service: 'accessTokenExpiry' }),
+        Keychain.resetGenericPassword({ service: 'credentials' }),
+        Keychain.resetGenericPassword({ service: 'refreshToken' }),
+    ])
+    .then(() => true)
+}
+
+export const storeAndValidateAuthResponse = async (authresponse: AuthResponse): Promise<AuthResponse | undefined> => {
     if (authresponse.accessToken && authresponse.refreshToken && authresponse.accessTokenExpiry && authresponse.user) {
         await Keychain.setGenericPassword('accessToken', authresponse.accessToken, {
             service: 'accessToken',
         });
-        await Keychain.setGenericPassword('refreshToken', authresponse.refreshToken, {
-            service: 'refreshToken',
-        });
         await Keychain.setGenericPassword('accessTokenExpiry', authresponse.accessTokenExpiry.toString(), {
             service: 'accessTokenExpiry',
+        });
+        await Keychain.setGenericPassword('refreshToken', authresponse.refreshToken, {
+            service: 'refreshToken',
         });
 
         if (authresponse.user !== null && authresponse.user !== undefined) {
