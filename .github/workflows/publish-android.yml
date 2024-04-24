@@ -75,7 +75,6 @@ jobs:
           RELEASE_VERSION: ${{ env.RELEASE_VERSION }}
           VERSION_CODE: ${{ github.run_number }} 
         run: |
-          VERSION_CODE=$(expr $VERSION_CODE - 35)
           echo "$GOOGLE_CLOUD_SERVICE_ACCOUNT_JSON" > ./app/service-account.json
           chmod +x ./gradlew
           ./gradlew publishReleaseBundle -Pandroid.injected.signing.store.file=$ANDROID_SIGNING_KEY_PATH -Pandroid.injected.signing.store.password=$ANDROID_SIGNING_STORE_PASSWORD -Pandroid.injected.signing.key.alias=$ANDROID_SIGNING_ALIAS -Pandroid.injected.signing.key.password=$ANDROID_SIGNING_STORE_PASSWORD -PversionName=$RELEASE_VERSION -PpublishTrack=$TRACK -PversionCode=$VERSION_CODE
