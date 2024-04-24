@@ -13,7 +13,6 @@ const useUserLocation = () => {
   const intervalRef = useRef<NodeJS.Timeout>();
 
   useEffect(() => {
-    console.log('useUserLocation rerunning');
     // Make sure there is only one interval running
     if (intervalRef.current) {
       clearInterval(intervalRef.current);

@@ -15,6 +15,7 @@ def get_current_time_zone():
 def convert_string_to_datetime(datestring: str):
     return datetime.strptime(datestring, '%Y-%m-%d')
 
+# Convert naive datetime to timezone aware datetime. This is necessary because MongoDB stores all datetimes in UTC
 def convert_to_tz_aware(naive_dt):
     aware_dt = naive_dt.replace(tzinfo=pytz.utc).astimezone(get_current_time_zone())
     return aware_dt

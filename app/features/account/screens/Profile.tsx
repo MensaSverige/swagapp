@@ -1,32 +1,26 @@
 import React, { useEffect, useState } from 'react';
 import {
   useColorMode,
-  useTheme,
 } from '@gluestack-ui/themed';
 import {
-  Button,
-  KeyboardAvoidingView, Center,
+  KeyboardAvoidingView,
   Input,
   VStack,
   Text,
-  Image,
   ScrollView,
-  View,
   Heading,
   InputField,
   Card,
   useToast,
   Divider,
+  Button,
 } from '../../../gluestack-components';
-import { faPlus, faUser } from '@fortawesome/free-solid-svg-icons';
-import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import useStore from '../../common/store/store';
 import Field from '../../common/components/Field';
 import Fields from '../../common/components/Fields';
 import { ActivityIndicator, Platform, SafeAreaView, StyleSheet } from 'react-native';
 import { updateUser } from '../services/userService';
 import { User, UserUpdate } from '../../../api_schema/types';
-import { gluestackUIConfig } from '../../../gluestack-components/gluestack-ui.config';
 import { Picker } from '@react-native-picker/picker';
 import SettingsSwitchField from '../../common/components/SettingsSwitchField';
 import ShowSettingsLabelIconColor from '../../common/components/ShowSettingsLabelIconColor';
@@ -35,6 +29,8 @@ import AutosaveSuccessToast from '../../common/components/AutosaveSuccessToast';
 import AutosaveErrorToast from '../../common/components/AutosaveErrorToast';
 import AutosaveToast from '../../common/components/AutosaveToast';
 import { resetUserCredentials } from '../../common/services/authService';
+import ProfileEditAvatar from '../../common/components/ProfileEditAvatar';
+
 
 const Profile: React.FC = () => {
   const { user, setUser } = useStore();
@@ -51,7 +47,7 @@ const Profile: React.FC = () => {
   });
   const [formState, setFormState] = useState<UserUpdate>(getFormStateFromUser(user as User));
 
-  const colorMode = useColorMode()
+  const colorMode = useColorMode();
   const toast = useToast();
   const styles = createStyles();
 
@@ -80,7 +76,6 @@ const Profile: React.FC = () => {
   }
 
   useEffect(() => {
-
     if (!formState || isEditing) {
       return;
     }
@@ -89,63 +84,56 @@ const Profile: React.FC = () => {
     }
     );
   }, [formState, isEditing]);
+  type ToastType = 'save' | 'saved' | 'error';
 
-  const autosave = (formState: User): Promise<User> | undefined => {
-    if (!user || JSON.stringify(getFormStateFromUser(user)) === JSON.stringify(formState)) {
-      return;
+  const showToast = (type: ToastType) => {
+    let content;
+    switch (type) {
+      case 'save':
+        content = <AutosaveToast id="save" />;
+        break;
+      case 'saved':
+        content = <AutosaveSuccessToast id="saved" />;
+        break;
+      case 'error':
+        content = <AutosaveErrorToast id="error" />;
+        break;
     }
+
     toast.closeAll();
     toast.show({
       placement: "bottom",
       duration: 1000,
-      render: ({ id }) => (
-        <AutosaveToast
-          id={id}
-        />
-      ),
+      render: () => content,
     });
-    setTimeout(() => {
-      if (!user) {
-        return;
-      }
-      updateUser(formState as UserUpdate)
-        .then(returnedUser => {
-          setUser({ ...user, ...returnedUser });
-          toast.closeAll();
-          toast.show({
-            placement: "bottom",
-            duration: 1000,
-            render: ({ id }) => (
-              <AutosaveSuccessToast
-                id={id}
-              />
-            ),
-          });
-          return returnedUser;
-        })
-        .catch(error => {
-          console.error('Error updating user', error);
-          toast.closeAll();
-          toast.show({
-            placement: "bottom",
-            duration: 3000,
-            render: ({ id }) => (
-              <AutosaveErrorToast
-                id={id}
-              />
-            ),
-          });
-        })
-        .finally(() => {
-        });
-    }, 1000); // Delay of 1 second
 
+  };
+  const autosave = (formState: User): Promise<User> | undefined => {
+    if (!user || JSON.stringify(getFormStateFromUser(user)) === JSON.stringify(formState)) {
+      return;
+    }
+    showToast('save');
+
+    if (!user) {
+      return;
+    }
+    updateUser(formState as UserUpdate)
+      .then(returnedUser => {
+        setUser({ ...user, ...returnedUser });
+        showToast('saved');
+        return returnedUser;
+      })
+      .catch(error => {
+        console.error('Error updating user', error);
+        showToast('error');
+      })
+      .finally(() => {
+      });
   }
 
   if (!user) {
     return null;
   }
-
 
   return (
     //<SafeAreaView style={styles.viewContainer}>
@@ -161,50 +149,18 @@ const Profile: React.FC = () => {
         >
 
           <VStack space="md" h="100%" bg="$background0" flex={1} justifyContent="center" alignItems="center">
-            <Center pt={10}>
-
-              {user.avatar_url ? (
-                <Image
-                  source={{ uri: user.avatar_url }}
-                  alt="Profile image"
-                  size="md"
-                  style={{ width: 160, height: 160, borderRadius: 80 }}
-                />
-              ) : (
-                <View style={{
-                  backgroundColor: gluestackUIConfig.tokens.colors.blue700,
-                  borderRadius: 80,
-                  width: 160,
-                  height: 160,
-                  justifyContent: 'center',
-                  alignItems: 'center'
-                }}>
-                  <FontAwesomeIcon
-                    icon={faUser}
-                    size={100}
-                    color="white"
-                  />
-                </View>
-              )}
-              <View style={{
-                position: 'absolute',
-                right: 0,
-                bottom: 0,
-                backgroundColor: 'white',
-                borderRadius: 20,
-                width: 40,
-                height: 40,
-                justifyContent: 'center',
-                alignItems: 'center'
-              }}>
-                <FontAwesomeIcon
-                  icon={faPlus}
-                  size={15}
-                  color={gluestackUIConfig.tokens.colors.blue700}
-                />
-              </View>
-
-            </Center>
+            <ProfileEditAvatar
+              onError={(error) => {
+                showToast('error');
+              }}
+              onSaved={() => {
+                console.log('saved recieved');
+                showToast('saved');
+              }}
+              onSaving={() => {
+                showToast('save');
+              }}
+            />
             <Heading> {user.firstName} {user.lastName}</Heading>
 
           </VStack>

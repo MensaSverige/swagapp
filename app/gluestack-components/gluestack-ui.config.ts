@@ -370,6 +370,18 @@ export const gluestackUIConfig = createConfig({
       borderLight900: '#262626',
       borderLight950: '#171717',
 
+      background0: '#F6F6F7',
+      background50: '#F6F6F7',
+      background100: '#F6F6F7',
+      background200: '#F6F6F7',
+      background300: '#F6F6F7',
+      background400: '#F6F6F7',
+      background500: '#F6F6F7',
+      background600: '#F6F6F7',
+      background700: '#F6F6F7',
+      background800: '#F6F6F7',
+      background900: '#F6F6F7',
+      
       backgroundLight0: '#ffffff',//'#FCFCFC',
       backgroundLight50: '#F5F5F5',
       backgroundLight100: '#F1F1F1',
@@ -395,6 +407,21 @@ export const gluestackUIConfig = createConfig({
       backgroundDarkMuted: '#252526',
       white: '#FFFFFF',
       black: '#000000',
+
+      //vscode colors
+      newOperator: '#AF00DB',
+      stringLiteral:'#a31515',
+      customLiteral: '#795E26',
+      numberLiteral: '#098658',
+
+      //types declaration and references, TS grammar specific",
+      typeDeclaration: "#267f99",
+
+      //Variable and parameter name",
+			vscode_var: '#001080',
+
+      vscode_const: '#0070C1'
+
     },
     space: {
       'px': '1px',
@@ -683,6 +710,16 @@ export const gluestackUIConfig = createConfig({
         primary700: '#5bb8eb',
         primary800: '#51b3e8',
         primary900: '#47aee6',
+        secondary0: '#58e3c7',
+        secondary100: '#56ddc2',
+        secondary200: '#53d7bd',
+        secondary300: '#51d2b8',
+        secondary400: '#4fccb3',
+        secondary500: '#4ec9b0',
+        secondary600: '#4bc1a9',
+        secondary700: '#48bba4',
+        secondary800: '#46b69f',
+        secondary900: '#44b09a',
         text950: '#FCFCFC',
         text900: '#F5F5F5',
         text800: '#E5E5E5',
@@ -724,8 +761,24 @@ export const gluestackUIConfig = createConfig({
         backgroundSuccess: '#1C2B21',
         backgroundInfo: '#1A282E',
         backgroundMuted: '#252526',
-      },
+
+       //vscode colors
+      newOperator: '#C586C0',
+      stringLiteral:'#ce9178',
+      customLiteral: '#DCDCAA',
+      numberLiteral: '#b5cea8',
+
+
+      //types declaration and references, TS grammar specific",
+      typeDeclaration: "#4EC9B0",
+
+      //Variable and parameter name",
+			vscode_var: '#9CDCFE',
+
+      vscode_const: '#4FC1FF'
     },
+  }, 
+
   },
   plugins: [new AnimationResolver(MotionAnimationDriver)],
 });
