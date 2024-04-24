@@ -1,16 +1,12 @@
-import configparser
-from datetime import datetime
-import logging
-import os
-from pydantic import BaseModel, Field
 from datetime import timedelta
-from env_constants import SECRET_KEY
-from utilities import get_current_time, get_time_from_timestamp
+from v1.env_constants import SECRET_KEY
+from v1.utilities import get_current_time, get_time_from_timestamp
 import jwt
 from cryptography.fernet import Fernet
 
 access_token_expiry_delta = timedelta(minutes=15)
 refresh_token_expiry_delta = timedelta(hours=24)
+
 
 def generate_secret_key():
     """
@@ -20,6 +16,7 @@ def generate_secret_key():
     :rtype: str
     """
     return Fernet.generate_key().decode()
+
 
 def get_or_create_jwt_secret():
     """
@@ -36,8 +33,11 @@ def get_or_create_jwt_secret():
     except ValueError as e:
         print(f"Error: {e}")
 
+
 def get_token_expiry(token: str):
-    payload = jwt.decode(token, get_or_create_jwt_secret(), algorithms=['HS256'])
+    payload = jwt.decode(token,
+                         get_or_create_jwt_secret(),
+                         algorithms=['HS256'])
     expiry_timestamp = payload.get('exp')
 
     if expiry_timestamp:
@@ -46,6 +46,7 @@ def get_token_expiry(token: str):
         return expiry_datetime
     else:
         return None
+
 
 def create_token(userId, expiry_delta, type):
     """
@@ -63,13 +64,9 @@ def create_token(userId, expiry_delta, type):
     iat = get_current_time()
     exp = iat + expiry_delta
 
-    payload = {
-        'exp': exp,
-        'iat': iat,
-        'sub': userId,
-        'type': type
-    }
+    payload = {'exp': exp, 'iat': iat, 'sub': userId, 'type': type}
     return jwt.encode(payload, get_or_create_jwt_secret(), algorithm='HS256')
+
 
 def create_refresh_token(userId):
     """
@@ -83,6 +80,7 @@ def create_refresh_token(userId):
 
     return create_token(userId, refresh_token_expiry_delta, 'refresh')
 
+
 def create_access_token(userId):
     """
     Create an access token for the given userId.
@@ -93,6 +91,7 @@ def create_access_token(userId):
     :rtype: str
     """
     return create_token(userId, access_token_expiry_delta, 'access')
+
 
 def verify_token(token, type):
     """
@@ -109,8 +108,9 @@ def verify_token(token, type):
         - If the token is invalid, the first element of the tuple is False and the second element is the error message.
     """
     try:
-        payload = jwt.decode(
-            token, get_or_create_jwt_secret(), algorithms=['HS256'])
+        payload = jwt.decode(token,
+                             get_or_create_jwt_secret(),
+                             algorithms=['HS256'])
         if payload['type'] != type:
             raise jwt.InvalidTokenError('Invalid token type')
         return True, payload
@@ -118,6 +118,7 @@ def verify_token(token, type):
         return False, 'Token expired'
     except jwt.InvalidTokenError as e:
         return False, str(e)
+
 
 def verify_access_token(token):
     """
@@ -132,6 +133,7 @@ def verify_access_token(token):
         - If the token is invalid, the first element of the tuple is False and the second element is the error message.
     """
     return verify_token(token, 'access')
+
 
 def verify_refresh_token(token):
     """

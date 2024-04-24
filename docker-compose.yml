@@ -7,7 +7,7 @@ services:
       - ./schema:/app/schema
       - ./tmp/backend.ini:/backend.ini
     working_dir: /app
-    command: bash -c "pip install -r v1/requirements.txt && mkdir -p /static/img/ && python v1/server.py"
+    command: bash -c "pip install -r v1/requirements.txt && mkdir -p /static/img/ && uvicorn v1.server:app --host 0.0.0.0 --port 5000 --reload"
     ports:
       - "5000:5000"
     depends_on:
@@ -22,9 +22,13 @@ services:
       SECRET_KEY: ${SECRET_KEY:-SECRET_KEY}
       URL_MEMBER_API: 'https://medlem.mensa.se/mensa_verify/restlogin.php'
       URL_EVENTS_API: 'https://events.mensa.se/swag2024/info-rest/?sec_action=app-api'
-      ENABLE_DEV_ENDPOINTS: ${ENABLE_DEV_ENDPOINTS}
-      MY_USER_ID: ${MY_USER_ID:-null}
-      TEST_MODE: ${TEST_MODE:-false}
+      ENABLE_DEV_ENDPOINTS: 'true'
+      MY_USER_ID: ${MY_USER_ID}
+      TEST_MODE: 'true'
+      APPLE_REVIEW_USER: apple@apple.com
+      GOOGLE_REVIEW_USER: google@google.com
+      REVIEW_PASSWORD: some-nice-password # Different in production
+
   mongo:
     image: mongo:latest
     volumes:

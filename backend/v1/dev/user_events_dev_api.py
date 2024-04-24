@@ -2,9 +2,9 @@ import datetime
 import os
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
-from db.mongo import user_collection, user_event_collection
-from user_events.user_events_model import ExtendedUserEvent
-from user_events.user_events_db import get_safe_user_event
+from v1.db.mongo import user_collection, user_event_collection
+from v1.user_events.user_events_model import ExtendedUserEvent
+from v1.user_events.user_events_db import get_safe_user_event
 
 
 class StatusResponseWithMessage(BaseModel):

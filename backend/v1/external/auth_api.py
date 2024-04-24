@@ -1,8 +1,8 @@
 import requests
 import logging
 from fastapi import HTTPException
-from env_constants import LOGINM_SEED, URL_MEMBER_API
-from utilities import calc_hash, get_current_time_formatted
+from v1.env_constants import LOGINM_SEED, URL_MEMBER_API
+from v1.utilities import calc_hash, get_current_time_formatted
 
 
 def loginm(username, password):
@@ -23,8 +23,11 @@ def loginm(username, password):
 
     logging.info(f"loginm_par: {loginm_par}")
     headers = {'Content-Type': 'application/json'}
-    response = requests.post(URL_MEMBER_API, json=loginm_par, headers=headers, verify=False)
+    response = requests.post(URL_MEMBER_API,
+                             json=loginm_par,
+                             headers=headers,
+                             verify=False)
     if response.status_code != 200:
         raise HTTPException(status_code=400, detail="Invalid credentials")
 
-    return response.json() 
+    return response.json()

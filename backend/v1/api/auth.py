@@ -3,14 +3,16 @@ import logging
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 import logging
-from utilities import convert_string_to_datetime
-from external.auth_api import loginm
-from db.external_token_storage import save_external_token
-from token_handler import create_access_token, create_refresh_token, get_token_expiry, verify_refresh_token
-from db.models.user import User
-from db.users import create_user, get_user
+from v1.db.review_users import check_review_user_creds
+from v1.utilities import convert_string_to_datetime
+from v1.external.auth_api import loginm
+from v1.db.external_token_storage import save_external_token
+from v1.token_handler import create_access_token, create_refresh_token, get_token_expiry, verify_refresh_token
+from v1.db.models.user import User
+from v1.db.users import create_user, get_user
 
 auth_v1 = APIRouter(prefix="/v1")
+
 
 class AuthRequest(BaseModel):
     username: str
@@ -23,9 +25,16 @@ class AuthResponse(BaseModel):
     accessTokenExpiry: datetime
     user: User
 
+
 @auth_v1.post("/authm")
 def authm(request: AuthRequest) -> AuthResponse:
-    response = loginm(request.username, request.password)
+    response = check_review_user_creds(request.username, request.password)
+
+    if response is not None:
+        # Important, so we can look at the logs to see when the app is being reviewed ;)
+        logging.info(f"Review user logged in! {request.username}")
+    else:
+        response = loginm(request.username, request.password)
 
     logging.info(f"response_json: {response}")
     try:
@@ -33,20 +42,21 @@ def authm(request: AuthRequest) -> AuthResponse:
         user = get_user(memberId)
         if not user:
             user = create_user(response)
-    except KeyError:
+    except KeyError as e:
         print("memberId not found in response")
         raise HTTPException(status_code=400, detail="Invalid credentials")
 
-    save_external_token(user["userId"], response["token"], convert_string_to_datetime(response["validThrough"]))
+    save_external_token(user["userId"], response["token"],
+                        convert_string_to_datetime(response["validThrough"]))
     accesstoken = create_access_token(user["userId"])
 
     authresponse = AuthResponse(
         accessToken=accesstoken,
         refreshToken=create_refresh_token(user["userId"]),
         accessTokenExpiry=get_token_expiry(accesstoken),
-        user=user
-    )
+        user=user)
     return authresponse
+
 
 @auth_v1.post("/refresh_token")
 def refresh_token(refresh_token: str) -> AuthResponse:
@@ -61,8 +71,7 @@ def refresh_token(refresh_token: str) -> AuthResponse:
             accessToken=accesstoken,
             refreshToken=create_refresh_token(user["userId"]),
             accessTokenExpiry=get_token_expiry(accesstoken),
-            user=user
-        )
+            user=user)
         return authresponse
     except:
         raise HTTPException(status_code=401, detail="Unauthorized")
