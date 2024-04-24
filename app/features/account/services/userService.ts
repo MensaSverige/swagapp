@@ -2,7 +2,7 @@ import apiClient from '../../common/services/apiClient';
 import { UserUpdate } from '../../../api_schema/types';
 import { AuthResponse, User } from '../../../api_schema/types';
 import * as Keychain from 'react-native-keychain';
-import { attemptLoginWithStoredCredentials } from '../../common/services/authService';
+import { attemptLoginWithStoredCredentials, storeAndValidateAuthResponse } from '../../common/services/authService';
 
 
 export const updateUser = async (
@@ -91,9 +91,3 @@ export const getUser = async (userName: string): Promise<User> => {
       console.error('Failed to get user:', error.message || error);
     });
 };
-
-
-function storeAndValidateAuthResponse(authresponse: { accessToken: string; refreshToken: string; accessTokenExpiry: string; user: { userId: number; isMember?: boolean | undefined; settings: { show_location?: "NO_ONE" | "ALL_MEMBERS_WHO_SHARE_THEIR_OWN_LOCATION" | "ALL_MEMBERS" | "EVERYONE_WHO_SHARE_THEIR_OWN_LOCATION" | "EVERYONE" | undefined; show_email?: boolean | undefined; show_phone?: boolean | undefined; }; location?: { latitude: number; longitude: number; timestamp: string | null; accuracy: number; } | null | undefined; contact_info?: { email?: string | null | undefined; phone?: string | null | undefined; } | null | undefined; age?: number | null | undefined; slogan?: string | null | undefined; avatar_url?: string | null | undefined; firstName?: string | null | undefined; lastName?: string | null | undefined; }; }): any {
-  throw new Error('Function not implemented.');
-}
-

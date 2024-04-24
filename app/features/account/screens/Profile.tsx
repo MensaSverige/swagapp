@@ -12,11 +12,13 @@ import {
   InputField,
   Card,
   useToast,
+  Divider,
+  Button,
 } from '../../../gluestack-components';
 import useStore from '../../common/store/store';
 import Field from '../../common/components/Field';
 import Fields from '../../common/components/Fields';
-import { Platform, SafeAreaView, StyleSheet } from 'react-native';
+import { ActivityIndicator, Platform, SafeAreaView, StyleSheet } from 'react-native';
 import { updateUser } from '../services/userService';
 import { User, UserUpdate } from '../../../api_schema/types';
 import { Picker } from '@react-native-picker/picker';
@@ -26,12 +28,12 @@ import ShowSettingsLabelIcon from '../../common/components/ShowSettingsLabelIcon
 import AutosaveSuccessToast from '../../common/components/AutosaveSuccessToast';
 import AutosaveErrorToast from '../../common/components/AutosaveErrorToast';
 import AutosaveToast from '../../common/components/AutosaveToast';
+import { resetUserCredentials } from '../../common/services/authService';
 import ProfileEditAvatar from '../../common/components/ProfileEditAvatar';
 
 
 const Profile: React.FC = () => {
-  // Get current user and token from Zustand store
-  const { user, setUser, backendConnection } = useStore();
+  const { user, setUser } = useStore();
   const getFormStateFromUser = (user: User) => ({
     contact_info: {
       email: user?.contact_info?.email || '',
@@ -61,8 +63,19 @@ const Profile: React.FC = () => {
     setIsEditing(false);
   };
 
-  useEffect(() => {
+  function handleLogout(): void {
+    setIsLoading(true);
+    resetUserCredentials().then(() => {
+      setUser(null);
+    })
+      .catch((error) => console.error('Error logging out', error)
+      ).finally(() => {
+        setIsLoading(false);
+      }
+      );
+  }
 
+  useEffect(() => {
     if (!formState || isEditing) {
       return;
     }
@@ -281,11 +294,13 @@ const Profile: React.FC = () => {
                 )}
               </Card>
             </Fields>
+            <Divider style={{ marginTop: 20, marginBottom: 10 }} />
+            <Button size="sm" action="primary" onPress={() => handleLogout()}>
+              <Text color="white">Logga ut</Text>
+              <ActivityIndicator size="small" color="white" animating={isLoading} />
+            </Button>
           </VStack>
         </ScrollView>
-        {/* <Button size="sm" onPress={() => handleLogout()}>
-              <Text color="white">Logga ut</Text>
-            </Button> */}
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
