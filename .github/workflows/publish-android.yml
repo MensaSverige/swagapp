@@ -39,10 +39,6 @@ jobs:
         run: |
           echo "$ANDROID_SIGNING_KEY" | base64 --decode > mensa-release-key.keystore
       
-      - name: Verify keystore file
-        working-directory: app/android
-        run: ls -la
-        
       - name: Create .env file
         working-directory: app
         run: |
@@ -71,7 +67,7 @@ jobs:
       - name: Publish internal release to Google Play
         working-directory: app/android
         env:
-          ANDROID_SIGNING_KEY_PATH: ./mensa-release-key.keystore
+          ANDROID_SIGNING_KEY_PATH: ${{ github.workspace }}/app/android/mensa-release-key.keystore
           ANDROID_SIGNING_ALIAS: ${{ secrets.ANDROID_SIGNING_ALIAS}}
           ANDROID_SIGNING_STORE_PASSWORD: ${{ secrets.ANDROID_SIGNING_STORE_PASSWORD }}
           GOOGLE_CLOUD_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_CLOUD_SERVICE_ACCOUNT_JSON }}
