@@ -1,7 +1,7 @@
 from pydantic import BaseModel, Field
-from typing import Optional
 from datetime import datetime
-from utilities import get_current_time
+from v1.utilities import get_current_time
+
 
 class TokenStorage(BaseModel):
     userId: int = Field(..., example=123)

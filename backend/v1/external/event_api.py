@@ -1,14 +1,14 @@
-from datetime import datetime, time
+from datetime import datetime
 import json
 import logging
 from typing import List
 import requests
 from fastapi import HTTPException
-from utilities import convert_string_to_datetime
-from db.external_events import store_external_event_details
-from db.models.external_events import ExternalEvent, ExternalEventDetails
-from db.external_token_storage import get_external_token
-from env_constants import EVENT_API_TOKEN, LOGINM_SEED, URL_EVENTS_API
+from v1.utilities import convert_string_to_datetime
+from v1.db.external_events import store_external_event_details
+from v1.db.models.external_events import ExternalEvent, ExternalEventDetails
+from v1.db.external_token_storage import get_external_token
+from v1.env_constants import EVENT_API_TOKEN, URL_EVENTS_API
 
 
 def get_booked_external_events(userId: int) -> list[ExternalEvent]:
@@ -27,6 +27,7 @@ def get_booked_external_events(userId: int) -> list[ExternalEvent]:
     events = response.json()["events"]
     return events
 
+
 def get_external_event_details(date: str):
     parameters = {
         'operation': 'events',
@@ -38,7 +39,7 @@ def get_external_event_details(date: str):
                              json=parameters,
                              headers=headers,
                              verify=False)
-    
+
     if response.status_code != 200:
         raise HTTPException(status_code=400, detail="Invalid credentials")
 
@@ -50,10 +51,12 @@ def get_external_event_details(date: str):
         for event in events:
             try:
                 event_json = json.dumps(event)
-                validated = ExternalEventDetails.model_validate_json(event_json)
-                
+                validated = ExternalEventDetails.model_validate_json(
+                    event_json)
+
                 # Convert startTime string to time object
-                start_time = datetime.strptime(validated.startTime, '%H:%M').time()
+                start_time = datetime.strptime(validated.startTime,
+                                               '%H:%M').time()
 
                 # Combine eventDate and startTime
                 validated.eventDate = datetime.combine(eventdate, start_time)
@@ -71,4 +74,3 @@ def get_external_event_details(date: str):
         logging.info("Successfully stored external event details.")
     except Exception as e:
         logging.error(f"Failed to store external event details: {e}")
-

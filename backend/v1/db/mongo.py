@@ -1,14 +1,14 @@
 from pymongo import MongoClient
-from env_constants import TEST_MODE
-from db.test_data import generate_fake_users
+from v1.env_constants import TEST_MODE
+from v1.db.test_data import generate_fake_users
 import logging
 from typing import Type
 from pydantic import BaseModel
-from db.models.tokenstorage import TokenStorage
-from db.models.user import User
-from user_events.user_events_model import UserEvent
-from db.models.external_events import ExternalEventDetails
-from db.review_users import review_users
+from v1.db.models.tokenstorage import TokenStorage
+from v1.db.models.user import User
+from v1.user_events.user_events_model import UserEvent
+from v1.db.models.external_events import ExternalEventDetails
+from v1.db.review_users import review_users
 
 logging.basicConfig(level=logging.INFO)
 

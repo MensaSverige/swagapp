@@ -1,7 +1,7 @@
 from datetime import datetime
 from pydantic import BaseModel, Field
-from shared.model_with_id import ModelWithId
-from typing import Annotated, Any, List, Optional
+from v1.shared.model_with_id import ModelWithId
+from typing import List, Optional
 
 
 class Attendee(BaseModel):

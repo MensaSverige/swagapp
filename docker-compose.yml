@@ -7,7 +7,7 @@ services:
       - ./schema:/app/schema
       - ./tmp/backend.ini:/backend.ini
     working_dir: /app
-    command: bash -c "pip install -r v1/requirements.txt && mkdir -p /static/img/ && python v1/server.py"
+    command: bash -c "pip install -r v1/requirements.txt && mkdir -p /static/img/ && uvicorn v1.server:app --host 0.0.0.0 --port 5000 --reload"
     ports:
       - "5000:5000"
     depends_on:
