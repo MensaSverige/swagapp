@@ -1,46 +1,49 @@
-import React, { useEffect, useMemo, useRef } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  Dimensions,
-  Platform,
   StyleSheet,
-  TouchableOpacity,
-  ScrollView,
+  Image,
 } from 'react-native';
-import ReactNativeMapView, { PanDragEvent } from 'react-native-maps';
+import ReactNativeMapView from 'react-native-maps';
 import {
-  Box,
   Button,
-  Center,
-  ITheme,
   View,
-  useTheme,
-} from 'native-base';
+  SafeAreaView
+} from '../../../gluestack-components';
 import UserMarker from '../components/markers/UserMarker';
 import useStore from '../../common/store/store';
 import useRequestLocationPermission from '../hooks/useRequestLocationPermission';
 import useGetUsersShowingLocation from '../hooks/useGetUsersShowingLocation';
 import lightMapstyle from '../styles/light';
 import darkMapstyle from '../styles/dark';
-import { faLocation } from '@fortawesome/free-solid-svg-icons';
+import { faFilter, faLocation } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import ContactCard from '../components/ContactCard';
+import { getFullUrl } from '../../common/functions/GetFullUrl';
+import UserWithLocation from '../types/userWithLocation';
+import { useFocusEffect } from '@react-navigation/native';
+import { FilterMarkersComponent } from '../components/FilterMarkers';
+import IncognitoInfo from '../components/IncognitoInfo';
+import { config } from '../../../gluestack-components/gluestack-ui.config';
+import { useColorMode } from '@gluestack-ui/themed';
+import { VStack } from 'native-base';
 
-const createStyles = (theme: ITheme) =>
+const createStyles = () =>
   StyleSheet.create({
     map: {
       ...StyleSheet.absoluteFillObject,
     },
     mapControlsWrapper: {
       position: 'absolute',
-      alignItems: 'flex-end',
-      top: 10,
+      top: 50,
       right: 10,
-      left: 10,
       zIndex: 1,
       backgroundColor: 'transparent',
+      width: 50,
+      flexDirection: 'column',
+      gap: 10,
     },
     mapControlsButton: {
-      backgroundColor: `${theme.colors.background[500]}99`,
+      backgroundColor: `$background0`,
       borderRadius: 10,
       shadowColor: 'black',
       shadowOffset: { width: 3, height: 3 },
@@ -49,108 +52,150 @@ const createStyles = (theme: ITheme) =>
       paddingHorizontal: 10,
       paddingVertical: 10,
     },
-    infoWrapper: {
-      position: 'absolute',
-      bottom: 0,
-      left: 0,
-      right: 0,
-      zIndex: 1,
-      backgroundColor: 'transparent',
-    },
-    infoScrollView: {
-      backgroundColor: 'transparent',
-    },
-    infoScrollViewContent: {
-      backgroundColor: 'transparent',
-      padding: 10,
-      gap: 10,
-    },
-    infoCard: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      backgroundColor: theme.colors.background[500],
-      width: 330,
-      padding: 10,
-      borderRadius: 10,
-      shadowColor: 'black',
-      shadowOffset: { width: 3, height: 3 },
-      shadowOpacity: 0.5,
-      shadowRadius: 5,
-    },
   });
 
 const MapView: React.FC = () => {
-  const theme = useTheme();
+  const colorMode = useColorMode();
   const mapRef = useRef<ReactNativeMapView | null>(null);
-  const scrollViewRef = useRef<ScrollView | null>(null);
-  const { region, usersShowingLocation, selectedUserId, setSelectedUserId } = useStore();
-  const [focusedContactCard, setFocusedContactCard] = React.useState(usersShowingLocation.findIndex(u => u.userId === selectedUserId));
+  const { region, usersShowingLocation, filteredUsers, selectedUser, userFilter, setSelectedUser, setFilteredUsers } = useStore();
+  const [visibleRegion, setVisibleRegion] = useState(region);
+  const [showContactCard, setShowContactCard] = useState(false);
+  const [showFilter, setshowFilter] = useState(false);
+  const [isImagesLoaded, setIsImagesLoaded] = useState(false);
+
+  // Prefetch images so they are ready to be displayed
   useEffect(() => {
-    console.log('Map re-rendered');
-  });
+    console.log('Loading images');
+    setIsImagesLoaded(false);
 
-  const selectedUserKey = useMemo(() => {
-    if (selectedUserId) {
-      return `user-marker-${selectedUserId}-${Math.random()}`;
-    }
-    return '';
-  }, [selectedUserId]);
+    const loadImages = filteredUsers.map(user => {
+      if (user.avatar_url) {
+        return Image.prefetch(getFullUrl(user.avatar_url));
+      }
+      return Promise.resolve();
+    });
 
+    Promise.all(loadImages)
+      .then(() => {
+        setIsImagesLoaded(true);
+        console.log('Images loaded');
+      })
+      .catch((error) => console.log("Failed to load images", error));
+
+  }, [userFilter]);
+  useFocusEffect(
+    React.useCallback(() => {
+      const onUnfocus = () => {
+        setShowContactCard(false);
+      };
+
+      return onUnfocus;
+    }, [])
+  );
   const [followsUserLocation, setFollowsUserLocation] = React.useState(true);
 
-  const screenWidth = Dimensions.get('window').width;
-
-  const styles = createStyles(theme);
+  const styles = createStyles();
 
   useRequestLocationPermission();
   useGetUsersShowingLocation();
 
-  const focusOnUser = (userId: number) => {
+  const onClose = useMemo(() => () => {
+    setShowContactCard(false);
+    setSelectedUser(null);
+  }, [selectedUser, showContactCard]);
+
+  const focusOnUser = (user: UserWithLocation) => {
+    setSelectedUser(user);
+    setShowContactCard(true);
     if (!usersShowingLocation) {
       return;
     }
     setFollowsUserLocation(false)
-    const loc = usersShowingLocation.find(u => u.userId === userId)?.location;
-    const index = usersShowingLocation.findIndex(u => u.userId === userId);
-    setFocusedContactCard(index);
-    if (loc) {
+    if (user.location) {
       mapRef.current?.animateToRegion(
         {
-          latitude: loc.latitude,
-          longitude: loc.longitude,
+          latitude: user.location.latitude,
+          longitude: user.location.longitude,
           latitudeDelta: region.latitudeDelta,
           longitudeDelta: region.longitudeDelta,
         },
         350,
       );
     }
-    setSelectedUserId(userId);
-    const x =
-      index * (styles.infoCard.width + 10) -
-      (screenWidth - styles.infoCard.width) / 2; // Calculate the x position
-    scrollViewRef.current?.scrollTo({ x, animated: true });
   }
 
-  const scrollViewStyle = {
-    ...styles.infoScrollViewContent,
-    paddingHorizontal: Platform.OS === 'android' ? 10 : 0,
+  const openFilter = () => {
+    setShowContactCard(false);
+    setSelectedUser(null);
+    setshowFilter(true);
   };
 
-  function onPanDrag(event: PanDragEvent): void {
+  const resetSelectedUser = useMemo(() => () => {
     if (followsUserLocation !== false) {
       setFollowsUserLocation(false);
     }
-    if (selectedUserId !== null) {
-      setSelectedUserId(null);
+    if (selectedUser !== null) {
+      setSelectedUser(null);
     }
-  }
+    setShowContactCard(false);
+    setshowFilter(false);
+
+  }, [followsUserLocation, selectedUser, showContactCard, showFilter]);
+
+  useEffect(() => {
+    if (!filteredUsers || filteredUsers.length === 0) {
+      return;
+    }
+    if (userFilter.name === undefined && userFilter.showHoursAgo === undefined) {
+      return;
+    }
+    resetSelectedUser();
+    setShowContactCard(false);
+
+    const latitudes = filteredUsers.map(user => user.location.latitude);
+    const longitudes = filteredUsers.map(user => user.location.longitude);
+
+    const minLat = Math.min(...latitudes);
+    const maxLat = Math.max(...latitudes);
+    const minLong = Math.min(...longitudes);
+    const maxLong = Math.max(...longitudes);
+
+    const midLat = (minLat + maxLat) / 2;
+    const midLong = (minLong + maxLong) / 2;
+
+    const deltaLat = (maxLat - minLat) * 1.2;
+    const deltaLong = (maxLong - minLong) * 1.2;
+
+    mapRef.current?.animateToRegion({
+      latitude: midLat,
+      longitude: midLong,
+      latitudeDelta: deltaLat,
+      longitudeDelta: deltaLong,
+    });
+  }, [userFilter, isImagesLoaded]);
 
   return (
-    <Center w="100%" h="100%">
-      <Box safeArea flex={1} w="100%" mx="auto">
+    <SafeAreaView flex={1} key={colorMode}>
+      <VStack flex={1}>
+        {selectedUser && showContactCard &&
+          <ContactCard
+            key={`${selectedUser.userId}-${colorMode}`}
+            user={selectedUser}
+            showCard={showContactCard}
+            onClose={onClose} />}
+
+        <FilterMarkersComponent
+          showFilterView={showFilter}
+          onClose={
+            () => {
+              setshowFilter(false);
+            }
+          } />
+
         <ReactNativeMapView
           ref={mapRef}
-          style={styles.map}
+          style={{ flex: 1 }}
+          //style={styles.map}
           showsUserLocation={true}
           initialRegion={region}
           followsUserLocation={followsUserLocation}
@@ -164,36 +209,52 @@ const MapView: React.FC = () => {
                   latitudeDelta: region.latitudeDelta,
                   longitudeDelta: region.longitudeDelta,
                 },
-                350,
+                350
               );
             }
           }}
-          onPanDrag={onPanDrag}
+          onRegionChangeComplete={setVisibleRegion}
+          onPanDrag={resetSelectedUser}
+          onPress={resetSelectedUser}
           mapPadding={{
             top: 10,
             right: 10,
             bottom: 10,
             left: 10,
           }}
-          customMapStyle={
-            theme.config.initialColorMode === 'dark'
-              ? darkMapstyle
-              : lightMapstyle
-          }>
-          {usersShowingLocation &&
-            usersShowingLocation.map(u => (
-              <UserMarker
-                key={u.userId === selectedUserId ? selectedUserKey : `user-marker-${u.userId}`}
-                user={u}
-                zIndex={100}
-                highlighted={selectedUserId === u.userId}
-                onPress={() => {
-                  focusOnUser(u.userId);
-                }}
-              />
-            ))}
+          customMapStyle={colorMode === 'dark'
+            ? darkMapstyle
+            : lightMapstyle}>
+          {filteredUsers && isImagesLoaded &&
+            filteredUsers
+              .filter(u => u.location.latitude >= visibleRegion.latitude - visibleRegion.latitudeDelta * 5 &&
+                u.location.latitude <= visibleRegion.latitude + visibleRegion.latitudeDelta * 5 &&
+                u.location.longitude >= visibleRegion.longitude - visibleRegion.longitudeDelta * 5 &&
+                u.location.longitude <= visibleRegion.longitude + visibleRegion.longitudeDelta * 5
+              )
+              .map(u => (
+                <UserMarker
+                  key={`${u.userId}-${colorMode}`}
+                  imageLoaded={isImagesLoaded}
+                  user={u}
+                  zIndex={100}
+                  highlighted={selectedUser?.userId === u.userId}
+                  onPress={() => {
+                    focusOnUser(u);
+                  }} />
+              ))}
         </ReactNativeMapView>
         <View style={styles.mapControlsWrapper}>
+          <Button
+            style={styles.mapControlsButton}
+            variant="solid"
+            onPress={openFilter}>
+            <FontAwesomeIcon
+              icon={faFilter}
+              size={30}
+              color={userFilter && (userFilter.name || userFilter.showHoursAgo !== 24) ? config.tokens.colors.primary300 : config.tokens.colors.coolGray400}
+            />
+          </Button>
           <Button
             style={styles.mapControlsButton}
             variant="solid"
@@ -203,51 +264,15 @@ const MapView: React.FC = () => {
             <FontAwesomeIcon
               icon={faLocation}
               size={30}
-              color={
-                followsUserLocation
-                  ? theme.colors.primary[500]
-                  : theme.colors.secondary[100]
-              }
+              color={followsUserLocation
+                ? config.tokens.colors.primary300
+                : config.tokens.colors.coolGray400}
             />
           </Button>
         </View>
-        <View style={styles.infoWrapper}>
-          <ScrollView
-            ref={scrollViewRef}
-            horizontal
-            pagingEnabled
-            scrollEventThrottle={1}
-            showsHorizontalScrollIndicator={true}
-            snapToInterval={styles.infoCard.width + 10}
-            snapToAlignment={'center'}
-            contentInset={{
-              top: 0,
-              left: 10,
-              bottom: 0,
-              right: 10,
-            }}
-            style={styles.infoScrollView}
-            contentContainerStyle={scrollViewStyle}>
-            {usersShowingLocation &&
-              usersShowingLocation.map(u => (
-                <TouchableOpacity
-                  activeOpacity={1}
-                  key={`user-card-${u.userId}`}
-                  onPress={() => {
-                    focusOnUser(u.userId);
-                  }}
-                  style={styles.infoCard}>
-                      <ContactCard
-                        user={u}
-                        isSelected={selectedUserId === u.userId}
-                      />
-
-                </TouchableOpacity>
-              ))}
-          </ScrollView>
-        </View>
-      </Box>
-    </Center>
+      </VStack>
+      <IncognitoInfo />
+    </SafeAreaView>
   );
 };
 

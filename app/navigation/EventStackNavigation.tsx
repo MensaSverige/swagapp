@@ -16,13 +16,14 @@ export const EventStackNavigator: React.FC<{
         name="Event"
         component={EventList}
         options={{
-          title: 'Evenemang',
+          headerShown: false,
         }}
       />
       <EventStack.Screen
         name="EventForm"
         component={EventForm}
         options={{
+          headerShown: false,
           title: 'Skapa evenemang',
           presentation: 'modal',
         }}

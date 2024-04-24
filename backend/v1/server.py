@@ -1,6 +1,7 @@
 import datetime
 import logging
 import os
+from fastapi.staticfiles import StaticFiles
 from pydantic.v1.json import ENCODERS_BY_TYPE
 from bson import ObjectId
 from fastapi import FastAPI
@@ -11,6 +12,8 @@ from api.auth import auth_v1
 from api.health import health_v1
 from api.users import users_v1
 from api.events import events_v1
+from external.event_site_news import get_event_site_news
+from external.event_api import get_external_event_details
 from user_events.user_events_api import user_events_v1
 from db.mongo import initialize_db
 
@@ -36,6 +39,7 @@ app.include_router(health_v1)
 app.include_router(users_v1)
 app.include_router(events_v1)
 app.include_router(user_events_v1)
+app.mount("/static/img", StaticFiles(directory="/static/img"), name="static")
 
 if os.getenv("ENABLE_DEV_ENDPOINTS") == "true":
     from dev.user_events_dev_api import dev_user_events
@@ -44,6 +48,12 @@ if os.getenv("ENABLE_DEV_ENDPOINTS") == "true":
 
 def initialize_app():
     initialize_db()
+    get_external_event_details("2024-05-08")
+    get_external_event_details("2024-05-09")
+    get_external_event_details("2024-05-10")
+    get_external_event_details("2024-05-11")
+    get_event_site_news()
+
 
 
 if __name__ == "__main__":

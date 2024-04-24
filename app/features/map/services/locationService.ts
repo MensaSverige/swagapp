@@ -1,9 +1,6 @@
-import {User} from '../../common/types/user';
 import apiClient from '../../common/services/apiClient';
-import UserWithLocation, {isUserWithLocation} from '../types/userWithLocation';
+import UserWithLocation, {calculateOnlineStatus, isUserWithLocation} from '../types/userWithLocation';
 import { UserLocation } from '../../../api_schema/types';
-
-
 
 export const getUserLocations = async (): Promise<UserWithLocation[]> => {
   return apiClient
@@ -11,8 +8,11 @@ export const getUserLocations = async (): Promise<UserWithLocation[]> => {
     .then(
       response => {
         if (response.data) {
-          console.log('fetching new user locations');
-          return response.data.filter(isUserWithLocation);
+          const usersWithLocation = response.data.filter(isUserWithLocation);
+          return usersWithLocation.map((user: UserWithLocation) => ({
+            ...user,
+            onlineStatus: calculateOnlineStatus(user.location.timestamp),
+          }));
         }
         return [];
       },
@@ -42,21 +42,3 @@ export const updateUserLocation = async (data: UserLocation) => {
     });
 };
 
-function generateFakeUserLocations(numberOfUsers: number) {
-  const fakeUsers: User[] = [];
-
-  for (let i = 0; i < numberOfUsers; i++) {
-    const fakeUser: User = {
-      name: `User${i + 1}`,
-      username: `user${i + 1}`,
-      avatar_url: `https://secure.gravatar.com/avatar/e6bb5f4f4707bfdd1b205e2b2a2dd130?d=https%3A%2F%2Fmedlem.mensa.se%2Fuploads%2Fset_resources_2%2F84c1e40ea0e759e3f1505eb1788ddf3c_default_photo.png`,
-      location: {
-        latitude: 59.269249 + Math.random() * 0.01 - 0.005,
-        longitude: 15.206333 + Math.random() * 0.01 - 0.005,
-      },
-    };
-    fakeUsers.push(fakeUser);
-  }
-
-  return fakeUsers;
-}

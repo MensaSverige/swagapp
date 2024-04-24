@@ -2,18 +2,18 @@ from datetime import timedelta
 from faker import Faker
 import random
 from typing import List
-from utilities import get_current_time
+from utilities import convert_to_tz_aware, get_current_time
 from db.models.user import User, UserSettings, ShowLocation, UserLocation, ContactInfo
 
 fake = Faker()
 
 def generate_fake_users(n: int) -> List[User]:
     users = []
-    for _ in range(n):
+    for i in range(n):
         lat, long = generate_random_lat_long(59.26925456856207, 15.20632088460749, 0.01)
         user = User(
-            userId=fake.random_int(min=1, max=1000),
-            isMember=fake.boolean(),
+            userId=int(f"{i}{random.randint(100, 999)}"),
+            isMember=True,
             settings=UserSettings(
                 show_location=fake.random_element(elements=(ShowLocation.ALL_MEMBERS, ShowLocation.ALL_MEMBERS_WHO_SHARE_THEIR_OWN_LOCATION, ShowLocation.NO_ONE)),
                 show_email=fake.boolean(),
@@ -22,7 +22,7 @@ def generate_fake_users(n: int) -> List[User]:
             location=UserLocation(
                 latitude=lat,
                 longitude=long,
-                timestamp = random_time_last_day(),
+                timestamp = random_time_last_hours(2),
                 accuracy=fake.random_int(min=1, max=100)
             ) if fake.boolean() else None,
             contact_info=ContactInfo(
@@ -38,11 +38,12 @@ def generate_fake_users(n: int) -> List[User]:
         users.append(user)
     return users
 
-def random_time_last_day():
-    now = get_current_time()
-    random_seconds = random.randint(0, 24*60*60)
+def random_time_last_hours(hours: int):
+    now = convert_to_tz_aware(get_current_time())
+    random_seconds = random.randint(0, hours*60*60)
     random_time = now - timedelta(seconds=random_seconds)
     return random_time.isoformat()
+
 
 def generate_random_lat_long(center_lat, center_long, radius):
     offset_lat = random.uniform(-radius, radius)
