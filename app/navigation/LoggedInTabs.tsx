@@ -2,7 +2,7 @@ import { Button, HStack, ICustomTheme, theme, useTheme } from 'native-base';
 import React, { useEffect, useState } from 'react';
 import MapView from '../features/map/screens/Map';
 import UserSettings from '../features/account/screens/Settings';
-import { MapIcon, CalendarIcon, EventsIcon } from './TabBarIcons';
+import { MapIcon, CalendarIcon, EventsIcon, InformationIcon } from './TabBarIcons';
 import { EventStackNavigator } from './EventStackNavigation';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useSwagNavigation } from './RootStackNavigation';
@@ -14,8 +14,8 @@ import { faCircleInfo, faGear, faInfo } from '@fortawesome/free-solid-svg-icons'
 import { config } from '../gluestack-components/gluestack-ui.config';
 import { StyleSheet } from 'react-native';
 import { useColorMode } from '@gluestack-ui/themed';
-import ExternalEvents from '../features/events/screens/ExternalEvents';
-import NewsScreen from '../features/common/screens/NewsScreen';
+import MyExternalEvents from '../features/events/screens/MyExternalEvents';
+import WelcomeScreen from '../features/common/screens/WelcomeScreen';
 
 const createStyles1 = (theme: any, colorMode: string) =>
 
@@ -29,10 +29,10 @@ const createStyles1 = (theme: any, colorMode: string) =>
       right: 10
     },
     tabBarStyle: { backgroundColor: theme.background0 },
-    tabBarActiveTintColor: { color: theme.primary100 },
-    tabBarInactiveTintColor: { color: theme.primary600 },
+    tabBarActiveTintColor: { color: colorMode === 'dark' ? theme.info700 : theme.primary200 },
+    tabBarInactiveTintColor: { color: colorMode === 'dark' ? theme.info400 : theme.primary600 },
     headerStyle: { backgroundColor: theme.background0 },
-    headerTintColor: { color: theme.primary500 },
+    headerTintColor: { color: theme.primary600 },
   })
   ;
 
@@ -41,7 +41,7 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export const LoggedInTabs = () => {
   const colorMode = useColorMode();
-  const [styles, setStyles] = useState(createStyles1(config.tokens.colors,colorMode));
+  const [styles, setStyles] = useState(createStyles1(config.tokens.colors, colorMode));
 
   useEffect(() => {
     const theme = colorMode === 'dark' ? config.themes.dark.colors : config.tokens.colors
@@ -63,21 +63,21 @@ export const LoggedInTabs = () => {
 
   const defaultHeaderOptions = {
     headerRight: () => (
-<HStack space={2} alignItems="center" paddingRight={2}>
-      <Pressable
-      style={{ marginRight: 10 }}
-      onPress={() => navigation.navigate('News')}
-    >
-      <FontAwesomeIcon icon={faCircleInfo} size={28} style={styles.InfoIcon} />
-    </Pressable>
+      <HStack space={2} alignItems="center" paddingRight={2}>
+        {/* <Pressable
+          style={{ marginRight: 10 }}
+          onPress={() => navigation.navigate('WelcomeScreen')}
+        >
+          <FontAwesomeIcon icon={faCircleInfo} size={28} style={styles.InfoIcon} />
+        </Pressable> */}
 
-      <Pressable
-        style={{ marginRight: 10 }}
-        onPress={() => navigation.navigate('UserSettings')}
-      >
-        <FontAwesomeIcon icon={faGear} size={28} style={styles.settingsIcon} />
-      </Pressable>
-</HStack>
+        <Pressable
+          style={{ marginRight: 10 }}
+          onPress={() => navigation.navigate('UserSettings')}
+        >
+          <FontAwesomeIcon icon={faGear} size={28} style={styles.settingsIcon} />
+        </Pressable>
+      </HStack>
     ),
   };
 
@@ -87,8 +87,16 @@ export const LoggedInTabs = () => {
         {() => (
           <BottomTab.Navigator screenOptions={screenOptions}>
             <BottomTab.Screen
+              name="Information"
+              component={WelcomeScreen}
+              options={{
+                ...defaultHeaderOptions,
+                tabBarIcon: InformationIcon,
+              }}
+            />
+            <BottomTab.Screen
               name="Schema"
-              component={ExternalEvents}
+              component={MyExternalEvents}
               options={{
                 ...defaultHeaderOptions,
                 tabBarIcon: CalendarIcon,
@@ -122,14 +130,7 @@ export const LoggedInTabs = () => {
           title: "Inställningar"
         }}
       />
-      <Stack.Screen
-        name="News"
-        component={NewsScreen}
-        options={{
-          ...screenOptions,
-          title: "Nyheter"
-        }}
-      />
+
     </Stack.Navigator>
   );
 }

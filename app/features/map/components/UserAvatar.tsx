@@ -17,9 +17,9 @@ type UserAvatarProps = {
 export const getOnlineStatusColor = (status: OnlineStatus) => {
     switch (status) {
       case 'online':
-        return gluestackUIConfig.tokens.colors.green200;
+        return gluestackUIConfig.tokens.colors.secondary400;
       case 'away':
-        return gluestackUIConfig.tokens.colors.amber200;
+        return gluestackUIConfig.tokens.colors.amber300;
       default:
         return gluestackUIConfig.tokens.colors.coolGray600;
     }

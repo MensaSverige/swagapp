@@ -7,6 +7,7 @@ import { gluestackUIConfig } from '../../../gluestack-components/gluestack-ui.co
 import UserAvatar, { getOnlineStatusColor } from './UserAvatar';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faDiamondTurnRight, faEnvelope, faLocationArrow, faMap, faPhone } from '@fortawesome/free-solid-svg-icons';
+import LocationLinkButton from '../../common/components/LocationLinkIcon';
 
 type ContactCardProps = {
     user: UserWithLocation;
@@ -58,12 +59,12 @@ const ContactCard: React.FC<ContactCardProps> = ({ user, showCard, onClose }) =>
 
                         <UserAvatar firstName={user.firstName} lastName={user.lastName} avatar_url={user.avatar_url} onlineStatus={user.onlineStatus} />
                         <VStack style={{ flex: 1 }}>
-                            <Heading size="sm" color={gluestackUIConfig.tokens.colors.primary200} >{user.firstName} {user.lastName}</Heading>
+                            <Heading size="sm" color="$primary400" >{user.firstName} {user.lastName}</Heading>
                             {user.location.timestamp &&
                                 <Text color={getOnlineStatusColor(user.onlineStatus)}>{timeUntil(comparisonDate, user.location.timestamp)} sedan</Text>
                             }
 
-                            <HStack space="xl" style={{ flex: 1, marginTop: 10, marginBottom: 20, marginRight: 30, alignItems: 'center', justifyContent: 'flex-end' }}>
+                            <HStack space="xl" style={{ flex: 1, marginTop: 10, marginBottom: 20, marginRight: 30, justifyContent: 'flex-end' }}>
                                 {user.contact_info?.phone && user.contact_info.phone.trim() !== '' && (
                                     <Pressable
                                         style={{ marginRight: 10 }}
@@ -86,20 +87,9 @@ const ContactCard: React.FC<ContactCardProps> = ({ user, showCard, onClose }) =>
                                 )}
 
                                 {user.location && (
-                                    <Pressable
-                                        onPress={() => {
-                                            const url = Platform.select({
-                                                ios: `maps:0,0?q=${user.location.latitude},${user.location.longitude}`,
-                                                android: `geo:0,0?q=${user.location.latitude},${user.location.longitude}`
-                                            });
-                                            if (!url) {
-                                                return;
-                                            }
-                                            Linking.openURL(url);
-                                        }}
-                                    >
-                                        <FontAwesomeIcon icon={faDiamondTurnRight} size={28} color={gluestackUIConfig.tokens.colors.blue400} />
-                                    </Pressable>
+                                    <>
+                                    <LocationLinkButton latitude={user.location.latitude} longitude={user.location.longitude} />
+                                    </>
                                 )}
                             </HStack>
                         </VStack>

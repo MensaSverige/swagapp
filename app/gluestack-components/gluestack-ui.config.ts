@@ -196,6 +196,7 @@ export const gluestackUIConfig = createConfig({
       amber700: '#b45309',
       amber800: '#92400e',
       amber900: '#78350f',
+
       orange50: '#fff7ed',
       orange100: '#ffedd5',
       orange200: '#fed7aa',
@@ -731,6 +732,16 @@ export const gluestackUIConfig = createConfig({
         text100: '#404040',
         text50: '#262626',
         text0: '#171717',
+        info900: '#f0f9ff',
+        info800: '#e0f2fe',
+        info700: '#bae6fd',
+        info600: '#7dd3fc',
+        info500: '#38bdf8',
+        info400: '#0ea5e9',
+        info300: '#0284c7',
+        info200: '#0369a1',
+        info100: '#075985',
+        info50: '#0c4a6e',
         border950: '#FCFCFC',
         border900: '#F5F5F5',
         border800: '#E5E5E5',
@@ -760,6 +771,18 @@ export const gluestackUIConfig = createConfig({
         backgroundSuccess: '#1C2B21',
         backgroundInfo: '#1A282E',
         backgroundMuted: '#252526',
+        amber50: '#ffffff', // made lighter
+        amber100: '#ffffff', // made lighter
+        amber200: '#fffbeb', // made lighter
+        amber300: '#fef3c7', // made lighter
+        amber400: '#fde68a', // made lighter
+        amber500: '#fcd34d', // made lighter
+        amber600: '#fbbf24', // made lighter
+        amber700: '#f59e0b', // made lighter
+        amber800: '#d97706', // made lighter
+        amber900: '#b45309', // made lighter
+        //amber800: '#92400e',
+        //amber950: '#78350f',
 
        //vscode colors
       vscode_newOperator: '#C586C0',

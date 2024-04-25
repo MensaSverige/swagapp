@@ -49,7 +49,7 @@ const ProfileEditAvatar: React.FC<ProfileEditAvatarProps> = ({onError, onSaved, 
                 />
             ) : (
                 <View style={{
-                    backgroundColor: gluestackUIConfig.tokens.colors.blue700,
+                    backgroundColor: gluestackUIConfig.tokens.colors.primary600,
                     borderRadius: 80,
                     width: 160,
                     height: 160,

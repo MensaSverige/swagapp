@@ -1,5 +1,5 @@
 import React from "react";
-import { faMapLocationDot, faCalendarDays, faAddressCard, faIcons } from "@fortawesome/free-solid-svg-icons";
+import { faMapLocationDot, faCalendarDays, faAddressCard, faIcons, faCircleInfo } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
 
 export interface TabBarIconProps {
@@ -20,5 +20,8 @@ export const EventsIcon: React.FC<TabBarIconProps> = ({ color, size }) => (
 );
 export const ProfileIcon: React.FC<TabBarIconProps> = ({ color, size }) => (
   <FontAwesomeIcon color={color} size={size} icon={faAddressCard} />
+);
+export const InformationIcon: React.FC<TabBarIconProps> = ({ color, size }) => (
+  <FontAwesomeIcon color={color} size={size} icon={faCircleInfo} />
 );
 

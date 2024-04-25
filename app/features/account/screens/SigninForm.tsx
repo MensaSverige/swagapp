@@ -11,7 +11,8 @@ import {
   CheckboxIcon,
   CheckboxIndicator,
   CheckboxLabel,
-  
+  InputSlot,
+  InputIcon,
   Heading,
   Input,
   Spinner,
@@ -23,9 +24,12 @@ import {
   ModalBackdrop,
   ModalHeader,
   ModalBody,
-  CheckIcon
+  CheckIcon,
+  EyeIcon,
+  EyeOffIcon
 } from "../../../gluestack-components";
 import { ModalFooter, useColorMode } from '@gluestack-ui/themed';
+import { LoadingScreen } from '../../common/screens/LoadingScreen';
 import { config } from "../../../gluestack-components/gluestack-ui.config";
 
 export const SigninForm = () => {
@@ -93,10 +97,12 @@ export const SigninForm = () => {
         setIsLoading(false);
       });
   };
+
+
   const cancelRef = useRef(null);
   return (
     <SafeAreaView flex={1} key={colorMode}>
-      <VStack flex={1} bg="$background50" space="lg" padding={20}>
+      <VStack flex={1} bg="$background0" space="lg" padding={20}>
         <Heading size="lg">Välkommen Swagger</Heading>
         <Heading fontWeight="medium" size="xs">
           Logga in med dina Mensa.se-uppgifter
@@ -125,8 +131,18 @@ export const SigninForm = () => {
               onChangeText={setPassword}
               secureTextEntry={!passwordVisible}
             />
+            <InputSlot pr="$3" onPress={() => {
+              setPasswordVisible((passwordVisible) => {
+                return !passwordVisible
+              })
+            }}>
+              <InputIcon
+                as={passwordVisible ? EyeIcon : EyeOffIcon}
+                color="$primary500"
+              />
+            </InputSlot>
           </Input>
-          <Checkbox size="md" isInvalid={false} isDisabled={false} onChange={setSaveCredentials} value={saveCredentials.toString()}>
+          <Checkbox aria-label="Save Credentials" size="md" isInvalid={false} isDisabled={false} onChange={setSaveCredentials} value={saveCredentials.toString()}>
             <CheckboxIndicator mr="$2">
               <CheckboxIcon as={CheckIcon} />
             </CheckboxIndicator>
@@ -135,7 +151,7 @@ export const SigninForm = () => {
 
           <HStack space="lg" flex={1} justifyContent="center" paddingBottom={20}>
             {isLoading ? (
-              <Spinner />
+              <LoadingScreen/>
             ) : (
               <Button
                 flex={1}
@@ -171,7 +187,7 @@ export const SigninForm = () => {
               <Text>{loginErrorText}</Text>
             </ModalBody>
             <ModalFooter >
-            <HStack space="lg" justifyContent="center" alignItems="center" padding={20}>
+              <HStack space="lg" justifyContent="center" alignItems="center" padding={20}>
                 <Button
                   size="md"
                   variant="solid"
@@ -188,7 +204,5 @@ export const SigninForm = () => {
         </Modal>
       </VStack>
     </SafeAreaView>
-
-
   );
 };
