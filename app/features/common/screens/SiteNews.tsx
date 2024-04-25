@@ -36,8 +36,7 @@ export const SiteNews = () => {
     };
 
     return (
-
-        <VStack space="lg" h="100%" bg="$background0" flex={1}>
+        <VStack space="xs" h="100%" bg="$background0" flex={1}>
             <Heading size="xl" >Information från arrangörerna</Heading>
             <ScrollView>
                 <VStack space="lg" flex={1} justifyContent="center">
@@ -52,8 +51,8 @@ export const SiteNews = () => {
                 {news &&
                     news.map((news) => (
                         <Card key={news.title} paddingHorizontal={0} size="sm" variant="ghost" m="$0" >
-                            <Heading color="$amber200">{parseHTML(news.title ?? "")}</Heading>
-                            <Text color="$secondary600">
+                            <Heading color="$amber400">{parseHTML(news.title ?? "")}</Heading>
+                            <Text color="$secondary600" bold>
                                 {new Date(news.date ?? "").toLocaleDateString()}{' '}
                                 {new Date(news.date ?? "").toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                             </Text>

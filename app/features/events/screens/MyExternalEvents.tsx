@@ -64,7 +64,7 @@ export const MyExternalEvents = () => {
                                                             <AccordionTitleText color="$text800">
                                                                 {event.titel}
                                                             </AccordionTitleText>
-                                                            <AccordionContentText color="$secondary600">
+                                                            <AccordionTitleText color="$secondary600">
                                                                 {(() => {
                                                                     const date: Date = new Date(event.eventDate ?? "");
                                                                     const weekday = date.toLocaleDateString('sv-SE', { weekday: 'long' });
@@ -73,10 +73,10 @@ export const MyExternalEvents = () => {
                                                                     const time = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
                                                                     return `${capitalizedWeekday} ${dayMonth} kl ${time}`;
                                                                 })()}
-                                                            </AccordionContentText>
-                                                            <AccordionContentText color="$amber200">
+                                                            </AccordionTitleText>
+                                                            <AccordionTitleText color="$primary300">
                                                                 {event.location}
-                                                            </AccordionContentText>
+                                                            </AccordionTitleText>
 
                                                         </VStack>
 
