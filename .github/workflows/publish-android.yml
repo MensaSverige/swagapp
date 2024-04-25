@@ -63,6 +63,7 @@ jobs:
       - name: Install dependencies with Yarn
         working-directory: app
         run: yarn install
+        
 
       - name: Publish internal release to Google Play
         working-directory: app/android
@@ -72,8 +73,8 @@ jobs:
           ANDROID_SIGNING_STORE_PASSWORD: ${{ secrets.ANDROID_SIGNING_STORE_PASSWORD }}
           GOOGLE_CLOUD_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_CLOUD_SERVICE_ACCOUNT_JSON }}
           TRACK: internal 
-          RELEASE_VERSION: ${{ env.RELEASE_VERSION }}
-          VERSION_CODE: ${{ github.run_number }} 
+          # RELEASE_VERSION: ${{ env.RELEASE_VERSION }} #set these in the gradle.properties file for now
+          # VERSION_CODE: ${{ github.run_number }} 
         run: |
           echo "$GOOGLE_CLOUD_SERVICE_ACCOUNT_JSON" > ./app/service-account.json
           chmod +x ./gradlew
