@@ -11,7 +11,8 @@ import {
   CheckboxIcon,
   CheckboxIndicator,
   CheckboxLabel,
-  
+  InputSlot,
+  InputIcon,
   Heading,
   Input,
   Spinner,
@@ -23,7 +24,9 @@ import {
   ModalBackdrop,
   ModalHeader,
   ModalBody,
-  CheckIcon
+  CheckIcon,
+  EyeIcon,
+  EyeOffIcon
 } from "../../../gluestack-components";
 import { ModalFooter, useColorMode } from '@gluestack-ui/themed';
 import { config } from "../../../gluestack-components/gluestack-ui.config";
@@ -93,6 +96,8 @@ export const SigninForm = () => {
         setIsLoading(false);
       });
   };
+
+
   const cancelRef = useRef(null);
   return (
     <SafeAreaView flex={1} key={colorMode}>
@@ -125,6 +130,16 @@ export const SigninForm = () => {
               onChangeText={setPassword}
               secureTextEntry={!passwordVisible}
             />
+            <InputSlot pr="$3" onPress={() => {
+              setPasswordVisible((passwordVisible) => {
+                return !passwordVisible
+              })
+            }}>
+              <InputIcon
+                as={passwordVisible ? EyeIcon : EyeOffIcon}
+                color="$primary500"
+              />
+            </InputSlot>
           </Input>
           <Checkbox aria-label="Save Credentials" size="md" isInvalid={false} isDisabled={false} onChange={setSaveCredentials} value={saveCredentials.toString()}>
             <CheckboxIndicator mr="$2">
@@ -171,7 +186,7 @@ export const SigninForm = () => {
               <Text>{loginErrorText}</Text>
             </ModalBody>
             <ModalFooter >
-            <HStack space="lg" justifyContent="center" alignItems="center" padding={20}>
+              <HStack space="lg" justifyContent="center" alignItems="center" padding={20}>
                 <Button
                   size="md"
                   variant="solid"
