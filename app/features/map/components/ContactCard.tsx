@@ -59,7 +59,7 @@ const ContactCard: React.FC<ContactCardProps> = ({ user, showCard, onClose }) =>
 
                         <UserAvatar firstName={user.firstName} lastName={user.lastName} avatar_url={user.avatar_url} onlineStatus={user.onlineStatus} />
                         <VStack style={{ flex: 1 }}>
-                            <Heading size="sm" color={gluestackUIConfig.tokens.colors.primary200} >{user.firstName} {user.lastName}</Heading>
+                            <Heading size="sm" color="$primary400" >{user.firstName} {user.lastName}</Heading>
                             {user.location.timestamp &&
                                 <Text color={getOnlineStatusColor(user.onlineStatus)}>{timeUntil(comparisonDate, user.location.timestamp)} sedan</Text>
                             }
