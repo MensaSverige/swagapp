@@ -23,7 +23,7 @@ export const EventStackNavigator: React.FC<{
         name="EventForm"
         component={EventForm}
         options={{
-          headerShown: false,
+          headerShown: true,
           title: 'Skapa evenemang',
           presentation: 'modal',
         }}
