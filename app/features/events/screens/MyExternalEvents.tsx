@@ -62,7 +62,7 @@ export const MyExternalEvents = () => {
                                                     <HStack flex={1}>
                                                         <VStack flex={1}>
                                                             <AccordionTitleText color="$text800">
-                                                                {event.titel}
+                                                                <Heading size="md">{event.titel}</Heading>
                                                             </AccordionTitleText>
                                                             <AccordionTitleText color="$secondary600">
                                                                 {(() => {
