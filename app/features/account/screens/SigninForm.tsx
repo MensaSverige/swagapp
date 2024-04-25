@@ -126,7 +126,7 @@ export const SigninForm = () => {
               secureTextEntry={!passwordVisible}
             />
           </Input>
-          <Checkbox size="md" isInvalid={false} isDisabled={false} onChange={setSaveCredentials} value={saveCredentials.toString()}>
+          <Checkbox aria-label="Save Credentials" size="md" isInvalid={false} isDisabled={false} onChange={setSaveCredentials} value={saveCredentials.toString()}>
             <CheckboxIndicator mr="$2">
               <CheckboxIcon as={CheckIcon} />
             </CheckboxIndicator>
