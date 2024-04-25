@@ -29,6 +29,7 @@ import {
   EyeOffIcon
 } from "../../../gluestack-components";
 import { ModalFooter, useColorMode } from '@gluestack-ui/themed';
+import { LoadingScreen } from '../../common/screens/LoadingScreen';
 import { config } from "../../../gluestack-components/gluestack-ui.config";
 
 export const SigninForm = () => {
@@ -101,7 +102,7 @@ export const SigninForm = () => {
   const cancelRef = useRef(null);
   return (
     <SafeAreaView flex={1} key={colorMode}>
-      <VStack flex={1} bg="$background50" space="lg" padding={20}>
+      <VStack flex={1} bg="$background0" space="lg" padding={20}>
         <Heading size="lg">Välkommen Swagger</Heading>
         <Heading fontWeight="medium" size="xs">
           Logga in med dina Mensa.se-uppgifter
@@ -150,7 +151,7 @@ export const SigninForm = () => {
 
           <HStack space="lg" flex={1} justifyContent="center" paddingBottom={20}>
             {isLoading ? (
-              <Spinner />
+              <LoadingScreen/>
             ) : (
               <Button
                 flex={1}

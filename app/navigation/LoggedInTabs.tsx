@@ -14,7 +14,7 @@ import { faCircleInfo, faGear, faInfo } from '@fortawesome/free-solid-svg-icons'
 import { config } from '../gluestack-components/gluestack-ui.config';
 import { StyleSheet } from 'react-native';
 import { useColorMode } from '@gluestack-ui/themed';
-import ExternalEvents from '../features/events/screens/ExternalEvents';
+import MyExternalEvents from '../features/events/screens/MyExternalEvents';
 import WelcomeScreen from '../features/common/screens/WelcomeScreen';
 
 const createStyles1 = (theme: any, colorMode: string) =>
@@ -29,10 +29,10 @@ const createStyles1 = (theme: any, colorMode: string) =>
       right: 10
     },
     tabBarStyle: { backgroundColor: theme.background0 },
-    tabBarActiveTintColor: { color: theme.primary100 },
-    tabBarInactiveTintColor: { color: theme.primary600 },
+    tabBarActiveTintColor: { color: colorMode === 'dark' ? theme.info700 : theme.primary200 },
+    tabBarInactiveTintColor: { color: colorMode === 'dark' ? theme.info400 : theme.primary600 },
     headerStyle: { backgroundColor: theme.background0 },
-    headerTintColor: { color: theme.primary500 },
+    headerTintColor: { color: theme.primary600 },
   })
   ;
 
@@ -96,7 +96,7 @@ export const LoggedInTabs = () => {
             />
             <BottomTab.Screen
               name="Schema"
-              component={ExternalEvents}
+              component={MyExternalEvents}
               options={{
                 ...defaultHeaderOptions,
                 tabBarIcon: CalendarIcon,
