@@ -20,12 +20,8 @@ WORKDIR /app
 # Copy the backend directory contents into the container
 COPY ./backend /app
 
-# Copy the ./schema files into the /app/schema directory
-COPY ./schema /app/schema
-
 # Install dependencies
 RUN pip install --no-cache-dir -r v1/requirements.txt
-
 
 # Expose the port the app runs on
 EXPOSE 5000
