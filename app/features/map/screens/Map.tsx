@@ -7,7 +7,8 @@ import ReactNativeMapView from 'react-native-maps';
 import {
   Button,
   View,
-  SafeAreaView
+  SafeAreaView,
+  VStack
 } from '../../../gluestack-components';
 import UserMarker from '../components/markers/UserMarker';
 import useStore from '../../common/store/store';
@@ -25,7 +26,7 @@ import { FilterMarkersComponent } from '../components/FilterMarkers';
 import IncognitoInfo from '../components/IncognitoInfo';
 import { config } from '../../../gluestack-components/gluestack-ui.config';
 import { useColorMode } from '@gluestack-ui/themed';
-import { VStack } from 'native-base';
+
 
 const createStyles = () =>
   StyleSheet.create({
