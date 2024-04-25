@@ -203,7 +203,5 @@ export const SigninForm = () => {
         </Modal>
       </VStack>
     </SafeAreaView>
-
-
   );
 };

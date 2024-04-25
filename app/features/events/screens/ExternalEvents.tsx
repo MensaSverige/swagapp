@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text } from 'react-native';
 import { fetchExternalEvents } from '../services/eventService';
 import { ExternalEventDetails } from '../../../api_schema/types';
-import { Heading, ScrollView, VStack } from '../../../gluestack-components';
+import { Heading, ScrollView, Text, VStack } from '../../../gluestack-components';
 
 function parseHTML(htmlString: string) {
     // Replace HTML tags with corresponding React Native components
