@@ -289,8 +289,8 @@ const UserSettings: React.FC = () => {
                     }
                     onBlur={handleBlur}
                   >
-                    <Picker.Item label="Visa för andra som visar sin position" value="only_members_who_share_their_own_location" />
-                    <Picker.Item label="Visa för alla" value="only_members" />
+                    <Picker.Item label="Visa för andra som visar sin position" value="ALL_MEMBERS_WHO_SHARE_THEIR_OWN_LOCATION" />
+                    <Picker.Item label="Visa för alla" value="ALL_MEMBERS" />
                   </Picker>
                 )}
               </Card>
