@@ -48,7 +48,7 @@ jobs:
     needs: prepare-data
     uses: ./.github/workflows/publish-android.yml
     with:
-      release_tag: ${{ needs.prepare-data.outputs.GIT_TAG }}
+      release_tag: ${{ needs.prepare-data.outputs.TAG_NAME }}
 
   publish-website:
     needs: prepare-data
@@ -70,7 +70,7 @@ jobs:
     needs: [prepare-data, publish-website, publish-backend]
     uses: ./.github/workflows/update-gitops.yml
     with:
-      release_tag: ${{ needs.prepare-data.outputs.GIT_TAG }}
+      release_tag: ${{ needs.prepare-data.outputs.TAG_NAME }}
       docker_tag: ${{ needs.prepare-data.outputs.DOCKER_TAG }}
       commit_message: ${{ needs.prepare-data.outputs.COMMIT_MESSAGE }}
     secrets: inherit

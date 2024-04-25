@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Button, Platform, TextInput } from 'react-native';
+import { ActivityIndicator, Platform, TextInput } from 'react-native';
 import { StyleSheet, SafeAreaView } from 'react-native';
 import MapView from 'react-native-maps';
 import useStore from '../../common/store/store';
@@ -30,6 +30,8 @@ import { DatepickerField } from '../../common/components/DatepickerField';
 import { UserEvent } from '../../../api_schema/types';
 import EventWithLocation from '../types/eventWithLocation';
 import FutureUserEvent from '../types/futureUserEvent';
+import { Button, ButtonText, HStack, VStack } from '../../../gluestack-components';
+import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 
 type EventFormProps = RouteProp<RootStackParamList, 'EventForm'>;
 
@@ -203,34 +205,6 @@ const EditEventForm: React.FC = () => {
     user,
   ]);
 
-  useEffect(() => {
-    navigation.setOptions({
-      // eslint-disable-next-line react/no-unstable-nested-components
-      headerLeft: () => (
-        <Button
-          title="Avbryt"
-          disabled={isSaving}
-          onPress={() => {
-            navigation.goBack();
-          }}
-        />
-      ),
-      // eslint-disable-next-line react/no-unstable-nested-components
-      headerRight: () =>
-        isSaving ? (
-          <Spinner />
-        ) : (
-          <Button title="Spara" disabled={!formChanged} onPress={saveEvent} />
-        ),
-    });
-  }, [
-    initialEvent,
-    fetchAllEvents,
-    formChanged,
-    isSaving,
-    navigation,
-    saveEvent,
-  ]);
 
   const handleChangeStartDate = (date?: Date) => {
     if (!date) {
@@ -417,7 +391,52 @@ const EditEventForm: React.FC = () => {
               </Box>
             </Field>
           </Fields>
+
+
         </ScrollView>
+<HStack
+  flex={1}
+  flexDirection='row'
+  bgColor='$background50'
+
+  style={{
+    position: 'absolute',
+    bottom: 0,
+    paddingHorizontal: 0,
+    justifyContent: 'flex-end',
+    alignItems: 'center'
+  }}
+>
+  <Button
+    size="md"
+    variant="outline"
+    action="secondary"
+    borderRadius={0}
+    borderColor="$vscode_stringLiteral"
+    isDisabled={isSaving}
+    isFocusVisible={false}
+    onPress={() => {
+      navigation.goBack();
+    }}
+    style={{ flex: 1 }}
+  >
+    <ButtonText color='$vscode_stringLiteral' style={{ textAlign: 'center' }}>Avbryt</ButtonText>
+  </Button>
+  <Button
+    size="md"
+    variant="solid"
+    action="primary"
+    borderRadius={0}
+    isDisabled={isSaving}
+    isFocusVisible={false}
+    onPress={saveEvent}
+    style={{ flex: 1 }}
+  >
+    <ButtonText style={{ textAlign: 'center' }}>Spara</ButtonText>
+    {isSaving && <ActivityIndicator style={{ marginLeft: 5 }} />}
+  </Button>
+</HStack>
+
       </KeyboardAvoidingView>
     </SafeAreaView>
   );

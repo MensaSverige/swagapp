@@ -20,7 +20,9 @@ jobs:
     environment: Mensa-Dev
     steps:
       - name: Set release version by removing v-prefix from release tag
-        run: echo "RELEASE_VERSION=${{ inputs.release_tag }}".substring(1) >> $GITHUB_ENV
+        run: |
+          RELEASE_VERSION=$(echo "${{ github.event.inputs.release_tag }}" | cut -c2-)
+          echo "RELEASE_VERSION=$RELEASE_VERSION" >> $GITHUB_ENV
       
       - name: Print run number
         run: echo Run number is ${{ github.run_number }}
@@ -61,6 +63,7 @@ jobs:
       - name: Install dependencies with Yarn
         working-directory: app
         run: yarn install
+        
 
       - name: Publish internal release to Google Play
         working-directory: app/android
@@ -70,9 +73,10 @@ jobs:
           ANDROID_SIGNING_STORE_PASSWORD: ${{ secrets.ANDROID_SIGNING_STORE_PASSWORD }}
           GOOGLE_CLOUD_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_CLOUD_SERVICE_ACCOUNT_JSON }}
           TRACK: internal 
-          RELEASE_VERSION: ${{ env.RELEASE_VERSION }}
+          # RELEASE_VERSION: ${{ env.RELEASE_VERSION }} #set these in the gradle.properties file for now
+          # VERSION_CODE: ${{ github.run_number }} 
         run: |
           echo "$GOOGLE_CLOUD_SERVICE_ACCOUNT_JSON" > ./app/service-account.json
           chmod +x ./gradlew
-          ./gradlew publishReleaseBundle -Pandroid.injected.signing.store.file=$ANDROID_SIGNING_KEY_PATH -Pandroid.injected.signing.store.password=$ANDROID_SIGNING_STORE_PASSWORD -Pandroid.injected.signing.key.alias=$ANDROID_SIGNING_ALIAS -Pandroid.injected.signing.key.password=$ANDROID_SIGNING_STORE_PASSWORD -PversionName=${{ env.RELEASE_VERSION }} -PpublishTrack=${{ env.TRACK }} -PversionCode=${{ github.run_number }}
+          ./gradlew publishReleaseBundle -Pandroid.injected.signing.store.file=$ANDROID_SIGNING_KEY_PATH -Pandroid.injected.signing.store.password=$ANDROID_SIGNING_STORE_PASSWORD -Pandroid.injected.signing.key.alias=$ANDROID_SIGNING_ALIAS -Pandroid.injected.signing.key.password=$ANDROID_SIGNING_STORE_PASSWORD -PversionName=$RELEASE_VERSION -PpublishTrack=$TRACK -PversionCode=$VERSION_CODE
 

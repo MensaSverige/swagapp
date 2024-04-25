@@ -1,26 +1,35 @@
-import {
-  AlertDialog,
-  Box,
-  Button,
-  Center,
-  Checkbox,
-  Heading,
-  Input,
-  Spinner,
-  Text,
-  VStack,
-  useTheme,
-} from "native-base";
 import React, { useEffect, useState, useRef } from "react";
 import useStore from "../../common/store/store";
 import * as Keychain from "react-native-keychain";
 import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
-import { faEye, faEyeSlash } from "@fortawesome/free-solid-svg-icons";
+import { faClose, faEye, faEyeSlash } from "@fortawesome/free-solid-svg-icons";
 import { TEST_MODE } from "@env";
-import { authenticate} from "../../common/services/authService";
+import { authenticate } from "../../common/services/authService";
 import { tryGetCurrentUser } from "../services/userService";
+import {
+  Checkbox,
+  CheckboxIcon,
+  CheckboxIndicator,
+  CheckboxLabel,
+  
+  Heading,
+  Input,
+  Spinner,
+  Text, Button, ButtonText, HStack, Pressable, SafeAreaView, VStack,
+  InputField,
+  Modal,
+  ModalContent,
+  ModalCloseButton,
+  ModalBackdrop,
+  ModalHeader,
+  ModalBody,
+  CheckIcon
+} from "../../../gluestack-components";
+import { ModalFooter, useColorMode } from '@gluestack-ui/themed';
+import { config } from "../../../gluestack-components/gluestack-ui.config";
+
 export const SigninForm = () => {
-  const theme = useTheme();
+  const colorMode = useColorMode();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [passwordVisible, setPasswordVisible] = useState(false);
@@ -86,90 +95,100 @@ export const SigninForm = () => {
   };
   const cancelRef = useRef(null);
   return (
-    <Center w="100%" h="100%">
-      <Box safeArea flex={1} p={10} w="100%" mx="auto">
+    <SafeAreaView flex={1} key={colorMode}>
+      <VStack flex={1} bg="$background50" space="lg" padding={20}>
         <Heading size="lg">Välkommen Swagger</Heading>
-        <Heading mt="1" fontWeight="medium" size="xs">
+        <Heading fontWeight="medium" size="xs">
           Logga in med dina Mensa.se-uppgifter
         </Heading>
 
-        <VStack space={4} mt={5}>
+        <VStack flex={1} space="lg" mt={5}>
           <Input
-            variant="filled"
-            placeholder="Email"
-            value={username}
-            onChangeText={setUsername}
-            autoCapitalize="none"
-            keyboardType="email-address"
+            variant="outline"
             isDisabled={isLoading}
-            InputRightElement={
-              <Button ml={1} bg="transparent" isDisabled>
-                <FontAwesomeIcon icon={faEye} color="transparent" />
-              </Button>
-            }
-          />
+          >
+            <InputField
+              placeholder="Email"
+              keyboardType="email-address"
+              value={username}
+              onChangeText={setUsername}
+            />
+          </Input>
           <Input
-            variant="filled"
-            placeholder="Lösenord"
-            type={passwordVisible ? "text" : "password"}
-            value={password}
-            onChangeText={setPassword}
+
+            variant="outline"
             isDisabled={isLoading}
-            InputRightElement={
-              <Button
-                ml={1}
-                bg="transparent"
-                roundedLeft={0}
-                roundedRight="md"
-                onPress={() => setPasswordVisible(!passwordVisible)}
-              >
-                {passwordVisible ? (
-                  <FontAwesomeIcon
-                    icon={faEyeSlash}
-                    color={theme.colors.primary[500]}
-                  />
-                ) : (
-                  <FontAwesomeIcon
-                    icon={faEye}
-                    color={theme.colors.primary[500]}
-                  />
-                )}
-              </Button>
-            }
-          />
-          <Checkbox value="saveCredentials" onChange={setSaveCredentials}>
-            <Text>Spara inloggning</Text>
+          >
+            <InputField
+              placeholder="Lösenord"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry={!passwordVisible}
+            />
+          </Input>
+          <Checkbox size="md" isInvalid={false} isDisabled={false} onChange={setSaveCredentials} value={saveCredentials.toString()}>
+            <CheckboxIndicator mr="$2">
+              <CheckboxIcon as={CheckIcon} />
+            </CheckboxIndicator>
+            <CheckboxLabel>Spara inloggning</CheckboxLabel>
           </Checkbox>
-          {isLoading ? (
-            <Spinner />
-          ) : (
-            <Button
-              mt={8}
-              onPress={handleLogin}
-              isDisabled={!backendConnection}
-            >
-              {TEST_MODE ? "Logga in" : "Logga in i testläge"}
-            </Button>
-          )}
-        </VStack>
-        <AlertDialog
-          leastDestructiveRef={cancelRef}
-          isOpen={showLoginError}
-          onClose={() => {
-            setShowLoginError(false);
-          }}
-        >
-          <AlertDialog.Content>
-            <AlertDialog.Header>Fel vid inloggning</AlertDialog.Header>
-            <AlertDialog.Body>{loginErrorText}</AlertDialog.Body>
-            <AlertDialog.Footer>
-              <Button ref={cancelRef} onPress={() => setShowLoginError(false)}>
-                OK
+
+          <HStack space="lg" flex={1} justifyContent="center" paddingBottom={20}>
+            {isLoading ? (
+              <Spinner />
+            ) : (
+              <Button
+                flex={1}
+                size="md"
+                variant="solid"
+                alignContent="center"
+                justifyContent="center"
+                action="primary"
+                alignItems="center"
+                onPress={handleLogin}
+                isDisabled={!backendConnection}
+              >
+                <ButtonText style={{ textAlign: 'center' }}> {TEST_MODE ? "Logga in" : "Logga in i testläge"} </ButtonText>
               </Button>
-            </AlertDialog.Footer>
-          </AlertDialog.Content>
-        </AlertDialog>
-      </Box>
-    </Center>
+            )}
+          </HStack>
+        </VStack>
+        <Modal
+          isOpen={showLoginError}
+          onClose={() => setShowLoginError(false)}
+          finalFocusRef={cancelRef}
+          size='lg'
+        >
+          <ModalBackdrop bg="$coolGray500" />
+          <ModalContent >
+            <ModalHeader>
+              <Heading size="lg">Fel vid inloggning</Heading>
+              <ModalCloseButton>
+                <FontAwesomeIcon icon={faClose} size={20} style={{ color: config.tokens.colors.blue400, }} />
+              </ModalCloseButton>
+            </ModalHeader>
+            <ModalBody>
+              <Text>{loginErrorText}</Text>
+            </ModalBody>
+            <ModalFooter >
+            <HStack space="lg" justifyContent="center" alignItems="center" padding={20}>
+                <Button
+                  size="md"
+                  variant="solid"
+                  action="primary"
+                  isDisabled={false}
+                  isFocusVisible={false}
+                  onPress={() => setShowLoginError(false)}
+                >
+                  <ButtonText style={{ textAlign: 'center' }}>OK</ButtonText>
+                </Button>
+              </HStack>
+            </ModalFooter>
+          </ModalContent>
+        </Modal>
+      </VStack>
+    </SafeAreaView>
+
+
   );
 };

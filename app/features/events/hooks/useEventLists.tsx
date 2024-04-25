@@ -1,8 +1,6 @@
 import useStore from '../../common/store/store';
 import {useCallback, useEffect, useRef, useState} from 'react';
 import {
-  fetchExternalEvents,
-  // fetchStaticEvents,
   fetchUserEvents,
   fetchUserEvent,
   attendUserEvent,
@@ -16,8 +14,6 @@ const DATA_STALE_INTERVAL = 1000 * 60 * 5; // 5 minutes
 export const useEventLists = () => {
   const {
     setUserEvents,
-    // setStaticEvents,
-    setExternalEvents,
     setEventsRefreshing,
     setEventsLastFetched,
     eventsRefreshing,
@@ -60,18 +56,13 @@ export const useEventLists = () => {
 
     return Promise.all([
       fetchUserEvents(),
-      // fetchStaticEvents(),
-      fetchExternalEvents(),
     ])
       .then(
         ([
           userEvents,
-          // staticEvents,
-          external_events,
         ]) => {
           setUserEvents(userEvents);
-          // setStaticEvents(staticEvents);
-          setExternalEvents(external_events);
+
         },
       )
       .catch(error => {
@@ -83,9 +74,7 @@ export const useEventLists = () => {
         setEventsRefreshing(false);
       });
   }, [
-    setUserEvents,
-    // setStaticEvents,
-    setExternalEvents,
+    setUserEvents,,
     setEventsRefreshing,
     setEventsLastFetched,
     eventsRefreshing,
