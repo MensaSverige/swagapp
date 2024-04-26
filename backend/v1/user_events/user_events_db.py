@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import List
 from bson import ObjectId
 from v1.user_events.user_events_model import ExtendedUserEvent, UserEvent
@@ -89,8 +89,9 @@ def get_unsafe_future_user_events() -> list[UserEvent]:
             }
         }, {
             "start": {
-                "$gte": datetime.now()
-            }
+                "$gte": datetime.now() - timedelta(hours=1)
+            },
+            "end": None
         }]
     }
 
