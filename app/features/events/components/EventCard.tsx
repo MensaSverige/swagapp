@@ -3,32 +3,28 @@ import {
   Box,
   Button,
   Card,
-  Column,
   Heading,
-  Row,
+  HStack,
   Text,
-} from 'native-base';
-import React, {useEffect, useState} from 'react';
-import {ActivityIndicator, TouchableOpacity} from 'react-native';
+} from '../../../gluestack-components';
+import React, { useEffect, useState } from 'react';
+import { ActivityIndicator, TouchableOpacity } from 'react-native';
 import TimeLeft from '../utilities/TimeLeft';
-import {clockForTime} from '../../map/functions/clockForTime';
-import FutureUserEvent, {isFutureUserEvent} from '../types/futureUserEvent';
+import { clockForTime } from '../../map/functions/clockForTime';
+import FutureUserEvent, { isFutureUserEvent } from '../types/futureUserEvent';
 import useStore from '../../common/store/store';
-import {useNavigation} from '@react-navigation/native';
-import {NativeStackNavigationProp} from '@react-navigation/native-stack';
-import {RootStackParamList} from '../../../navigation/RootStackParamList';
-import {EditButton} from '../../common/components/EditButton';
-import {formatDateAndTime} from '../../common/functions/FormatDateAndTime';
+import { formatDateAndTime } from '../../common/functions/FormatDateAndTime';
 import FutureEvent from '../types/futureEvent';
-import {useEventLists} from '../hooks/useEventLists';
-import {SmallDeleteButton} from '../../common/components/SmallDeleteButton';
+import { useEventLists } from '../hooks/useEventLists';
+import { SmallDeleteButton } from '../../common/components/SmallDeleteButton';
+import { EditButton } from '../../common/components/EditButton';
 
 const EventCard: React.FC<{
   event: FutureEvent | FutureUserEvent;
+  isPreview?: boolean;
   initiallyOpen?: boolean;
-}> = ({event, initiallyOpen = false}) => {
-  const navigation =
-    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  onEditEvent?: (event: FutureUserEvent) => void;
+}> = ({ event, isPreview, initiallyOpen = false, onEditEvent }) => {
   const user = useStore(state => state.user);
   const [open, setOpen] = React.useState(initiallyOpen || false);
   const [comparisonDate, setComparisonDate] = React.useState(new Date());
@@ -46,13 +42,13 @@ const EventCard: React.FC<{
 
   return (
     <TouchableOpacity onPress={() => setOpen(!open)}>
-      <Card rounded="lg" overflow="hidden" m="2" opacity={open ? '1' : '0.8'}>
+      <Card padding={10} size="sm" variant="elevated" m="$0" >
         <Box
-          flex="1"
+          flex={1}
           flexDirection="row"
           justifyContent="space-between"
           alignItems={'center'}>
-          <Box flex="1" flexDirection="column">
+          <Box flex={1} flexDirection="column">
             <Heading
               size={open ? 'lg' : 'sm'}
               isTruncated={!open}
@@ -67,11 +63,9 @@ const EventCard: React.FC<{
             />
           </Box>
 
-          {open && isFutureUserEvent(event) && event.userId === user?.userId ? (
+          {open && isFutureUserEvent(event) && event.userId === user?.userId && !isPreview ? (
             <EditButton
-              onPress={() => {
-                navigation.navigate('EventForm', {event: event});
-              }}
+              onPress={() => onEditEvent && onEditEvent(event)}
             />
           ) : (
             <Heading size="lg" isTruncated={!open}>
@@ -81,42 +75,48 @@ const EventCard: React.FC<{
         </Box>
         {open && (
           <>
-            <Text mt="5">{event.description}</Text>
+            <Text>{event.description}</Text>
             {isFutureUserEvent(event) && (
               <>
-                <Box flex="1" flexDirection="row" mt="5">
-                  <Heading size="sm">{`Värd${
-                    hostNames.length === 1 ? '' : 'ar'
-                  }: `}</Heading>
+                <Box flex={1} flexDirection="row">
+                  <Heading size="sm">{`Värd${hostNames.length === 1 ? '' : 'ar'
+                    }: `}</Heading>
                   <Text>{hostNames.join(', ')}</Text>
                 </Box>
 
                 {event.maxAttendees && (
-                  <Box flex="1" flexDirection="row">
+                  <Box flex={1} flexDirection="row">
                     <Heading size="sm">Platser kvar: </Heading>
                     <Text>
-                      {`${
-                        event.maxAttendees - (event.attendees?.length || 0)
-                      } av ${event.maxAttendees}`}
+                      {`${event.maxAttendees - (event.attendees?.length || 0)
+                        } av ${event.maxAttendees}`}
                     </Text>
                   </Box>
                 )}
               </>
             )}
-            <Box flex="1" flexDirection="row">
+            <Box flex={1} flexDirection="row">
               <Heading size="sm">Start:</Heading>
               <Text> {formatDateAndTime(event.start)}</Text>
             </Box>
             {event.end && (
-              <Box flex="1" flexDirection="row">
+              <Box flex={1} flexDirection="row">
                 <Heading size="sm">Slut:</Heading>
                 <Text> {formatDateAndTime(event.end)}</Text>
               </Box>
             )}
-            <Box flex="1" flexDirection="row" mt="5">
+            <Box flex={1} flexDirection="row">
               {event.location?.description && (
                 <>
-                  <Heading size="sm">Plats:</Heading>
+                  <Heading size="sm">Adress:</Heading>
+                  <Text> {event.location?.adress || ''}</Text>
+                </>
+              )}
+            </Box>
+            <Box flex={1} flexDirection="row">
+              {event.location?.description && (
+                <>
+                  <Heading size="sm">Platsbeskrivning:</Heading>
                   <Text> {event.location?.description || ''}</Text>
                 </>
               )}
@@ -134,8 +134,8 @@ const EventCard: React.FC<{
 const Attending: React.FC<{
   event: FutureUserEvent;
   userId: number;
-}> = ({event, userId}) => {
-  const {attendEvent, unattendEvent} = useEventLists();
+}> = ({ event, userId }) => {
+  const { attendEvent, unattendEvent } = useEventLists();
 
   const [changingAttendance, setChangingAttendance] = useState<boolean>(false);
 
@@ -179,10 +179,10 @@ const Attending: React.FC<{
 
   if (attending) {
     return (
-      <Column alignItems={'center'}>
+      <HStack alignItems={'center'}>
         <Text>Du är anmäld!</Text>
         <Button onPress={handlePressUnattend}>Ta bort anmälan</Button>
-      </Column>
+      </HStack>
     );
   } else {
     if (
@@ -190,9 +190,9 @@ const Attending: React.FC<{
       (event.attendees && event.attendees.length < event.maxAttendees)
     ) {
       return (
-        <Column alignItems={'center'}>
+        <HStack alignItems={'center'}>
           <Button onPress={handlePressAttend}>Anmäl mig!</Button>
-        </Column>
+        </HStack>
       );
     }
   }
@@ -200,8 +200,8 @@ const Attending: React.FC<{
 
 const AttendanceManager: React.FC<{
   event: FutureUserEvent;
-}> = ({event}) => {
-  const {removeAttendee} = useEventLists();
+}> = ({ event }) => {
+  const { removeAttendee } = useEventLists();
 
   const [deletingAttendee, setDeleteingAttendee] = useState<boolean>(false);
   const [attendeeToDelete, setAttendeetoDelete] = useState<number | null>(null);
@@ -239,12 +239,12 @@ const AttendanceManager: React.FC<{
             }
             const attendeeUserId = event.attendees[i].userId;
             return (
-              <Row justifyContent={'space-between'}>
+              <HStack justifyContent={'space-between'}>
                 <Text key={`${event.id}-${attendeeUserId}`}>{name}</Text>
                 <SmallDeleteButton
                   onPress={() => setAttendeetoDelete(attendeeUserId)}
                 />
-              </Row>
+              </HStack>
             );
           })}
         </Box>
@@ -257,7 +257,7 @@ const AttendanceManager: React.FC<{
               <Text>{`Är du säker på att du vill ta bort ${attendeeToDeleteName} från eventet?`}</Text>
             </AlertDialog.Body>
             <AlertDialog.Footer>
-              <Button.Group space={2}>
+              <Button.Group space="sm">
                 {deletingAttendee ? (
                   <Button disabled>
                     <ActivityIndicator />

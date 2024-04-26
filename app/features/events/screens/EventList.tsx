@@ -8,7 +8,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faPlus } from '@fortawesome/free-solid-svg-icons';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../../navigation/RootStackParamList';
-import { Button, Center, HStack, View, VStack, ScrollView, Text, ButtonText } from '../../../gluestack-components';
+import { Button, Center, HStack, View, VStack, ScrollView, Text, ButtonText, Box } from '../../../gluestack-components';
 import { config } from '../../../gluestack-components/gluestack-ui.config';
 
 if (
@@ -61,23 +61,31 @@ const EventList: React.FC = () => {
 
   return (
     <VStack flex={1} bg="$background50">
-
-      <ScrollView flex={1} contentContainerStyle={{ flexGrow: 1 }}
-
+      <ScrollView
+        flex={1}
+        contentContainerStyle={{
+          flexGrow: 1,
+          padding: 15,
+          justifyContent: 'flex-start',
+        }}
         refreshControl={
           <RefreshControl
             refreshing={eventsRefreshing}
             onRefresh={fetchAllEvents}
           />
         }>
-
         {visibleEvents.length === 0 && (
           <Center w="100%" p={10}>
             <Text>Inga spontana event hittades</Text>
           </Center>
         )}
         {visibleEvents.map((event, i) => (
-          <EventCard key={`event-${event.id}=${i}`} event={event} />
+          <Box key={event.id} style={{
+            paddingBottom: 10,
+          }}
+          >
+            <EventCard key={`event-${event.id}=${i}`} event={event} onEditEvent={() => { }} />
+          </Box>
         ))}
       </ScrollView>
       <CreateEventButton />

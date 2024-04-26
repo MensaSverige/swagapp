@@ -28,6 +28,7 @@ services:
       APPLE_REVIEW_USER: apple@apple.com
       GOOGLE_REVIEW_USER: google@google.com
       REVIEW_PASSWORD: some-nice-password # Different in production
+      GOOGLE_MAPS_API_KEY: ${GOOGLE_MAPS_API_KEY}
 
   mongo:
     image: mongo:latest

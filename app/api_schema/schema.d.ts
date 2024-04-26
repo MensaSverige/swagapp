@@ -93,6 +93,10 @@ export interface paths {
     /** Deny Being Cohost */
     post: operations["deny_being_cohost_v1_user_events__event_id__deny_cohosting_post"];
   };
+  "/v1/geolocation/{address}": {
+    /** Getlocationbyadress */
+    get: operations["getLocationByAdress_v1_geolocation__address__get"];
+  };
   "/v1/dev/clear_user_events": {
     /** Clear User Events */
     get: operations["clear_user_events_v1_dev_clear_user_events_get"];
@@ -341,6 +345,24 @@ export interface components {
       /** Eventurl */
       eventUrl: string;
     };
+    /** GeoLocation */
+    GeoLocation: {
+      /**
+       * Formatted Address
+       * @example 1234 Main St, San Francisco, CA 94123
+       */
+      formatted_address?: string | null;
+      /**
+       * Latitude
+       * @example 37.7749
+       */
+      latitude?: number | null;
+      /**
+       * Longitude
+       * @example -122.4194
+       */
+      longitude?: number | null;
+    };
     /** HTTPValidationError */
     HTTPValidationError: {
       /** Detail */
@@ -362,6 +384,11 @@ export interface components {
        */
       description?: string | null;
       /**
+       * Address
+       * @example 1234 Main St, San Francisco, CA 94123
+       */
+      address?: string | null;
+      /**
        * Marker
        * @example 🕑
        */
@@ -370,12 +397,12 @@ export interface components {
        * Latitude
        * @example 37.7749
        */
-      latitude: number;
+      latitude?: number | null;
       /**
        * Longitude
        * @example -122.4194
        */
-      longitude: number;
+      longitude?: number | null;
     };
     /** Report */
     Report: {
@@ -1049,6 +1076,28 @@ export interface operations {
       200: {
         content: {
           "application/json": components["schemas"]["StatusResponseWithMessage"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  /** Getlocationbyadress */
+  getLocationByAdress_v1_geolocation__address__get: {
+    parameters: {
+      path: {
+        address: string;
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["GeoLocation"];
         };
       };
       /** @description Validation Error */

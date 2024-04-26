@@ -1,6 +1,6 @@
 import React from 'react';
-import {FormControl, Heading, Text} from 'native-base';
-import {Pressable, StyleSheet} from 'react-native';
+import { Card, FormControl, FormControlError, FormControlErrorText, FormControlHelper, FormControlHelperText, FormControlLabel, Heading, Text } from '../../../gluestack-components';
+import { Pressable, StyleSheet } from 'react-native';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { IconProp } from '@fortawesome/fontawesome-svg-core';
 import { config } from '../../../gluestack-components/gluestack-ui.config';
@@ -32,36 +32,40 @@ const Field: React.FC<FieldProps> = ({
   error,
   onPress = undefined,
 }) => (
+  <Card size="sm" variant="elevated" m="$0">
   <Pressable onPress={onPress}>
     <FormControl
       isInvalid={error !== undefined}
       isRequired={required}
       isDisabled={disabled}>
-      <FormControl.Label style={styles.label}>
+      <FormControlLabel  style={styles.label}>
         <Heading size="sm">{label}</Heading>
         {labelControl}
         {labelIcon && <FontAwesomeIcon
-                  icon={labelIcon}
-                  size={24}
-                  color={labelIconColor ? labelIconColor : colors.primary500}
-                />}
+          icon={labelIcon}
+          size={24}
+          color={labelIconColor ? labelIconColor : colors.primary500}
+        />}
 
-      </FormControl.Label>
+      </FormControlLabel>
       {children}
 
       {error ? (
-        <FormControl.ErrorMessage>
-          <Text>{error}</Text>
-        </FormControl.ErrorMessage>
+        <FormControlError>
+          <FormControlErrorText>
+            {error}
+          </FormControlErrorText>
+        </FormControlError>
       ) : (
         help && (
-          <FormControl.HelperText>
-            <Text>{help}</Text>
-          </FormControl.HelperText>
+          <FormControlHelper>
+            <FormControlHelperText>{help}</FormControlHelperText>
+          </FormControlHelper>
         )
       )}
     </FormControl>
   </Pressable>
+  </Card>
 );
 
 const styles = StyleSheet.create({

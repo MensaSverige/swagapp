@@ -1,37 +1,47 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Platform, TextInput } from 'react-native';
-import { StyleSheet, SafeAreaView } from 'react-native';
+import { Keyboard, Platform, TouchableWithoutFeedback } from 'react-native';
+import { StyleSheet } from 'react-native';
 import MapView from 'react-native-maps';
 import useStore from '../../common/store/store';
-import {
-  Box,
-  ICustomTheme,
-  Input,
-  KeyboardAvoidingView,
-  ScrollView,
-  Spinner,
-  Text,
-  TextArea,
-  View,
-  ZStack,
-  useTheme,
-} from 'native-base';
 import { RouteProp, useRoute, useNavigation } from '@react-navigation/native';
 import { useEventLists } from '../hooks/useEventLists';
-import { clockForTime } from '../../map/functions/clockForTime';
 import { RootStackParamList } from '../../../navigation/RootStackParamList';
-import EventMarker from '../../map/components/markers/EventMarker';
 import Field from '../../common/components/Field';
 import Fields from '../../common/components/Fields';
 import EventCard from '../components/EventCard';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { createUserEvent, updateUserEvent } from '../services/eventService';
 import { DatepickerField } from '../../common/components/DatepickerField';
-import { UserEvent } from '../../../api_schema/types';
+import { ExtendedUserEvent, UserEvent } from '../../../api_schema/types';
 import EventWithLocation from '../types/eventWithLocation';
-import FutureUserEvent from '../types/futureUserEvent';
-import { Button, ButtonText, HStack, VStack } from '../../../gluestack-components';
+import FutureUserEvent, { isFutureUserEvent } from '../types/futureUserEvent';
+import {
+  Box,
+  SearchIcon,
+  Input,
+  InputSlot,
+  KeyboardAvoidingView,
+  ScrollView,
+  Text,
+  View,
+  Button,
+  ButtonText,
+  HStack,
+  Textarea,
+  SafeAreaView,
+  VStack,
+  TextareaInput,
+  InputField,
+  Card,
+  InputIcon
+} from '../../../gluestack-components';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
+import { config } from '../../../gluestack-components/gluestack-ui.config';
+import { extractNumericValue } from '../../common/functions/extractNumericValue';
+import EventCardPreview from '../components/EventCardPreview';
+import SettingsSwitchField from '../../common/components/SettingsSwitchField';
+import { getGeoLocation } from '../../map/services/locationService';
+import EventMapField from './EventMapField';
 
 type EventFormProps = RouteProp<RootStackParamList, 'EventForm'>;
 
@@ -43,6 +53,26 @@ const EditEventForm: React.FC = () => {
 
   const user = useStore(state => state.user);
 
+  //create a formstate based on event type 
+  const [formState, setFormState] = useState<ExtendedUserEvent>({
+    userId: user?.userId ?? 0,
+    name: '',
+    start: Date.now().toString(),
+    ownerName: `${user?.firstName} ${user?.lastName}` ?? '',
+    id: null,
+    hosts: null,
+    suggested_hosts: [],
+    location: null,
+    end: null,
+    description: null,
+    reports: [],
+    attendees: [],
+    maxAttendees: null,
+    hostNames: [],
+    attendeeNames: [],
+  });
+
+
   // Event data
   const [eventName, setEventName] = useState<string>('');
   const [eventDescription, setEventDescription] = useState<string>('');
@@ -51,23 +81,17 @@ const EditEventForm: React.FC = () => {
   >(null);
   const [eventStartDate, setEventStartDate] = useState<Date>(new Date());
   const [eventEndDate, setEventEndDate] = useState<Date | undefined>(undefined);
-  const [eventLocationLatitude, setEventLocationLatitude] = useState<number>(0);
-  const [eventLocationLongitude, setEventLocationLongitude] =
-    useState<number>(0);
+
   const [eventLocationDescription, setEventLocationDescription] =
     useState<string>('');
   const [eventLocationMarker, setEventLocationMarker] = useState<string>('');
 
-  const theme = useTheme() as ICustomTheme;
-  const styles = createStyles(theme);
-  const startRegion = useStore(state => state.region);
-  const [mapRegionDeltas, setMapRegionDeltas] = useState<{
-    latitudeDelta: number;
-    longitudeDelta: number;
-  }>({
-    latitudeDelta: 0.01,
-    longitudeDelta: 0.01,
-  });
+  const [showPreview, setShowPreview] = useState<boolean>(false);
+
+  const [addressSwitch, setAddressSwitch] = useState<boolean>(false);
+  const [locationDescriptionSwitch, setLocationDescriptionSwitch] = useState<boolean>(false);
+  const [endtimeSwitch, setEndtimeSwitch] = useState<boolean>(false);
+  const [maxParticipantsSwitch, setMaxParticipantsSwitch] = useState<boolean>(false);
 
   // Event data, and saving it
   const [isSaving, setIsSaving] = useState<boolean>(false);
@@ -80,9 +104,6 @@ const EditEventForm: React.FC = () => {
   );
   const [formChanged, setFormChanged] = useState<boolean>(false);
 
-  // Emoji input field ref, used for text selection
-  const emojiInputRef = React.useRef<TextInput | null>(null);
-
   useEffect(() => {
     if (initialEvent) {
       // Event Object fields
@@ -93,19 +114,10 @@ const EditEventForm: React.FC = () => {
       setEventEndDate(
         initialEvent.end ? new Date(initialEvent.end) : undefined,
       );
-      setEventLocationLatitude(
-        initialEvent.location?.latitude || startRegion.latitude,
-      );
-      setEventLocationLongitude(
-        initialEvent.location?.longitude || startRegion.longitude,
-      );
       setEventLocationDescription(initialEvent.location?.description || '');
       setEventLocationMarker(initialEvent.location?.marker || '');
-    } else {
-      setEventLocationLatitude(startRegion.latitude);
-      setEventLocationLongitude(startRegion.longitude);
     }
-  }, [initialEvent, startRegion.latitude, startRegion.longitude]);
+  }, [initialEvent]);
 
   // Validate form
   useEffect(() => {
@@ -117,8 +129,6 @@ const EditEventForm: React.FC = () => {
         eventMaxParticipants !== initialEvent.maxAttendees ||
         eventStartDate.toISOString() !== initialEvent.start ||
         (eventEndDate?.toISOString() || undefined) !== initialEvent.end ||
-        eventLocationLatitude !== initialEvent.location?.latitude ||
-        eventLocationLongitude !== initialEvent.location?.longitude ||
         eventLocationDescription !== initialEvent.location?.description ||
         eventLocationMarker !== initialEvent.location?.marker,
       );
@@ -133,8 +143,6 @@ const EditEventForm: React.FC = () => {
     eventMaxParticipants,
     eventStartDate,
     eventEndDate,
-    eventLocationLatitude,
-    eventLocationLongitude,
     eventLocationDescription,
     eventLocationMarker,
   ]);
@@ -146,6 +154,28 @@ const EditEventForm: React.FC = () => {
     }
   }, [eventName, nameFieldTouched]);
 
+
+  const searchLocation = useCallback(() => {
+    const address = formState.location?.address;
+    if (!address || address.trim() === '') {
+      console.log('Invalid address');
+      return;
+    }
+    getGeoLocation(address).then((location) => {
+      console.log('Location:', location);
+      if (location) {
+        setFormState((prevState) => ({
+          ...prevState,
+          location: {
+            ...prevState.location,
+            address: location.formatted_address,
+            latitude: location.latitude,
+            longitude: location.longitude,
+          }
+        }));
+      }
+    });
+  }, [formState, setFormState]);
   const saveEvent = useCallback(() => {
     if (!user) {
       console.error('No user found');
@@ -162,8 +192,8 @@ const EditEventForm: React.FC = () => {
       start: eventStartDate.toISOString() || '',
       end: eventEndDate?.toISOString() || undefined,
       location: {
-        latitude: eventLocationLatitude,
-        longitude: eventLocationLongitude,
+        latitude: 0,
+        longitude: 0,
         description: eventLocationDescription,
         marker: eventLocationMarker,
       },
@@ -189,15 +219,6 @@ const EditEventForm: React.FC = () => {
         setIsSaving(false);
       });
   }, [
-    eventDescription,
-    eventEndDate,
-    eventLocationDescription,
-    eventLocationLatitude,
-    eventLocationLongitude,
-    eventLocationMarker,
-    eventMaxParticipants,
-    eventName,
-    eventStartDate,
     fetchAllEvents,
     formChanged,
     initialEvent,
@@ -223,277 +244,248 @@ const EditEventForm: React.FC = () => {
   };
 
   return (
-    <SafeAreaView style={[styles.viewContainer]}>
+    <SafeAreaView flex={1} bgColor='$background0'>
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 144 : 0}>
-        <ScrollView contentContainerStyle={[styles.contentContainer]}>
-          <Fields>
-            <Field
-              label="Titel"
-              required
-              error={
-                nameFieldTouched && !nameValid
-                  ? 'Titeln får inte vara tom.'
-                  : undefined
-              }>
-              <Input
-                type={'text'}
-                placeholder="Evenemangets titel"
-                value={eventName}
-                onChangeText={setEventName}
-                onBlur={() => {
-                  setNameFieldTouched(true);
-                }}
-              />
-            </Field>
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        flex={1}>
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+          <ScrollView flex={1} flexDirection='column' padding={10}>
+            <Fields>
+              <Field
+                label="Titel"
+                required
+                error={
+                  nameFieldTouched && !nameValid
+                    ? 'Titeln får inte vara tom.'
+                    : undefined
+                }>
+                <Input>
+                  <InputField type="text" defaultValue={eventName} onChangeText={setEventName}
+                    onBlur={() => {
+                      setNameFieldTouched(true);
+                    }} placeholder="Evenemangets titel" />
+                </Input>
+              </Field>
 
-            <Field label="Beskrivning">
-              <TextArea
-                placeholder="Beskrivning av evenemanget"
-                value={eventDescription}
-                onChangeText={setEventDescription}
-                autoCompleteType={'off'}
-              />
-            </Field>
 
-            <Field label="Antal deltagare">
-              <Input
-                type={'number'}
-                placeholder="Lämna tomt för obegränsat antal deltagare"
-                value={eventMaxParticipants?.toString() || ''}
-                onChangeText={(value: string) => {
-                  if (value === '') {
-                    setEventMaxParticipants(null);
-                  } else {
-                    setEventMaxParticipants(parseInt(value, 10));
-                  }
-                }}
-              />
-            </Field>
+              <Field label="Beskrivning">
+                <Textarea>
+                  <TextareaInput
+                    defaultValue={eventDescription}
+                    onChangeText={setEventDescription}
+                    placeholder="Beskrivning av evenemanget" />
+                </Textarea>
+              </Field>
 
-            <DatepickerField
-              label="Start"
-              date={eventStartDate}
-              onDateChange={handleChangeStartDate}
-            />
 
-            <DatepickerField
-              label="Slut"
-              date={eventEndDate || undefined}
-              minimumDate={eventStartDate}
-              optional
-              onDateChange={setEventEndDate}
-            />
 
-            <Field label="Plats">
-              <MapView
-                style={styles.mapView}
-                region={{
-                  latitude: eventLocationLatitude,
-                  longitude: eventLocationLongitude,
-                  ...mapRegionDeltas,
-                }}
-                onRegionChangeComplete={region => {
-                  setEventLocationLatitude(region.latitude);
-                  setEventLocationLongitude(region.longitude);
-                  setMapRegionDeltas({
-                    latitudeDelta: region.latitudeDelta,
-                    longitudeDelta: region.longitudeDelta,
-                  });
-                }}>
-                <EventMarker
-                  hasCallout={false}
-                  event={
-                    {
-                      name: eventName.trim() || 'Exempel',
-                      start: eventStartDate.toISOString(),
-                      end: eventEndDate?.toISOString() || undefined,
-                      location: {
-                        latitude: eventLocationLatitude || startRegion.latitude,
-                        longitude:
-                          eventLocationLongitude || startRegion.longitude,
-                        description:
-                          eventLocationDescription || 'Exempeladress 42',
-                        marker: eventLocationMarker || clockForTime(new Date()),
-                      },
-                    } as EventWithLocation
-                  }
+              <Field label="Datum och tid">
+                <SettingsSwitchField
+                  label="Ange sluttid"
+                  value={endtimeSwitch}
+                  onValueChange={() => {
+                    setEndtimeSwitch(!endtimeSwitch)
+                    if (!endtimeSwitch)
+                      setFormState({
+                        ...formState,
+                        end: undefined,
+                      });
+                  }}
                 />
-              </MapView>
-            </Field>
-
-            <Field
-              label="Platsbeskrivning"
-              help="Denna visas i botten på Evenemangskortet.">
-              <Input
-                type={'text'}
-                placeholder="Exempeladress 42"
-                value={eventLocationDescription}
-                onChangeText={setEventLocationDescription}
-              />
-            </Field>
-
-            <Field
-              label="Kartsymbol"
-              help="Används som kartmarkör och visas i Evenemangskortet (se nedan)"
-              onPress={() => {
-                if (emojiInputRef.current) {
-                  emojiInputRef.current.focus();
-                }
-              }}
-              labelControl={
-                <ZStack style={styles.emojiTextFieldWrapper}>
-                  <View style={styles.emojiDisplayWrapper}>
-                    <Text style={styles.emojiDisplay}>
-                      {eventLocationMarker || clockForTime(eventStartDate)}
-                    </Text>
-                  </View>
-                  <TextInput
-                    placeholder={clockForTime(eventStartDate)}
-                    value={eventLocationMarker || ''}
-                    ref={emojiInputRef}
-                    onKeyPress={e => {
-                      // if non character key is pressed, return
-                      if (
-                        e.nativeEvent.key.length > 4 ||
-                        e.nativeEvent.key === ' '
-                      ) {
-                        return;
-                      }
-                      setEventLocationMarker(e.nativeEvent.key);
-                    }}
-                    style={styles.emojiTextField}
+                <DatepickerField
+                  label="Start"
+                  date={eventStartDate}
+                  onDateChange={handleChangeStartDate}
+                />
+                {endtimeSwitch && (
+                  <DatepickerField
+                    label="Slut"
+                    date={eventEndDate || undefined}
+                    minimumDate={eventStartDate}
+                    optional
+                    onDateChange={setEventEndDate}
                   />
-                </ZStack>
-              }
-            />
-
-            <Field label="Evenemangets kort">
-              <Box style={styles.eventCardContainer}>
-                <EventCard
-                  event={
-                    {
-                      id: '',
-                      name: eventName,
-                      start: eventStartDate.toISOString(),
-                      end: eventEndDate?.toISOString() || undefined,
-                      location: {
-                        latitude: eventLocationLatitude,
-                        longitude: eventLocationLongitude,
-                        description: eventLocationDescription,
-                        marker: eventLocationMarker,
-                      },
-                    } as FutureUserEvent
-                  }
-                  initiallyOpen
+                )}
+              </Field>
+              <Field label="Antal deltagare">
+                <SettingsSwitchField
+                  label="Ange max antal deltagare"
+                  value={maxParticipantsSwitch}
+                  onValueChange={() => {
+                    setMaxParticipantsSwitch(!maxParticipantsSwitch)
+                    if (!maxParticipantsSwitch)
+                      setFormState({
+                        ...formState,
+                        maxAttendees: undefined,
+                      });
+                  }}
                 />
-              </Box>
-            </Field>
-          </Fields>
+                {maxParticipantsSwitch &&
+                  <Input>
+                    <InputField
+                      inputMode='numeric'
+                      defaultValue={eventMaxParticipants?.toString() || ''}
+                      onChangeText={(value: string) => {
+                        if (value === '') {
+                          setEventMaxParticipants(null);
+                        } else {
+                          setEventMaxParticipants(extractNumericValue(value));
+                        }
+                      }}
+                      placeholder="Max antal deltagare" />
+                  </Input>
+                }
+              </Field>
 
 
-        </ScrollView>
-<HStack
-  flex={1}
-  flexDirection='row'
-  bgColor='$background50'
+              <Field
+                label="Adress">
+                <SettingsSwitchField
+                  label="Lägg till adress"
+                  value={addressSwitch}
+                  onValueChange={() => {
+                    setAddressSwitch(!addressSwitch)
+                    if (!formState) {
+                      return;
+                    }
+                    if (!addressSwitch)
+                      setFormState({
+                        ...formState,
+                        location: {
+                          ...formState.location,
+                          address: undefined,
+                        }
+                      });
+                  }}
+                />
+                {addressSwitch &&
+                  <Input>
+                    <InputField type="text"
+                      defaultValue={formState.location?.address || ''}
+                      placeholder="Fabriksgatan 19, 702 23 Örebro"
+                      onChangeText={(value) => {
+                        setFormState({
+                          ...formState,
+                          location: {
+                            ...formState.location,
+                            address: value,
+                          }
+                        })
+                      }}
+                      onEndEditing={searchLocation}
+                    />
+                    <InputSlot pr="$3" onPress={searchLocation}>
+                      <InputIcon
+                        as={SearchIcon}
+                        color="$primary500"
+                      />
+                    </InputSlot>
+                  </Input>
+                }
+                <Text>
+                  {formState.location?.address}
+                  {formState.location?.latitude}
+                  {formState.location?.longitude}
+                </Text>
+                {/* {formState.location?.latitude && formState.location?.longitude && (
+                  <EventMapField longitude={formState.location?.longitude} latitude={formState.location?.latitude} />
+                )} */}
+              </Field>
 
-  style={{
-    position: 'absolute',
-    bottom: 0,
-    paddingHorizontal: 0,
-    justifyContent: 'flex-end',
-    alignItems: 'center'
-  }}
->
-  <Button
-    size="md"
-    variant="outline"
-    action="secondary"
-    borderRadius={0}
-    borderColor="$vscode_stringLiteral"
-    isDisabled={isSaving}
-    isFocusVisible={false}
-    onPress={() => {
-      navigation.goBack();
-    }}
-    style={{ flex: 1 }}
-  >
-    <ButtonText color='$vscode_stringLiteral' style={{ textAlign: 'center' }}>Avbryt</ButtonText>
-  </Button>
-  <Button
-    size="md"
-    variant="solid"
-    action="primary"
-    borderRadius={0}
-    isDisabled={isSaving}
-    isFocusVisible={false}
-    onPress={saveEvent}
-    style={{ flex: 1 }}
-  >
-    <ButtonText style={{ textAlign: 'center' }}>Spara</ButtonText>
-    {isSaving && <ActivityIndicator style={{ marginLeft: 5 }} />}
-  </Button>
-</HStack>
+              <Field
+                label="Platsbeskrivning">
+                <SettingsSwitchField
+                  label="Lägg till platsbeskrivning"
+                  value={locationDescriptionSwitch}
+                  onValueChange={() => {
+                    setLocationDescriptionSwitch(!locationDescriptionSwitch)
+                    if (!locationDescriptionSwitch)
+                      setFormState({
+                        ...formState,
+                        location: {
+                          ...formState.location,
+                          description: undefined,
+                        }
+                      });
+                  }}
+                />
+                {locationDescriptionSwitch &&
 
+
+                  <Input>
+                    <InputField type="text" defaultValue={eventLocationDescription} placeholder="Rum 107"
+                      onChangeText={(value) => {
+                        setFormState({
+                          ...formState,
+                          location: {
+                            ...formState.location,
+                            description: value,
+                          }
+                        })
+                      }
+                      }
+                    />
+                  </Input>
+                }
+              </Field>
+
+            </Fields>
+            <HStack space="lg" h="100%" flex={1} justifyContent="space-between" paddingVertical={20} >
+              <Button
+                flex={1}
+                size="md"
+                variant="outline"
+                action="secondary"
+                borderRadius={0}
+                borderColor="$vscode_stringLiteral"
+                isDisabled={isSaving}
+                isFocusVisible={false}
+                onPress={() => {
+                  navigation.goBack();
+                }}
+              >
+                <ButtonText color='$vscode_stringLiteral'>Avbryt</ButtonText>
+              </Button>
+              <Button
+                flex={1}
+                size="md"
+                variant="solid"
+                action="primary"
+                borderRadius={0}
+                isDisabled={isSaving}
+                isFocusVisible={false}
+                onPress={() => { setShowPreview(true) }}
+              >
+                <ButtonText>Förhandsgranska</ButtonText>
+              </Button>
+            </HStack>
+            {showPreview && (
+              <EventCardPreview
+                event={
+                  {
+                    id: '',
+                    name: eventName,
+                    start: eventStartDate.toISOString(),
+                    end: eventEndDate?.toISOString() || undefined,
+                    location: {
+                      latitude: 0,
+                      longitude: 0,
+                      description: eventLocationDescription,
+                      marker: eventLocationMarker,
+                    },
+                  } as FutureUserEvent
+                }
+                onClose={() => setShowPreview(false)}
+                showPreview={showPreview}
+                onSave={saveEvent}
+              />
+            )}
+          </ScrollView>
+        </TouchableWithoutFeedback>
       </KeyboardAvoidingView>
+
     </SafeAreaView>
   );
 };
-
-const createStyles = (theme: ICustomTheme) =>
-  StyleSheet.create({
-    viewContainer: {
-      flex: 1,
-      backgroundColor: theme.colors.background[500],
-    },
-    contentContainer: {
-      flexGrow: 1,
-      padding: 10,
-    },
-    mapView: {
-      width: '100%',
-      aspectRatio: 4 / 3,
-      borderRadius: 20,
-      borderWidth: 1,
-      borderColor: theme.colors.text[50],
-    },
-    emojiTextFieldWrapper: {
-      width: 40,
-      height: 40,
-    },
-    emojiTextField: {
-      position: 'absolute',
-      top: 0,
-      left: 0,
-      width: 40,
-      height: 40,
-      fontSize: 30,
-      textAlign: 'center',
-      alignSelf: 'center',
-      opacity: 0,
-    },
-    emojiDisplayWrapper: {
-      position: 'absolute',
-      width: 40,
-      height: 40,
-      justifyContent: 'center', // Add this for vertical centering
-    },
-    emojiDisplay: {
-      fontSize: 30,
-      lineHeight: 40,
-      alignSelf: 'center', // Ensure the text itself is centered
-      color: theme.colors.text[500],
-      padding: 0,
-      margin: 0,
-    },
-
-    eventCardContainer: {
-      borderWidth: 1,
-      borderColor: theme.colors.text[50],
-      borderRadius: 10,
-    },
-  });
 
 export default EditEventForm;

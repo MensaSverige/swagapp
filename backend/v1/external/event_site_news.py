@@ -24,7 +24,6 @@ def get_event_site_news() -> list[EventSiteNews]:
 
     try:
         response_json = response.json()
-        logging.info(f"Response JSON: {response_json}")
         news = response_json['news']
         validated_news: List[EventSiteNews] = []
         for n in news:

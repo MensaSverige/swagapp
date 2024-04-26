@@ -30,6 +30,7 @@ import AutosaveErrorToast from '../../common/components/AutosaveErrorToast';
 import AutosaveToast from '../../common/components/AutosaveToast';
 import { resetUserCredentials } from '../../common/services/authService';
 import ProfileEditAvatar from '../../common/components/ProfileEditAvatar';
+import { extractNumericValue } from '../../common/functions/extractNumericValue';
 
 
 const UserSettings: React.FC = () => {
@@ -186,7 +187,6 @@ const UserSettings: React.FC = () => {
                       value={formState?.contact_info?.phone || ''}
                       onFocus={handleFocus}
                       onChangeText={(phone: string) => {
-                        const numericPhone = phone.replace(/[^0-9]/g, '');
                         if (!formState || !formState.contact_info) {
                           return;
                         }
@@ -194,7 +194,7 @@ const UserSettings: React.FC = () => {
                           ...formState,
                           contact_info: {
                             ...formState.contact_info,
-                            phone: numericPhone,
+                            phone: extractNumericValue(phone)?.toString() || '',
                           },
                         });
                       }}

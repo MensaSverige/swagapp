@@ -1,4 +1,3 @@
-import {Event} from '../../common/types/event';
 import {ExtendedUserEvent} from '../../../api_schema/types'; // Import the UserEvent class
 
 export type FutureUserEvent = ExtendedUserEvent & {
@@ -6,7 +5,7 @@ export type FutureUserEvent = ExtendedUserEvent & {
 };
 
 export function isFutureUserEvent(
-  event: Event | ExtendedUserEvent,
+  event: ExtendedUserEvent,
 ): event is FutureUserEvent {
   // Check if the event is a UserEvent
   if (!(event as ExtendedUserEvent).userId) {

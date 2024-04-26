@@ -11,6 +11,7 @@ try:
     APPLE_REVIEW_USER = os.getenv('APPLE_REVIEW_USER')
     GOOGLE_REVIEW_USER = os.getenv('GOOGLE_REVIEW_USER')
     REVIEW_PASSWORD = os.getenv('REVIEW_PASSWORD')
+    GOOGLE_MAPS_API_KEY = os.getenv('GOOGLE_MAPS_API_KEY')
 
     if LOGINM_SEED is None or LOGINB_SEED is None or EVENT_API_TOKEN is None or URL_MEMBER_API is None or URL_EVENTS_API is None or SECRET_KEY is None or TEST_MODE is None:
         raise ValueError("One or more environment variables are not set")

@@ -72,7 +72,6 @@ export const fetchNews = async (): Promise<News[]> => {
     .then(
       response => {
         if (response.data) {
-          console.log('News:', response.data);
           return response.data;
         }
         return [];

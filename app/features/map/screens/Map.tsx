@@ -2,10 +2,14 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   StyleSheet,
   Image,
+  Platform,
+  TouchableWithoutFeedback,
+  Keyboard,
 } from 'react-native';
 import ReactNativeMapView from 'react-native-maps';
 import {
   Button,
+  KeyboardAvoidingView,
   View,
   SafeAreaView,
   VStack
@@ -177,102 +181,108 @@ const MapView: React.FC = () => {
 
   return (
     <SafeAreaView flex={1} key={colorMode}>
-      <VStack flex={1}>
-        {selectedUser && showContactCard &&
-          <ContactCard
-            key={`${selectedUser.userId}-${colorMode}`}
-            user={selectedUser}
-            showCard={showContactCard}
-            onClose={onClose} />}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        flex={1}>
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+          <VStack flex={1}>
+            {selectedUser && showContactCard &&
+              <ContactCard
+                key={`${selectedUser.userId}-${colorMode}`}
+                user={selectedUser}
+                showCard={showContactCard}
+                onClose={onClose} />}
 
-        <FilterMarkersComponent
-          showFilterView={showFilter}
-          onClose={
-            () => {
-              setshowFilter(false);
-            }
-          } />
+            <FilterMarkersComponent
+              showFilterView={showFilter}
+              onClose={
+                () => {
+                  setshowFilter(false);
+                }
+              } />
 
-        <ReactNativeMapView
-          ref={mapRef}
-          style={{ flex: 1 }}
-          //style={styles.map}
-          showsUserLocation={true}
-          initialRegion={region}
-          followsUserLocation={followsUserLocation}
-          showsMyLocationButton={false}
-          onUserLocationChange={e => {
-            if (e.nativeEvent.coordinate && followsUserLocation) {
-              mapRef.current?.animateToRegion(
-                {
-                  latitude: e.nativeEvent.coordinate?.latitude,
-                  longitude: e.nativeEvent.coordinate?.longitude,
-                  latitudeDelta: region.latitudeDelta,
-                  longitudeDelta: region.longitudeDelta,
-                },
-                350
-              );
-            }
-          }}
-          onRegionChangeComplete={setVisibleRegion}
-          onPanDrag={resetSelectedUser}
-          onPress={resetSelectedUser}
-          mapPadding={{
-            top: 10,
-            right: 10,
-            bottom: 10,
-            left: 10,
-          }}
-          customMapStyle={colorMode === 'dark'
-            ? darkMapstyle
-            : lightMapstyle}>
-          {filteredUsers && isImagesLoaded &&
-            filteredUsers
-              .filter(u => u.location.latitude >= visibleRegion.latitude - visibleRegion.latitudeDelta * 5 &&
-                u.location.latitude <= visibleRegion.latitude + visibleRegion.latitudeDelta * 5 &&
-                u.location.longitude >= visibleRegion.longitude - visibleRegion.longitudeDelta * 5 &&
-                u.location.longitude <= visibleRegion.longitude + visibleRegion.longitudeDelta * 5
-              )
-              .map(u => (
-                <UserMarker
-                  key={`${u.userId}-${colorMode}`}
-                  imageLoaded={isImagesLoaded}
-                  user={u}
-                  zIndex={100}
-                  highlighted={selectedUser?.userId === u.userId}
-                  onPress={() => {
-                    focusOnUser(u);
-                  }} />
-              ))}
-        </ReactNativeMapView>
-        <View style={styles.mapControlsWrapper}>
-          <Button
-            style={styles.mapControlsButton}
-            variant="solid"
-            onPress={openFilter}>
-            <FontAwesomeIcon
-              icon={faFilter}
-              size={30}
-              color={userFilter && (userFilter.name || userFilter.showHoursAgo !== 24) ? config.tokens.colors.primary300 : config.tokens.colors.coolGray400}
-            />
-          </Button>
-          <Button
-            style={styles.mapControlsButton}
-            variant="solid"
-            onPress={() => {
-              setFollowsUserLocation(!followsUserLocation);
-            }}>
-            <FontAwesomeIcon
-              icon={faLocation}
-              size={30}
-              color={followsUserLocation
-                ? config.tokens.colors.primary300
-                : config.tokens.colors.coolGray400}
-            />
-          </Button>
-        </View>
-      </VStack>
-      <IncognitoInfo />
+            <ReactNativeMapView
+              ref={mapRef}
+              style={{ flex: 1 }}
+              //style={styles.map}
+              showsUserLocation={true}
+              initialRegion={region}
+              followsUserLocation={followsUserLocation}
+              showsMyLocationButton={false}
+              onUserLocationChange={e => {
+                if (e.nativeEvent.coordinate && followsUserLocation) {
+                  mapRef.current?.animateToRegion(
+                    {
+                      latitude: e.nativeEvent.coordinate?.latitude,
+                      longitude: e.nativeEvent.coordinate?.longitude,
+                      latitudeDelta: region.latitudeDelta,
+                      longitudeDelta: region.longitudeDelta,
+                    },
+                    350
+                  );
+                }
+              }}
+              onRegionChangeComplete={setVisibleRegion}
+              onPanDrag={resetSelectedUser}
+              onPress={resetSelectedUser}
+              mapPadding={{
+                top: 10,
+                right: 10,
+                bottom: 10,
+                left: 10,
+              }}
+              customMapStyle={colorMode === 'dark'
+                ? darkMapstyle
+                : lightMapstyle}>
+              {filteredUsers && isImagesLoaded &&
+                filteredUsers
+                  .filter(u => u.location.latitude >= visibleRegion.latitude - visibleRegion.latitudeDelta * 5 &&
+                    u.location.latitude <= visibleRegion.latitude + visibleRegion.latitudeDelta * 5 &&
+                    u.location.longitude >= visibleRegion.longitude - visibleRegion.longitudeDelta * 5 &&
+                    u.location.longitude <= visibleRegion.longitude + visibleRegion.longitudeDelta * 5
+                  )
+                  .map(u => (
+                    <UserMarker
+                      key={`${u.userId}-${colorMode}`}
+                      imageLoaded={isImagesLoaded}
+                      user={u}
+                      zIndex={100}
+                      highlighted={selectedUser?.userId === u.userId}
+                      onPress={() => {
+                        focusOnUser(u);
+                      }} />
+                  ))}
+            </ReactNativeMapView>
+            <View style={styles.mapControlsWrapper}>
+              <Button
+                style={styles.mapControlsButton}
+                variant="solid"
+                onPress={openFilter}>
+                <FontAwesomeIcon
+                  icon={faFilter}
+                  size={30}
+                  color={userFilter && (userFilter.name || userFilter.showHoursAgo !== 24) ? config.tokens.colors.primary300 : config.tokens.colors.coolGray400}
+                />
+              </Button>
+              <Button
+                style={styles.mapControlsButton}
+                variant="solid"
+                onPress={() => {
+                  setFollowsUserLocation(!followsUserLocation);
+                }}>
+                <FontAwesomeIcon
+                  icon={faLocation}
+                  size={30}
+                  color={followsUserLocation
+                    ? config.tokens.colors.primary300
+                    : config.tokens.colors.coolGray400}
+                />
+              </Button>
+            </View>
+            <IncognitoInfo />
+          </VStack>
+        </TouchableWithoutFeedback>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 };

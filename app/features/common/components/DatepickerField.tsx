@@ -1,10 +1,9 @@
-import React, {useState} from 'react';
+import React, { useState } from 'react';
 import DatePicker from 'react-native-date-picker';
-import {Dimensions, TouchableOpacity} from 'react-native';
-import {Box, Column, Text} from 'native-base';
-import {FormControl, ICustomTheme, useTheme, Heading} from 'native-base';
-import {formatDateAndTime} from '../functions/FormatDateAndTime';
-import {SmallDeleteButton} from './SmallDeleteButton';
+import { Dimensions, TouchableOpacity } from 'react-native';
+import { Box, Heading, FormControl, FormControlError, FormControlErrorText, FormControlHelper, FormControlHelperText, FormControlLabel, Text, VStack } from '../../../gluestack-components';
+import { formatDateAndTime } from '../functions/FormatDateAndTime';
+import { SmallDeleteButton } from './SmallDeleteButton';
 
 interface DateFieldProps {
   label: React.ReactNode;
@@ -18,29 +17,21 @@ export const DatepickerField: React.FC<DateFieldProps> = ({
   label,
   date,
   minimumDate,
-  optional = false,
   onDateChange,
 }) => {
   const [openDateModal, setOpenDateModal] = useState(false);
-  const theme = useTheme() as ICustomTheme;
-  const styles = createStyles(theme);
+  const styles = createStyles();
 
   return (
     <>
-      <FormControl>
-        <FormControl.Label style={[styles.datepickerField]}>
+
+      <FormControl paddingVertical={5}>
+        <FormControlLabel flex={1} justifyContent="space-between" alignItems='center'>
           <Heading size="sm">{label}</Heading>
-          <Column justifyContent={'right'}>
-            <TouchableOpacity onPress={() => setOpenDateModal(true)}>
-              <Text>{formatDateAndTime(date || '')}</Text>
-            </TouchableOpacity>
-            {optional && date && (
-              <Box alignItems={'flex-end'}>
-                <SmallDeleteButton onPress={() => onDateChange(undefined)} />
-              </Box>
-            )}
-          </Column>
-        </FormControl.Label>
+          <TouchableOpacity onPress={() => setOpenDateModal(true)}>
+            <Text>{formatDateAndTime(date || '')}</Text>
+          </TouchableOpacity>
+        </FormControlLabel>
         <DatePicker
           modal
           title={label?.toString()}
@@ -67,7 +58,7 @@ export const DatepickerField: React.FC<DateFieldProps> = ({
   );
 };
 
-const createStyles = (_theme: ICustomTheme) => ({
+const createStyles = () => ({
   datepickerField: {
     flex: 1,
     flexDirection: 'row',
