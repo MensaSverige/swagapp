@@ -16,8 +16,6 @@ import { Platform, StyleSheet } from 'react-native';
 import { useColorMode } from '@gluestack-ui/themed';
 import MyExternalEvents from '../features/events/screens/MyExternalEvents';
 import WelcomeScreen from '../features/common/screens/WelcomeScreen';
-import MyExternalEvents from '../features/events/screens/MyExternalEvents';
-import WelcomeScreen from '../features/common/screens/WelcomeScreen';
 
 const createStyles1 = (theme: any, colorMode: string) =>
 
