@@ -79,7 +79,7 @@ const EditEventForm: React.FC = () => {
       setLocationDescriptionSwitch(!!initialEvent.location?.description);
       setEndtimeSwitch(!!initialEvent.end);
       setMaxParticipantsSwitch(!!initialEvent.maxAttendees);
-      
+
     }
   }, [initialEvent]);
 
@@ -134,26 +134,29 @@ const EditEventForm: React.FC = () => {
     user,
   ]);
 
-  const handleChangeStartDate = (date?: Date) => {
-    if (!date) {
-      return; // should not happen
-    }
-    let startDateDelta = 0;
-    const newStartDate = new Date(date);
-    const previousStartDateDate = new Date(formState.start);
-    startDateDelta = newStartDate.getTime() - previousStartDateDate.getTime();
-    setFormState({
-      ...formState,
-      start: date.toISOString(),
-    });
-    if (formState.end && startDateDelta !== 0) {
-      const newEndDate = new Date(formState.end);
-      setFormState({
-        ...formState,
-        end: new Date(newEndDate.getTime() + startDateDelta).toISOString(),
-      });
-    }
+const handleChangeStartDate = useCallback((newStartDate?: Date) => () => {
+  if (!newStartDate) {
+    return; // should not happen
+  }
+
+  const previousStartDate = new Date(formState.start);
+  const startDateDelta = newStartDate.getTime() - previousStartDate.getTime();
+
+  let updatedFormState = {
+    ...formState,
+    start: newStartDate.toISOString(),
   };
+
+  if (formState.end) {
+    const newEndDate = new Date(new Date(formState.end).getTime() + startDateDelta);
+    updatedFormState = {
+      ...updatedFormState,
+      end: newEndDate.toISOString(),
+    };
+  }
+
+  setFormState(updatedFormState);
+}, [formState.start]);
 
   return (
     <SafeAreaView flex={1} bgColor='$background0'>

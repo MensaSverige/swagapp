@@ -1,4 +1,3 @@
-import { Button, HStack, ICustomTheme, theme, useTheme } from 'native-base';
 import React, { useEffect, useState } from 'react';
 import MapView from '../features/map/screens/Map';
 import UserSettings from '../features/account/screens/Settings';
@@ -8,9 +7,9 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useSwagNavigation } from './RootStackNavigation';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { RootStackParamList } from './RootStackParamList';
-import { KeyboardAvoidingView, Pressable } from '../gluestack-components';
+import { HStack, KeyboardAvoidingView, Pressable } from '../gluestack-components';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
-import { faCircleInfo, faGear, faInfo } from '@fortawesome/free-solid-svg-icons';
+import { faGear } from '@fortawesome/free-solid-svg-icons';
 import { config } from '../gluestack-components/gluestack-ui.config';
 import { Platform, StyleSheet } from 'react-native';
 import { useColorMode } from '@gluestack-ui/themed';
@@ -42,7 +41,6 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 export const LoggedInTabs = () => {
   const colorMode = useColorMode();
   const [styles, setStyles] = useState(createStyles1(config.tokens.colors, colorMode));
-  const [styles, setStyles] = useState(createStyles1(config.tokens.colors, colorMode));
 
   useEffect(() => {
     const theme = colorMode === 'dark' ? config.themes.dark.colors : config.tokens.colors
@@ -64,7 +62,7 @@ export const LoggedInTabs = () => {
 
   const defaultHeaderOptions = {
     headerRight: () => (
-      <HStack space={2} alignItems="center" paddingRight={2}>
+      <HStack space="sm" alignItems="center" paddingRight={2}>
         <Pressable
           style={{ marginRight: 10 }}
           onPress={() => navigation.navigate('UserSettings')}
@@ -93,16 +91,7 @@ export const LoggedInTabs = () => {
               }}
             />
             <BottomTab.Screen
-              name="Information"
-              component={WelcomeScreen}
-              options={{
-                ...defaultHeaderOptions,
-                tabBarIcon: InformationIcon,
-              }}
-            />
-            <BottomTab.Screen
               name="Schema"
-              component={MyExternalEvents}
               component={MyExternalEvents}
               options={{
                 ...defaultHeaderOptions,
