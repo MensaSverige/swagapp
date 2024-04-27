@@ -8,11 +8,11 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useSwagNavigation } from './RootStackNavigation';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { RootStackParamList } from './RootStackParamList';
-import { Pressable } from '../gluestack-components';
+import { KeyboardAvoidingView, Pressable } from '../gluestack-components';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faCircleInfo, faGear, faInfo } from '@fortawesome/free-solid-svg-icons';
 import { config } from '../gluestack-components/gluestack-ui.config';
-import { StyleSheet } from 'react-native';
+import { Platform, StyleSheet } from 'react-native';
 import { useColorMode } from '@gluestack-ui/themed';
 import MyExternalEvents from '../features/events/screens/MyExternalEvents';
 import WelcomeScreen from '../features/common/screens/WelcomeScreen';
@@ -64,13 +64,6 @@ export const LoggedInTabs = () => {
   const defaultHeaderOptions = {
     headerRight: () => (
       <HStack space={2} alignItems="center" paddingRight={2}>
-        {/* <Pressable
-          style={{ marginRight: 10 }}
-          onPress={() => navigation.navigate('WelcomeScreen')}
-        >
-          <FontAwesomeIcon icon={faCircleInfo} size={28} style={styles.InfoIcon} />
-        </Pressable> */}
-
         <Pressable
           style={{ marginRight: 10 }}
           onPress={() => navigation.navigate('UserSettings')}
@@ -82,6 +75,10 @@ export const LoggedInTabs = () => {
   };
 
   return (
+    <KeyboardAvoidingView
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      style={{ flex: 1 }}
+    >
     <Stack.Navigator key={colorMode}>
       <Stack.Screen name="LoggedIn" options={{ headerShown: false }}>
         {() => (
@@ -132,5 +129,6 @@ export const LoggedInTabs = () => {
       />
 
     </Stack.Navigator>
+    </KeyboardAvoidingView>
   );
 }

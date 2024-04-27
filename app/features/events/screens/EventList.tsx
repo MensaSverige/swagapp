@@ -1,15 +1,13 @@
 import React from 'react';
-import { RefreshControl, TouchableOpacity } from 'react-native';
+import { RefreshControl } from 'react-native';
 import { UIManager, Platform } from 'react-native';
 import { useEventLists } from '../hooks/useEventLists';
 import EventCard from '../components/EventCard';
 import { useNavigation } from '@react-navigation/native';
-import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
-import { faPlus } from '@fortawesome/free-solid-svg-icons';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../../navigation/RootStackParamList';
-import { Button, Center, HStack, View, VStack, ScrollView, Text, ButtonText, Box } from '../../../gluestack-components';
-import { config } from '../../../gluestack-components/gluestack-ui.config';
+import { Button, Center, VStack, ScrollView, Text, ButtonText, Box } from '../../../gluestack-components';
+import { FutureUserEvent, isFutureUserEvent } from '../types/futureUserEvent';
 
 if (
   Platform.OS === 'android' &&
@@ -18,31 +16,8 @@ if (
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
-const CreateEventButton: React.FC = () => {
-
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-
-  const showEditEventForm = () => {
-    navigation.navigate('EventForm', { event: null });
-  };
-
-  return (
-
-    <Button
-      size="md"
-      variant="solid"
-      action="secondary"
-      isDisabled={false}
-      isFocusVisible={false}
-      onPress={showEditEventForm}>
-      <ButtonText style={{ textAlign: 'center' }}>Skapa event</ButtonText>
-    </Button>
-
-  );
-};
-
 const EventList: React.FC = () => {
-  const navigation = useNavigation();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   const {
     visibleEvents,
@@ -84,11 +59,30 @@ const EventList: React.FC = () => {
             paddingBottom: 10,
           }}
           >
-            <EventCard key={`event-${event.id}=${i}`} event={event} onEditEvent={() => { }} />
+            <EventCard 
+            key={`event-${event.id}=${i}`} 
+            event={event} 
+            onEditEvent={(e: FutureUserEvent) => {
+              if (isFutureUserEvent(e)) {
+                navigation.navigate('EventForm', { event: e });
+              } else {
+                console.error('Event is not of type FutureUserEvent');
+              }
+            }}
+            />
           </Box>
         ))}
       </ScrollView>
-      <CreateEventButton />
+
+      <Button
+      size="md"
+      variant="solid"
+      action="secondary"
+      isDisabled={false}
+      isFocusVisible={false}
+      onPress={() => navigation.navigate('EventForm', { event: null })}>
+      <ButtonText style={{ textAlign: 'center' }}>Skapa event</ButtonText>
+    </Button>
     </VStack>
   );
 };

@@ -64,7 +64,7 @@ const EventCardPreview: React.FC<EventCardPreviewProps> = ({
               isDisabled={false}
               isFocusVisible={false}
             >
-              <ButtonText color='$vscode_stringLiteral'>Nollställ filter </ButtonText>
+              <ButtonText color='$vscode_stringLiteral'>Avbryt </ButtonText>
             </Button>
 
             <Button

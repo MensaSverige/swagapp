@@ -18,13 +18,13 @@ import FutureEvent from '../types/futureEvent';
 import { useEventLists } from '../hooks/useEventLists';
 import { SmallDeleteButton } from '../../common/components/SmallDeleteButton';
 import { EditButton } from '../../common/components/EditButton';
+import { on } from 'events';
 
 const EventCard: React.FC<{
   event: FutureEvent | FutureUserEvent;
-  isPreview?: boolean;
   initiallyOpen?: boolean;
-  onEditEvent?: (event: FutureUserEvent) => void;
-}> = ({ event, isPreview, initiallyOpen = false, onEditEvent }) => {
+  onEditEvent: (event: FutureUserEvent) => void;
+}> = ({ event, initiallyOpen = false, onEditEvent }) => {
   const user = useStore(state => state.user);
   const [open, setOpen] = React.useState(initiallyOpen || false);
   const [comparisonDate, setComparisonDate] = React.useState(new Date());
@@ -39,6 +39,10 @@ const EventCard: React.FC<{
   const hostNames = isFutureUserEvent(event)
     ? [event.ownerName, ...(event.hostNames || [])]
     : [];
+
+  const onEditPress = () => {
+      onEditEvent(event);
+    };
 
   return (
     <TouchableOpacity onPress={() => setOpen(!open)}>
@@ -63,15 +67,12 @@ const EventCard: React.FC<{
             />
           </Box>
 
-          {open && isFutureUserEvent(event) && event.userId === user?.userId && !isPreview ? (
+          {isFutureUserEvent(event) && event.userId === user?.userId && (
             <EditButton
-              onPress={() => onEditEvent && onEditEvent(event)}
+              onPress={onEditPress}
             />
-          ) : (
-            <Heading size="lg" isTruncated={!open}>
-              {event.location?.marker || clockForTime(event.start)}
-            </Heading>
           )}
+
         </Box>
         {open && (
           <>
@@ -109,7 +110,7 @@ const EventCard: React.FC<{
               {event.location?.description && (
                 <>
                   <Heading size="sm">Adress:</Heading>
-                  <Text> {event.location?.adress || ''}</Text>
+                  <Text> {event.location?.address || ''}</Text>
                 </>
               )}
             </Box>

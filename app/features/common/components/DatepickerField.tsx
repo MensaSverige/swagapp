@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
 import DatePicker from 'react-native-date-picker';
-import { Dimensions, TouchableOpacity } from 'react-native';
-import { Box, Heading, FormControl, FormControlError, FormControlErrorText, FormControlHelper, FormControlHelperText, FormControlLabel, Text, VStack } from '../../../gluestack-components';
+import { Dimensions } from 'react-native';
+import { Heading, FormControl, FormControlLabel, Text, Pressable } from '../../../gluestack-components';
 import { formatDateAndTime } from '../functions/FormatDateAndTime';
-import { SmallDeleteButton } from './SmallDeleteButton';
 
 interface DateFieldProps {
   label: React.ReactNode;
@@ -24,13 +23,14 @@ export const DatepickerField: React.FC<DateFieldProps> = ({
 
   return (
     <>
-
       <FormControl paddingVertical={5}>
         <FormControlLabel flex={1} justifyContent="space-between" alignItems='center'>
           <Heading size="sm">{label}</Heading>
-          <TouchableOpacity onPress={() => setOpenDateModal(true)}>
+          <Pressable
+            p="$1"
+            onPress={() => setOpenDateModal(true)}>
             <Text>{formatDateAndTime(date || '')}</Text>
-          </TouchableOpacity>
+          </Pressable>
         </FormControlLabel>
         <DatePicker
           modal
