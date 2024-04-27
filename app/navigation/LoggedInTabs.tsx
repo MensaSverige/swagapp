@@ -3,7 +3,6 @@ import React, { useEffect, useState } from 'react';
 import MapView from '../features/map/screens/Map';
 import UserSettings from '../features/account/screens/Settings';
 import { MapIcon, CalendarIcon, EventsIcon, InformationIcon } from './TabBarIcons';
-import { MapIcon, CalendarIcon, EventsIcon, InformationIcon } from './TabBarIcons';
 import { EventStackNavigator } from './EventStackNavigation';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useSwagNavigation } from './RootStackNavigation';
