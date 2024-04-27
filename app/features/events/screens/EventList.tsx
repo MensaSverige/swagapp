@@ -48,7 +48,7 @@ const EventList: React.FC = () => {
             onRefresh={fetchAllEvents}
           />
         }>
-        {visibleEvents.length === 0 && (
+        {visibleEvents.length === 0 && !eventsRefreshing && (
           <Center w="100%" p={10}>
             <Text>Inga spontana event hittades</Text>
           </Center>

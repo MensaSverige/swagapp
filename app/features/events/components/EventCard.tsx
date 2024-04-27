@@ -107,10 +107,12 @@ const EventCard: React.FC<{
               </Box>
             )}
             <Box flex={1} flexDirection="row">
-              {event.location?.description && (
+              {event.location?.address && (
                 <>
-                  <Heading size="sm">Adress:</Heading>
-                  <Text> {event.location?.address || ''}</Text>
+                  <Heading size="sm">Adress: </Heading>
+                  <Text>
+                  {event.location?.address.includes(", Sweden") ? event.location?.address.replace(", Sweden", "") : event.location?.address}
+                  </Text>
                 </>
               )}
             </Box>
