@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import MapView from '../features/map/screens/Map';
 import UserSettings from '../features/account/screens/Settings';
 import { MapIcon, CalendarIcon, EventsIcon, InformationIcon } from './TabBarIcons';
+import { MapIcon, CalendarIcon, EventsIcon, InformationIcon } from './TabBarIcons';
 import { EventStackNavigator } from './EventStackNavigation';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useSwagNavigation } from './RootStackNavigation';
@@ -14,6 +15,8 @@ import { faCircleInfo, faGear, faInfo } from '@fortawesome/free-solid-svg-icons'
 import { config } from '../gluestack-components/gluestack-ui.config';
 import { Platform, StyleSheet } from 'react-native';
 import { useColorMode } from '@gluestack-ui/themed';
+import MyExternalEvents from '../features/events/screens/MyExternalEvents';
+import WelcomeScreen from '../features/common/screens/WelcomeScreen';
 import MyExternalEvents from '../features/events/screens/MyExternalEvents';
 import WelcomeScreen from '../features/common/screens/WelcomeScreen';
 
@@ -41,6 +44,7 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export const LoggedInTabs = () => {
   const colorMode = useColorMode();
+  const [styles, setStyles] = useState(createStyles1(config.tokens.colors, colorMode));
   const [styles, setStyles] = useState(createStyles1(config.tokens.colors, colorMode));
 
   useEffect(() => {
@@ -92,7 +96,16 @@ export const LoggedInTabs = () => {
               }}
             />
             <BottomTab.Screen
+              name="Information"
+              component={WelcomeScreen}
+              options={{
+                ...defaultHeaderOptions,
+                tabBarIcon: InformationIcon,
+              }}
+            />
+            <BottomTab.Screen
               name="Schema"
+              component={MyExternalEvents}
               component={MyExternalEvents}
               options={{
                 ...defaultHeaderOptions,
@@ -127,6 +140,7 @@ export const LoggedInTabs = () => {
           title: "Inställningar"
         }}
       />
+
 
     </Stack.Navigator>
     </KeyboardAvoidingView>
