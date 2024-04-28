@@ -469,7 +469,7 @@
 				DEVELOPMENT_TEAM = M7JL6D8M57;
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = swagapp/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = SWAG;
+				INFOPLIST_KEY_CFBundleDisplayName = "Mensa SWAG";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.social-networking";
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -499,7 +499,7 @@
 				CURRENT_PROJECT_VERSION = 5;
 				DEVELOPMENT_TEAM = M7JL6D8M57;
 				INFOPLIST_FILE = swagapp/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = SWAG;
+				INFOPLIST_KEY_CFBundleDisplayName = "Mensa SWAG";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.social-networking";
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				LD_RUNPATH_SEARCH_PATHS = (

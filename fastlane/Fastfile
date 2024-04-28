@@ -45,7 +45,7 @@ platform :ios do
   lane :release do
     $version = Time.now.strftime("%Y.%m.%d")
     produce(
-      app_name: 'SWAG Communiator',
+      app_name: 'Mensa SWAG',
       language: 'sv',
       app_version: $version,
       sku: 'swag',
