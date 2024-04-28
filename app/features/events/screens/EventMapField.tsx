@@ -23,7 +23,7 @@ const EventMapField: React.FC<EventMapFieldProps> = ({
     const mapRef = useRef<ReactNativeMapView | null>(null);
     const colorMode = useColorMode();
     const { region } = useStore();
-    const [addressEditEnabled, setAddressEditEnabled] = useState(true);
+    const [addressEditEnabled, setAddressEditEnabled] = useState(location?.address ? false : true);
     const [locationForm, setLocationField] = useState({ ...location });
     if (!locationForm) {
         return null;
@@ -44,48 +44,51 @@ const EventMapField: React.FC<EventMapFieldProps> = ({
             console.log('Invalid address');
             return;
         }
+        //reset location so old coordinates is not shown in case of error in maps request
+        locationForm.latitude = null;
+        locationForm.longitude = null;
+        setAddressEditEnabled(false);
         getGeoLocation(locationForm.address).then((location) => {
             if (location) {
-
                 setLocationField((locationForm) => ({
                     ...locationForm,
                     latitude: location.latitude,
                     longitude: location.longitude,
                     address: location.formatted_address
                 }));
-                  
             }
         })
         .finally(() => {
-            onLocationChanged(locationForm); 
-            setAddressEditEnabled(false)
+            onLocationChanged(locationForm);
+
         });
     }, [locationForm.address]);
 
 
     return (
-        <VStack style={{ flex: 1 }} width="100%" height="100%">
+        <VStack flex={1} space="md" width="100%" height="100%">
             {addressEditEnabled && (
-            <Input>
-                <InputField
-                    type="text"
-                    defaultValue={locationForm.address || ''}
-                    placeholder="Fabriksgatan 19, 702 23 Örebro"
-                    onChangeText={(value) => {
-                        setLocationField((locationForm) => ({ ...locationForm, address: value }));
-                    }}
-                    onEndEditing={searchLocation}
-                />
-                <InputSlot pr="$3" onPress={searchLocation}>
-                    <InputIcon
-                        as={SearchIcon}
-                        color="$primary500"
+                <Input>
+                    <InputField
+                        type="text"
+                        defaultValue={locationForm.address || ''}
+                        placeholder="Fabriksgatan 19, 702 23 Örebro"
+                        onChangeText={(value) => {
+                            setLocationField((locationForm) => ({ ...locationForm, address: value }));
+                        }}
+                        onEndEditing={searchLocation}
                     />
-                </InputSlot>
-            </Input>
+                    <InputSlot pr="$3" onPress={searchLocation}>
+                        <InputIcon
+                            as={SearchIcon}
+                            color="$primary500"
+                        />
+                    </InputSlot>
+                </Input>
             )}
-            {!addressEditEnabled && locationForm.address && locationForm.latitude && locationForm.longitude && (
-                <VStack>
+
+            <VStack paddingTop={10}>
+                {!addressEditEnabled && locationForm.address && locationForm.latitude && locationForm.longitude && (
                     <MapView
                         style={{ height: 120 }}
                         initialRegion={{
@@ -104,6 +107,8 @@ const EventMapField: React.FC<EventMapFieldProps> = ({
                             }}
                         />
                     </MapView>
+                )}
+                {!addressEditEnabled && locationForm.address && (
                     <HStack space="md" justifyContent="space-between" alignItems="center">
                         <Text>
                             {locationForm.address.includes(", Sweden") ? locationForm.address.replace(", Sweden", "") : locationForm.address}
@@ -113,8 +118,10 @@ const EventMapField: React.FC<EventMapFieldProps> = ({
                             onPress={() => setAddressEditEnabled(true)}
                         />
                     </HStack>
-                </VStack>
-            )}
+                )}
+
+            </VStack>
+
         </VStack>
 
     );
