@@ -248,7 +248,8 @@ const MapView: React.FC = () => {
                       user={u}
                       zIndex={100}
                       highlighted={selectedUser?.userId === u.userId}
-                      onPress={() => {
+                      onPress={(e) => {
+                        e.stopPropagation();
                         focusOnUser(u);
                       }} />
                   ))}

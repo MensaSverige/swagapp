@@ -2,15 +2,16 @@ import {
   AlertDialog,
   Box,
   Button,
+  ButtonText,
   Card,
   Heading,
   HStack,
   Text,
+  VStack,
 } from '../../../gluestack-components';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, TouchableOpacity } from 'react-native';
 import TimeLeft from '../utilities/TimeLeft';
-import { clockForTime } from '../../map/functions/clockForTime';
 import FutureUserEvent, { isFutureUserEvent } from '../types/futureUserEvent';
 import useStore from '../../common/store/store';
 import { formatDateAndTime } from '../../common/functions/FormatDateAndTime';
@@ -18,7 +19,6 @@ import FutureEvent from '../types/futureEvent';
 import { useEventLists } from '../hooks/useEventLists';
 import { SmallDeleteButton } from '../../common/components/SmallDeleteButton';
 import { EditButton } from '../../common/components/EditButton';
-import { on } from 'events';
 
 const EventCard: React.FC<{
   event: FutureEvent | FutureUserEvent;
@@ -41,12 +41,12 @@ const EventCard: React.FC<{
     : [];
 
   const onEditPress = () => {
-      onEditEvent(event);
-    };
+    onEditEvent(event);
+  };
 
   return (
     <TouchableOpacity onPress={() => setOpen(!open)}>
-      <Card padding={10} size="sm" variant="elevated" m="$0" >
+      <Card padding={10} size="sm" variant="elevated" m="$0">
         <Box
           flex={1}
           flexDirection="row"
@@ -68,11 +68,8 @@ const EventCard: React.FC<{
           </Box>
 
           {isFutureUserEvent(event) && event.userId === user?.userId && (
-            <EditButton
-              onPress={onEditPress}
-            />
+            <EditButton onPress={onEditPress} />
           )}
-
         </Box>
         {open && (
           <>
@@ -80,8 +77,9 @@ const EventCard: React.FC<{
             {isFutureUserEvent(event) && (
               <>
                 <Box flex={1} flexDirection="row">
-                  <Heading size="sm">{`Värd${hostNames.length === 1 ? '' : 'ar'
-                    }: `}</Heading>
+                  <Heading size="sm">{`Värd${
+                    hostNames.length === 1 ? '' : 'ar'
+                  }: `}</Heading>
                   <Text>{hostNames.join(', ')}</Text>
                 </Box>
 
@@ -89,8 +87,9 @@ const EventCard: React.FC<{
                   <Box flex={1} flexDirection="row">
                     <Heading size="sm">Platser kvar: </Heading>
                     <Text>
-                      {`${event.maxAttendees - (event.attendees?.length || 0)
-                        } av ${event.maxAttendees}`}
+                      {`${
+                        event.maxAttendees - (event.attendees?.length || 0)
+                      } av ${event.maxAttendees}`}
                     </Text>
                   </Box>
                 )}
@@ -111,7 +110,9 @@ const EventCard: React.FC<{
                 <>
                   <Heading size="sm">Adress: </Heading>
                   <Text>
-                  {event.location?.address.includes(", Sweden") ? event.location?.address.replace(", Sweden", "") : event.location?.address}
+                    {event.location?.address.includes(', Sweden')
+                      ? event.location?.address.replace(', Sweden', '')
+                      : event.location?.address}
                   </Text>
                 </>
               )}
@@ -177,15 +178,23 @@ const Attending: React.FC<{
   };
 
   if (changingAttendance) {
-    return <ActivityIndicator />;
+    return (
+      <Box mt={10}>
+        <ActivityIndicator />
+      </Box>
+    );
   }
 
   if (attending) {
     return (
-      <HStack alignItems={'center'}>
+      <VStack flex={1} gap={5} mt={10}>
         <Text>Du är anmäld!</Text>
-        <Button onPress={handlePressUnattend}>Ta bort anmälan</Button>
-      </HStack>
+        <Button onPress={handlePressUnattend} style={{ width: '100%' }}>
+          <ButtonText style={{ textAlign: 'center' }}>
+            Ta bort anmälan
+          </ButtonText>
+        </Button>
+      </VStack>
     );
   } else {
     if (
@@ -193,9 +202,11 @@ const Attending: React.FC<{
       (event.attendees && event.attendees.length < event.maxAttendees)
     ) {
       return (
-        <HStack alignItems={'center'}>
-          <Button onPress={handlePressAttend}>Anmäl mig!</Button>
-        </HStack>
+        <VStack flex={1} mt={10}>
+          <Button onPress={handlePressAttend} style={{ width: '100%' }}>
+            <ButtonText style={{ textAlign: 'center' }}>Anmäl mig!</ButtonText>
+          </Button>
+        </VStack>
       );
     }
   }

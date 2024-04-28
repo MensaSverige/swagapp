@@ -1,26 +1,30 @@
 module.exports = {
-  root: true,
-  extends: "@react-native",
-  overrides: [
-    {
-      files: [
-        "__tests__/**/*.ts",
-        "__tests__/**/*.tsx",
-        "tests/**/*.ts",
-        "tests/**/*.tsx",
-        "**/*.test.ts",
-      ],
-      env: {
-        jest: true, // now **/*.test.js files' env has both es6 *and* jest
-      },
-      plugins: ["jest"],
-      rules: {
-        "jest/no-disabled-tests": "warn",
-        "jest/no-focused-tests": "error",
-        "jest/no-identical-title": "error",
-        "jest/prefer-to-have-length": "warn",
-        "jest/valid-expect": "error",
-      },
+    root: true,
+    extends: ['@react-native', 'prettier'],
+    plugins: ['prettier'],
+    rules: {
+        'prettier/prettier': 'error',
     },
-  ],
+    overrides: [
+        {
+            files: [
+                '__tests__/**/*.ts',
+                '__tests__/**/*.tsx',
+                'tests/**/*.ts',
+                'tests/**/*.tsx',
+                '**/*.test.ts',
+            ],
+            env: {
+                jest: true, // now **/*.test.js files' env has both es6 *and* jest
+            },
+            plugins: ['jest'],
+            rules: {
+                'jest/no-disabled-tests': 'warn',
+                'jest/no-focused-tests': 'error',
+                'jest/no-identical-title': 'error',
+                'jest/prefer-to-have-length': 'warn',
+                'jest/valid-expect': 'error',
+            },
+        },
+    ],
 };
