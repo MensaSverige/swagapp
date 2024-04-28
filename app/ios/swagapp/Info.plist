@@ -53,6 +53,8 @@
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Din platsinformation används för att visa din position för andra användare. Varje
 			platsuppdatering lagras i upp till en timme.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Bildgalleriet används för att visa dig bilder så du kan välja profilbild för uppladdning. Bara den bild du väljer används av appen.</string>
 	<key>UIAppFonts</key>
 	<array>
 		<string>Fontisto.ttf</string>
