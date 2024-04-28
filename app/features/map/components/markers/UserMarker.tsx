@@ -1,5 +1,5 @@
 import React from 'react';
-import { Marker } from 'react-native-maps';
+import { Marker, MarkerPressEvent } from 'react-native-maps';
 import UserWithLocation from '../../types/userWithLocation';
 import UserAvatar from '../UserAvatar';
 
@@ -8,7 +8,7 @@ const UserMarker: React.FC<{
   imageLoaded: boolean;
   zIndex: number;
   highlighted: boolean;
-  onPress: () => void;
+  onPress: (event: MarkerPressEvent) => void;
 }> = ({ user, imageLoaded, zIndex, highlighted, onPress }) => {
   //const markerSize = highlighted ? 'xl' : 'lg';
   const markerSize = 'lg';
