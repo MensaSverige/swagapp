@@ -19,9 +19,10 @@ class Report(BaseModel):
 
 class Location(BaseModel):
     description: Optional[str] = Field(None, example="Location Description")
+    address: Optional[str] = Field(None, example="1234 Main St, San Francisco, CA 94123")
     marker: Optional[str] = Field(None, example="🕑")
-    latitude: float = Field(..., example=37.7749)
-    longitude: float = Field(..., example=-122.4194)
+    latitude: Optional[float] = Field(None, example=37.7749)
+    longitude: Optional[float] = Field(None, example=-122.4194)
 
 
 class UserEvent(ModelWithId):

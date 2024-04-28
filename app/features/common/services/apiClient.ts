@@ -30,7 +30,6 @@ apiClient.interceptors.request.use(
   config => {
     return getOrRefreshAccessToken()
       .then(token => {
-        console.log('Token', token);
         config.headers.Authorization = `Bearer ${token}`;
         return config;
       })

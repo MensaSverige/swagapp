@@ -1,15 +1,13 @@
 import React from 'react';
-import { RefreshControl, TouchableOpacity } from 'react-native';
+import { RefreshControl } from 'react-native';
 import { UIManager, Platform } from 'react-native';
 import { useEventLists } from '../hooks/useEventLists';
 import EventCard from '../components/EventCard';
 import { useNavigation } from '@react-navigation/native';
-import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
-import { faPlus } from '@fortawesome/free-solid-svg-icons';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../../navigation/RootStackParamList';
-import { Button, Center, HStack, View, VStack, ScrollView, Text, ButtonText } from '../../../gluestack-components';
-import { config } from '../../../gluestack-components/gluestack-ui.config';
+import { Button, Center, VStack, ScrollView, Text, ButtonText, Box, HStack } from '../../../gluestack-components';
+import { FutureUserEvent, isFutureUserEvent } from '../types/futureUserEvent';
 
 if (
   Platform.OS === 'android' &&
@@ -18,31 +16,8 @@ if (
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
-const CreateEventButton: React.FC = () => {
-
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-
-  const showEditEventForm = () => {
-    navigation.navigate('EventForm', { event: null });
-  };
-
-  return (
-
-    <Button
-      size="md"
-      variant="solid"
-      action="secondary"
-      isDisabled={false}
-      isFocusVisible={false}
-      onPress={showEditEventForm}>
-      <ButtonText style={{ textAlign: 'center' }}>Skapa event</ButtonText>
-    </Button>
-
-  );
-};
-
 const EventList: React.FC = () => {
-  const navigation = useNavigation();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   const {
     visibleEvents,
@@ -60,27 +35,56 @@ const EventList: React.FC = () => {
   }, [subscribe, unsubscribe]);
 
   return (
-    <VStack flex={1} bg="$background50">
-
-      <ScrollView flex={1} contentContainerStyle={{ flexGrow: 1 }}
-
+    <VStack flex={1} bg="$background50" padding={10}>
+      <ScrollView
+        flex={1}
+        contentContainerStyle={{
+          flexGrow: 1,
+          justifyContent: 'flex-start',
+        }}
         refreshControl={
           <RefreshControl
             refreshing={eventsRefreshing}
             onRefresh={fetchAllEvents}
           />
         }>
-
-        {visibleEvents.length === 0 && (
+        {visibleEvents.length === 0 && !eventsRefreshing && (
           <Center w="100%" p={10}>
             <Text>Inga spontana event hittades</Text>
           </Center>
         )}
         {visibleEvents.map((event, i) => (
-          <EventCard key={`event-${event.id}=${i}`} event={event} />
+          <Box key={event.id} style={{
+            paddingBottom: 10,
+          }}
+          >
+            <EventCard
+              key={`event-${event.id}=${i}`}
+              event={event}
+              onEditEvent={(e: FutureUserEvent) => {
+                if (isFutureUserEvent(e)) {
+                  navigation.navigate('EventForm', { event: e });
+                } else {
+                  console.error('Event is not of type FutureUserEvent');
+                }
+              }}
+            />
+          </Box>
         ))}
       </ScrollView>
-      <CreateEventButton />
+      <HStack space="lg" justifyContent="space-evenly" alignItems='center' paddingVertical={10} >
+        <Button
+          size="md"
+          variant="solid"
+          action="secondary"
+          width="100%"
+          isDisabled={false}
+          isFocusVisible={false}
+          onPress={() => navigation.navigate('EventForm', { event: null })}>
+          <ButtonText style={{ textAlign: 'center' }}>Skapa event</ButtonText>
+        </Button>
+      </HStack>
+
     </VStack>
   );
 };

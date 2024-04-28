@@ -8,6 +8,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import datetime
 import logging
+from v1.google_maps_api.geolocation_api import geolocation_v1
 from v1.api.auth import auth_v1
 from v1.api.health import health_v1
 from v1.api.users import users_v1
@@ -39,6 +40,7 @@ app.include_router(health_v1)
 app.include_router(users_v1)
 app.include_router(events_v1)
 app.include_router(user_events_v1)
+app.include_router(geolocation_v1)
 app.mount("/static/img", StaticFiles(directory="/static/img"), name="static")
 
 if os.getenv("ENABLE_DEV_ENDPOINTS") == "true":
@@ -53,7 +55,6 @@ def initialize_app():
     get_external_event_details("2024-05-10")
     get_external_event_details("2024-05-11")
     get_event_site_news()
-
 
 initialize_app()  # uvicorn does not run the __main__ block below.
 

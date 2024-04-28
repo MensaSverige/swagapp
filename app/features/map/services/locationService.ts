@@ -1,6 +1,6 @@
 import apiClient from '../../common/services/apiClient';
 import UserWithLocation, {calculateOnlineStatus, isUserWithLocation} from '../types/userWithLocation';
-import { UserLocation } from '../../../api_schema/types';
+import { GeoLocation, UserLocation } from '../../../api_schema/types';
 
 export const getUserLocations = async (): Promise<UserWithLocation[]> => {
   return apiClient
@@ -42,3 +42,22 @@ export const updateUserLocation = async (data: UserLocation) => {
     });
 };
 
+export const getGeoLocation = async (address: string): Promise<GeoLocation> => {
+  return apiClient
+.   get(`/geolocation/${address}`)
+    .then(
+      response => {
+        if (response.data) {
+          return response.data;
+        }
+        return null;
+      },
+      error => {
+        throw new Error(error.message || error);
+      },
+    )
+    .catch(error => {
+      console.error('Error fetching geo location:', error);
+    });
+};
+  

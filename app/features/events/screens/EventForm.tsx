@@ -1,37 +1,29 @@
-import React, { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Platform, TextInput } from 'react-native';
-import { StyleSheet, SafeAreaView } from 'react-native';
-import MapView from 'react-native-maps';
+import React, { useCallback, useEffect, useState, useMemo } from 'react';
+import { ActivityIndicator, Keyboard, TouchableWithoutFeedback } from 'react-native';
 import useStore from '../../common/store/store';
-import {
-  Box,
-  ICustomTheme,
-  Input,
-  KeyboardAvoidingView,
-  ScrollView,
-  Spinner,
-  Text,
-  TextArea,
-  View,
-  ZStack,
-  useTheme,
-} from 'native-base';
 import { RouteProp, useRoute, useNavigation } from '@react-navigation/native';
 import { useEventLists } from '../hooks/useEventLists';
-import { clockForTime } from '../../map/functions/clockForTime';
 import { RootStackParamList } from '../../../navigation/RootStackParamList';
-import EventMarker from '../../map/components/markers/EventMarker';
 import Field from '../../common/components/Field';
 import Fields from '../../common/components/Fields';
-import EventCard from '../components/EventCard';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { createUserEvent, updateUserEvent } from '../services/eventService';
 import { DatepickerField } from '../../common/components/DatepickerField';
-import { UserEvent } from '../../../api_schema/types';
-import EventWithLocation from '../types/eventWithLocation';
-import FutureUserEvent from '../types/futureUserEvent';
-import { Button, ButtonText, HStack, VStack } from '../../../gluestack-components';
-import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
+import { ExtendedUserEvent, UserEvent } from '../../../api_schema/types';
+import {
+  Input,
+  ScrollView,
+  Button,
+  ButtonText,
+  HStack,
+  Textarea,
+  SafeAreaView,
+  TextareaInput,
+  InputField,
+} from '../../../gluestack-components';
+import { extractNumericValue } from '../../common/functions/extractNumericValue';
+import SettingsSwitchField from '../../common/components/SettingsSwitchField';
+import EventMapField from './EventMapField';
 
 type EventFormProps = RouteProp<RootStackParamList, 'EventForm'>;
 
@@ -43,129 +35,75 @@ const EditEventForm: React.FC = () => {
 
   const user = useStore(state => state.user);
 
-  // Event data
-  const [eventName, setEventName] = useState<string>('');
-  const [eventDescription, setEventDescription] = useState<string>('');
-  const [eventMaxParticipants, setEventMaxParticipants] = useState<
-    number | null
-  >(null);
-  const [eventStartDate, setEventStartDate] = useState<Date>(new Date());
-  const [eventEndDate, setEventEndDate] = useState<Date | undefined>(undefined);
-  const [eventLocationLatitude, setEventLocationLatitude] = useState<number>(0);
-  const [eventLocationLongitude, setEventLocationLongitude] =
-    useState<number>(0);
-  const [eventLocationDescription, setEventLocationDescription] =
-    useState<string>('');
-  const [eventLocationMarker, setEventLocationMarker] = useState<string>('');
-
-  const theme = useTheme() as ICustomTheme;
-  const styles = createStyles(theme);
-  const startRegion = useStore(state => state.region);
-  const [mapRegionDeltas, setMapRegionDeltas] = useState<{
-    latitudeDelta: number;
-    longitudeDelta: number;
-  }>({
-    latitudeDelta: 0.01,
-    longitudeDelta: 0.01,
+  //create a formstate based on event type
+  const [formState, setFormState] = useState<ExtendedUserEvent>({
+    userId: user?.userId ?? 0,
+    name: '',
+    start: new Date().toISOString(),
+    ownerName: `${user?.firstName} ${user?.lastName}` ?? '',
+    id: null,
+    hosts: null,
+    suggested_hosts: [],
+    location: null,
+    end: null,
+    description: null,
+    reports: [],
+    attendees: [],
+    maxAttendees: null,
+    hostNames: [],
+    attendeeNames: [],
   });
+
+  const [addressSwitch, setAddressSwitch] = useState<boolean>(false);
+  const [locationDescriptionSwitch, setLocationDescriptionSwitch] = useState<boolean>(false);
+  const [endtimeSwitch, setEndtimeSwitch] = useState<boolean>(false);
+  const [maxParticipantsSwitch, setMaxParticipantsSwitch] = useState<boolean>(false);
 
   // Event data, and saving it
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const { fetchAllEvents } = useEventLists();
 
-  // Field validation states
-  const [nameFieldTouched, setNameFieldTouched] = useState<boolean>(false);
-  const [nameValid, setNameValid] = useState<boolean>(
-    (initialEvent && initialEvent.name !== '') || false,
-  );
-  const [formChanged, setFormChanged] = useState<boolean>(false);
-
-  // Emoji input field ref, used for text selection
-  const emojiInputRef = React.useRef<TextInput | null>(null);
-
   useEffect(() => {
     if (initialEvent) {
       // Event Object fields
-      setEventName(initialEvent.name);
-      setEventDescription(initialEvent.description || '');
-      setEventMaxParticipants(initialEvent.maxAttendees || null);
-      setEventStartDate(new Date(initialEvent.start));
-      setEventEndDate(
-        initialEvent.end ? new Date(initialEvent.end) : undefined,
-      );
-      setEventLocationLatitude(
-        initialEvent.location?.latitude || startRegion.latitude,
-      );
-      setEventLocationLongitude(
-        initialEvent.location?.longitude || startRegion.longitude,
-      );
-      setEventLocationDescription(initialEvent.location?.description || '');
-      setEventLocationMarker(initialEvent.location?.marker || '');
-    } else {
-      setEventLocationLatitude(startRegion.latitude);
-      setEventLocationLongitude(startRegion.longitude);
-    }
-  }, [initialEvent, startRegion.latitude, startRegion.longitude]);
+      setFormState({
+        ...formState,
+        name: initialEvent.name,
+        description: initialEvent.description,
+        maxAttendees: initialEvent.maxAttendees,
+        start: initialEvent.start,
+        end: initialEvent.end,
+        location: initialEvent.location,
+      });
+      setAddressSwitch(!!initialEvent.location?.address);
+      setLocationDescriptionSwitch(!!initialEvent.location?.description);
+      setEndtimeSwitch(!!initialEvent.end);
+      setMaxParticipantsSwitch(!!initialEvent.maxAttendees);
 
-  // Validate form
-  useEffect(() => {
-    if (initialEvent) {
-      // You can only save changed events.
-      setFormChanged(
-        eventName !== initialEvent.name ||
-        eventDescription !== initialEvent.description ||
-        eventMaxParticipants !== initialEvent.maxAttendees ||
-        eventStartDate.toISOString() !== initialEvent.start ||
-        (eventEndDate?.toISOString() || undefined) !== initialEvent.end ||
-        eventLocationLatitude !== initialEvent.location?.latitude ||
-        eventLocationLongitude !== initialEvent.location?.longitude ||
-        eventLocationDescription !== initialEvent.location?.description ||
-        eventLocationMarker !== initialEvent.location?.marker,
-      );
-    } else {
-      setFormChanged(eventName !== '');
     }
-  }, [
-    initialEvent,
-    nameValid,
-    eventName,
-    eventDescription,
-    eventMaxParticipants,
-    eventStartDate,
-    eventEndDate,
-    eventLocationLatitude,
-    eventLocationLongitude,
-    eventLocationDescription,
-    eventLocationMarker,
-  ]);
+  }, [initialEvent]);
 
-  // Validate individual fields
-  useEffect(() => {
-    if (nameFieldTouched) {
-      setNameValid(eventName.trim() !== '');
-    }
-  }, [eventName, nameFieldTouched]);
 
-  const saveEvent = useCallback(() => {
+  const saveEvent = useMemo(() => () => {
+    console.log('Saving event', formState);
     if (!user) {
       console.error('No user found');
       return;
     }
-    if (!formChanged) {
-      return;
-    }
+
     const event: UserEvent = {
       _id: initialEvent?.id,
-      name: eventName,
-      description: eventDescription,
-      maxAttendees: eventMaxParticipants ?? undefined,
-      start: eventStartDate.toISOString() || '',
-      end: eventEndDate?.toISOString() || undefined,
+      name: formState.name,
+      description: formState.description,
+      maxAttendees: formState.maxAttendees ?? undefined,
+      start: formState.start,
+      end: formState.end || undefined,
       location: {
-        latitude: eventLocationLatitude,
-        longitude: eventLocationLongitude,
-        description: eventLocationDescription,
-        marker: eventLocationMarker,
+        latitude: formState.location?.latitude || undefined,
+        longitude: formState.location?.longitude || undefined,
+        address: formState.location?.address || undefined,
+        description: formState.location?.description || undefined,
+        marker: formState.location?.marker || undefined,
       },
       hosts: [],
       userId: user?.userId,
@@ -189,311 +127,252 @@ const EditEventForm: React.FC = () => {
         setIsSaving(false);
       });
   }, [
-    eventDescription,
-    eventEndDate,
-    eventLocationDescription,
-    eventLocationLatitude,
-    eventLocationLongitude,
-    eventLocationMarker,
-    eventMaxParticipants,
-    eventName,
-    eventStartDate,
     fetchAllEvents,
-    formChanged,
     initialEvent,
+    formState,
     navigation,
     user,
   ]);
 
+const handleChangeStartDate = useCallback((newStartDate?: Date) => () => {
+  if (!newStartDate) {
+    return; // should not happen
+  }
 
-  const handleChangeStartDate = (date?: Date) => {
-    if (!date) {
-      return; // should not happen
-    }
-    let startDateDelta = 0;
-    const newStartDate = new Date(date);
-    const previousStartDateDate = new Date(eventStartDate);
-    startDateDelta = newStartDate.getTime() - previousStartDateDate.getTime();
-    setEventStartDate(date);
-    if (eventEndDate && startDateDelta !== 0) {
-      const newEndDate = new Date(eventEndDate || date);
-      // If end date is set, move it the same amount of time as start date
-      setEventEndDate(new Date(newEndDate.getTime() + startDateDelta));
-    }
+  const previousStartDate = new Date(formState.start);
+  const startDateDelta = newStartDate.getTime() - previousStartDate.getTime();
+
+  let updatedFormState = {
+    ...formState,
+    start: newStartDate.toISOString(),
   };
 
+  if (formState.end) {
+    const newEndDate = new Date(new Date(formState.end).getTime() + startDateDelta);
+    updatedFormState = {
+      ...updatedFormState,
+      end: newEndDate.toISOString(),
+    };
+  }
+
+  setFormState(updatedFormState);
+}, [formState.start]);
+
   return (
-    <SafeAreaView style={[styles.viewContainer]}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 144 : 0}>
-        <ScrollView contentContainerStyle={[styles.contentContainer]}>
+    <SafeAreaView flex={1} bgColor='$background0'>
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+        <ScrollView flex={1} flexDirection='column' padding={10}>
           <Fields>
             <Field
               label="Titel"
               required
-              error={
-                nameFieldTouched && !nameValid
-                  ? 'Titeln får inte vara tom.'
-                  : undefined
-              }>
-              <Input
-                type={'text'}
-                placeholder="Evenemangets titel"
-                value={eventName}
-                onChangeText={setEventName}
-                onBlur={() => {
-                  setNameFieldTouched(true);
-                }}
-              />
+              // error={
+              //   nameFieldTouched && !nameValid
+              //     ? 'Titeln får inte vara tom.'
+              //     : undefined
+              // }
+              >
+              <Input>
+                <InputField type="text"
+                  defaultValue={formState.name}
+                  onChangeText={
+                    (value) => {
+                      setFormState({
+                        ...formState,
+                        name: value,
+                      });
+                    }
+                  }
+                  onBlur={() => {
+                  }} placeholder="Evenemangets titel" />
+              </Input>
             </Field>
 
             <Field label="Beskrivning">
-              <TextArea
-                placeholder="Beskrivning av evenemanget"
-                value={eventDescription}
-                onChangeText={setEventDescription}
-                autoCompleteType={'off'}
+              <Textarea>
+                <TextareaInput
+                  defaultValue={formState.description || ''}
+                  onChangeText={(value) => {
+                    setFormState({
+                      ...formState,
+                      description: value,
+                    });
+                  }}
+                  placeholder="Beskrivning av evenemanget" />
+              </Textarea>
+            </Field>
+
+            <Field label="Datum och tid">
+              <SettingsSwitchField
+                label="Ange sluttid"
+                value={endtimeSwitch}
+                onValueChange={() => {
+                  setEndtimeSwitch(!endtimeSwitch)
+                  if (!endtimeSwitch)
+                    setFormState({
+                      ...formState,
+                      end: undefined,
+                    });
+                }}
               />
+              <DatepickerField
+                label="Start"
+                date={new Date(formState.start)}
+                onDateChange={handleChangeStartDate}
+              />
+              {endtimeSwitch && (
+                <DatepickerField
+                  label="Slut"
+                  date={formState.end ? new Date(formState.end) : undefined}
+                  minimumDate={new Date(formState.start)}
+                  optional
+                  onDateChange={(value) =>
+                    setFormState({
+                      ...formState,
+                      end: value?.toISOString() || undefined
+                    })
+                  }
+                />
+              )}
             </Field>
 
             <Field label="Antal deltagare">
-              <Input
-                type={'number'}
-                placeholder="Lämna tomt för obegränsat antal deltagare"
-                value={eventMaxParticipants?.toString() || ''}
-                onChangeText={(value: string) => {
-                  if (value === '') {
-                    setEventMaxParticipants(null);
-                  } else {
-                    setEventMaxParticipants(parseInt(value, 10));
-                  }
+              <SettingsSwitchField
+                label="Ange max antal deltagare"
+                value={maxParticipantsSwitch}
+                onValueChange={() => {
+                  setMaxParticipantsSwitch(!maxParticipantsSwitch)
+                  if (!maxParticipantsSwitch)
+                    setFormState({
+                      ...formState,
+                      maxAttendees: undefined,
+                    });
                 }}
               />
-            </Field>
-
-            <DatepickerField
-              label="Start"
-              date={eventStartDate}
-              onDateChange={handleChangeStartDate}
-            />
-
-            <DatepickerField
-              label="Slut"
-              date={eventEndDate || undefined}
-              minimumDate={eventStartDate}
-              optional
-              onDateChange={setEventEndDate}
-            />
-
-            <Field label="Plats">
-              <MapView
-                style={styles.mapView}
-                region={{
-                  latitude: eventLocationLatitude,
-                  longitude: eventLocationLongitude,
-                  ...mapRegionDeltas,
-                }}
-                onRegionChangeComplete={region => {
-                  setEventLocationLatitude(region.latitude);
-                  setEventLocationLongitude(region.longitude);
-                  setMapRegionDeltas({
-                    latitudeDelta: region.latitudeDelta,
-                    longitudeDelta: region.longitudeDelta,
-                  });
-                }}>
-                <EventMarker
-                  hasCallout={false}
-                  event={
-                    {
-                      name: eventName.trim() || 'Exempel',
-                      start: eventStartDate.toISOString(),
-                      end: eventEndDate?.toISOString() || undefined,
-                      location: {
-                        latitude: eventLocationLatitude || startRegion.latitude,
-                        longitude:
-                          eventLocationLongitude || startRegion.longitude,
-                        description:
-                          eventLocationDescription || 'Exempeladress 42',
-                        marker: eventLocationMarker || clockForTime(new Date()),
-                      },
-                    } as EventWithLocation
-                  }
-                />
-              </MapView>
-            </Field>
-
-            <Field
-              label="Platsbeskrivning"
-              help="Denna visas i botten på Evenemangskortet.">
-              <Input
-                type={'text'}
-                placeholder="Exempeladress 42"
-                value={eventLocationDescription}
-                onChangeText={setEventLocationDescription}
-              />
-            </Field>
-
-            <Field
-              label="Kartsymbol"
-              help="Används som kartmarkör och visas i Evenemangskortet (se nedan)"
-              onPress={() => {
-                if (emojiInputRef.current) {
-                  emojiInputRef.current.focus();
-                }
-              }}
-              labelControl={
-                <ZStack style={styles.emojiTextFieldWrapper}>
-                  <View style={styles.emojiDisplayWrapper}>
-                    <Text style={styles.emojiDisplay}>
-                      {eventLocationMarker || clockForTime(eventStartDate)}
-                    </Text>
-                  </View>
-                  <TextInput
-                    placeholder={clockForTime(eventStartDate)}
-                    value={eventLocationMarker || ''}
-                    ref={emojiInputRef}
-                    onKeyPress={e => {
-                      // if non character key is pressed, return
-                      if (
-                        e.nativeEvent.key.length > 4 ||
-                        e.nativeEvent.key === ' '
-                      ) {
-                        return;
+              {maxParticipantsSwitch &&
+                <Input>
+                  <InputField
+                    inputMode='numeric'
+                    defaultValue={formState.maxAttendees?.toString() || ''}
+                    onChangeText={(value: string) => {
+                      if (value === '') {
+                        setFormState({
+                          ...formState,
+                          maxAttendees: undefined,
+                        });
+                      } else {
+                        setFormState({
+                          ...formState,
+                          maxAttendees: extractNumericValue(value),
+                        });
                       }
-                      setEventLocationMarker(e.nativeEvent.key);
                     }}
-                    style={styles.emojiTextField}
-                  />
-                </ZStack>
+                    placeholder="Max antal deltagare" />
+                </Input>
               }
-            />
-
-            <Field label="Evenemangets kort">
-              <Box style={styles.eventCardContainer}>
-                <EventCard
-                  event={
-                    {
-                      id: '',
-                      name: eventName,
-                      start: eventStartDate.toISOString(),
-                      end: eventEndDate?.toISOString() || undefined,
-                      location: {
-                        latitude: eventLocationLatitude,
-                        longitude: eventLocationLongitude,
-                        description: eventLocationDescription,
-                        marker: eventLocationMarker,
-                      },
-                    } as FutureUserEvent
-                  }
-                  initiallyOpen
-                />
-              </Box>
             </Field>
+
+            <Field
+              label="Adress">
+              <SettingsSwitchField
+                label="Lägg till adress"
+                value={addressSwitch}
+                onValueChange={() => {
+                  setAddressSwitch(!addressSwitch)
+                  if (!formState) {
+                    return;
+                  }
+                  if (!addressSwitch)
+                    setFormState({
+                      ...formState,
+                      location: {
+                        ...formState.location,
+                        address: undefined,
+                        latitude: undefined,
+                        longitude: undefined,
+                      }
+                    });
+                }}
+              />
+              {addressSwitch && (
+                <EventMapField
+                  location={formState.location}
+                  onLocationChanged={(value) => {
+                    console.log('Location changed', value);
+                    setFormState({
+                      ...formState,
+                      location: {
+                        ...formState.location,
+                        address: value?.address,
+                        latitude: value?.latitude,
+                        longitude: value?.longitude,
+                      }
+                    })
+                  }
+                  } />
+              )}
+            </Field>
+
+            <Field
+              label="Platsbeskrivning">
+              <SettingsSwitchField
+                label="Lägg till platsbeskrivning"
+                value={locationDescriptionSwitch}
+                onValueChange={() => {
+                  setLocationDescriptionSwitch(!locationDescriptionSwitch)
+                  if (!locationDescriptionSwitch)
+                    setFormState({
+                      ...formState,
+                      location: {
+                        ...formState.location,
+                        description: undefined,
+                      }
+                    });
+                }}
+              />
+              {locationDescriptionSwitch &&
+
+
+                <Input>
+                  <InputField type="text" defaultValue={formState.location?.description || ''} placeholder="Rum 107"
+                    onChangeText={(value) => {
+                      setFormState({
+                        ...formState,
+                        location: {
+                          ...formState.location,
+                          description: value,
+                        }
+                      })
+                    }
+                    }
+                  />
+                </Input>
+              }
+            </Field>
+
           </Fields>
-
-
+          <HStack space="lg" justifyContent="space-evenly" alignItems='center' paddingVertical={30} >
+            <Button
+              size="md"
+              variant="solid"
+              action="primary"
+              width="100%"
+              isDisabled={isSaving}
+              isFocusVisible={false}
+              onPress={saveEvent}
+            >
+              <ButtonText textAlign='center'>
+                Spara
+                {isSaving &&
+                  <ActivityIndicator style={{ marginLeft: 5 }} />
+                }
+              </ButtonText>
+            </Button>
+          </HStack>
         </ScrollView>
-<HStack
-  flex={1}
-  flexDirection='row'
-  bgColor='$background50'
-
-  style={{
-    position: 'absolute',
-    bottom: 0,
-    paddingHorizontal: 0,
-    justifyContent: 'flex-end',
-    alignItems: 'center'
-  }}
->
-  <Button
-    size="md"
-    variant="outline"
-    action="secondary"
-    borderRadius={0}
-    borderColor="$vscode_stringLiteral"
-    isDisabled={isSaving}
-    isFocusVisible={false}
-    onPress={() => {
-      navigation.goBack();
-    }}
-    style={{ flex: 1 }}
-  >
-    <ButtonText color='$vscode_stringLiteral' style={{ textAlign: 'center' }}>Avbryt</ButtonText>
-  </Button>
-  <Button
-    size="md"
-    variant="solid"
-    action="primary"
-    borderRadius={0}
-    isDisabled={isSaving}
-    isFocusVisible={false}
-    onPress={saveEvent}
-    style={{ flex: 1 }}
-  >
-    <ButtonText style={{ textAlign: 'center' }}>Spara</ButtonText>
-    {isSaving && <ActivityIndicator style={{ marginLeft: 5 }} />}
-  </Button>
-</HStack>
-
-      </KeyboardAvoidingView>
+      </TouchableWithoutFeedback>
     </SafeAreaView>
   );
 };
-
-const createStyles = (theme: ICustomTheme) =>
-  StyleSheet.create({
-    viewContainer: {
-      flex: 1,
-      backgroundColor: theme.colors.background[500],
-    },
-    contentContainer: {
-      flexGrow: 1,
-      padding: 10,
-    },
-    mapView: {
-      width: '100%',
-      aspectRatio: 4 / 3,
-      borderRadius: 20,
-      borderWidth: 1,
-      borderColor: theme.colors.text[50],
-    },
-    emojiTextFieldWrapper: {
-      width: 40,
-      height: 40,
-    },
-    emojiTextField: {
-      position: 'absolute',
-      top: 0,
-      left: 0,
-      width: 40,
-      height: 40,
-      fontSize: 30,
-      textAlign: 'center',
-      alignSelf: 'center',
-      opacity: 0,
-    },
-    emojiDisplayWrapper: {
-      position: 'absolute',
-      width: 40,
-      height: 40,
-      justifyContent: 'center', // Add this for vertical centering
-    },
-    emojiDisplay: {
-      fontSize: 30,
-      lineHeight: 40,
-      alignSelf: 'center', // Ensure the text itself is centered
-      color: theme.colors.text[500],
-      padding: 0,
-      margin: 0,
-    },
-
-    eventCardContainer: {
-      borderWidth: 1,
-      borderColor: theme.colors.text[50],
-      borderRadius: 10,
-    },
-  });
 
 export default EditEventForm;
