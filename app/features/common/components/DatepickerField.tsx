@@ -28,12 +28,18 @@ export const DatepickerField: React.FC<DateFieldProps> = ({
           <Heading size="sm">{label}</Heading>
           <Pressable
             p="$1"
-            onPress={() => setOpenDateModal(true)}>
+            key={label?.toString()}
+onPress={() => {
+  console.log('DatepickerField onPress triggered');
+  setOpenDateModal(true);
+}}
+            >
             <Text>{formatDateAndTime(date || '')}</Text>
           </Pressable>
         </FormControlLabel>
         <DatePicker
           modal
+          key={label?.toString()}
           title={label?.toString()}
           minimumDate={minimumDate}
           open={openDateModal}

@@ -135,6 +135,7 @@ const EditEventForm: React.FC = () => {
   ]);
 
 const handleChangeStartDate = useCallback((newStartDate?: Date) => {
+  console.log('Start date changed', newStartDate);
   if (!newStartDate) {
     return; // should not happen
   }
@@ -147,8 +148,9 @@ const handleChangeStartDate = useCallback((newStartDate?: Date) => {
     start: newStartDate.toISOString(),
   };
 
-  if (formState.end) {
-    const newEndDate = new Date(new Date(formState.end).getTime() + startDateDelta);
+  if (endtimeSwitch && formState.end) {
+    const previousEndDate = new Date(formState.end);
+    const newEndDate = new Date(previousEndDate.getTime() + startDateDelta);
     updatedFormState = {
       ...updatedFormState,
       end: newEndDate.toISOString(),
@@ -156,7 +158,7 @@ const handleChangeStartDate = useCallback((newStartDate?: Date) => {
   }
 
   setFormState(updatedFormState);
-}, [formState.start, formState.end]);
+}, [formState.start, formState.end, endtimeSwitch]);
 
   return (
     <SafeAreaView flex={1} bgColor='$background0'>
@@ -211,7 +213,7 @@ const handleChangeStartDate = useCallback((newStartDate?: Date) => {
                   if (!endtimeSwitch)
                     setFormState({
                       ...formState,
-                      end: undefined,
+                      end: formState.start,
                     });
                 }}
               />
@@ -224,7 +226,6 @@ const handleChangeStartDate = useCallback((newStartDate?: Date) => {
                 <DatepickerField
                   label="Slut"
                   date={formState.end ? new Date(formState.end) : undefined}
-                  minimumDate={new Date(formState.start)}
                   optional
                   onDateChange={(value) =>
                     setFormState({
