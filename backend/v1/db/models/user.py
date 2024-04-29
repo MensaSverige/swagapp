@@ -8,7 +8,7 @@ class UserLocation(BaseModel):
     latitude: float
     longitude: float
     timestamp: Optional[datetime]
-    accuracy: int  # Accuracy in meters
+    accuracy: float  # Accuracy in meters
 
 
 class ShowLocation(str, Enum):
