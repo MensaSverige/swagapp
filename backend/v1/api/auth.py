@@ -57,11 +57,13 @@ def authm(request: AuthRequest) -> AuthResponse:
         user=user)
     return authresponse
 
+class RefreshTokenRequest(BaseModel):
+    refresh_token: str
 
 @auth_v1.post("/refresh_token")
-def refresh_token(refresh_token: str) -> AuthResponse:
+def refresh_token(refresh_token: RefreshTokenRequest) -> AuthResponse:
     try:
-        valid, payload = verify_refresh_token(refresh_token)
+        valid, payload = verify_refresh_token(refresh_token.refresh_token)
         if not valid:
             raise HTTPException(status_code=401, detail="Unauthorized")
         user = get_user(payload.get("sub"))
