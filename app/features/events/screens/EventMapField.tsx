@@ -50,20 +50,18 @@ const EventMapField: React.FC<EventMapFieldProps> = ({
         setAddressEditEnabled(false);
         getGeoLocation(locationForm.address).then((location) => {
             if (location) {
-                setLocationField((locationForm) => ({
+                const newLocationForm = { 
                     ...locationForm,
                     latitude: location.latitude,
                     longitude: location.longitude,
-                    address: location.formatted_address
-                }));
+                    address: location.formatted_address, 
+                };
+                setLocationField(newLocationForm);
+                console.log('New location:', newLocationForm);
+                onLocationChanged(newLocationForm)
             }
         })
-        .finally(() => {
-            onLocationChanged(locationForm);
-
-        });
-    }, [locationForm.address]);
-
+    }, [locationForm.address, locationForm.latitude, locationForm.longitude, addressEditEnabled]);
 
     return (
         <VStack flex={1} space="md" width="100%" height="100%">
