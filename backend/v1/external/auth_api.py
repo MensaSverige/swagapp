@@ -1,7 +1,7 @@
 import requests
 import logging
 from fastapi import HTTPException
-from v1.env_constants import LOGINM_SEED, LOGINB_SEED, URL_MEMBER_API
+from v1.env_constants import LOGINM_SEED, LOGINB_SEED, URL_MEMBER_API, URL_EVENTS_API
 from v1.utilities import calc_hash, get_current_time_formatted
 
 
@@ -52,7 +52,7 @@ def loginb(user, password):
     loggable_data.pop('password', None)
     logging.info(f"loginb_par: {loggable_data}")
     headers = {'Content-Type': 'application/json'}
-    response = requests.post(URL_MEMBER_API,
+    response = requests.post(URL_EVENTS_API,
                              json=loginb_par,
                              headers=headers,
                              verify=False)
