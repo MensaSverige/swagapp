@@ -29,10 +29,7 @@ export const DatepickerField: React.FC<DateFieldProps> = ({
           <Pressable
             p="$1"
             key={label?.toString()}
-onPress={() => {
-  console.log('DatepickerField onPress triggered');
-  setOpenDateModal(true);
-}}
+            onPress={() => setOpenDateModal(true)}
             >
             <Text>{formatDateAndTime(date || '')}</Text>
           </Pressable>
