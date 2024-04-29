@@ -315,7 +315,6 @@ const handleChangeEndDate = useCallback((newEndDate?: Date) => {
                 <EventMapField
                   location={formState.location}
                   onLocationChanged={(value) => {
-                    console.log('Location changed', value);
                     setFormState({
                       ...formState,
                       location: {
