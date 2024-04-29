@@ -153,24 +153,27 @@ export const SigninForm = () => {
           <Input
             variant="outline"
             isDisabled={isLoading}
+            height={48}
           >
             <InputField
               placeholder="Email"
               keyboardType="email-address"
               value={username}
               onChangeText={setUsername}
+              height={48}
             />
           </Input>
           <Input
-
             variant="outline"
             isDisabled={isLoading}
+            height={48}
           >
             <InputField
               placeholder="Lösenord"
               value={password}
               onChangeText={setPassword}
               secureTextEntry={!passwordVisible}
+              height={48}
             />
             <InputSlot pr="$3" onPress={() => {
               setPasswordVisible((passwordVisible) => {
@@ -183,12 +186,14 @@ export const SigninForm = () => {
               />
             </InputSlot>
           </Input>
-          <Checkbox aria-label="Save Credentials" size="md" isInvalid={false} isDisabled={false} onChange={setSaveCredentials} value={saveCredentials.toString()}>
-            <CheckboxIndicator mr="$2">
-              <CheckboxIcon as={CheckIcon} />
-            </CheckboxIndicator>
-            <CheckboxLabel>Spara inloggning</CheckboxLabel>
-          </Checkbox>
+          <TouchableOpacity onPress={() => {setSaveCredentials(!saveCredentials)}}>
+            <Checkbox aria-label="Save Credentials" size="md" isInvalid={false} isDisabled={false} onChange={setSaveCredentials} value={saveCredentials.toString()} height={48} paddingHorizontal={5}>
+              <CheckboxIndicator mr="$2">
+                <CheckboxIcon as={CheckIcon} />
+              </CheckboxIndicator>
+              <CheckboxLabel>Spara inloggning</CheckboxLabel>
+            </Checkbox>
+          </TouchableOpacity>
 
           <VStack space="lg" flex={1}>
             {isLoading ? (
@@ -197,6 +202,7 @@ export const SigninForm = () => {
               <>
                 <Button
                   size="md"
+                  height={48}
                   variant="solid"
                   action="primary"
                   onPress={() => {
@@ -210,18 +216,18 @@ export const SigninForm = () => {
                 >
                   <ButtonText style={{ textAlign: 'center' }}> {TEST_MODE ? (loginAsNonMember ? "Logga in som medföljande" : "Logga in") : "Logga in i testläge"} </ButtonText>
                 </Button>
-                <Box flex={1} paddingTop={20} alignItems="center">
+                <Box flex={1} paddingTop={40} alignItems="center">
                   {loginAsNonMember ? (
                     <>
-                      <Text size="sm">Medlem i Mensa Sverige?</Text>
-                      <Link onPress={() => setLoginAsNonMember(false)}>
+                      <Link onPress={() => setLoginAsNonMember(false)} alignItems="center" height={48}>
+                        <Text size="sm">Medlem i Mensa Sverige?</Text>
                         <Text size="sm" color="$primary700">Logga in här</Text>
                       </Link>
-                      </>
+                    </>
                   ) : (
                     <>
-                      <Text size="sm">Medföljande eller internationell medlem?</Text>
-                      <Link onPress={() => setLoginAsNonMember(true)}>
+                      <Link onPress={() => setLoginAsNonMember(true)} alignItems="center" height={48}>
+                        <Text size="sm">Medföljande eller internationell medlem?</Text>
                         <Text size="sm" color="$primary700">Logga in här</Text>
                       </Link>
                     </>
