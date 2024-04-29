@@ -57,7 +57,6 @@ const EventMapField: React.FC<EventMapFieldProps> = ({
                     address: location.formatted_address, 
                 };
                 setLocationField(newLocationForm);
-                console.log('New location:', newLocationForm);
                 onLocationChanged(newLocationForm)
             }
         })
