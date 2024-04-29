@@ -21,7 +21,9 @@ def loginm(username, password):
         'hash': hash
     }
 
-    logging.info(f"loginm_par: {loginm_par}")
+    loggable_data = loginm_par.copy()
+    loggable_data.pop('password', None)
+    logging.info(f"loginm_par: {loggable_data}")
     headers = {'Content-Type': 'application/json'}
     response = requests.post(URL_MEMBER_API,
                              json=loginm_par,

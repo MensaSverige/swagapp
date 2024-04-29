@@ -134,7 +134,7 @@ const EditEventForm: React.FC = () => {
     user,
   ]);
 
-const handleChangeStartDate = useCallback((newStartDate?: Date) => () => {
+const handleChangeStartDate = useCallback((newStartDate?: Date) => {
   if (!newStartDate) {
     return; // should not happen
   }
@@ -156,7 +156,7 @@ const handleChangeStartDate = useCallback((newStartDate?: Date) => () => {
   }
 
   setFormState(updatedFormState);
-}, [formState.start]);
+}, [formState.start, formState.end]);
 
   return (
     <SafeAreaView flex={1} bgColor='$background0'>
