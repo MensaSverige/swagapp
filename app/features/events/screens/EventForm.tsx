@@ -234,7 +234,7 @@ const handleChangeEndDate = useCallback((newEndDate?: Date) => {
                   if (!endtimeSwitch)
                     setFormState({
                       ...formState,
-                      end: undefined,
+                      end: formState.start,
                     });
                 }}
               />
@@ -247,7 +247,6 @@ const handleChangeEndDate = useCallback((newEndDate?: Date) => {
                 <DatepickerField
                   label="Slut"
                   date={formState.end ? new Date(formState.end) : undefined}
-                  minimumDate={new Date(formState.start)}
                   optional
                   onDateChange={handleChangeEndDate}
                 />
