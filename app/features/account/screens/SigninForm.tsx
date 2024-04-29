@@ -26,11 +26,14 @@ import {
   ModalBody,
   CheckIcon,
   EyeIcon,
-  EyeOffIcon
+  EyeOffIcon,
+  Box
 } from "../../../gluestack-components";
-import { ModalFooter, useColorMode } from '@gluestack-ui/themed';
+import { Link, ModalFooter, useColorMode } from '@gluestack-ui/themed';
 import { LoadingScreen } from '../../common/screens/LoadingScreen';
 import { config } from "../../../gluestack-components/gluestack-ui.config";
+import { Touchable, TouchableOpacity } from "react-native";
+import { Spacer } from "@gluestack-ui/themed-native-base";
 
 export const SigninForm = () => {
   const colorMode = useColorMode();
@@ -143,13 +146,6 @@ export const SigninForm = () => {
 
         <VStack flex={1} space="lg" mt={5}>
 
-          <Checkbox aria-label="Logga in som medföljande till medlem eller som internationell medlem" size="md" isInvalid={false} isDisabled={false} onChange={setLoginAsNonMember} value={loginAsNonMember.toString()} isChecked={loginAsNonMember}>
-            <CheckboxIndicator mr="$2">
-              <CheckboxIcon as={CheckIcon} />
-            </CheckboxIndicator>
-            <CheckboxLabel>Logga in som medföljande / internationell</CheckboxLabel>
-          </Checkbox>
-
           <Heading fontWeight="medium" size="xs">
             {loginAsNonMember ? 'Logga in med dina swag.mensa.se-uppgifter' : 'Logga in med dina Mensa.se-uppgifter'}
           </Heading>
@@ -194,31 +190,47 @@ export const SigninForm = () => {
             <CheckboxLabel>Spara inloggning</CheckboxLabel>
           </Checkbox>
 
-          <HStack space="lg" flex={1} justifyContent="center" paddingBottom={20}>
+          <VStack space="lg" flex={1}>
             {isLoading ? (
               <LoadingScreen/>
             ) : (
-              <Button
-                flex={1}
-                size="md"
-                variant="solid"
-                alignContent="center"
-                justifyContent="center"
-                action="primary"
-                alignItems="center"
-                onPress={() => {
-                  if (loginAsNonMember) {
-                    handleNonMemberLogin();
-                  } else {
-                    handleMemberLogin();
-                  }
-                }}
-                isDisabled={!backendConnection}
-              >
-                <ButtonText style={{ textAlign: 'center' }}> {TEST_MODE ? `Logga in som ${loginAsNonMember ? 'medföljande' : 'medlem'}` : "Logga in i testläge"} </ButtonText>
-              </Button>
+              <>
+                <Button
+                  size="md"
+                  variant="solid"
+                  action="primary"
+                  onPress={() => {
+                    if (loginAsNonMember) {
+                      handleNonMemberLogin();
+                    } else {
+                      handleMemberLogin();
+                    }
+                  }}
+                  isDisabled={!backendConnection}
+                >
+                  <ButtonText style={{ textAlign: 'center' }}> {TEST_MODE ? (loginAsNonMember ? "Logga in som medföljande" : "Logga in") : "Logga in i testläge"} </ButtonText>
+                </Button>
+                <Box flex={1} paddingTop={20} alignItems="center">
+                  {loginAsNonMember ? (
+                    <>
+                      <Text size="sm">Medlem i Mensa Sverige?</Text>
+                      <Link onPress={() => setLoginAsNonMember(false)}>
+                        <Text size="sm" color="$primary700">Logga in här</Text>
+                      </Link>
+                      </>
+                  ) : (
+                    <>
+                      <Text size="sm">Medföljande eller internationell medlem?</Text>
+                      <Link onPress={() => setLoginAsNonMember(true)}>
+                        <Text size="sm" color="$primary700">Logga in här</Text>
+                      </Link>
+                    </>
+                  )}
+                </Box>
+              </>
             )}
-          </HStack>
+          </VStack>
+          <Box flex={1} />
         </VStack>
         <Modal
           isOpen={showLoginError}
