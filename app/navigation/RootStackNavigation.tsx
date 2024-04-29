@@ -10,6 +10,7 @@ import {
 } from '@react-navigation/native-stack';
 import { RootStackParamList } from './RootStackParamList';
 import { LoggedInTabs } from './LoggedInTabs';
+import { NonMemberLoggedInTabs } from './NonMemberLoggedInTabs';
 import useStore from '../features/common/store/store';
 import { SigninForm } from '../features/account/screens/SigninForm';
 import { ICustomTheme, useTheme } from 'native-base';
@@ -89,8 +90,10 @@ export const RootStackNavigation = () => {
                         {() => {
                             if (user === null) {
                                 return <SigninForm />;
-                            } else {
+                            } else if (user.isMember) {
                                 return <LoggedInTabs />;
+                            } else {
+                                return <NonMemberLoggedInTabs />;
                             }
                         }}
                     </Stack.Screen>

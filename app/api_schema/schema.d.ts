@@ -9,6 +9,10 @@ export interface paths {
     /** Authm */
     post: operations["authm_v1_authm_post"];
   };
+  "/v1/authb": {
+    /** Authb */
+    post: operations["authb_v1_authb_post"];
+  };
   "/v1/refresh_token": {
     /** Refresh Token */
     post: operations["refresh_token_v1_refresh_token_post"];
@@ -404,6 +408,11 @@ export interface components {
        */
       longitude?: number | null;
     };
+    /** RefreshTokenRequest */
+    RefreshTokenRequest: {
+      /** Refreshtoken */
+      refreshToken: string;
+    };
     /** Report */
     Report: {
       /**
@@ -662,11 +671,33 @@ export interface operations {
       };
     };
   };
+  /** Authb */
+  authb_v1_authb_post: {
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["AuthRequest"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["AuthResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
   /** Refresh Token */
   refresh_token_v1_refresh_token_post: {
-    parameters: {
-      query: {
-        refresh_token: string;
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["RefreshTokenRequest"];
       };
     };
     responses: {

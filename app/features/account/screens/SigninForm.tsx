@@ -38,6 +38,7 @@ export const SigninForm = () => {
   const [password, setPassword] = useState("");
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [saveCredentials, setSaveCredentials] = useState(false);
+  const [loginAsNonMember, setLoginAsNonMember] = useState(false);
   const [showLoginError, setShowLoginError] = useState(false);
   const [loginErrorText, setLoginErrorText] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -63,7 +64,8 @@ export const SigninForm = () => {
         });
     }
   }, [user, backendConnection]);
-  const handleLogin = async () => {
+
+  const handleMemberLogin = async () => {
     try {
       if (saveCredentials) {
         Keychain.setGenericPassword(username, password, {
@@ -78,7 +80,7 @@ export const SigninForm = () => {
       setShowLoginError(true);
     }
     setIsLoading(true);
-    authenticate(username, password, testMode)
+    authenticate(username, password, testMode, true)
       .then((response) => {
         if (response !== undefined) setUser(response.user);
       })
@@ -98,17 +100,60 @@ export const SigninForm = () => {
       });
   };
 
+  const handleNonMemberLogin = async () => {
+    try {
+      if (saveCredentials) {
+        Keychain.setGenericPassword(username, password, {
+          service: "non-member-credentials",
+        });
+      }
+    } catch (error) {
+      console.error("Save credentials error", error);
+      setLoginErrorText(
+        "Något gick fel. Kunde inte spara dina inloggningsuppgifter.",
+      );
+      setShowLoginError(true);
+    }
+    setIsLoading(true);
+    authenticate(username, password, testMode, false)
+      .then((response) => {
+        if (response !== undefined) setUser(response.user);
+      })
+      .catch((error) => {
+        console.error("Login error", error.message || error);
+        if (error.message.includes("Network Error")) {
+          setLoginErrorText(
+            `Det går inte att nå servern just nu. ${isTryingStoredCredentials ? "Försöker igen automatiskt" : "Försök igen om en stund."}`,
+          );
+        } else {
+          setLoginErrorText("Något gick fel. Försök igen senare.");
+        }
+        setShowLoginError(true);
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
+  };
 
   const cancelRef = useRef(null);
   return (
     <SafeAreaView flex={1} key={colorMode}>
       <VStack flex={1} bg="$background0" space="lg" padding={20}>
         <Heading size="lg">Välkommen Swagger</Heading>
-        <Heading fontWeight="medium" size="xs">
-          Logga in med dina Mensa.se-uppgifter
-        </Heading>
 
         <VStack flex={1} space="lg" mt={5}>
+
+          <Checkbox aria-label="Logga in som medföljande till medlem eller som internationell medlem" size="md" isInvalid={false} isDisabled={false} onChange={setLoginAsNonMember} value={loginAsNonMember.toString()} isChecked={loginAsNonMember}>
+            <CheckboxIndicator mr="$2">
+              <CheckboxIcon as={CheckIcon} />
+            </CheckboxIndicator>
+            <CheckboxLabel>Logga in som medföljande / internationell</CheckboxLabel>
+          </Checkbox>
+
+          <Heading fontWeight="medium" size="xs">
+            {loginAsNonMember ? 'Logga in med dina swag.mensa.se-uppgifter' : 'Logga in med dina Mensa.se-uppgifter'}
+          </Heading>
+
           <Input
             variant="outline"
             isDisabled={isLoading}
@@ -161,10 +206,16 @@ export const SigninForm = () => {
                 justifyContent="center"
                 action="primary"
                 alignItems="center"
-                onPress={handleLogin}
+                onPress={() => {
+                  if (loginAsNonMember) {
+                    handleNonMemberLogin();
+                  } else {
+                    handleMemberLogin();
+                  }
+                }}
                 isDisabled={!backendConnection}
               >
-                <ButtonText style={{ textAlign: 'center' }}> {TEST_MODE ? "Logga in" : "Logga in i testläge"} </ButtonText>
+                <ButtonText style={{ textAlign: 'center' }}> {TEST_MODE ? `Logga in som ${loginAsNonMember ? 'medföljande' : 'medlem'}` : "Logga in i testläge"} </ButtonText>
               </Button>
             )}
           </HStack>

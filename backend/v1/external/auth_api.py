@@ -1,7 +1,7 @@
 import requests
 import logging
 from fastapi import HTTPException
-from v1.env_constants import LOGINM_SEED, URL_MEMBER_API
+from v1.env_constants import LOGINM_SEED, LOGINB_SEED, URL_MEMBER_API
 from v1.utilities import calc_hash, get_current_time_formatted
 
 
@@ -27,6 +27,33 @@ def loginm(username, password):
     headers = {'Content-Type': 'application/json'}
     response = requests.post(URL_MEMBER_API,
                              json=loginm_par,
+                             headers=headers,
+                             verify=False)
+    if response.status_code != 200:
+        raise HTTPException(status_code=400, detail="Invalid credentials")
+
+    return response.json()
+
+def loginb(user, password):
+    client = 'swagapp'
+    timestamp = get_current_time_formatted()
+    loginb_hash = [user, password, timestamp, LOGINB_SEED]
+    hash = calc_hash(loginb_hash)
+    loginb_par = {
+        'operation': 'loginb',
+        'client': client,
+        'user': user,
+        'password': password,
+        'timestamp': timestamp,
+        'hash': hash
+    }
+
+    loggable_data = loginb_par.copy()
+    loggable_data.pop('password', None)
+    logging.info(f"loginb_par: {loggable_data}")
+    headers = {'Content-Type': 'application/json'}
+    response = requests.post(URL_MEMBER_API,
+                             json=loginb_par,
                              headers=headers,
                              verify=False)
     if response.status_code != 200:
