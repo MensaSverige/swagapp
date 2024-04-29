@@ -135,8 +135,8 @@ const EditEventForm: React.FC = () => {
   ]);
 
 const handleChangeStartDate = useCallback((newStartDate?: Date) => {
-  if (!newStartDate) {
-    return; // should not happen
+  if (!newStartDate || newStartDate < new Date()) {
+    newStartDate = new Date(); // set to current time if not provided or if before current time
   }
 
   const previousStartDate = new Date(formState.start);
@@ -147,8 +147,10 @@ const handleChangeStartDate = useCallback((newStartDate?: Date) => {
     start: newStartDate.toISOString(),
   };
 
-  if (formState.end) {
-    const newEndDate = new Date(new Date(formState.end).getTime() + startDateDelta);
+  if (endtimeSwitch && formState.end) {
+    const previousEndDate = new Date(formState.end);
+    // update end date to maintain the same time difference from start date
+    const newEndDate = new Date(previousEndDate.getTime() + startDateDelta);
     updatedFormState = {
       ...updatedFormState,
       end: newEndDate.toISOString(),
@@ -156,6 +158,27 @@ const handleChangeStartDate = useCallback((newStartDate?: Date) => {
   }
 
   setFormState(updatedFormState);
+}, [formState.start, formState.end, endtimeSwitch]);
+
+const handleChangeEndDate = useCallback((newEndDate?: Date) => {
+  if (!newEndDate || newEndDate < new Date()) {
+    newEndDate = new Date(); // set to current time if not provided or if before current time
+  }
+
+  let newEndTime = newEndDate?.toISOString() || undefined;
+  // if end time is before start time, set start time to new end time
+  if (newEndTime && new Date(newEndTime) < new Date(formState.start)) { 
+    setFormState({
+      ...formState,
+      start: newEndTime,
+      end: newEndTime
+    });
+  } else {
+    setFormState({
+      ...formState,
+      end: newEndTime
+    });
+  }
 }, [formState.start, formState.end]);
 
   return (
@@ -226,12 +249,7 @@ const handleChangeStartDate = useCallback((newStartDate?: Date) => {
                   date={formState.end ? new Date(formState.end) : undefined}
                   minimumDate={new Date(formState.start)}
                   optional
-                  onDateChange={(value) =>
-                    setFormState({
-                      ...formState,
-                      end: value?.toISOString() || undefined
-                    })
-                  }
+                  onDateChange={handleChangeEndDate}
                 />
               )}
             </Field>
