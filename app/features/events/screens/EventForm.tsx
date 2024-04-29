@@ -135,7 +135,6 @@ const EditEventForm: React.FC = () => {
   ]);
 
 const handleChangeStartDate = useCallback((newStartDate?: Date) => {
-  console.log('Start date changed', newStartDate);
   if (!newStartDate) {
     return; // should not happen
   }
