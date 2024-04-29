@@ -17,6 +17,7 @@ from v1.external.event_site_news import get_event_site_news
 from v1.external.event_api import get_external_event_details
 from v1.user_events.user_events_api import user_events_v1
 from v1.db.mongo import initialize_db
+from v1.dev.exception_handlers import register_exception_handlers
 
 # Initialize logging
 logging.basicConfig(level=logging.INFO)
@@ -34,6 +35,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+register_exception_handlers(app)
 
 app.include_router(auth_v1)
 app.include_router(health_v1)
