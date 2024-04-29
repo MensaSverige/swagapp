@@ -3,7 +3,7 @@ import { Linking } from 'react-native';
 import { fetchNews } from '../../events/services/eventService';
 import { News } from '../../../api_schema/types';
 import { Card, Heading, Link, LinkText, ScrollView, Spinner, Text, VStack } from '../../../gluestack-components';
-import { parseHTML } from '../functions/formatHtml';
+import { filterHtml } from '../functions/filterHtml';
 import { LoadingScreen } from './LoadingScreen';
 
 export const SiteNews = () => {
@@ -28,8 +28,10 @@ export const SiteNews = () => {
         let match;
         while ((match = linkRegex.exec(html)) !== null) {
             let name = match[2];
-            name = name.replace(/en\s/g, '');
-            name = name.charAt(0).toUpperCase() + name.slice(1);
+            if (!name.startsWith('http')) {
+                name = name.replace(/en\s/g, '');
+                name = name.charAt(0).toUpperCase() + name.slice(1);
+            }
             links.push({ url: match[1], name: name });
         }
         return links;
@@ -51,12 +53,12 @@ export const SiteNews = () => {
                 {news &&
                     news.map((news) => (
                         <Card key={news.title} paddingHorizontal={0} size="sm" variant="ghost" m="$0" >
-                            <Heading color="$amber400">{parseHTML(news.title ?? "")}</Heading>
+                            <Heading color="$amber400">{filterHtml(news.title ?? "")}</Heading>
                             <Text color="$secondary600" bold>
                                 {new Date(news.date ?? "").toLocaleDateString()}{' '}
                                 {new Date(news.date ?? "").toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                             </Text>
-                            <Text>{parseHTML(news.description)}</Text>
+                            <Text>{filterHtml(news.description)}</Text>
                             {extractLinks(news.description)?.map((link, index) => (
 
 
