@@ -18,7 +18,7 @@ import { Platform, StyleSheet } from 'react-native';
 import { useColorMode } from '@gluestack-ui/themed';
 import MyExternalEvents from '../features/events/screens/MyExternalEvents';
 import WelcomeScreen from '../features/common/screens/WelcomeScreen';
-import NonMemberUserSettings from '../features/account/screens/NonMemberSettings';
+import UserSettings from '../features/account/screens/Settings';
 
 const createStyles1 = (theme: any, colorMode: string) =>
     StyleSheet.create({
@@ -115,7 +115,7 @@ export const NonMemberLoggedInTabs = () => {
                 </Stack.Screen>
                 <Stack.Screen
                     name="UserSettings"
-                    component={NonMemberUserSettings}
+                    component={UserSettings}
                     options={{
                         ...screenOptions,
                         title: 'Inställningar',

@@ -19,7 +19,7 @@ const useUserLocation = () => {
     }
 
     const fetchLocation = async () => {
-      if (!user?.isMember || !hasLocationPermission) {
+      if (!hasLocationPermission) {
         return;
       }
       Geolocation.getCurrentPosition(

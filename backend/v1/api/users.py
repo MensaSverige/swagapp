@@ -4,7 +4,7 @@ from typing import List
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from v1.utilities import convert_to_tz_aware, get_current_time
 from v1.db.models.user import User, UserLocation, UserUpdate
-from v1.request_filter import validate_request, require_member
+from v1.request_filter import validate_request
 from v1.db.users import get_user, get_users_showing_location, update_user
 
 users_v1 = APIRouter(prefix="/v1")
@@ -18,7 +18,7 @@ async def get_user_by_id(user_id: int):
 
 @users_v1.get("/users", response_model=List[User])
 async def get_users(show_location: bool = None,
-                    _: dict = Depends(require_member)):
+                    _: dict = Depends(validate_request)):
     if show_location:
         return get_users_showing_location()
     return get_users()
@@ -26,7 +26,7 @@ async def get_users(show_location: bool = None,
 
 @users_v1.put("/users/me/location", response_model=User)
 async def update_user_location(location: UserLocation,
-                               current_user: dict = Depends(require_member)):
+                               current_user: dict = Depends(validate_request)):
     logging.info(f"location: {location}")
     update_dict = location.model_dump(exclude_unset=True)
     update_dict['timestamp'] = convert_to_tz_aware(
@@ -52,7 +52,7 @@ async def update_current_user(user_update: UserUpdate,
 
 @users_v1.post("/users/me/avatar", response_model=User)
 async def update_user_avatar(file: UploadFile = File(...),
-                             current_user: User = Depends(require_member)):
+                             current_user: User = Depends(validate_request)):
     logging.info(f"file: {file.filename}")
     logging.info(f"current_user: {current_user}")
     file_path = f"/static/img/{current_user['userId']}_avatar.jpg"

@@ -19,3 +19,4 @@ export type News = components["schemas"]["EventSiteNews"];
 export type GeoLocation = components["schemas"]["GeoLocation"];
 export type HTTPValidationError = components["schemas"]["HTTPValidationError"];
 export type ValidationError = components["schemas"]["ValidationError"];
+export type ShowLocation = components["schemas"]["ShowLocation"];
