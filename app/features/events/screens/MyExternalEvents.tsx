@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { fetchExternalEvents } from '../services/eventService';
 import { ExternalEventDetails } from '../../../api_schema/types';
-import { Accordion, AccordionContent, AccordionContentText, AccordionHeader, AccordionIcon, AccordionItem, AccordionTitleText, AccordionTrigger, ChevronDownIcon, ChevronUpIcon, Divider, HStack, Heading, ScrollView, Spinner, Text, VStack } from '../../../gluestack-components';
+import { Accordion, AccordionContent, AccordionContentText, AccordionHeader, AccordionIcon, AccordionItem, AccordionTitleText, AccordionTrigger, Box, ChevronDownIcon, ChevronUpIcon, Divider, HStack, Heading, ScrollView, Spinner, Text, VStack } from '../../../gluestack-components';
 import { filterHtml } from '../../common/functions/filterHtml';
 import { LoadingScreen } from '../../common/screens/LoadingScreen';
 import LocationLinkButton from '../../common/components/LocationLinkIcon';
@@ -50,7 +50,9 @@ export const MyExternalEvents = () => {
                     }
 
                     {events && events.length === 0 &&
-                        <Text>Inga bokade aktiviteter</Text>
+                        <Box alignItems='center' paddingVertical={40}>
+                            <Text>Inga bokade aktiviteter</Text>
+                        </Box>
                     }
                 </VStack>
                 {events &&
