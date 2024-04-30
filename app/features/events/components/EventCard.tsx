@@ -76,36 +76,36 @@ const EventCard: React.FC<{
             <Text>{event.description}</Text>
             {isFutureUserEvent(event) && (
               <>
-                <Box flex={1} flexDirection="row">
+                <HStack flex={1} flexDirection="row" flexWrap='wrap'>
                   <Heading size="sm">{`Värd${
                     hostNames.length === 1 ? '' : 'ar'
                   }: `}</Heading>
                   <Text>{hostNames.join(', ')}</Text>
-                </Box>
+                </HStack>
 
                 {event.maxAttendees && (
-                  <Box flex={1} flexDirection="row">
+                  <HStack flex={1} flexDirection="row" flexWrap='wrap'>
                     <Heading size="sm">Platser kvar: </Heading>
                     <Text>
                       {`${
                         event.maxAttendees - (event.attendees?.length || 0)
                       } av ${event.maxAttendees}`}
                     </Text>
-                  </Box>
+                  </HStack>
                 )}
               </>
             )}
-            <Box flex={1} flexDirection="row">
+            <HStack flex={1} flexDirection="row" flexWrap='wrap'>
               <Heading size="sm">Start:</Heading>
               <Text> {formatDateAndTime(event.start)}</Text>
-            </Box>
+            </HStack>
             {event.end && (
-              <Box flex={1} flexDirection="row">
+              <HStack flex={1} flexDirection="row" flexWrap='wrap'>
                 <Heading size="sm">Slut:</Heading>
                 <Text> {formatDateAndTime(event.end)}</Text>
-              </Box>
+              </HStack>
             )}
-            <Box flex={1} flexDirection="row">
+            <HStack flex={1} flexDirection="row" flexWrap='wrap'>
               {event.location?.address && (
                 <>
                   <Heading size="sm">Adress: </Heading>
@@ -116,15 +116,15 @@ const EventCard: React.FC<{
                   </Text>
                 </>
               )}
-            </Box>
-            <Box flex={1} flexDirection="row">
+            </HStack>
+            <HStack flex={1} flexDirection="row" flexWrap='wrap'>
               {event.location?.description && (
                 <>
-                  <Heading size="sm">Platsbeskrivning:</Heading>
-                  <Text> {event.location?.description || ''}</Text>
+                  <Heading size="sm">Platsbeskrivning: </Heading>
+                  <Text>{event.location?.description || ''}</Text>
                 </>
               )}
-            </Box>
+            </HStack>
             {user && isFutureUserEvent(event) && (
               <Attending event={event} userId={user.userId} />
             )}
