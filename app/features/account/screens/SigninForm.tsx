@@ -269,6 +269,7 @@ export const SigninForm = () => {
                   isDisabled={false}
                   isFocusVisible={false}
                   onPress={() => setShowLoginError(false)}
+                  flex={1}
                 >
                   <ButtonText style={{ textAlign: 'center' }}>OK</ButtonText>
                 </Button>
