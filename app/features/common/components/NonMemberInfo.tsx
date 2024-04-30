@@ -2,6 +2,7 @@ import React from 'react';
 import useStore from '../../common/store/store';
 import {
     AlertDialog,
+    AlertDialogBackdrop,
     Button,
     ButtonText,
     HStack,
@@ -47,6 +48,7 @@ const NonMemberInfo: React.FC = () => {
                 </HStack>
             </TouchableOpacity>
             <AlertDialog isOpen={showMoreInfo} onClose={() => setShowMoreInfo(false)}>
+                <AlertDialogBackdrop />
                 <AlertDialog.Content>
                     <AlertDialog.Header>
                         <Heading size="md">Begränsad funktionalitet</Heading>
