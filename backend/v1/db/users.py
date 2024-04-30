@@ -73,11 +73,10 @@ def map_authresponse_to_user(response_json: dict) -> User:
         settings=UserSettings(),  # Default values
     )
 
-    if user.isMember:
-        user.firstName = response_json.get("firstName", None)
-        user.lastName = response_json.get("lastName", None)
-        user.contact_info = ContactInfo(email=response_json.get("email", None),
-                                        phone=None)  # Update email
+    user.firstName = response_json.get("firstName", None)
+    user.lastName = response_json.get("lastName", None)
+    user.contact_info = ContactInfo(email=response_json.get("email", None),
+                                    phone=None)  # Update email
 
     try:
         user_json = json.dumps(user.model_dump())
