@@ -410,8 +410,8 @@ export interface components {
     };
     /** RefreshTokenRequest */
     RefreshTokenRequest: {
-      /** Refreshtoken */
-      refreshToken: string;
+      /** Refresh Token */
+      refresh_token: string;
     };
     /** Report */
     Report: {
