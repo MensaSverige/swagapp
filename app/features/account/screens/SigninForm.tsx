@@ -32,8 +32,7 @@ import {
 import { Link, ModalFooter, useColorMode } from '@gluestack-ui/themed';
 import { LoadingScreen } from '../../common/screens/LoadingScreen';
 import { config } from "../../../gluestack-components/gluestack-ui.config";
-import { Touchable, TouchableOpacity } from "react-native";
-import { Spacer } from "@gluestack-ui/themed-native-base";
+import { TouchableOpacity } from "react-native";
 
 export const SigninForm = () => {
   const colorMode = useColorMode();
@@ -186,14 +185,20 @@ export const SigninForm = () => {
               />
             </InputSlot>
           </Input>
-          <TouchableOpacity onPress={() => {setSaveCredentials(!saveCredentials)}}>
-            <Checkbox aria-label="Save Credentials" size="md" isInvalid={false} isDisabled={false} onChange={setSaveCredentials} value={saveCredentials.toString()} height={48} paddingHorizontal={5}>
-              <CheckboxIndicator mr="$2">
-                <CheckboxIcon as={CheckIcon} />
-              </CheckboxIndicator>
-              <CheckboxLabel>Spara inloggning</CheckboxLabel>
-            </Checkbox>
-          </TouchableOpacity>
+          <Checkbox
+            aria-label="Save Credentials"
+            size="md"
+            isInvalid={false}
+            isDisabled={false}
+            onChange={setSaveCredentials}
+            value={saveCredentials.toString()}
+            height={48}
+            paddingHorizontal={5}>
+            <CheckboxIndicator mr="$2">
+              <CheckboxIcon as={CheckIcon} />
+            </CheckboxIndicator>
+            <CheckboxLabel>Spara inloggning</CheckboxLabel>
+          </Checkbox>
 
           <VStack space="lg" flex={1}>
             {isLoading ? (
