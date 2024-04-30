@@ -5,6 +5,8 @@ import { Accordion, AccordionContent, AccordionContentText, AccordionHeader, Acc
 import { filterHtml } from '../../common/functions/filterHtml';
 import { LoadingScreen } from '../../common/screens/LoadingScreen';
 import LocationLinkButton from '../../common/components/LocationLinkIcon';
+import useStore from '../../common/store/store';
+import NonMemberInfo from '../../common/components/NonMemberInfo';
 
 const getCoordinatesFromUrl = (mapUrl: string) => {
     const url = new URL(mapUrl);
@@ -23,6 +25,7 @@ const getPlaceFromUrl = (mapUrl: string) => {
 export const MyExternalEvents = () => {
     const [events, setEvents] = useState<ExternalEventDetails[]>();
     const [loading, setLoading] = useState(true);
+    const {user} = useStore();
 
     useEffect(() => {
         fetchExternalEvents().then((events) => {
@@ -123,6 +126,9 @@ export const MyExternalEvents = () => {
                     </Accordion>
                 }
             </ScrollView>
+            {user && !user.isMember && (
+                <NonMemberInfo />
+            )}
         </VStack>
 
     );
