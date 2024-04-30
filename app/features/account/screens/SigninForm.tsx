@@ -210,6 +210,7 @@ export const SigninForm = () => {
                   height={48}
                   variant="solid"
                   action="primary"
+                  bgColor={loginAsNonMember ? "$amber300" : "$primary500"}
                   onPress={() => {
                     if (loginAsNonMember) {
                       handleNonMemberLogin();
@@ -219,7 +220,12 @@ export const SigninForm = () => {
                   }}
                   isDisabled={!backendConnection}
                 >
-                  <ButtonText style={{ textAlign: 'center' }}> {TEST_MODE ? (loginAsNonMember ? "Logga in som medföljande" : "Logga in") : "Logga in i testläge"} </ButtonText>
+                  <ButtonText
+                    style={{ textAlign: 'center' }}
+                    color={loginAsNonMember ? "$text900" : "$text0"}
+                  >
+                    {TEST_MODE ? (loginAsNonMember ? "Logga in som medföljande" : "Logga in") : "Logga in i testläge"}
+                  </ButtonText>
                 </Button>
                 <Box flex={1} paddingTop={40} alignItems="center">
                   {loginAsNonMember ? (
@@ -233,7 +239,7 @@ export const SigninForm = () => {
                     <>
                       <Link onPress={() => setLoginAsNonMember(true)} alignItems="center" height={48}>
                         <Text size="sm">Medföljande eller internationell medlem?</Text>
-                        <Text size="sm" color="$primary700">Logga in här</Text>
+                        <Text size="sm" color="$amber700">Logga in här</Text>
                       </Link>
                     </>
                   )}
@@ -250,7 +256,7 @@ export const SigninForm = () => {
           size='lg'
         >
           <ModalBackdrop bg="$coolGray500" />
-          <ModalContent >
+          <ModalContent>
             <ModalHeader>
               <Heading size="lg">Fel vid inloggning</Heading>
               <ModalCloseButton>
