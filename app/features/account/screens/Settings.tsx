@@ -145,13 +145,15 @@ const UserSettings: React.FC = () => {
     }
 
     const locationSharingOptions: {value: ShowLocation, label: string}[] = useMemo(() => user.isMember ? [
+        // Members can choose between all options
         {value: "ALL_MEMBERS_WHO_SHARE_THEIR_OWN_LOCATION", label: "Visa för andra medlemmar som visar sin position"},
-        {value: "ALL_MEMBERS", label: "Visa för alla medlemmar"},
-        {value: "EVERYONE_WHO_SHARE_THEIR_OWN_LOCATION", label: "Visa för alla som visar sin position"},
-        {value: "EVERYONE", label: 'Visa för alla'},
+        {value:                              "ALL_MEMBERS", label: "Visa för alla medlemmar"},
+        {value:    "EVERYONE_WHO_SHARE_THEIR_OWN_LOCATION", label: "Visa för alla som visar sin position"},
+        {value:                                 "EVERYONE", label: 'Visa för alla'},
     ] : [
-        {value: "EVERYONE_WHO_SHARE_THEIR_OWN_LOCATION", label: 'Visa för andra som visar sin position'},
-        {value: "EVERYONE", label: 'Visa för alla'},
+        // Non-members can only choose between non member specific options
+        {value:    "EVERYONE_WHO_SHARE_THEIR_OWN_LOCATION", label: 'Visa för andra som visar sin position'},
+        {value:                                 "EVERYONE", label: 'Visa för alla'},
     ], [user.isMember]);
 
     return (
