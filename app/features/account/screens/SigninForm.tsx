@@ -31,6 +31,7 @@ import {
 import { ModalFooter, useColorMode } from '@gluestack-ui/themed';
 import { LoadingScreen } from '../../common/screens/LoadingScreen';
 import { config } from "../../../gluestack-components/gluestack-ui.config";
+import { TouchableOpacity } from "react-native";
 
 export const SigninForm = () => {
   const colorMode = useColorMode();
@@ -112,25 +113,29 @@ export const SigninForm = () => {
           <Input
             variant="outline"
             isDisabled={isLoading}
+            height={48}
           >
             <InputField
               placeholder="Email"
               keyboardType="email-address"
               value={username}
               onChangeText={setUsername}
-            />
+              height={48}
+              />
           </Input>
           <Input
 
             variant="outline"
             isDisabled={isLoading}
+            height={48}
           >
             <InputField
               placeholder="Lösenord"
               value={password}
               onChangeText={setPassword}
               secureTextEntry={!passwordVisible}
-            />
+              height={48}
+              />
             <InputSlot pr="$3" onPress={() => {
               setPasswordVisible((passwordVisible) => {
                 return !passwordVisible
@@ -142,7 +147,15 @@ export const SigninForm = () => {
               />
             </InputSlot>
           </Input>
-          <Checkbox aria-label="Save Credentials" size="md" isInvalid={false} isDisabled={false} onChange={setSaveCredentials} value={saveCredentials.toString()}>
+          <Checkbox
+            aria-label="Save Credentials"
+            size="md"
+            isInvalid={false}
+            isDisabled={false}
+            onChange={setSaveCredentials}
+            value={saveCredentials.toString()}
+            height={48}
+            paddingHorizontal={5}>
             <CheckboxIndicator mr="$2">
               <CheckboxIcon as={CheckIcon} />
             </CheckboxIndicator>
@@ -163,6 +176,7 @@ export const SigninForm = () => {
                 alignItems="center"
                 onPress={handleLogin}
                 isDisabled={!backendConnection}
+                height={48}
               >
                 <ButtonText style={{ textAlign: 'center' }}> {TEST_MODE ? "Logga in" : "Logga in i testläge"} </ButtonText>
               </Button>
