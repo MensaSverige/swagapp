@@ -48,7 +48,7 @@ const NonMemberInfo: React.FC = () => {
                 </HStack>
             </TouchableOpacity>
             <AlertDialog isOpen={showMoreInfo} onClose={() => setShowMoreInfo(false)}>
-                <AlertDialogBackdrop />
+                <AlertDialogBackdrop bgColor='$coolGray500' />
                 <AlertDialog.Content>
                     <AlertDialog.Header>
                         <Heading size="md">Begränsad funktionalitet</Heading>
