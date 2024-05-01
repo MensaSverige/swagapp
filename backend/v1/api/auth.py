@@ -5,7 +5,7 @@ from pydantic import BaseModel
 import logging
 from v1.db.review_users import check_review_user_creds
 from v1.utilities import convert_string_to_datetime
-from v1.external.auth_api import loginm
+from v1.external.auth_api import loginm, loginb
 from v1.db.external_token_storage import save_external_token
 from v1.token_handler import create_access_token, create_refresh_token, get_token_expiry, verify_refresh_token
 from v1.db.models.user import User
@@ -58,10 +58,39 @@ def authm(request: AuthRequest) -> AuthResponse:
     return authresponse
 
 
-@auth_v1.post("/refresh_token")
-def refresh_token(refresh_token: str) -> AuthResponse:
+@auth_v1.post("/authb")
+def authb(request: AuthRequest) -> AuthResponse:
+    response = loginb(request.username, request.password)
+
+    logging.info(f"Non member login, response_json: {response}")
     try:
-        valid, payload = verify_refresh_token(refresh_token)
+        memberId = int(response["memberId"])
+        user = get_user(memberId)
+        if not user:
+            user = create_user(response)
+    except KeyError as e:
+        print("memberId not found in response")
+        raise HTTPException(status_code=400, detail="Invalid credentials")
+
+    save_external_token(user["userId"], response["token"],
+                        convert_string_to_datetime(response["validThrough"]))
+    accesstoken = create_access_token(user["userId"])
+
+    authresponse = AuthResponse(
+        accessToken=accesstoken,
+        refreshToken=create_refresh_token(user["userId"]),
+        accessTokenExpiry=get_token_expiry(accesstoken),
+        user=user)
+    return authresponse
+
+
+class RefreshTokenRequest(BaseModel):
+    refresh_token: str
+
+@auth_v1.post("/refresh_token")
+def refresh_token(refresh_token: RefreshTokenRequest) -> AuthResponse:
+    try:
+        valid, payload = verify_refresh_token(refresh_token.refresh_token)
         if not valid:
             raise HTTPException(status_code=401, detail="Unauthorized")
         user = get_user(payload.get("sub"))

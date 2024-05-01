@@ -19,3 +19,11 @@ async def validate_request(
             raise HTTPException(status_code=401, detail="Unauthorized")
     else:
         raise HTTPException(status_code=403, detail="Unauthorized")
+
+
+async def require_member(
+        current_user: dict = Depends(validate_request)):
+    if not current_user['isMember']:
+        raise HTTPException(status_code=403, detail="Not a member")
+
+    return current_user

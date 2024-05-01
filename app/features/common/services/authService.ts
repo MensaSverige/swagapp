@@ -36,9 +36,12 @@ const authClient = axios.create({
     baseURL: `${API_URL}/${API_VERSION}`,
 });
 
-export const authenticate = async (username: string, password: string, testMode: boolean): Promise<AuthResponse> => {
+export const authenticate = async (username: string, password: string, testMode: boolean, member: boolean): Promise<AuthResponse> => {
+    
+    const endpoint = member ? 'authm' : 'authb';
+    
     return authClient
-        .post('/authm',
+        .post(`/${endpoint}`,
             {
                 username: username,
                 password: password,
@@ -122,18 +125,33 @@ export const refreshAccessToken = async (refreshToken: string): Promise<string> 
 }
 
 export const attemptLoginWithStoredCredentials = async (): Promise<AuthResponse> => {
+    // First try to login with stored credentials for member users
     return Keychain.getGenericPassword({ service: 'credentials' })
-        .then((credentials: UserCredentials | false) => {
+        .then(async (credentials: UserCredentials | false) => {
             if (credentials) {
-                return authenticate(credentials.username, credentials.password, false);
+                return authenticate(credentials.username, credentials.password, false, true)
+                    .catch(async (error: Error) => {
+                        // If that login fails, reset member user credentials storage.
+                        console.error('Login with stored credentials failed', error);
+                        return Keychain.resetGenericPassword({ service: 'credentials' })
+                            .then(() => Promise.reject('Login failed'));
+                    });
             }
-            throw new Error('No stored credentials');
+            // If no stored credentials are found, try to login with stored credentials for non-member users
+            return Keychain.getGenericPassword({ service: 'non-member-credentials' })
+                .then(async (credentials: UserCredentials | false) => {
+                    if (credentials) {
+                        return authenticate(credentials.username, credentials.password, false, false)
+                            // If that login fails, reset non-member user credentials storage.
+                            .catch( async (error: Error) => {
+                                console.error('Login with stored credentials failed', error);
+                                return Keychain.resetGenericPassword({ service: 'non-member-credentials' })
+                                    .then(() => Promise.reject('Login failed'));
+                            });
+                    }
+                    return Promise.reject('No stored credentials');
+                });
         })
-        .catch((error: Error) => {
-            console.error('Login with stored credentials failed', error);
-            return Keychain.resetGenericPassword({ service: 'credentials' })
-            .then(() => Promise.reject('Login failed'));
-        });
 }
 
 export const resetUserCredentials = async (): Promise<boolean> => {
@@ -141,6 +159,7 @@ export const resetUserCredentials = async (): Promise<boolean> => {
         Keychain.resetGenericPassword({ service: 'accessToken' }),
         Keychain.resetGenericPassword({ service: 'accessTokenExpiry' }),
         Keychain.resetGenericPassword({ service: 'credentials' }),
+        Keychain.resetGenericPassword({ service: 'non-member-credentials' }),
         Keychain.resetGenericPassword({ service: 'refreshToken' }),
     ])
     .then(() => true)

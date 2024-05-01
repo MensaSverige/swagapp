@@ -26,9 +26,10 @@ import {
   ModalBody,
   CheckIcon,
   EyeIcon,
-  EyeOffIcon
+  EyeOffIcon,
+  Box
 } from "../../../gluestack-components";
-import { ModalFooter, useColorMode } from '@gluestack-ui/themed';
+import { Link, ModalFooter, useColorMode } from '@gluestack-ui/themed';
 import { LoadingScreen } from '../../common/screens/LoadingScreen';
 import { config } from "../../../gluestack-components/gluestack-ui.config";
 import { TouchableOpacity } from "react-native";
@@ -39,6 +40,7 @@ export const SigninForm = () => {
   const [password, setPassword] = useState("");
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [saveCredentials, setSaveCredentials] = useState(false);
+  const [loginAsNonMember, setLoginAsNonMember] = useState(false);
   const [showLoginError, setShowLoginError] = useState(false);
   const [loginErrorText, setLoginErrorText] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -64,7 +66,8 @@ export const SigninForm = () => {
         });
     }
   }, [user, backendConnection]);
-  const handleLogin = async () => {
+
+  const handleMemberLogin = async () => {
     try {
       if (saveCredentials) {
         Keychain.setGenericPassword(username, password, {
@@ -79,7 +82,7 @@ export const SigninForm = () => {
       setShowLoginError(true);
     }
     setIsLoading(true);
-    authenticate(username, password, testMode)
+    authenticate(username, password, testMode, true)
       .then((response) => {
         if (response !== undefined) setUser(response.user);
       })
@@ -99,17 +102,53 @@ export const SigninForm = () => {
       });
   };
 
+  const handleNonMemberLogin = async () => {
+    try {
+      if (saveCredentials) {
+        Keychain.setGenericPassword(username, password, {
+          service: "non-member-credentials",
+        });
+      }
+    } catch (error) {
+      console.error("Save credentials error", error);
+      setLoginErrorText(
+        "Något gick fel. Kunde inte spara dina inloggningsuppgifter.",
+      );
+      setShowLoginError(true);
+    }
+    setIsLoading(true);
+    authenticate(username, password, testMode, false)
+      .then((response) => {
+        if (response !== undefined) setUser(response.user);
+      })
+      .catch((error) => {
+        console.error("Login error", error.message || error);
+        if (error.message.includes("Network Error")) {
+          setLoginErrorText(
+            `Det går inte att nå servern just nu. ${isTryingStoredCredentials ? "Försöker igen automatiskt" : "Försök igen om en stund."}`,
+          );
+        } else {
+          setLoginErrorText("Något gick fel. Försök igen senare.");
+        }
+        setShowLoginError(true);
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
+  };
 
   const cancelRef = useRef(null);
   return (
     <SafeAreaView flex={1} key={colorMode}>
       <VStack flex={1} bg="$background0" space="lg" padding={20}>
         <Heading size="lg">Välkommen Swagger</Heading>
-        <Heading fontWeight="medium" size="xs">
-          Logga in med dina Mensa.se-uppgifter
-        </Heading>
 
         <VStack flex={1} space="lg" mt={5}>
+
+          <Heading fontWeight="medium" size="xs">
+            {loginAsNonMember ? 'Logga in med dina swag.mensa.se-uppgifter' : 'Logga in med dina Mensa.se-uppgifter'}
+          </Heading>
+
           <Input
             variant="outline"
             isDisabled={isLoading}
@@ -121,10 +160,9 @@ export const SigninForm = () => {
               value={username}
               onChangeText={setUsername}
               height={48}
-              />
+            />
           </Input>
           <Input
-
             variant="outline"
             isDisabled={isLoading}
             height={48}
@@ -135,7 +173,7 @@ export const SigninForm = () => {
               onChangeText={setPassword}
               secureTextEntry={!passwordVisible}
               height={48}
-              />
+            />
             <InputSlot pr="$3" onPress={() => {
               setPasswordVisible((passwordVisible) => {
                 return !passwordVisible
@@ -162,26 +200,54 @@ export const SigninForm = () => {
             <CheckboxLabel>Spara inloggning</CheckboxLabel>
           </Checkbox>
 
-          <HStack space="lg" flex={1} justifyContent="center" paddingBottom={20}>
+          <VStack space="lg" flex={1}>
             {isLoading ? (
               <LoadingScreen/>
             ) : (
-              <Button
-                flex={1}
-                size="md"
-                variant="solid"
-                alignContent="center"
-                justifyContent="center"
-                action="primary"
-                alignItems="center"
-                onPress={handleLogin}
-                isDisabled={!backendConnection}
-                height={48}
-              >
-                <ButtonText style={{ textAlign: 'center' }}> {TEST_MODE ? "Logga in" : "Logga in i testläge"} </ButtonText>
-              </Button>
+              <>
+                <Button
+                  size="md"
+                  height={48}
+                  variant="solid"
+                  action="primary"
+                  bgColor={loginAsNonMember ? "$amber300" : "$primary500"}
+                  onPress={() => {
+                    if (loginAsNonMember) {
+                      handleNonMemberLogin();
+                    } else {
+                      handleMemberLogin();
+                    }
+                  }}
+                  isDisabled={!backendConnection}
+                >
+                  <ButtonText
+                    style={{ textAlign: 'center' }}
+                    color={loginAsNonMember ? "$text900" : "$text0"}
+                  >
+                    {TEST_MODE ? (loginAsNonMember ? "Logga in som medföljande" : "Logga in") : "Logga in i testläge"}
+                  </ButtonText>
+                </Button>
+                <Box flex={1} paddingTop={40} alignItems="center">
+                  {loginAsNonMember ? (
+                    <>
+                      <Link onPress={() => setLoginAsNonMember(false)} alignItems="center" height={48}>
+                        <Text size="sm">Medlem i Mensa Sverige?</Text>
+                        <Text size="sm" color="$primary700">Logga in här</Text>
+                      </Link>
+                    </>
+                  ) : (
+                    <>
+                      <Link onPress={() => setLoginAsNonMember(true)} alignItems="center" height={48}>
+                        <Text size="sm">Medföljande eller internationell medlem?</Text>
+                        <Text size="sm" color="$primary700">Logga in här</Text>
+                      </Link>
+                    </>
+                  )}
+                </Box>
+              </>
             )}
-          </HStack>
+          </VStack>
+          <Box flex={1} />
         </VStack>
         <Modal
           isOpen={showLoginError}
@@ -190,7 +256,7 @@ export const SigninForm = () => {
           size='lg'
         >
           <ModalBackdrop bg="$coolGray500" />
-          <ModalContent >
+          <ModalContent>
             <ModalHeader>
               <Heading size="lg">Fel vid inloggning</Heading>
               <ModalCloseButton>
@@ -209,6 +275,7 @@ export const SigninForm = () => {
                   isDisabled={false}
                   isFocusVisible={false}
                   onPress={() => setShowLoginError(false)}
+                  flex={1}
                 >
                   <ButtonText style={{ textAlign: 'center' }}>OK</ButtonText>
                 </Button>

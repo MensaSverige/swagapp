@@ -1,7 +1,7 @@
 import logging
 import shutil
 from typing import List
-from fastapi import APIRouter, Depends, File, UploadFile
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from v1.utilities import convert_to_tz_aware, get_current_time
 from v1.db.models.user import User, UserLocation, UserUpdate
 from v1.request_filter import validate_request
@@ -17,7 +17,8 @@ async def get_user_by_id(user_id: int):
 
 
 @users_v1.get("/users", response_model=List[User])
-async def get_users(show_location: bool = None):
+async def get_users(show_location: bool = None,
+                    _: dict = Depends(validate_request)):
     if show_location:
         return get_users_showing_location()
     return get_users()

@@ -1,27 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { fetchExternalEvents } from '../services/eventService';
 import { ExternalEventDetails } from '../../../api_schema/types';
-import { Accordion,
-    AccordionContent,
-    AccordionContentText,
-    AccordionHeader,
-    AccordionIcon,
-    AccordionItem,
-    AccordionTitleText,
-    AccordionTrigger,
-    ChevronDownIcon,
-    ChevronUpIcon,
-    Heading,
-    HStack,
-    Link,
-    LinkText,
-    VStack,
-    ScrollView,
-    Text } from '../../../gluestack-components';
+import { Accordion, AccordionContent, AccordionContentText, AccordionHeader, AccordionIcon, AccordionItem, AccordionTitleText, AccordionTrigger, Box, ChevronDownIcon, ChevronUpIcon, Divider, HStack, Link, LinkText, Heading, ScrollView, Spinner, Text, VStack } from '../../../gluestack-components';
 import { filterHtml } from '../../common/functions/filterHtml';
 import { extractLinks } from '../../common/functions/extractLinks';
 import { LoadingScreen } from '../../common/screens/LoadingScreen';
 import LocationLinkButton from '../../common/components/LocationLinkIcon';
+import useStore from '../../common/store/store';
+import NonMemberInfo from '../../common/components/NonMemberInfo';
 
 const getCoordinatesFromUrl = (mapUrl: string) => {
     const url = new URL(mapUrl);
@@ -40,6 +26,7 @@ const getPlaceFromUrl = (mapUrl: string) => {
 export const MyExternalEvents = () => {
     const [events, setEvents] = useState<ExternalEventDetails[]>();
     const [loading, setLoading] = useState(true);
+    const {user} = useStore();
 
     useEffect(() => {
         fetchExternalEvents().then((events) => {
@@ -64,7 +51,9 @@ export const MyExternalEvents = () => {
                     }
 
                     {events && events.length === 0 &&
-                        <Text>Inga bokade aktiviteter</Text>
+                        <Box alignItems='center' paddingVertical={40}>
+                            <Text>Inga bokade aktiviteter</Text>
+                        </Box>
                     }
                 </VStack>
                 {events &&
@@ -149,6 +138,9 @@ export const MyExternalEvents = () => {
                     </Accordion>
                 }
             </ScrollView>
+            {user && !user.isMember && (
+                <NonMemberInfo />
+            )}
         </VStack>
 
     );

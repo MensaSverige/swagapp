@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useColorMode } from '@gluestack-ui/themed';
 import {
     KeyboardAvoidingView,
@@ -24,7 +24,7 @@ import {
     StyleSheet,
 } from 'react-native';
 import { updateUser } from '../services/userService';
-import { User, UserUpdate } from '../../../api_schema/types';
+import { ShowLocation, User, UserUpdate } from '../../../api_schema/types';
 import { Picker } from '@react-native-picker/picker';
 import SettingsSwitchField from '../../common/components/SettingsSwitchField';
 import ShowSettingsLabelIconColor from '../../common/components/ShowSettingsLabelIconColor';
@@ -143,6 +143,18 @@ const UserSettings: React.FC = () => {
     if (!user) {
         return null;
     }
+
+    const locationSharingOptions: {value: ShowLocation, label: string}[] = useMemo(() => user.isMember ? [
+        // Members can choose between all options
+        {value: "ALL_MEMBERS_WHO_SHARE_THEIR_OWN_LOCATION", label: "Visa för andra medlemmar som visar sin position"},
+        {value:                              "ALL_MEMBERS", label: "Visa för alla medlemmar"},
+        {value:    "EVERYONE_WHO_SHARE_THEIR_OWN_LOCATION", label: "Visa för andra deltagare som visar sin position"},
+        {value:                                 "EVERYONE", label: 'Visa för alla'},
+    ] : [
+        // Non-members can only choose between non member specific options
+        {value:    "EVERYONE_WHO_SHARE_THEIR_OWN_LOCATION", label: 'Visa för andra deltagare som visar sin position'},
+        {value:                                 "EVERYONE", label: 'Visa för alla'},
+    ], [user.isMember]);
 
     return (
         //<SafeAreaView style={styles.viewContainer}>
@@ -293,8 +305,7 @@ const UserSettings: React.FC = () => {
                                                 ...formState,
                                                 settings: {
                                                     ...formState.settings,
-                                                    show_location:
-                                                        'ALL_MEMBERS_WHO_SHARE_THEIR_OWN_LOCATION',
+                                                    show_location: user.isMember ? 'ALL_MEMBERS_WHO_SHARE_THEIR_OWN_LOCATION' : 'EVERYONE_WHO_SHARE_THEIR_OWN_LOCATION',
                                                 },
                                             });
                                         } else {
@@ -333,24 +344,20 @@ const UserSettings: React.FC = () => {
                                             });
                                         }}
                                         onBlur={handleBlur}>
-                                        <Picker.Item
-                                            color={
-                                                colorMode == 'dark'
-                                                    ? 'white'
-                                                    : 'black'
-                                            }
-                                            label="Visa för andra som visar sin position"
-                                            value="ALL_MEMBERS_WHO_SHARE_THEIR_OWN_LOCATION"
-                                        />
-                                        <Picker.Item
-                                            color={
-                                                colorMode == 'dark'
-                                                    ? 'white'
-                                                    : 'black'
-                                            }
-                                            label="Visa för alla"
-                                            value="ALL_MEMBERS"
-                                        />
+                                        {locationSharingOptions.map(
+                                            (option, index) => (
+                                                <Picker.Item
+                                                    key={`location-sharing-option-${index}`}
+                                                    color={
+                                                        colorMode == 'dark'
+                                                            ? 'white'
+                                                            : 'black'
+                                                    }
+                                                    label={option.label}
+                                                    value={option.value}
+                                                />
+                                            ),
+                                        )}
                                     </Picker>
                                 )}
                             </Card>
