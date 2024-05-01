@@ -68,6 +68,32 @@ export const tryGetCurrentUser = async (): Promise<AuthResponse | undefined> => 
 
 }
 
+//TODO: fix backend
+export const getUsersByIds = async (userIds: string[]): Promise<User[]> => {
+  if (!userIds || userIds.length === 0) {
+    return Promise.reject('No user ids provided');
+  }
+  return apiClient
+    .get('/users_by_ids', {
+      params: { userIds },
+    })
+    .then(
+      response => {
+        if (response.status === 200) {
+          return response.data;
+        } else {
+          return [];
+        }
+      },
+      error => {
+        throw new Error(error.message || error);
+      },
+    )
+    .catch(error => {
+      console.error('Failed to get users:', error.message || error);
+    });
+}
+
 export const getUser = async (userName: string): Promise<User> => {
   if (!userName) {
     return Promise.reject('No username provided');
