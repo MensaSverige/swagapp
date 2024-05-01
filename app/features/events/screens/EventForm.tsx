@@ -147,17 +147,18 @@ const handleChangeStartDate = useCallback((newStartDate?: Date) => {
   const startDateDelta = newStartDate.getTime() - previousStartDate.getTime();
 
   const newStartDateString = newStartDate.toISOString();
-
+  let newEndDateString = undefined;
   if (endtimeSwitch && formState.end) {
     const previousEndDate = new Date(formState.end);
     // update end date to maintain the same time difference from start date
     const newEndDate = new Date(previousEndDate.getTime() + startDateDelta);
-    const newEndDateString = newEndDate.toISOString();
+    newEndDateString = newEndDate.toISOString();
   }
 
   setFormState(currentFromState => ({
     ...currentFromState,
     start: newStartDateString,
+    end: newEndDateString || currentFromState.end,
   }));
 }, [formState.start, formState.end, endtimeSwitch]);
 
