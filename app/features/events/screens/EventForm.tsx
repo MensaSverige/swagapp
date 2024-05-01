@@ -23,7 +23,7 @@ import {
 } from '../../../gluestack-components';
 import { extractNumericValue } from '../../common/functions/extractNumericValue';
 import SettingsSwitchField from '../../common/components/SettingsSwitchField';
-import EventMapField from './EventMapField';
+import EventMapField from '../components/EventMapField';
 
 type EventFormProps = RouteProp<RootStackParamList, 'EventForm'>;
 
@@ -88,6 +88,10 @@ const EditEventForm: React.FC = () => {
     console.log('Saving event', formState);
     if (!user) {
       console.error('No user found');
+      return;
+    }
+
+    if (!formState.name) {
       return;
     }
 
@@ -280,7 +284,7 @@ const handleChangeEndDate = useCallback((newEndDate?: Date) => {
                       } else {
                         setFormState({
                           ...formState,
-                          maxAttendees: extractNumericValue(value),
+                          maxAttendees: parseInt(extractNumericValue(value) ?? ''),
                         });
                       }
                     }}
@@ -295,21 +299,19 @@ const handleChangeEndDate = useCallback((newEndDate?: Date) => {
                 label="Lägg till adress"
                 value={addressSwitch}
                 onValueChange={() => {
-                  setAddressSwitch(!addressSwitch)
-                  if (!formState) {
-                    return;
+                  if (addressSwitch && formState) {
+                      setFormState({
+                          ...formState,
+                          location: {
+                              ...formState.location,
+                              address: undefined,
+                              latitude: undefined,
+                              longitude: undefined,
+                          }
+                      });
                   }
-                  if (!addressSwitch)
-                    setFormState({
-                      ...formState,
-                      location: {
-                        ...formState.location,
-                        address: undefined,
-                        latitude: undefined,
-                        longitude: undefined,
-                      }
-                    });
-                }}
+                  setAddressSwitch(!addressSwitch);
+              }}
               />
               {addressSwitch && (
                 <EventMapField

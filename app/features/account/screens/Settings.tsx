@@ -239,7 +239,7 @@ const UserSettings: React.FC = () => {
                                                         phone:
                                                             extractNumericValue(
                                                                 phone,
-                                                            )?.toString() || '',
+                                                            ) || '',
                                                     },
                                                 });
                                             }}

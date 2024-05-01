@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { fetchExternalEvents } from '../services/eventService';
 import { ExternalEventDetails } from '../../../api_schema/types';
-import { Accordion, AccordionContent, AccordionContentText, AccordionHeader, AccordionIcon, AccordionItem, AccordionTitleText, AccordionTrigger, Box, ChevronDownIcon, ChevronUpIcon, Divider, HStack, Heading, ScrollView, Spinner, Text, VStack } from '../../../gluestack-components';
+import { Accordion, AccordionContent, AccordionContentText, AccordionHeader, AccordionIcon, AccordionItem, AccordionTitleText, AccordionTrigger, Box, ChevronDownIcon, ChevronUpIcon, Divider, HStack, Link, LinkText, Heading, ScrollView, Spinner, Text, VStack } from '../../../gluestack-components';
 import { filterHtml } from '../../common/functions/filterHtml';
+import { extractLinks } from '../../common/functions/extractLinks';
 import { LoadingScreen } from '../../common/screens/LoadingScreen';
 import LocationLinkButton from '../../common/components/LocationLinkIcon';
 import useStore from '../../common/store/store';
@@ -121,7 +122,16 @@ export const MyExternalEvents = () => {
 
                                     <AccordionContentText>
                                         {filterHtml(event.description)}
+                                        
                                     </AccordionContentText>
+                                    <HStack flex={1} flexDirection="row" flexWrap='wrap' paddingTop={10}>
+                                    {extractLinks(event.description)?.map((link, index) => (
+                                            
+                                            <Link href={link.url} key={index}>
+                                                <LinkText>{link.name}</LinkText>
+                                            </Link>
+                                        ))}
+                                    </HStack>
                                 </AccordionContent>
                             </AccordionItem>
                         ))}

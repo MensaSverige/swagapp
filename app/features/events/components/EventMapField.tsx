@@ -10,6 +10,7 @@ import { Input, InputField, InputIcon, InputSlot, SearchIcon, Text, VStack } fro
 import { HStack } from 'native-base';
 import { EditButton } from '../../common/components/EditButton';
 import { getGeoLocation } from '../../map/services/locationService';
+import MapLocationPreview from '../../map/components/MapLocationPreview';
 
 interface EventMapFieldProps {
     location: UserEventLocation;
@@ -20,24 +21,15 @@ const EventMapField: React.FC<EventMapFieldProps> = ({
     location,
     onLocationChanged,
 }) => {
-    const mapRef = useRef<ReactNativeMapView | null>(null);
+    
     const colorMode = useColorMode();
-    const { region } = useStore();
+    
     const [addressEditEnabled, setAddressEditEnabled] = useState(location?.address ? false : true);
     const [locationForm, setLocationField] = useState({ ...location });
     if (!locationForm) {
         return null;
     }
-    useEffect(() => {
-        if (mapRef.current && locationForm && locationForm.latitude && locationForm.longitude) {
-            mapRef.current.animateToRegion({
-                latitude: locationForm.latitude,
-                longitude: locationForm.longitude,
-                latitudeDelta: region.latitudeDelta,
-                longitudeDelta: region.longitudeDelta,
-            }, 350);
-        }
-    }, [locationForm.latitude, locationForm.longitude]);
+
 
     const searchLocation = useCallback(() => {
         if (!locationForm.address || locationForm.address.trim() === '') {
@@ -86,24 +78,11 @@ const EventMapField: React.FC<EventMapFieldProps> = ({
 
             <VStack paddingTop={10}>
                 {!addressEditEnabled && locationForm.address && locationForm.latitude && locationForm.longitude && (
-                    <MapView
-                        style={{ height: 120 }}
-                        initialRegion={{
-                            latitude: locationForm.latitude,
-                            longitude: locationForm.longitude,
-                            latitudeDelta: 0.001,
-                            longitudeDelta: 0.001,
-                        }}
-                        customMapStyle={colorMode === 'dark'
-                            ? darkMapstyle
-                            : lightMapstyle}>
-                        <Marker
-                            coordinate={{
-                                latitude: locationForm.latitude,
-                                longitude: locationForm.longitude,
-                            }}
-                        />
-                    </MapView>
+                    <MapLocationPreview 
+                        latitude={locationForm.latitude}
+                        longitude={locationForm.longitude}
+                        colorMode={colorMode}
+                    />
                 )}
                 {!addressEditEnabled && locationForm.address && (
                     <HStack space="md" justifyContent="space-between" alignItems="center">
