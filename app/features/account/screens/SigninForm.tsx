@@ -239,7 +239,7 @@ export const SigninForm = () => {
                     <>
                       <Link onPress={() => setLoginAsNonMember(true)} alignItems="center" height={48}>
                         <Text size="sm">Medföljande eller internationell medlem?</Text>
-                        <Text size="sm" color="$amber700">Logga in här</Text>
+                        <Text size="sm" color="$primary700">Logga in här</Text>
                       </Link>
                     </>
                   )}

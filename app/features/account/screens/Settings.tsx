@@ -148,11 +148,11 @@ const UserSettings: React.FC = () => {
         // Members can choose between all options
         {value: "ALL_MEMBERS_WHO_SHARE_THEIR_OWN_LOCATION", label: "Visa för andra medlemmar som visar sin position"},
         {value:                              "ALL_MEMBERS", label: "Visa för alla medlemmar"},
-        {value:    "EVERYONE_WHO_SHARE_THEIR_OWN_LOCATION", label: "Visa för alla som visar sin position"},
+        {value:    "EVERYONE_WHO_SHARE_THEIR_OWN_LOCATION", label: "Visa för andra deltagare som visar sin position"},
         {value:                                 "EVERYONE", label: 'Visa för alla'},
     ] : [
         // Non-members can only choose between non member specific options
-        {value:    "EVERYONE_WHO_SHARE_THEIR_OWN_LOCATION", label: 'Visa för andra som visar sin position'},
+        {value:    "EVERYONE_WHO_SHARE_THEIR_OWN_LOCATION", label: 'Visa för andra deltagare som visar sin position'},
         {value:                                 "EVERYONE", label: 'Visa för alla'},
     ], [user.isMember]);
 
@@ -305,8 +305,7 @@ const UserSettings: React.FC = () => {
                                                 ...formState,
                                                 settings: {
                                                     ...formState.settings,
-                                                    show_location:
-                                                        'EVERYONE_WHO_SHARE_THEIR_OWN_LOCATION',
+                                                    show_location: user.isMember ? 'ALL_MEMBERS_WHO_SHARE_THEIR_OWN_LOCATION' : 'EVERYONE_WHO_SHARE_THEIR_OWN_LOCATION',
                                                 },
                                             });
                                         } else {
