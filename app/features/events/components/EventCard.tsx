@@ -1,5 +1,7 @@
 import {
   AlertDialog,
+  Badge,
+  BadgeText,
   Box,
   Button,
   ButtonText,
@@ -12,6 +14,7 @@ import {
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, TouchableOpacity } from 'react-native';
 import TimeLeft from '../utilities/TimeLeft';
+import { useColorMode } from '@gluestack-ui/themed';
 import FutureUserEvent, { isFutureUserEvent } from '../types/futureUserEvent';
 import useStore from '../../common/store/store';
 import { formatDateAndTime } from '../../common/functions/FormatDateAndTime';
@@ -19,12 +22,15 @@ import FutureEvent from '../types/futureEvent';
 import { useEventLists } from '../hooks/useEventLists';
 import { SmallDeleteButton } from '../../common/components/SmallDeleteButton';
 import { EditButton } from '../../common/components/EditButton';
+import AddressLinkAndIcon from '../../common/components/AddressLinkAndIcon';
+import { BadgeCheckIcon } from 'lucide-react-native';
 
 const EventCard: React.FC<{
   event: FutureEvent | FutureUserEvent;
   initiallyOpen?: boolean;
   onEditEvent: (event: FutureUserEvent) => void;
 }> = ({ event, initiallyOpen = false, onEditEvent }) => {
+  const colorMode = useColorMode();
   const user = useStore(state => state.user);
   const [open, setOpen] = React.useState(initiallyOpen || false);
   const [comparisonDate, setComparisonDate] = React.useState(new Date());
@@ -70,61 +76,62 @@ const EventCard: React.FC<{
           {isFutureUserEvent(event) && event.userId === user?.userId && (
             <EditButton onPress={onEditPress} />
           )}
+          {user?.userId && isUserAttending(event, user?.userId) &&
+            <Badge size="lg" variant="outline" borderRadius="$full" action="success">
+              <BadgeText>Anmäld</BadgeText>
+            </Badge>
+          }
+
         </Box>
         {open && (
           <>
+
             <Text>{event.description}</Text>
+
             {isFutureUserEvent(event) && (
               <>
-                <Box flex={1} flexDirection="row">
-                  <Heading size="sm">{`Värd${
-                    hostNames.length === 1 ? '' : 'ar'
-                  }: `}</Heading>
+                <HStack flex={1} flexDirection="row" flexWrap='wrap'>
+                  <Heading size="sm">{`Värd${hostNames.length === 1 ? '' : 'ar'
+                    }: `}</Heading>
                   <Text>{hostNames.join(', ')}</Text>
-                </Box>
+                </HStack>
 
                 {event.maxAttendees && (
-                  <Box flex={1} flexDirection="row">
+                  <HStack flex={1} flexDirection="row" flexWrap='wrap'>
                     <Heading size="sm">Platser kvar: </Heading>
                     <Text>
-                      {`${
-                        event.maxAttendees - (event.attendees?.length || 0)
-                      } av ${event.maxAttendees}`}
+                      {`${event.maxAttendees - (event.attendees?.length || 0)
+                        } av ${event.maxAttendees}`}
                     </Text>
-                  </Box>
+                  </HStack>
                 )}
               </>
             )}
-            <Box flex={1} flexDirection="row">
+            <HStack flex={1} flexDirection="row" flexWrap='wrap'>
               <Heading size="sm">Start:</Heading>
               <Text> {formatDateAndTime(event.start)}</Text>
-            </Box>
+            </HStack>
             {event.end && (
-              <Box flex={1} flexDirection="row">
+              <HStack flex={1} flexDirection="row" flexWrap='wrap'>
                 <Heading size="sm">Slut:</Heading>
                 <Text> {formatDateAndTime(event.end)}</Text>
-              </Box>
+              </HStack>
             )}
-            <Box flex={1} flexDirection="row">
+            <VStack space="sm" flex={1} paddingVertical={5}>
+              <Heading size="sm">Plats: </Heading>
               {event.location?.address && (
-                <>
-                  <Heading size="sm">Adress: </Heading>
-                  <Text>
-                    {event.location?.address.includes(', Sweden')
-                      ? event.location?.address.replace(', Sweden', '')
-                      : event.location?.address}
-                  </Text>
-                </>
+                <HStack flex={1} flexDirection="row" flexWrap='wrap'>
+                  <AddressLinkAndIcon
+                    address={event.location.address}
+                  />
+                </HStack>
               )}
-            </Box>
-            <Box flex={1} flexDirection="row">
               {event.location?.description && (
-                <>
-                  <Heading size="sm">Platsbeskrivning:</Heading>
-                  <Text> {event.location?.description || ''}</Text>
-                </>
+                <HStack flex={1} flexDirection="row" flexWrap='wrap'>
+                  <Text>{event.location?.description || ''}</Text>
+                </HStack>
               )}
-            </Box>
+            </VStack>
             {user && isFutureUserEvent(event) && (
               <Attending event={event} userId={user.userId} />
             )}
@@ -132,6 +139,12 @@ const EventCard: React.FC<{
         )}
       </Card>
     </TouchableOpacity>
+  );
+};
+
+export const isUserAttending = (event: FutureUserEvent, userId: number) => {
+  return event.attendees?.some(
+    attendee => attendee.userId === userId,
   );
 };
 
@@ -151,9 +164,7 @@ const Attending: React.FC<{
     return <AttendanceManager event={event} />;
   }
 
-  const attending = event.attendees?.some(
-    attendee => attendee.userId === userId,
-  );
+  const attending = isUserAttending(event, userId);
 
   const handlePressAttend = () => {
     setChangingAttendance(true);
@@ -188,7 +199,6 @@ const Attending: React.FC<{
   if (attending) {
     return (
       <VStack flex={1} gap={5} mt={10}>
-        <Text>Du är anmäld!</Text>
         <Button onPress={handlePressUnattend} style={{ width: '100%' }}>
           <ButtonText style={{ textAlign: 'center' }}>
             Ta bort anmälan
