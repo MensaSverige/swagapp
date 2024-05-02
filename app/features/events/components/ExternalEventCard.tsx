@@ -100,7 +100,7 @@ const ExternalEventCard: React.FC<{
             source={{ uri: event.imageUrl300 }}
             alt="Image"
             width="$full"
-            height={150}
+            height={200} // 3:2 aspect ratio
           />
         )}
         <Heading size="md" fontFamily="$heading" mb="$4">
