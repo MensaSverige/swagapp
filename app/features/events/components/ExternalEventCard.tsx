@@ -17,21 +17,8 @@ import UserAvatar from '../../map/components/UserAvatar';
 import { displayLocaleTimeStringDate } from '../screens/MyExternalEvents';
 import { filterHtml } from '../../common/functions/filterHtml';
 import { extractLinks } from '../../common/functions/extractLinks';
-import LocationLinkButton from '../../common/components/LocationLinkIcon';
-
-const getCoordinatesFromUrl = (mapUrl: string) => {
-  const url = new URL(mapUrl);
-  const params = new URLSearchParams(url.search);
-  const coordinates = params.get('@');
-  const latitude = coordinates ? parseFloat(coordinates.split(',')[0]) : 0;
-  const longitude = coordinates ? parseFloat(coordinates.split(',')[1]) : 0;
-  return { latitude, longitude };
-};
-
-const getPlaceFromUrl = (mapUrl: string) => {
-  const match = mapUrl.match(/maps\/place\/([^/]+)\//);
-  return match ? decodeURIComponent(match[1]) : null;
-};
+import { AddressLinkAndIcon } from '../../map/components/AddressLinkAndIcon';
+import { parseMapUrl } from '../../map/functions/parseMapUrl';
 
 
 function formatSpeakerInfo(description: string): string {
@@ -77,108 +64,112 @@ const ExternalEventCard: React.FC<{
   }, [capitalizedSpeakerInfo]);
 
   return (
-<ScrollView width="$full">
-    <Card  width="$full">
-      <Text
-        fontSize="$sm"
-        fontStyle="normal"
-        fontFamily="$heading"
-        fontWeight="$normal"
-        lineHeight="$sm"
-        mb="$0"
-      >
-        {displayLocaleTimeStringDate(event.eventDate ?? "")}
+    <ScrollView width="$full">
+      <Card width="$full">
+        <Text
+          fontSize="$sm"
+          fontStyle="normal"
+          fontFamily="$heading"
+          fontWeight="$normal"
+          lineHeight="$sm"
+          mb="$0"
+        >
+          {displayLocaleTimeStringDate(event.eventDate ?? "")}
 
-      </Text>
-      <Text mb="$3" size="sm" color='$teal700' paddingTop={2}>
-        {event.startTime} - {event.endTime}
-      </Text>
-      <VStack mb="$2">
-        {event.imageUrl300 && (
-          <Image
-            mb="$2"
-            source={{ uri: event.imageUrl300 }}
-            alt="Image"
-            width="$full"
-            height={200} // 3:2 aspect ratio
-          />
-        )}
-        <Heading size="md" fontFamily="$heading" mb="$4">
-          {event.titel}
-        </Heading>
-        {event.speaker && (
-          <Box >
+        </Text>
+        <Text mb="$3" size="sm" color='$teal700' paddingTop={2}>
+          {event.startTime} - {event.endTime}
+        </Text>
+        <VStack mb="$2">
+          {event.imageUrl300 && (
+            <Image
+              mb="$2"
+              source={{ uri: event.imageUrl300 }}
+              alt="Image"
+              width="$full"
+              height={200} // 3:2 aspect ratio
+            />
+          )}
+          <Heading size="md" fontFamily="$heading" mb="$0">
+            {event.titel}
+          </Heading>
+          {event.mapUrl ? 
+            (() => {
+              const searchParameters = parseMapUrl(event.mapUrl);
+              if (searchParameters) {
+                return (
+                  <HStack justifyContent="flex-start" mb="$0">
+                    <AddressLinkAndIcon
+                      displayName={event.location || undefined}
+                      latitude={searchParameters.latitude}
+                      longitude={searchParameters.longitude}
+                      landmark={searchParameters.landmark || event.location}
+                      searchParameters={searchParameters.searchParameters}
+                    />
+                  </HStack>
+                );
+              }
+            })()
+            : 
+            <Text color="$vscode_customLiteral" size="sm" fontFamily="$heading" mb="$3"> 
+              {/* todo: add links for all events at the hotel */}
+              {event.location} 
+            </Text>
+          }
+
+          {event.speaker && (
+            <Box >
+              <VStack flex={1} flexDirection="row" flexWrap='wrap' mb="$4">
+                <Heading size="sm" fontFamily="$heading" mb="$1">
+                  {event.speaker}
+                </Heading>
+                {capitalizedSpeakerInfo && (
+                  <Text size="sm" fontFamily="$heading">
+                    {filterHtml(capitalizedSpeakerInfo)}
+                  </Text>
+                )}
+              </VStack>
+            </Box>
+
+          )}
+          <Divider mb="$4" />
+          <Text size="sm" fontFamily="$heading">
+            {filterHtml(event.description)}
+          </Text>
+          <HStack flex={1} flexDirection="row" flexWrap='wrap' paddingTop={10}>
+            {extractLinks(event.description)?.map((link, index) => (
+              <Link href={link.url} key={index}>
+                <LinkText>{link.name}</LinkText>
+              </Link>
+            ))}
+          </HStack>
+        </VStack>
+        {admins && admins.map((admin) => (
+          <Box flexDirection="row">
+            <UserAvatar
+              key={admin.userId}
+              avatarSize="sm"
+              firstName={admin.firstName}
+              lastName={admin.lastName}
+              avatar_url={admin.avatar_url ?? ""}
+              onlineStatus="offline"
+            />
+
             <VStack flex={1} flexDirection="row" flexWrap='wrap' mb="$4">
               <Heading size="sm" fontFamily="$heading" mb="$1">
-                {event.speaker}
+                {admin.firstName} {admin.lastName}
               </Heading>
-              {capitalizedSpeakerInfo && (
-                <Text size="sm" fontFamily="$heading">
-                  {filterHtml(capitalizedSpeakerInfo)}
-                </Text>
-              )}
             </VStack>
           </Box>
-          
-        )}
-        <Divider mb="$4" />
-        <Text size="sm" fontFamily="$heading">
-          {filterHtml(event.description)}
-        </Text>
-        <HStack flex={1} flexDirection="row" flexWrap='wrap' paddingTop={10}>
-          {extractLinks(event.description)?.map((link, index) => (
-            <Link href={link.url} key={index}>
-              <LinkText>{link.name}</LinkText>
-            </Link>
-          ))}
-        </HStack>
-      </VStack>
-      {admins && admins.map((admin) => (
-        <Box flexDirection="row">
-          <UserAvatar
-            key={admin.userId}
-            avatarSize="sm"
-            firstName={admin.firstName}
-            lastName={admin.lastName}
-            avatar_url={admin.avatar_url ?? ""}
-            onlineStatus="offline"
-          />
+        ))}
 
-          <VStack flex={1} flexDirection="row" flexWrap='wrap' mb="$4">
-            <Heading size="sm" fontFamily="$heading" mb="$1">
-              {admin.firstName} {admin.lastName}
-            </Heading>
-          </VStack>
-        </Box>
-      ))}
-      {event.mapUrl &&
-        (() => {
-          const place = getPlaceFromUrl(event.mapUrl);
-          if (place) {
-            return (
-              <HStack justifyContent="flex-end">
-                <LocationLinkButton landmark={place} />
-              </HStack>
-            );
-          } else {
-            const { latitude, longitude } = getCoordinatesFromUrl(event.mapUrl);
-            if (latitude !== 0 && longitude !== 0) {
-              return (
-                <HStack justifyContent="flex-end">
-                  <LocationLinkButton latitude={latitude} longitude={longitude} />
-                </HStack>
-              );
-            }
-          }
-        })()
-      }
-      {/* <AddressLinkAndIcon
+        {/* <AddressLinkAndIcon
         address={event.location}
         latitude={event.latitude}
         longitude={event.longitude}
       /> */}
-    </Card>
-  </ScrollView>
+      </Card>
+    </ScrollView>
   );
 };
 

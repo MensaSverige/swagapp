@@ -1,6 +1,6 @@
 import React from 'react';
-import { Card, HStack, Text, VStack } from '../../../gluestack-components';
-import LocationLinkButton from '../components/LocationLinkIcon';
+import { Card, Text, VStack } from '../../../gluestack-components';
+import {LocationLinkButton} from '../../map/components/LocationLinkIcon';
 
 const StartscreenFaq = () => {
     return (
