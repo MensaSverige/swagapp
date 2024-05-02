@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { fetchExternalEvents } from '../services/eventService';
 import { ExternalEventDetails } from '../../../api_schema/types';
 import {
-    Box, 
+    Box,
     Divider, HStack, Heading, ScrollView,
     Text,
     Pressable,
@@ -60,11 +60,10 @@ const getEventCategoryBadge = (categoryCode: string, color: string) => {
 export const MyExternalEvents = () => {
     const vscode_customLiteral = useToken("colors", "vscode_customLiteral")
     const vscode_numberLiteral = useToken("colors", "vscode_numberLiteral")
-    const [ events, setEvents ] = useState<ExternalEventDetails[]>();
-    const [ groupedEvents, setGroupedEvents ] = useState<{ [key: string]: ExternalEventDetails[] }>({});
-    const [ selectedEvent, setSelectedEvent ] = useState<ExternalEventDetails | undefined>(events ? events[0] : undefined);
-    const [ openModal, setOpenModal ] = useState(false);
-    const [ loading, setLoading ] = useState(true);
+    const [events, setEvents] = useState<ExternalEventDetails[]>();
+    const [groupedEvents, setGroupedEvents] = useState<{ [key: string]: ExternalEventDetails[] }>({});
+    const [selectedEvent, setSelectedEvent] = useState<ExternalEventDetails | null>(events ? events[0] : null);
+    const [loading, setLoading] = useState(true);
     const { user } = useStore();
 
     useEffect(() => {
@@ -87,11 +86,24 @@ export const MyExternalEvents = () => {
             setGroupedEvents(newGroupedEvents);
             setLoading(false);
         });
+        console.log('fetching events');
+    }, []);
+
+    const handlePress = useCallback((event: ExternalEventDetails) => {
+        setSelectedEvent(event);
     }, []);
 
     return (
 
         <VStack flex={1} space="sm" h="100%" bg="$background0">
+            {selectedEvent && (
+                <ExternalEventCardModal
+                    event={selectedEvent}
+                    open={!!selectedEvent}
+                    onClose={() => {
+                        setSelectedEvent(null)
+                    }} />
+            )}
             <Heading size="xl" paddingHorizontal={20}>Mina bokade aktiviteter</Heading>
             <ScrollView flex={1}>
                 <VStack space="lg" flex={1} justifyContent="center">
@@ -106,54 +118,46 @@ export const MyExternalEvents = () => {
                     }
                 </VStack>
                 {Object.keys(groupedEvents).map((date) => (
-                    
+
                     <VStack key={date} space="sm" paddingHorizontal={20}>
                         <Heading color="$primary900" size="lg" >{displayLocaleTimeStringDate(date ?? "")}</Heading>
                         <Divider />
                         {groupedEvents[date].map((event) => (
-                            <Pressable key={event.eventId} onPress={() => {
-                                setSelectedEvent(event)
-                                setOpenModal(true);
-                            }}>
-                            <HStack key={event.eventId} space="sm" paddingVertical={10}>
-                                <VStack justifyContent="flex-start" alignItems="center">
-                                    <Text size="md" color='$teal500' paddingTop={2}>
-                                        {event.startTime}
-                                    </Text>
-                                    <Text size='md' color='$teal800'>
-                                        {event.endTime}
-                                    </Text>
-                                </VStack>
-                                <VStack flex={1} paddingLeft={10}>
-                                    <HStack space="md" justifyContent="space-between" alignItems="center">
-                                        <Heading size="md" color="$primary600" style={{ flex: 1 }}>
-                                            {event.titel}
-                                        </Heading>
-                                        {event.categories?.map((category, index) => (
-                                            <Text key={index} color="$vscode_customLiteral" style={{ paddingLeft: 10, maxWidth: 45 }}>
-                                                {getEventCategoryBadge(category.code, `#${category.colorBackground}`)}
-                                            </Text>
-                                        ))}
-                                    </HStack>
-                                    <Text color="$vscode_customLiteral" style={{ marginBottom: 10 }}>
-                                        {/* <FontAwesomeIcon icon={faMountainCity} size={14} style={{ color: vscode_customLiteral, marginRight: 10 }} /> */}
-                                        {event.location}
-                                    </Text>
-                                </VStack>
-                            </HStack>
+                            <Pressable key={event.eventId} onPress={() => handlePress(event)}>
+
+                                <HStack key={event.eventId} space="sm" paddingVertical={10}>
+                                    <VStack justifyContent="flex-start" alignItems="center">
+                                        <Text size="md" color='$teal500' paddingTop={2}>
+                                            {event.startTime}
+                                        </Text>
+                                        <Text size='md' color='$teal800'>
+                                            {event.endTime}
+                                        </Text>
+                                    </VStack>
+                                    <VStack flex={1} paddingLeft={10}>
+                                        <HStack space="md" justifyContent="space-between" alignItems="center">
+                                            <Heading size="md" color="$primary600" style={{ flex: 1 }}>
+                                                {event.titel}
+                                            </Heading>
+                                            {event.categories?.map((category, index) => (
+                                                <Text key={index} color="$vscode_customLiteral" style={{ paddingLeft: 10, maxWidth: 45 }}>
+                                                    {getEventCategoryBadge(category.code, `#${category.colorBackground}`)}
+                                                </Text>
+                                            ))}
+                                        </HStack>
+                                        <Text color="$vscode_customLiteral" style={{ marginBottom: 10 }}>
+                                            {/* <FontAwesomeIcon icon={faMountainCity} size={14} style={{ color: vscode_customLiteral, marginRight: 10 }} /> */}
+                                            {event.location}
+                                        </Text>
+                                    </VStack>
+                                </HStack>
                             </Pressable>
                         ))}
-                    
+
                     </VStack>
 
                 ))}
-                {selectedEvent && ( 
-                <ExternalEventCardModal 
-                event={selectedEvent} 
-                open={openModal} 
-                onClose={() => {
-                    setOpenModal(false)}} />
-                )}
+
             </ScrollView>
             {user && !user.isMember && (
                 <NonMemberInfo />

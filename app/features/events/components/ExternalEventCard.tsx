@@ -11,7 +11,7 @@ import {
   Text,
   VStack,
 } from '../../../gluestack-components';
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { ExternalEventDetails, User } from '../../../api_schema/types';
 import UserAvatar from '../../map/components/UserAvatar';
 import { displayLocaleTimeStringDate } from '../screens/MyExternalEvents';
@@ -46,7 +46,7 @@ const ExternalEventCard: React.FC<{
 }> = ({ eventDetails }) => {
   const [event, setEvent] = useState<ExternalEventDetails>(eventDetails);
   const [admins, setAdmins] = useState<User[] | null>(null);
-  const capitalizedSpeakerInfo = formatSpeakerInfo(eventDetails.description);
+  const capitalizedSpeakerInfo = useMemo(() => formatSpeakerInfo(eventDetails.description), [eventDetails.description]);
 
   //TODO: jag är trött 
   // useEffect(() => {
@@ -56,12 +56,31 @@ const ExternalEventCard: React.FC<{
   //   }
   // }, [eventDetails.admins]);
 
+
+  const renderAddressLinkAndIcon = useCallback(() => {
+    if (!event.mapUrl) return null;
+    const searchParameters = parseMapUrl(event.mapUrl);
+    if (searchParameters) {
+      return (
+        <HStack justifyContent="flex-start" mb="$0">
+          <AddressLinkAndIcon
+            displayName={event.location || undefined}
+            latitude={searchParameters.latitude}
+            longitude={searchParameters.longitude}
+            landmark={searchParameters.landmark || event.location}
+            searchParameters={searchParameters.searchParameters}
+          />
+        </HStack>
+      );
+    }
+  }, [event.mapUrl, event.location]);
+
   useEffect(() => {
-    if (capitalizedSpeakerInfo) {
+    if (capitalizedSpeakerInfo && event.description.includes('<em>')) {
       const updatedDescription = removeLastEmTag(event.description);
       setEvent(prevEvent => ({ ...prevEvent, description: updatedDescription }));
     }
-  }, [capitalizedSpeakerInfo]);
+  }, [capitalizedSpeakerInfo, event.description]);
 
   return (
     <ScrollView width="$full">
@@ -94,22 +113,7 @@ const ExternalEventCard: React.FC<{
             {event.titel}
           </Heading>
           {event.mapUrl ? 
-            (() => {
-              const searchParameters = parseMapUrl(event.mapUrl);
-              if (searchParameters) {
-                return (
-                  <HStack justifyContent="flex-start" mb="$0">
-                    <AddressLinkAndIcon
-                      displayName={event.location || undefined}
-                      latitude={searchParameters.latitude}
-                      longitude={searchParameters.longitude}
-                      landmark={searchParameters.landmark || event.location}
-                      searchParameters={searchParameters.searchParameters}
-                    />
-                  </HStack>
-                );
-              }
-            })()
+            renderAddressLinkAndIcon()
             : 
             <Text color="$vscode_customLiteral" size="sm" fontFamily="$heading" mb="$3"> 
               {/* todo: add links for all events at the hotel */}

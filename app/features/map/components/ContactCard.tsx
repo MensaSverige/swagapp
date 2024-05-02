@@ -7,7 +7,8 @@ import { gluestackUIConfig } from '../../../gluestack-components/gluestack-ui.co
 import UserAvatar, { getOnlineStatusColor } from './UserAvatar';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faDiamondTurnRight, faEnvelope, faLocationArrow, faMap, faPhone } from '@fortawesome/free-solid-svg-icons';
-import LocationLinkButton from './LocationLinkIcon';
+import { LocationLinkButton } from './LocationLinkIcon';
+
 
 type ContactCardProps = {
     user: UserWithLocation;
