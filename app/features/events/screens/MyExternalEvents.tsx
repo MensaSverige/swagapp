@@ -127,7 +127,7 @@ export const MyExternalEvents = () => {
                                             {event.titel}
                                         </Heading>
                                         {event.categories?.map((category, index) => (
-                                            <Text key={index} color="$vscode_customLiteral" style={{ paddingLeft: 10 }}>
+                                            <Text key={index} color="$vscode_customLiteral" style={{ paddingLeft: 10, width: 45 }}>
                                                 {getEventCategoryBadge(category.code, `#${category.colorBackground}`)}
                                             </Text>
                                         ))}
