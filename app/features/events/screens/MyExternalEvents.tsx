@@ -19,6 +19,7 @@ import {
     LectureBadge,
     MicVocalBadge,
     PartyBadge,
+    TeenBadge,
     WorkshopBadge
 } from '../components/EventBadges';
 import ExternalEventCardModal from '../components/ExternalEventCardModal';
@@ -43,6 +44,8 @@ const getEventCategoryBadge = (categoryCode: string, color: string) => {
             return <PartyBadge color="$pink700" />;
         case 'S': // spel/tävling
             return <GameBadge color="$secondary600" />;
+        case 'U': // ungdomsaktivitet
+            return <TeenBadge color="$fuchsia500" />;
         case 'Up': //uppträdande
             return <MicVocalBadge color="$amber600" />;
         case 'Ut': // utflykt

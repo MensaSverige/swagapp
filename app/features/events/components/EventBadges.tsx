@@ -8,7 +8,8 @@ import {
   FootprintsIcon,
   GlobeIcon, HandIcon,
   MicVocalIcon, PresentationIcon,
-  SparklesIcon
+  SparklesIcon,
+  SproutIcon
 } from "lucide-react-native";
 
 export interface EventBadgesProps {
@@ -38,6 +39,12 @@ export const GameBadge: React.FC<EventBadgesProps> = ({ color, size }) => (
 export const GlobeBadge: React.FC<EventBadgesProps> = ({ color, size }) => (
   <Badge size="sm" bgColor={color} variant="solid" borderRadius="$full" ml="$1">
   <Icon as={GlobeIcon} color="#fff" />
+</Badge>
+);
+
+export const TeenBadge: React.FC<EventBadgesProps> = ({ color, size }) => (
+  <Badge size="sm" bgColor={color} variant="solid" borderRadius="$full" ml="$1">
+  <Icon as={SproutIcon} color="#fff" />
 </Badge>
 );
 
