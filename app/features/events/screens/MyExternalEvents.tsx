@@ -101,8 +101,8 @@ export const MyExternalEvents = () => {
     useEffect(() => {
         if (!groupedEvents || Object.keys(groupedEvents).length === 0) return;
         const findNextEvent = () => {
-            // const now = new Date();
-            const now = new Date(2024, 4, 9, 18, 10, 0);
+            const now = new Date();
+            // const now = new Date(2024, 4, 9, 18, 10, 0);
             let nextEventTemp: ExternalEventDetails | null = null;
     
             for (const date in groupedEvents) {
