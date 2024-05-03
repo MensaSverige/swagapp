@@ -166,16 +166,15 @@ export const MyExternalEvents = () => {
                         setSelectedEvent(null)
                     }} />
             )}
-            <HStack space='sm' alignItems='center'>
+            <HStack space='sm' alignItems='center' height={50}>
                 <Heading size="xl" paddingHorizontal={20}>Mina bokade aktiviteter</Heading>
                 {nextEvent && (
                     <Box flex={1} style={{alignItems: 'flex-end'}}>
                         <Pressable
                             onPress={scrollToCurrentEvent}
                             minWidth={50}
-                            minHeight={50}
-                            marginLeft={10}
-                            marginRight={20}
+                            height={50}
+                            marginHorizontal={10}
                             alignItems='center'
                             justifyContent='center'
                         >
