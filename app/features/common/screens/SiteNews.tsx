@@ -39,8 +39,8 @@ export const SiteNews = () => {
             {news &&
                 news.map((news) => (
                     <Card key={news.title} paddingHorizontal={0} size="sm" variant="ghost" m="$0" >
-                        <Heading color="$amber400">{filterHtml(news.title ?? "")}</Heading>
-                        <Text color="$secondary600" bold>
+                        <Heading color="$news_title">{filterHtml(news.title ?? "")}</Heading>
+                        <Text color="$vscode_numberLiteral" bold>
                             {new Date(news.date ?? "").toLocaleDateString()}{' '}
                             {new Date(news.date ?? "").toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </Text>

@@ -1,32 +1,70 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { fetchExternalEvents } from '../services/eventService';
 import { ExternalEventDetails } from '../../../api_schema/types';
-import { Accordion, AccordionContent, AccordionContentText, AccordionHeader, AccordionIcon, AccordionItem, AccordionTitleText, AccordionTrigger, Box, ChevronDownIcon, ChevronUpIcon, Divider, HStack, Link, LinkText, Heading, ScrollView, Spinner, Text, VStack } from '../../../gluestack-components';
-import { filterHtml } from '../../common/functions/filterHtml';
-import { extractLinks } from '../../common/functions/extractLinks';
+import {
+    Box,
+    Divider, HStack, Heading, ScrollView,
+    Text,
+    Pressable,
+    VStack,
+} from '../../../gluestack-components';
+import { useToken, } from "@gluestack-ui/themed"
 import { LoadingScreen } from '../../common/screens/LoadingScreen';
-import LocationLinkButton from '../../common/components/LocationLinkIcon';
 import useStore from '../../common/store/store';
 import NonMemberInfo from '../../common/components/NonMemberInfo';
+import {
+    FootprintsBadge,
+    GameBadge,
+    GlobeBadge,
+    LectureBadge,
+    MicVocalBadge,
+    PartyBadge,
+    TeenBadge,
+    WorkshopBadge
+} from '../components/EventBadges';
+import ExternalEventCardModal from '../components/ExternalEventCardModal';
 
-const getCoordinatesFromUrl = (mapUrl: string) => {
-    const url = new URL(mapUrl);
-    const params = new URLSearchParams(url.search);
-    const coordinates = params.get('@');
-    const latitude = coordinates ? parseFloat(coordinates.split(',')[0]) : 0;
-    const longitude = coordinates ? parseFloat(coordinates.split(',')[1]) : 0;
-    return { latitude, longitude };
-};
 
-const getPlaceFromUrl = (mapUrl: string) => {
-    const match = mapUrl.match(/maps\/place\/([^/]+)\//);
-    return match ? decodeURIComponent(match[1]) : null;
-};
+export const displayLocaleTimeStringDate = (datestring: string) => {
+    const date: Date = new Date(datestring ?? "");
+    const weekday = date.toLocaleDateString('sv-SE', { weekday: 'long' });
+    const capitalizedWeekday = weekday.charAt(0).toUpperCase() + weekday.slice(1);
+    const dayMonth = date.toLocaleDateString('sv-SE', { day: 'numeric', month: 'long' });
+    const time = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    return `${capitalizedWeekday} ${dayMonth}`;
+}
+
+const getEventCategoryBadge = (categoryCode: string, color: string) => {
+    switch (categoryCode) {
+        case 'F': // föreläsning
+            return <LectureBadge color="$primary500" />;
+        case 'Fö': // föreningsarbete
+            return <GlobeBadge color="$darkBlue700" />;
+        case 'M': // middag/festligheter
+            return <PartyBadge color="$pink700" />;
+        case 'S': // spel/tävling
+            return <GameBadge color="$secondary600" />;
+        case 'U': // ungdomsaktivitet
+            return <TeenBadge color="$fuchsia500" />;
+        case 'Up': //uppträdande
+            return <MicVocalBadge color="$amber600" />;
+        case 'Ut': // utflykt
+            return <FootprintsBadge color="$lime600" />;
+        case 'W': // workshop
+            return <WorkshopBadge color="$purple600" />;
+        default:
+            return null; // Return null or some default icon when the category code doesn't match any known codes
+    }
+}
 
 export const MyExternalEvents = () => {
+    const vscode_customLiteral = useToken("colors", "vscode_customLiteral")
+    const vscode_numberLiteral = useToken("colors", "vscode_numberLiteral")
     const [events, setEvents] = useState<ExternalEventDetails[]>();
+    const [groupedEvents, setGroupedEvents] = useState<{ [key: string]: ExternalEventDetails[] }>({});
+    const [selectedEvent, setSelectedEvent] = useState<ExternalEventDetails | null>(events ? events[0] : null);
     const [loading, setLoading] = useState(true);
-    const {user} = useStore();
+    const { user } = useStore();
 
     useEffect(() => {
         fetchExternalEvents().then((events) => {
@@ -35,14 +73,37 @@ export const MyExternalEvents = () => {
                 const dateB = b.eventDate ? new Date(b.eventDate).getTime() : 0;
                 return dateA - dateB;
             });
-            setEvents(events);
+
+            const newGroupedEvents: { [key: string]: ExternalEventDetails[] } = events.reduce((grouped, event) => {
+                const date = event.eventDate ? new Date(event.eventDate).toDateString() : 'No Date';
+                if (!grouped[date]) {
+                    grouped[date] = [];
+                }
+                grouped[date].push(event);
+                return grouped;
+            }, {} as { [key: string]: ExternalEventDetails[] });
+
+            setGroupedEvents(newGroupedEvents);
             setLoading(false);
         });
+        console.log('fetching events');
+    }, []);
+
+    const handlePress = useCallback((event: ExternalEventDetails) => {
+        setSelectedEvent(event);
     }, []);
 
     return (
 
         <VStack flex={1} space="sm" h="100%" bg="$background0">
+            {selectedEvent && (
+                <ExternalEventCardModal
+                    event={selectedEvent}
+                    open={!!selectedEvent}
+                    onClose={() => {
+                        setSelectedEvent(null)
+                    }} />
+            )}
             <Heading size="xl" paddingHorizontal={20}>Mina bokade aktiviteter</Heading>
             <ScrollView flex={1}>
                 <VStack space="lg" flex={1} justifyContent="center">
@@ -56,93 +117,52 @@ export const MyExternalEvents = () => {
                         </Box>
                     }
                 </VStack>
-                {events &&
-                    <Accordion size="md" width="100%" variant="unfilled" type="multiple" isCollapsible={true} isDisabled={false}>
-                        {events.map((event) => (
-                            <AccordionItem value={event.eventId.toString()} key={event.eventId}>
-                                <AccordionHeader>
-                                    <AccordionTrigger>
-                                        {({ isExpanded }: { isExpanded: boolean }) => {
-                                            return (
-                                                <VStack flex={1}>
-                                                    <HStack flex={1}>
-                                                        <VStack flex={1}>
-                                                            <AccordionTitleText color="$text800">
-                                                                <Heading size="md">{event.titel}</Heading>
-                                                            </AccordionTitleText>
-                                                            <AccordionTitleText color="$secondary600">
-                                                                {(() => {
-                                                                    const date: Date = new Date(event.eventDate ?? "");
-                                                                    const weekday = date.toLocaleDateString('sv-SE', { weekday: 'long' });
-                                                                    const capitalizedWeekday = weekday.charAt(0).toUpperCase() + weekday.slice(1);
-                                                                    const dayMonth = date.toLocaleDateString('sv-SE', { day: 'numeric', month: 'long' });
-                                                                    const time = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                                                                    return `${capitalizedWeekday} ${dayMonth} kl ${time}`;
-                                                                })()}
-                                                            </AccordionTitleText>
-                                                            <AccordionTitleText color="$primary300">
-                                                                {event.location}
-                                                            </AccordionTitleText>
+                {Object.keys(groupedEvents).map((date) => (
 
-                                                        </VStack>
+                    <VStack key={date} space="sm" paddingHorizontal={20}>
+                        <Heading color="$primary900" size="lg" >{displayLocaleTimeStringDate(date ?? "")}</Heading>
+                        <Divider />
+                        {groupedEvents[date].map((event) => (
+                            <Pressable key={event.eventId} onPress={() => handlePress(event)}>
 
-                                                        {isExpanded ? (
-                                                            <AccordionIcon as={ChevronUpIcon} ml="$3" />
-                                                        ) : (
-                                                            <AccordionIcon as={ChevronDownIcon} ml="$3" />
-                                                        )}
-                                                    </HStack>
-                                                    {event.mapUrl &&
-                                                        (() => {
-                                                            const place = getPlaceFromUrl(event.mapUrl);
-                                                            if (place) {
-                                                                return (
-                                                                    <HStack justifyContent="flex-end">
-                                                                        <LocationLinkButton landmark={place} />
-                                                                    </HStack>
-                                                                );
-                                                            } else {
-                                                                const { latitude, longitude } = getCoordinatesFromUrl(event.mapUrl);
-                                                                if (latitude !== 0 && longitude !== 0) {
-                                                                    return (
-                                                                        <HStack justifyContent="flex-end">
-                                                                            <LocationLinkButton latitude={latitude} longitude={longitude} />
-                                                                        </HStack>
-                                                                    );
-                                                                }
-                                                            }
-                                                        })()
-                                                    }
-                                                </VStack>
-                                            );
-                                        }}
-                                    </AccordionTrigger>
-                                </AccordionHeader>
-                                <AccordionContent>
-
-                                    <AccordionContentText>
-                                        {filterHtml(event.description)}
-                                        
-                                    </AccordionContentText>
-                                    <HStack flex={1} flexDirection="row" flexWrap='wrap' paddingTop={10}>
-                                    {extractLinks(event.description)?.map((link, index) => (
-                                            
-                                            <Link href={link.url} key={index}>
-                                                <LinkText>{link.name}</LinkText>
-                                            </Link>
-                                        ))}
-                                    </HStack>
-                                </AccordionContent>
-                            </AccordionItem>
+                                <HStack key={event.eventId} space="sm" paddingVertical={10}>
+                                    <VStack justifyContent="flex-start" alignItems="center">
+                                        <Text size="md" color='$teal500' paddingTop={2}>
+                                            {event.startTime}
+                                        </Text>
+                                        <Text size='md' color='$teal800'>
+                                            {event.endTime}
+                                        </Text>
+                                    </VStack>
+                                    <VStack flex={1} paddingLeft={10}>
+                                        <HStack space="md" justifyContent="space-between" alignItems="center">
+                                            <Heading size="md" color="$primary600" style={{ flex: 1 }}>
+                                                {event.titel}
+                                            </Heading>
+                                            {event.categories?.map((category, index) => (
+                                                <Text key={index} color="$vscode_customLiteral" style={{ paddingLeft: 10, maxWidth: 45 }}>
+                                                    {getEventCategoryBadge(category.code, `#${category.colorBackground}`)}
+                                                </Text>
+                                            ))}
+                                        </HStack>
+                                        <Text color="$vscode_customLiteral" style={{ marginBottom: 10 }}>
+                                            {/* <FontAwesomeIcon icon={faMountainCity} size={14} style={{ color: vscode_customLiteral, marginRight: 10 }} /> */}
+                                            {event.location}
+                                        </Text>
+                                    </VStack>
+                                </HStack>
+                            </Pressable>
                         ))}
-                    </Accordion>
-                }
+
+                    </VStack>
+
+                ))}
+
             </ScrollView>
             {user && !user.isMember && (
                 <NonMemberInfo />
             )}
         </VStack>
-
     );
 }
 

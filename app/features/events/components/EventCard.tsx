@@ -22,8 +22,8 @@ import FutureEvent from '../types/futureEvent';
 import { useEventLists } from '../hooks/useEventLists';
 import { SmallDeleteButton } from '../../common/components/SmallDeleteButton';
 import { EditButton } from '../../common/components/EditButton';
-import AddressLinkAndIcon from '../../common/components/AddressLinkAndIcon';
 import { BadgeCheckIcon } from 'lucide-react-native';
+import { AddressLinkAndIcon } from '../../map/components/AddressLinkAndIcon';
 
 const EventCard: React.FC<{
   event: FutureEvent | FutureUserEvent;
@@ -122,6 +122,11 @@ const EventCard: React.FC<{
               {event.location?.address && (
                 <HStack flex={1} flexDirection="row" flexWrap='wrap'>
                   <AddressLinkAndIcon
+                    displayName={
+                      event.location.address.includes(', Sweden')
+                      ? event.location.address.replace(', Sweden', '')
+                      : event.location.address
+                    }
                     address={event.location.address}
                   />
                 </HStack>
