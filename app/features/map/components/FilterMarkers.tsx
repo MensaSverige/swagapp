@@ -1,10 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import useStore from '../../common/store/store';
 import { FilterProps, filterUsers, defaultFilter } from '../store/LocationSlice';
-import { Button, Card, Heading, HStack, Input, InputField, Modal, ModalBackdrop, ModalBody, ModalCloseButton, ModalContent, ModalHeader, Pressable, VStack, View, Text } from '../../../gluestack-components';
+import { Button, Card, Heading, HStack, Input, InputField, Modal, ModalBackdrop, ModalBody, ModalCloseButton, ModalContent, ModalHeader, VStack, View, Text, InputSlot, InputIcon, SearchIcon, CloseIcon, Icon } from '../../../gluestack-components';
 import Slider from '@react-native-community/slider';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
-import { faClose, faSearch } from '@fortawesome/free-solid-svg-icons';
 import { config } from '../../../gluestack-components/gluestack-ui.config';
 import { ButtonText } from '@gluestack-ui/themed';
 
@@ -45,23 +44,30 @@ export const FilterMarkersComponent: React.FC<FilterMarkersProps> = ({ showFilte
             <Input bg="$background50"
                 borderWidth={0}
                 borderRadius={0}
-                style={{ paddingTop: 4 }}
             >
-                <FontAwesomeIcon icon={faSearch} size={28} style={{ marginTop: 4, color: config.tokens.colors.blue400 }} />
+                <InputSlot pl="$4">
+                    <Icon
+                        size="xl"
+                        as={SearchIcon}
+                        color="$blueGray400"
+                    />
+                </InputSlot>
                 <InputField
                     value={filter.name}
-
+                    placeholder="Sök deltagare..."
                     onChangeText={(value) => setFilterAndCalculateNumberOfUsers({ ...filter, name: value })}
                     onEndEditing={saveFilter}
                 />
                 {filter.name && (
-
-                    <Pressable
-                        style={{ marginRight: 10 }}
+                    <InputSlot p="$4" mr="$2"
                         onPress={() => setFilterAndCalculateNumberOfUsers({ ...filter, name: '' })}
                     >
-                        <FontAwesomeIcon icon={faClose} size={28} style={{ marginTop: 5, color: config.tokens.colors.blue400 }} />
-                    </Pressable>
+                        <InputIcon
+                            size="xl"
+                            as={CloseIcon}
+                            color="$blueGray400"
+                        />
+                    </InputSlot>
                 )}
             </Input>
             <Modal
@@ -76,8 +82,9 @@ export const FilterMarkersComponent: React.FC<FilterMarkersProps> = ({ showFilte
                 <ModalContent >
                     <ModalHeader>
                         <Heading size="lg" color={config.tokens.colors.primary200} >Filter</Heading>
-                        <ModalCloseButton>
-                            <FontAwesomeIcon icon={faClose} size={20} style={{ color: config.tokens.colors.blue400, }} />
+                        <ModalCloseButton
+                            padding={15}>
+                            <Icon as={CloseIcon} />
                         </ModalCloseButton>
                     </ModalHeader>
                     <ModalBody>
@@ -88,7 +95,7 @@ export const FilterMarkersComponent: React.FC<FilterMarkersProps> = ({ showFilte
                                     {filter.showHoursAgo || 1}
                                 </Text> timmarna</Text>
                                 <Slider
-                                    style={{ height: 40 }}
+                                    style={{ height: 50 }}
                                     value={filter.showHoursAgo}
                                     minimumValue={0}
                                     maximumValue={24}
@@ -107,7 +114,7 @@ export const FilterMarkersComponent: React.FC<FilterMarkersProps> = ({ showFilte
                                 <Button
                                     size="md"
                                     variant="outline"
-                                    action="secondary"                                 
+                                    action="secondary"
                                     borderColor="$vscode_stringLiteral"
                                     isDisabled={false}
                                     isFocusVisible={false}

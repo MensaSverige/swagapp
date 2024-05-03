@@ -17,6 +17,8 @@ export const defaultFilter: FilterProps = {
 };
 
 export const filterUsers = (users: UserWithLocation[], userFilter: FilterProps) => {
+  if (!users) return [];
+  
   const filterTime = new Date();
   filterTime.setHours(filterTime.getHours() - (userFilter.showHoursAgo ?? 0));
   return users.filter(user =>

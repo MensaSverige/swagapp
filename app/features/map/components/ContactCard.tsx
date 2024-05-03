@@ -53,7 +53,7 @@ const ContactCard: React.FC<ContactCardProps> = ({ user, showCard, onClose }) =>
                 bg="$background50"
             >
                 <ModalBody >
-                    <ModalCloseButton style={{ alignItems: 'flex-end' }}>
+                    <ModalCloseButton padding={15} style={{ alignItems: 'flex-end' }}>
                         <Icon as={CloseIcon} />
                     </ModalCloseButton>
                     <HStack space="xl" >

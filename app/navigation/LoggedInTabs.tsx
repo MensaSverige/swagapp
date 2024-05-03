@@ -79,7 +79,7 @@ export const LoggedInTabs = () => {
         headerRight: () => (
             <HStack space="sm" alignItems="center" paddingRight={2}>
                 <Pressable
-                    style={{ marginRight: 10 }}
+                    style={{ padding: 12 }}
                     onPress={() => navigation.navigate('UserSettings')}>
                     <FontAwesomeIcon
                         icon={faGear}

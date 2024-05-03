@@ -41,6 +41,7 @@ const ExternalEventCardModal: React.FC<EventDetailsProps> = ({
         <ModalBody paddingHorizontal={0} paddingBottom={0}>
           <Box position="relative">
             <ModalCloseButton
+              padding={15}
               position="absolute"
               top="$1"
               right="$1"
