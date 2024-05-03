@@ -1,8 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
 import useStore from "../../common/store/store";
 import * as Keychain from "react-native-keychain";
-import { FontAwesomeIcon } from "@fortawesome/react-native-fontawesome";
-import { faClose, faEye, faEyeSlash } from "@fortawesome/free-solid-svg-icons";
 import { TEST_MODE } from "@env";
 import { authenticate } from "../../common/services/authService";
 import { tryGetCurrentUser } from "../services/userService";
@@ -27,7 +25,9 @@ import {
   CheckIcon,
   EyeIcon,
   EyeOffIcon,
-  Box
+  Box,
+  Icon,
+  CloseIcon
 } from "../../../gluestack-components";
 import { Link, ModalFooter, useColorMode } from '@gluestack-ui/themed';
 import { LoadingScreen } from '../../common/screens/LoadingScreen';
@@ -202,7 +202,7 @@ export const SigninForm = () => {
 
           <VStack space="lg" flex={1}>
             {isLoading ? (
-              <LoadingScreen/>
+              <LoadingScreen />
             ) : (
               <>
                 <Button
@@ -259,8 +259,9 @@ export const SigninForm = () => {
           <ModalContent>
             <ModalHeader>
               <Heading size="lg">Fel vid inloggning</Heading>
-              <ModalCloseButton>
-                <FontAwesomeIcon icon={faClose} size={20} style={{ color: config.tokens.colors.blue400, }} />
+              <ModalCloseButton
+                padding={15}>
+                <Icon as={CloseIcon} />
               </ModalCloseButton>
             </ModalHeader>
             <ModalBody>
