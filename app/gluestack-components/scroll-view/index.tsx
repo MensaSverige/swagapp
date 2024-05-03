@@ -1,9 +1,11 @@
+import React from 'react';
 import { ScrollView as RNScrollView } from 'react-native';
-
 import { styled, useStyled, propertyTokenMap } from '@gluestack-style/react';
 
 const StyledRoot = styled(
-  RNScrollView,
+  React.forwardRef<RNScrollView, React.ComponentProps<typeof RNScrollView>>((props, ref) => (
+    <RNScrollView {...props} ref={ref} />
+  )),
   {},
   {
     resolveProps: ['contentContainerStyle'],
