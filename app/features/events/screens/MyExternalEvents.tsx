@@ -143,9 +143,7 @@ export const MyExternalEvents = () => {
         nextEventMarkerRef.current?.measureLayout(
             scrollViewRef.current.getInnerViewNode(),
             (_, y) => {
-                nextEventMarkerRef.current?.measure((_, __, ___, height) => {
-                    scrollViewRef.current?.scrollTo({ y: y + height, animated: true });
-                });
+                scrollViewRef.current?.scrollTo({ y, animated: true });
             }
         );
     }, [nextEventMarkerRef, scrollViewRef]);
