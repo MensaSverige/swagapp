@@ -222,7 +222,7 @@ export const SigninForm = () => {
                 >
                   <ButtonText
                     style={{ textAlign: 'center' }}
-                    color={loginAsNonMember ? "$text900" : "$text0"}
+                    color={loginAsNonMember ? (colorMode == 'dark' ? "$text0" : "$text900") : "$text0"}
                   >
                     {TEST_MODE ? (loginAsNonMember ? "Logga in som medföljande" : "Logga in") : "Logga in i testläge"}
                   </ButtonText>
