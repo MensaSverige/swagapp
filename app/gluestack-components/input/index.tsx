@@ -238,7 +238,7 @@ const StyledRoot = styled(
     'defaultProps': {
       size: 'md',
       variant: 'outline',
-      height: 48,
+      height: 50,
     },
   },
   {

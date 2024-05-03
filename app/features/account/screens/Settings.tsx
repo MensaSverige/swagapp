@@ -175,6 +175,7 @@ const UserSettings: React.FC = () => {
                         justifyContent="center"
                         alignItems="center">
                         <ProfileEditAvatar
+                            colorMode={colorMode}
                             onError={error => {
                                 showToast('error');
                             }}
@@ -364,7 +365,7 @@ const UserSettings: React.FC = () => {
                         </Fields>
                         <Divider style={{ marginTop: 20, marginBottom: 10 }} />
                         <Button
-                            size="sm"
+                            size="md"
                             action="primary"
                             onPress={() => handleLogout()}>
                             <ButtonText style={{ textAlign: 'center' }}>

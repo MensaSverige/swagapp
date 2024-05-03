@@ -320,8 +320,8 @@ const StyledRoot = styled(
           },
         },
         md: {
-          px: '$5',
-          h: '$10',
+          px: '$8',
+          h: 50,//edited defualt value to fit accessibility standards in google play
           _icon: {
             props: {
               size: 'md',
