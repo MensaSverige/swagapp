@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ScrollView as ReactScrollView } from 'react-native';
+import { NativeScrollEvent, NativeSyntheticEvent, ScrollView as ReactScrollView } from 'react-native';
 import { View } from 'react-native';
 import { fetchExternalEvents } from '../services/eventService';
 import { ExternalEventDetails } from '../../../api_schema/types';
@@ -26,7 +26,7 @@ import {
 } from '../components/EventBadges';
 import ExternalEventCardModal from '../components/ExternalEventCardModal';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
-import { faClock } from '@fortawesome/free-solid-svg-icons';
+import { faHistory } from '@fortawesome/free-solid-svg-icons';
 import { config } from "../../../gluestack-components/gluestack-ui.config";
 
 export const displayLocaleTimeStringDate = (datestring: string) => {
@@ -101,8 +101,8 @@ export const MyExternalEvents = () => {
     useEffect(() => {
         if (!groupedEvents || Object.keys(groupedEvents).length === 0) return;
         const findNextEvent = () => {
-            const now = new Date();
-            // const now = new Date(2024, 4, 9, 18, 10, 0);
+            // const now = new Date();
+            const now = new Date(2024, 4, 9, 18, 10, 0);
             let nextEventTemp: ExternalEventDetails | null = null;
     
             for (const date in groupedEvents) {
@@ -166,23 +166,22 @@ export const MyExternalEvents = () => {
                         setSelectedEvent(null)
                     }} />
             )}
-            <HStack space='sm' alignItems='center' height={50}>
-                <Heading size="xl" paddingHorizontal={20}>Mina bokade aktiviteter</Heading>
+            <HStack gap={20} alignItems='center' height={50} paddingHorizontal={20}>
+                <Heading size="xl">Mina bokade aktiviteter</Heading>
                 {nextEvent && (
-                    <Box flex={1} style={{alignItems: 'flex-end'}}>
+                    <Box flex={1} style={{alignItems: 'center'}}>
                         <Pressable
                             onPress={scrollToCurrentEvent}
                             minWidth={50}
                             height={50}
-                            marginHorizontal={10}
                             alignItems='center'
                             justifyContent='center'
                         >
                             <FontAwesomeIcon
-                                icon={faClock}
-                                style={{ color: config.tokens.colors.blue400, }}
+                                icon={faHistory}
+                                style={{ color: config.tokens.colors.blue400 }}
                                 size={20}
-                                />
+                            />
                         </Pressable>
                     </Box>
                 )}
