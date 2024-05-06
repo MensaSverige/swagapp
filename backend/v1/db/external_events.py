@@ -30,7 +30,9 @@ def store_external_event_details(events: List[ExternalEventDetails]):
 
 
 def get_stored_external_event_details(
-        event_ids: List[int]) -> List[ExternalEventDetails]:
+        event_ids: List[int],
+        host_id: int = None,
+    ) -> List[ExternalEventDetails]:
     """
     Retrieves external event details from the MongoDB database.
 
@@ -40,9 +42,12 @@ def get_stored_external_event_details(
     try:
         return [
             ExternalEventDetails(**event) for event in
-            external_event_collection.find({'eventId': {
-                '$in': event_ids
-            }})
+            external_event_collection.find({
+                "$or": [
+                    {"eventId": {"$in": event_ids}},
+                    {"admins": f"{host_id}"}
+                ]
+            })
         ]
     except Exception as e:
         logging.error(f"Failed to retrieve events: {e}")
