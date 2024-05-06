@@ -26,7 +26,7 @@ async def get_events_for_user(current_user: User = Depends(
         f"Booked events for user {current_user['userId']}: {bookedEvents}")
 
     event_ids = [event['eventId'] for event in bookedEvents]
-    events = get_stored_external_event_details(event_ids)
+    events = get_stored_external_event_details(event_ids, current_user['userId'])
 
     return events
 
