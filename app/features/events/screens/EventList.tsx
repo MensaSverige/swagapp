@@ -8,6 +8,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../../navigation/RootStackParamList';
 import { Button, Center, VStack, ScrollView, Text, ButtonText, Box, HStack } from '../../../gluestack-components';
 import { FutureUserEvent, isFutureUserEvent } from '../types/futureUserEvent';
+import { config } from '../../../gluestack-components/gluestack-ui.config';
 
 if (
   Platform.OS === 'android' &&
@@ -46,6 +47,8 @@ const EventList: React.FC = () => {
           <RefreshControl
             refreshing={eventsRefreshing}
             onRefresh={fetchAllEvents}
+            tintColor={config.tokens.colors.secondary300}
+            colors={[config.tokens.colors.secondary300]}
           />
         }>
         {visibleEvents.length === 0 && !eventsRefreshing && (

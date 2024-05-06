@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import { RefreshControl } from 'react-native';  // Make sure this is imported
 import { fetchExternalEvents } from '../services/eventService';
 import { ExternalEventDetails } from '../../../api_schema/types';
 import {
@@ -9,7 +10,6 @@ import {
     VStack,
 } from '../../../gluestack-components';
 import { useToken, } from "@gluestack-ui/themed"
-import { LoadingScreen } from '../../common/screens/LoadingScreen';
 import useStore from '../../common/store/store';
 import NonMemberInfo from '../../common/components/NonMemberInfo';
 import {
@@ -23,6 +23,7 @@ import {
     WorkshopBadge
 } from '../components/EventBadges';
 import ExternalEventCardModal from '../components/ExternalEventCardModal';
+import { config } from '../../../gluestack-components/gluestack-ui.config';
 
 
 export const displayLocaleTimeStringDate = (datestring: string) => {
@@ -63,10 +64,11 @@ export const MyExternalEvents = () => {
     const [events, setEvents] = useState<ExternalEventDetails[]>();
     const [groupedEvents, setGroupedEvents] = useState<{ [key: string]: ExternalEventDetails[] }>({});
     const [selectedEvent, setSelectedEvent] = useState<ExternalEventDetails | null>(events ? events[0] : null);
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(false);
     const { user } = useStore();
 
-    useEffect(() => {
+    const onRefresh = useCallback(() => {
+        setLoading(true);
         fetchExternalEvents().then((events) => {
             events.sort((a, b) => {
                 const dateA = a.eventDate ? new Date(a.eventDate).getTime() : 0;
@@ -89,6 +91,10 @@ export const MyExternalEvents = () => {
         console.log('fetching events');
     }, []);
 
+    useEffect(() => {
+        onRefresh();
+    }, [onRefresh]);
+
     const handlePress = useCallback((event: ExternalEventDetails) => {
         setSelectedEvent(event);
     }, []);
@@ -105,12 +111,16 @@ export const MyExternalEvents = () => {
                     }} />
             )}
             <Heading size="xl" paddingHorizontal={20}>Mina bokade aktiviteter</Heading>
-            <ScrollView flex={1}>
+            <ScrollView flex={1}
+                refreshControl={
+                    <RefreshControl
+                        refreshing={loading}
+                        onRefresh={onRefresh}
+                        tintColor={config.tokens.colors.secondary300}
+                        colors={[config.tokens.colors.secondary300]}
+                    />
+                }>
                 <VStack space="lg" flex={1} justifyContent="center">
-                    {loading &&
-                        <LoadingScreen />
-                    }
-
                     {events && events.length === 0 &&
                         <Box alignItems='center' paddingVertical={40}>
                             <Text>Inga bokade aktiviteter</Text>
