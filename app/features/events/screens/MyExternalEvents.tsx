@@ -9,6 +9,7 @@ import {
     Text,
     Pressable,
     VStack,
+    Icon,
 } from '../../../gluestack-components';
 import { useToken, } from "@gluestack-ui/themed"
 import { LoadingScreen } from '../../common/screens/LoadingScreen';
@@ -28,6 +29,7 @@ import ExternalEventCardModal from '../components/ExternalEventCardModal';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faHistory } from '@fortawesome/free-solid-svg-icons';
 import { config } from "../../../gluestack-components/gluestack-ui.config";
+import { AlarmClockCheckIcon, CalendarClockIcon, GalleryVerticalEndIcon, HourglassIcon, WatchIcon } from 'lucide-react-native';
 
 export const displayLocaleTimeStringDate = (datestring: string) => {
     const date: Date = new Date(datestring ?? "");
@@ -166,24 +168,21 @@ export const MyExternalEvents = () => {
                         setSelectedEvent(null)
                     }} />
             )}
-            <HStack gap={20} alignItems='center' height={50} paddingHorizontal={20}>
+            <HStack justifyContent="space-between" alignItems="center" height={50} paddingLeft={20}>
                 <Heading size="xl">Mina bokade aktiviteter</Heading>
                 {nextEvent && (
-                    <Box flex={1} style={{alignItems: 'center'}}>
+
                         <Pressable
                             onPress={scrollToCurrentEvent}
-                            minWidth={50}
+                            paddingRight={15}
+                            width={50}
                             height={50}
-                            alignItems='center'
+                            alignItems="center"
                             justifyContent='center'
                         >
-                            <FontAwesomeIcon
-                                icon={faHistory}
-                                style={{ color: config.tokens.colors.blue400 }}
-                                size={20}
-                            />
+                            <Icon as={CalendarClockIcon} size="xl" color="$primary200"/>
                         </Pressable>
-                    </Box>
+
                 )}
             </HStack>
             <ScrollView flex={1} ref={scrollViewRef}>
@@ -219,16 +218,18 @@ export const MyExternalEvents = () => {
                                             {event.endTime}
                                         </Text>
                                     </VStack>
-                                    <VStack flex={1} paddingLeft={10}>
+                                    <VStack flex={1} >
                                         <HStack space="md" justifyContent="space-between" alignItems="center">
                                             <Heading size="md" color="$primary600" style={{ flex: 1 }}>
                                                 {event.titel}
                                             </Heading>
+                                            <HStack space="sm" >
                                             {event.categories?.map((category, index) => (
-                                                <Text key={index} color="$vscode_customLiteral" style={{ paddingLeft: 10, maxWidth: 45 }}>
+                                                <Text key={index} color="$vscode_customLiteral" style={{ width: 30 }}>
                                                     {getEventCategoryBadge(category.code, `#${category.colorBackground}`)}
                                                 </Text>
                                             ))}
+                                            </HStack>
                                         </HStack>
                                         <Text color="$vscode_customLiteral" style={{ marginBottom: 10 }}>
                                             {/* <FontAwesomeIcon icon={faMountainCity} size={14} style={{ color: vscode_customLiteral, marginRight: 10 }} /> */}
