@@ -2,5 +2,5 @@
   "[python]": {
     "editor.defaultFormatter": "eeyore.yapf"
   },
-  "python.formatting.provider": "none"
+  "editor.formatOnSave": false,
 }
