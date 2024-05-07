@@ -28,11 +28,12 @@ import { AddressLinkAndIcon } from '../../map/components/AddressLinkAndIcon';
 const EventCard: React.FC<{
   event: FutureEvent | FutureUserEvent;
   initiallyOpen?: boolean;
-  onEditEvent: (event: FutureUserEvent) => void;
-}> = ({ event, initiallyOpen = false, onEditEvent }) => {
+  staticallyOpen?: boolean;
+  onEditEvent?: (event: FutureUserEvent) => void;
+}> = ({ event, initiallyOpen = false, staticallyOpen = false, onEditEvent }) => {
   const colorMode = useColorMode();
   const user = useStore(state => state.user);
-  const [open, setOpen] = React.useState(initiallyOpen || false);
+  const [open, setOpen] = React.useState(initiallyOpen || staticallyOpen || false);
   const [comparisonDate, setComparisonDate] = React.useState(new Date());
   useEffect(() => {
     const interval = setInterval(() => {
@@ -47,11 +48,12 @@ const EventCard: React.FC<{
     : [];
 
   const onEditPress = () => {
-    onEditEvent(event);
+    if (onEditEvent)
+      onEditEvent(event);
   };
 
   return (
-    <TouchableOpacity onPress={() => setOpen(!open)}>
+    <TouchableOpacity disabled={staticallyOpen} onPress={() => setOpen(!open)}>
       <Card padding={10} size="sm" variant="elevated" m="$0">
         <Box
           flex={1}
@@ -73,7 +75,7 @@ const EventCard: React.FC<{
             />
           </Box>
 
-          {isFutureUserEvent(event) && event.userId === user?.userId && (
+          {onEditEvent && isFutureUserEvent(event) && event.userId === user?.userId && (
             <EditButton onPress={onEditPress} />
           )}
           {user?.userId && isUserAttending(event, user?.userId) &&

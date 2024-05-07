@@ -23,6 +23,7 @@ import {
     WorkshopBadge
 } from '../components/EventBadges';
 import ExternalEventCardModal from '../components/ExternalEventCardModal';
+import EventCardModal from '../components/EventCardModal';
 import { config } from '../../../gluestack-components/gluestack-ui.config';
 import { useEventLists } from '../hooks/useEventLists';
 import FutureUserEvent from '../types/futureUserEvent';
@@ -145,6 +146,14 @@ export const MyExternalEvents = () => {
         <VStack flex={1} space="sm" h="100%" bg="$background0">
             {selectedEvent && 'eventDate' in selectedEvent && (
                 <ExternalEventCardModal
+                    event={selectedEvent}
+                    open={!!selectedEvent}
+                    onClose={() => {
+                        setSelectedEvent(null)
+                    }} />
+            )}
+            {selectedEvent && 'start' in selectedEvent && (
+                <EventCardModal
                     event={selectedEvent}
                     open={!!selectedEvent}
                     onClose={() => {
