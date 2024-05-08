@@ -87,7 +87,7 @@ const MapView: React.FC = () => {
       })
       .catch((error) => console.log("Failed to load images", error));
 
-  }, [userFilter]);
+  }, [filteredUsers]);
   useFocusEffect(
     React.useCallback(() => {
       const onUnfocus = () => {
@@ -177,7 +177,7 @@ const MapView: React.FC = () => {
       latitudeDelta: deltaLat,
       longitudeDelta: deltaLong,
     });
-  }, [userFilter, isImagesLoaded]);
+  }, [userFilter]);
 
   return (
     <SafeAreaView flex={1} key={colorMode}>
@@ -244,7 +244,6 @@ const MapView: React.FC = () => {
                   .map(u => (
                     <UserMarker
                       key={`${u.userId}-${colorMode}`}
-                      imageLoaded={isImagesLoaded}
                       user={u}
                       zIndex={100}
                       highlighted={selectedUser?.userId === u.userId}

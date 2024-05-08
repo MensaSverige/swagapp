@@ -1,16 +1,14 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Marker, MarkerPressEvent } from 'react-native-maps';
 import UserWithLocation from '../../types/userWithLocation';
 import UserAvatar from '../UserAvatar';
 
 const UserMarker: React.FC<{
   user: UserWithLocation;
-  imageLoaded: boolean;
   zIndex: number;
   highlighted: boolean;
   onPress: (event: MarkerPressEvent) => void;
-}> = ({ user, imageLoaded, zIndex, highlighted, onPress }) => {
-  //const markerSize = highlighted ? 'xl' : 'lg';
+}> = ({ user, zIndex, highlighted, onPress }) => {
   const markerSize = 'lg';
   return (
     <Marker
@@ -23,7 +21,7 @@ const UserMarker: React.FC<{
       zIndex={zIndex}
       onPress={onPress}>
       <UserAvatar
-        key={imageLoaded  ? user.avatar_url : 'loading'}
+        key={user.userId  ? user.avatar_url : 'loading'}
         firstName={user.firstName}
         lastName={user.lastName}
         avatar_url={user.avatar_url}
@@ -39,5 +37,6 @@ export default React.memo(UserMarker, (prevProps, nextProps) => {
   return prevProps.highlighted === nextProps.highlighted &&
     JSON.stringify(prevProps.user.avatar_url) === JSON.stringify(nextProps.user.avatar_url) &&
     prevProps.user.onlineStatus === nextProps.user.onlineStatus &&
-    prevProps.imageLoaded === nextProps.imageLoaded;
+    prevProps.user.location.latitude === nextProps.user.location.latitude &&
+    prevProps.user.location.longitude === nextProps.user.location.longitude;
 });
