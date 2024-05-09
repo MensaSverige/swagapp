@@ -31,7 +31,12 @@ export const fetchUserEvents = async (): Promise<FutureUserEvent[]> => {
     .then(
       response => {
         if (response.data) {
-          return response.data.filter(isFutureUserEvent);
+          return response.data.filter(isFutureUserEvent).sort((a: FutureUserEvent, b: FutureUserEvent) => {
+            if (a.start && b.start) {
+              return a.start < b.start ? -1 : 1;
+            }
+            return 0;
+          });
         }
         return [];
       },
