@@ -146,14 +146,14 @@ const UserSettings: React.FC = () => {
 
     const locationSharingOptions: {value: ShowLocation, label: string}[] = useMemo(() => user.isMember ? [
         // Members can choose between all options
-        {value: "ALL_MEMBERS_WHO_SHARE_THEIR_OWN_LOCATION", label: "Visa för andra medlemmar som visar sin position"},
-        {value:                              "ALL_MEMBERS", label: "Visa för alla medlemmar"},
-        {value:    "EVERYONE_WHO_SHARE_THEIR_OWN_LOCATION", label: "Visa för andra deltagare som visar sin position"},
-        {value:                                 "EVERYONE", label: 'Visa för alla'},
+        {value: "ALL_MEMBERS_WHO_SHARE_THEIR_OWN_LOCATION", label: "Andra medlemmar som visar sin position"},
+        {value:                              "ALL_MEMBERS", label: "Alla medlemmar"},
+        // {value:    "EVERYONE_WHO_SHARE_THEIR_OWN_LOCATION", label: "Andra deltagare som visar sin position"},
+        // {value:                                 "EVERYONE", label: 'Alla'},
     ] : [
         // Non-members can only choose between non member specific options
-        {value:    "EVERYONE_WHO_SHARE_THEIR_OWN_LOCATION", label: 'Visa för andra deltagare som visar sin position'},
-        {value:                                 "EVERYONE", label: 'Visa för alla'},
+        {value:    "EVERYONE_WHO_SHARE_THEIR_OWN_LOCATION", label: 'Andra deltagare som visar sin position'},
+        {value:                                 "EVERYONE", label: 'Alla'},
     ], [user.isMember]);
 
     return (
@@ -322,6 +322,7 @@ const UserSettings: React.FC = () => {
                                 />
                                 {locationSwitch && (
                                     <Picker
+                                        prompt='Visa platsuppgifter för...'
                                         selectedValue={
                                             formState?.settings?.show_location
                                         }
