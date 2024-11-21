@@ -6,17 +6,15 @@ const StartscreenFaq = () => {
     return (
         <Card size="sm" padding={0} borderRadius="$lg" borderColor='$info600' variant="outline" m="$0">
             <VStack>
-                <Card size="sm" variant="ghost" m="$0" style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <Text style={{ flexShrink: 1 }}><Text color="$info600" style={{ fontWeight: 'bold' }}>Huvudhotell:</Text> Scandic Grand Örebro, Fabriksgatan 21–23</Text>
-                    <LocationLinkButton landmark='Scandic Grand Örebro' address='Fabriksgatan 21-23, 702 23 Örebro' />
+            <Card size="sm" variant="ghost" m="$0" style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <Text style={{ flexShrink: 1 }}><Text color="$info600" style={{ fontWeight: 'bold' }}>Huvudhotell:</Text> Donners Hotell Visby</Text>
+                    <LocationLinkButton landmark='Donners Hotell Visby' address='Donners Plats 6, 621 59, Visby' />
                 </Card>
                 <Card size="sm" variant="ghost" m="$0" style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <Text style={{ flexShrink: 1 }}><Text color="$info600" style={{ fontWeight: 'bold' }}>Årsmöte:</Text> Lördagen den 11 maj klockan 10:30, Conventum, Club 700</Text>
-                    <LocationLinkButton landmark="Conventum Club 700" address='Drottninggatan 42, 702 22 Örebro' />
+                    <Text style={{ flexShrink: 1 }}><Text color="$info600" style={{ fontWeight: 'bold' }}>Datum Halvårsträff:</Text> 22–24 november 2024</Text>
                 </Card>
                 <Card size="sm" variant="ghost" m="$0" style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <Text style={{ flexShrink: 1 }}><Text color="$info600" style={{ fontWeight: 'bold' }}>Officiell invigning:</Text> Torsdagskvällen klockan 17, Club 700 på Conventum</Text>
-                    <LocationLinkButton landmark="Conventum Club 700" address='Drottninggatan 42, 702 22 Örebro' />
+                    <Text style={{ flexShrink: 1 }}><Text color="$info600" style={{ fontWeight: 'bold' }}>Datum Årsträff:</Text> 29 maj - 6 juni 2025</Text>
                 </Card>
             </VStack>
         </Card>

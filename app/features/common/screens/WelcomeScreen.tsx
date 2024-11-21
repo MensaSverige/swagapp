@@ -14,8 +14,8 @@ const WelcomeScreen = () => {
                     <VStack space={"lg"}>
                         <Heading size="xl" >Välkommen till SWAG!</Heading>
                         <StartscreenFaq />
-                        <Divider/>
-                        <SiteNews />
+                        {/* <Divider/> */}
+                        {/* <SiteNews /> */}
                     </VStack>
                 </ScrollView>
             </VStack>
