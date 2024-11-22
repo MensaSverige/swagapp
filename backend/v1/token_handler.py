@@ -64,7 +64,7 @@ def create_token(userId, expiry_delta, type):
     iat = get_current_time()
     exp = iat + expiry_delta
 
-    payload = {'exp': exp, 'iat': iat, 'sub': userId, 'type': type}
+    payload = {'exp': exp, 'iat': iat, 'sub': str(userId), 'type': type}
     return jwt.encode(payload, get_or_create_jwt_secret(), algorithm='HS256')
 
 
