@@ -34,7 +34,7 @@ async def get_events_for_user(current_user: User = Depends(
 @events_v1.get("/external_events/news")
 async def get_news_from_event_site(current_user: User = Depends(
     validate_request)) -> List[EventSiteNews]:
-    news: EventSiteNews = get_event_site_news()
+    news: EventSiteNews = get_event_site_news(False)
 
     return news
 
