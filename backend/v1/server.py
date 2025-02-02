@@ -14,7 +14,7 @@ from v1.api.health import health_v1
 from v1.api.users import users_v1
 from v1.api.events import events_v1
 from v1.external.event_site_news import get_event_site_news
-from v1.external.event_api import get_external_event_details
+from v1.external.event_api import get_external_root, get_external_event_details
 from v1.user_events.user_events_api import user_events_v1
 from v1.db.mongo import initialize_db
 from v1.dev.exception_handlers import register_exception_handlers
@@ -53,11 +53,10 @@ if os.getenv("ENABLE_DEV_ENDPOINTS") == "true":
 
 def initialize_app():
     initialize_db()
-    get_external_event_details("2024-05-08")
-    get_external_event_details("2024-05-09")
-    get_external_event_details("2024-05-10")
-    get_external_event_details("2024-05-11")
-    get_event_site_news()
+    root = get_external_root()
+    for date in root.dates:
+        get_external_event_details(root.restUrl, date)
+    get_event_site_news(root.restUrl)
 
 initialize_app()  # uvicorn does not run the __main__ block below.
 

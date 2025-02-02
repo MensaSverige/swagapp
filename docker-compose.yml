@@ -21,7 +21,7 @@ services:
       EVENT_API_TOKEN: ${EVENT_API_TOKEN}
       SECRET_KEY: ${SECRET_KEY:-SECRET_KEY}
       URL_MEMBER_API: 'https://medlem.mensa.se/mensa_verify/restlogin.php'
-      URL_EVENTS_API: 'https://events.mensa.se/swag2024/info-rest/?sec_action=app-api'
+      URL_EXTERNAL_ROOT: 'https://swag.mensa.se/root.php'
       ENABLE_DEV_ENDPOINTS: 'true'
       MY_USER_ID: ${MY_USER_ID}
       TEST_MODE: 'true'

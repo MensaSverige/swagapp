@@ -9,6 +9,18 @@ class Category(BaseModel):
     colorText: str
     colorBackground: str
 
+class ExternalRoot(BaseModel):
+    version: int
+    loginUrl: str
+    restUrl: str
+    siteUrl: str
+    dates: List[str]
+    header1: str
+    header2: str
+    city: str
+    streetAddress: str
+    mapUrl: str
+
 class ExternalEventDetails(BaseModel):
     eventId: int
     eventDate: Optional[datetime] = None
