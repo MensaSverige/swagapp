@@ -107,7 +107,6 @@ export const LoggedInTabs = () => {
                                     tabBarIcon: InformationIcon,
                                 }}
                             />
-                            {/*  
                             <BottomTab.Screen
                                 name="Schema"
                                 component={MyExternalEvents}
@@ -115,7 +114,7 @@ export const LoggedInTabs = () => {
                                     ...defaultHeaderOptions,
                                     tabBarIcon: CalendarIcon,
                                 }}
-                            /> */}
+                            />
                             <BottomTab.Screen
                                 name="Karta"
                                 component={MapView}

@@ -1,7 +1,8 @@
 import requests
 import logging
 from fastapi import HTTPException
-from v1.env_constants import LOGINM_SEED, LOGINB_SEED, URL_MEMBER_API, URL_EVENTS_API
+from v1.external.event_api import get_external_root
+from v1.env_constants import LOGINM_SEED, LOGINB_SEED, URL_MEMBER_API
 from v1.utilities import calc_hash, get_current_time_formatted
 
 
@@ -35,6 +36,9 @@ def loginm(username, password):
     return response.json()
 
 def loginb(user, password):
+
+    root = get_external_root()
+
     client = 'swagapp'
     timestamp = get_current_time_formatted()
     loginb_hash = [user, password, timestamp, LOGINB_SEED]
@@ -52,7 +56,7 @@ def loginb(user, password):
     loggable_data.pop('password', None)
     logging.info(f"loginb_par: {loggable_data}")
     headers = {'Content-Type': 'application/json'}
-    response = requests.post(URL_EVENTS_API,
+    response = requests.post(root.restUrl,
                              json=loginb_par,
                              headers=headers,
                              verify=False)

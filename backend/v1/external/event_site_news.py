@@ -4,18 +4,25 @@ import logging
 from typing import List
 import requests
 from fastapi import HTTPException
+from v1.external.event_api import get_external_root
 from v1.db.models.event_site_news import EventSiteNews
 from v1.utilities import convert_string_to_datetime
-from v1.env_constants import EVENT_API_TOKEN, URL_EVENTS_API
+from v1.env_constants import EVENT_API_TOKEN
 
 
-def get_event_site_news() -> list[EventSiteNews]:
+def get_event_site_news(url: str|bool) -> list[EventSiteNews]:
+
+    if not url:
+        logging.info("No external root URL provided, fetching from external API")
+        root = get_external_root()
+        url = root.restUrl
+
     parameters = {
         'operation': 'news',
         'token': EVENT_API_TOKEN,
     }
     headers = {'Content-Type': 'application/json'}
-    response = requests.post(URL_EVENTS_API,
+    response = requests.post(url,
                              json=parameters,
                              headers=headers,
                              verify=False)
