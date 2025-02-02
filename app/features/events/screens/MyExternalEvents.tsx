@@ -191,7 +191,7 @@ export const MyExternalEvents = () => {
                         <LoadingScreen />
                     }
 
-                    {events && events.length === 0 &&
+                    {!groupedEvents || Object.keys(groupedEvents).length === 0 &&
                         <Box alignItems='center' paddingVertical={40}>
                             <Text>Inga bokade aktiviteter</Text>
                         </Box>

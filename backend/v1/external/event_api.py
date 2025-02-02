@@ -11,7 +11,11 @@ from v1.db.external_token_storage import get_external_token
 from v1.env_constants import EVENT_API_TOKEN, URL_EXTERNAL_ROOT
 
 
-def get_booked_external_events(url: str, userId: int) -> list[ExternalEvent]:
+def get_booked_external_events(userId: int) -> list[ExternalEvent]:
+
+    root = get_external_root()
+    url = root.restUrl
+
     parameters = {
         'operation': 'booked',
         'token': get_external_token(userId),
@@ -24,8 +28,12 @@ def get_booked_external_events(url: str, userId: int) -> list[ExternalEvent]:
     if response.status_code != 200:
         raise HTTPException(status_code=400, detail="Invalid credentials")
 
-    events = response.json()["events"]
-    return events
+    response_data = response.json()
+    if 'events' not in response_data:
+        logging.info(f"Failed to get booked events: {response_data}")
+        return []
+    
+    return ExternalEvent.model_validate(response_data['events'])
 
 
 def get_external_root() -> ExternalRoot:
