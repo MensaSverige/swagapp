@@ -43,7 +43,7 @@ jobs:
         working-directory: app
         run: |
           touch .env
-          echo "API_URL=https://swag.k.mikael.blue/api" >> .env
+          echo "API_URL=https://app.events.mensa.se/api" >> .env
           echo "TEST_MODE=false" >> .env
 
       - name: Set up JDK 17
