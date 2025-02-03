@@ -1,7 +1,9 @@
 name: Update GitOps with new image tags - app verification version
 
 on:
-  workflow_dispatch:
+  push:
+    branches:
+      - in-org-gitops
 
 jobs:
   push-to-repo-B:
