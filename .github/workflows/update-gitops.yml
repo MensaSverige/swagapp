@@ -42,8 +42,8 @@ jobs:
       - name: Update Kubernetes Manifest repo
         working-directory: swagapp-ops
         run: |
-          git config --global user.name 'Mikael Grön'
-          git config --global user.email 'skaramicke@gmail.com'
+          git config --global user.name 'Swagapp Bot'
+          git config --global user.email 'app@events.mensa.se'
           git add deployment/*.yaml
           git commit -m "Update image tags for SWAG to ${{ inputs.docker_tag }}" -m "${{ inputs.commit_message }}"
           git push
