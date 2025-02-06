@@ -1,6 +1,6 @@
 ## Flöde, autentisering
 
-1. Användaren fyller i användarnamn och lösenord i appen och postar till /auth, just nu https://swag.k.mikael.blue/auth
+1. Användaren fyller i användarnamn och lösenord i appen och postar till /auth, just nu https://app.events.mensa.se/auth
 2. Backend loggar in på mensa.se och hämtar namnet på användaren om det funkade
 3. Backend genererar JWT och returnerar till användaren tillsammans med användarens riktiga namn.
 4. Appen känner sig nu inloggad.

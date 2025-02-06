@@ -41,7 +41,7 @@ const setEnvironmentVariablesAndTypes = async (): Promise<void> => {
 
     let backendURL = currentEnv?.API_URL ?? 'http://localhost:5000';
     if (isProd) {
-      backendURL = 'https://swag.k.mikael.blue/api';
+      backendURL = 'https://app.events.mensa.se/api';
     } else {
       const ipAddress = await getWifiIPAddress();
       if (ipAddress) {

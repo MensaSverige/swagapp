@@ -11,7 +11,7 @@
 <img src="https://github.com/mensasverige/swagapp/actions/workflows/publish-backend.yml/badge.svg">
 </p>
 
-<h1 align="center">📱 SWAG Communicator</h1>
+<h1 align="center">📱 Mensa Sverige SWAG App</h1>
 
 SWAG is a mobile and web application designed exclusively for Mensa Sweden members, offering a suite of features including location tracking, event management, and community interaction. It encompasses a React Native mobile app, a Python-based backend service, and a dedicated website.
 
@@ -19,7 +19,7 @@ SWAG is a mobile and web application designed exclusively for Mensa Sweden membe
 
 - Cross-platform mobile application compatible with Android and iOS.
 - Robust backend services leveraging Docker for efficient deployment.
-- A dedicated website hosted at [https://swag.k.mikael.blue](https://swag.k.mikael.blue).
+- A dedicated website hosted at [https://app.events.mensa.se](https://app.events.mensa.se).
 
 # 1 Components
 
@@ -78,11 +78,11 @@ For more detailed information on Python backend development, refer to [Python's 
 
 ### 1.3.1 Main Website
 
-The main website ([swag.k.mikael.blue](https://swag.k.mikael.blue)) serves as a landing page, providing app download links for both iOS and Android users, directly linking to the App Store and the latest GitHub release, respectively.
+The main website ([app.events.mensa.se](https://app.events.mensa.se)) serves as a landing page, providing app download links for both iOS and Android users, directly linking to the App Store and the latest GitHub release, respectively.
 
 ### 1.3.2 API
 
-The website also features a proxy ([swag.k.mikael.blue/api](https://swag.k.mikael.blue/api)) that routes API requests to the backend service. For more information on web proxies and Nginx, see [Nginx's official documentation](https://nginx.org/en/docs/).
+The website also features a proxy ([app.events.mensa.se/api](https://app.events.mensa.se/api)) that routes API requests to the backend service. For more information on web proxies and Nginx, see [Nginx's official documentation](https://nginx.org/en/docs/).
 
 # 2 👩‍💻 Development Environment
 
@@ -128,7 +128,7 @@ Learn more about Docker Compose at [Docker's official site](https://docs.docker.
 
 ## 2.5 Website and API
 
-Access the website at [https://swag.k.mikael.blue](https://swag.k.mikael.blue), with the backend API under `/api/`.
+Access the website at [https://app.events.mensa.se](https://app.events.mensa.se), with the backend API under `/api/`.
 
 ### 2.5.1 Nginx Configuration
 

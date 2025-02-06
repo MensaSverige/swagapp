@@ -21,27 +21,30 @@ jobs:
       id-token: write
 
     steps:
-        - name: Checkout GitOps Repository
-          uses: actions/checkout@v4
-          with:
-            ref: ${{ inputs.release_tag }}
-            repository: "gronitab/gronit-cluster1"
-            token: ${{ secrets.PAT_FOR_K8S }}
-            path: "gitops-repo"
-  
-        - name: Update Kubernetes Manifest Templates
-          working-directory: gitops-repo/swag
-          run: |
-            for file in *.yaml.tpl; do
-              sed "s/VERSION/${{ inputs.docker_tag }}/" "$file" > "${file%.tpl}"
-            done
-  
-        - name: Update Kubernetes Manifest repo
-          working-directory: gitops-repo
-          run: |
-            git config --global user.name 'Mikael Grön'
-            git config --global user.email 'skaramicke@gmail.com'
-            git add swag/
-            git commit -m "Update image tags for SWAG to ${{ inputs.docker_tag }}" -m "${{ inputs.commit_message }}"
-            git push
-  
+      - name: Generate GitHub App Installation Token
+        uses: tibdex/github-app-token@v1
+        id: generate_token
+        with:
+          app_id: ${{ secrets.GITOPS_APP_ID }}
+          private_key: ${{ secrets.GITOPS_APP_PRIVATE_KEY }}
+
+      - name: Checkout GitOps repo
+        run: |
+          git clone https://x-access-token:${{ steps.generate_token.outputs.token }}@github.com/mensasverige/swagapp-ops.git
+
+      - name: Update Kubernetes Manifest Templates
+        working-directory: swagapp-ops/deployment
+        run: |
+          for file in *.yaml.tpl; do
+            sed "s/VERSION/${{ inputs.docker_tag }}/" "$file" > "${file%.tpl}"
+          done
+
+      - name: Update Kubernetes Manifest repo
+        working-directory: swagapp-ops
+        run: |
+          git config --global user.name 'Swagapp Bot'
+          git config --global user.email 'app@events.mensa.se'
+          git add deployment/*.yaml
+          git commit -m "Update image tags for SWAG to ${{ inputs.docker_tag }}" -m "${{ inputs.commit_message }}"
+          git push
+
