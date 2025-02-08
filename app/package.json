@@ -1,7 +1,6 @@
 {
   "name": "swagapp",
   "version": "0.0.1",
-  "private": false,
   "license": "MIT",
   "scripts": {
     "android": "react-native run-android",
@@ -15,7 +14,7 @@
     "generate-icons": "npx icon-set-creator create ./assets/icon.jpg",
     "cc": "rimraf node_modules/react-native-config/ios/ReactNativeConfig/GeneratedDotEnv.m",
     "postinstall": "patch-package && yarn podinstall",
-    "podinstall": "node -e \"if (process.platform === 'darwin') { require('child_process').execSync('rm ios/.xcode.env.local && plutil -convert xml1 ios/swagapp/Info.plist && npx pod-install && plutil -convert xml1 ios/swagapp/Info.plist', { stdio: 'inherit' }); }\""
+    "podinstall": "./setup-ios.sh"
   },
   "dependencies": {
     "@fortawesome/fontawesome-svg-core": "^6.5.1",
@@ -120,5 +119,6 @@
   },
   "engines": {
     "node": ">=18"
-  }
+  },
+  "packageManager": "yarn@4.5.1+sha512.341db9396b6e289fecc30cd7ab3af65060e05ebff4b3b47547b278b9e67b08f485ecd8c79006b405446262142c7a38154445ef7f17c1d5d1de7d90bf9ce7054d"
 }
