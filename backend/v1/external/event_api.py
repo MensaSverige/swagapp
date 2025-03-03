@@ -33,6 +33,7 @@ def get_booked_external_events(userId: int) -> list[ExternalEvent]:
         logging.info(f"Failed to get booked events: {response_data}")
         return []
     
+    events_list = response_data['events']
     return [ExternalEvent.model_validate(event) for event in events_list]
 
 
