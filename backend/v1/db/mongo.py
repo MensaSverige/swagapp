@@ -7,7 +7,7 @@ from pydantic import BaseModel
 from v1.db.models.tokenstorage import TokenStorage
 from v1.db.models.user import User
 from v1.user_events.user_events_model import UserEvent
-from v1.db.models.external_events import ExternalEventDetails
+from v1.db.models.external_events import ExternalEventDetails, ExternalRoot
 from v1.db.review_users import review_users
 
 logging.basicConfig(level=logging.INFO)
@@ -23,7 +23,7 @@ user_collection = db[get_collection_name(User)]
 tokenstorage_collection = db[get_collection_name(TokenStorage)]
 user_event_collection = db[get_collection_name(UserEvent)]
 external_event_collection = db[get_collection_name(ExternalEventDetails)]
-
+external_root_collection = db[get_collection_name(ExternalRoot)]
 
 def initialize_db():
 
@@ -41,6 +41,8 @@ def initialize_db():
 
         initialize_collection(ExternalEventDetails, db)
         external_event_collection.create_index("eventId", unique=True)
+
+        initialize_collection(ExternalRoot, db)
 
         initialize_collection(UserEvent, db)
 
