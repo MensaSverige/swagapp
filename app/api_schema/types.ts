@@ -14,6 +14,7 @@ export type UserEventLocation = components['schemas']['UserEvent']['location'];
 export type ExtendedUserEvent = components['schemas']['ExtendedUserEvent'];
 export type UserUpdate = components["schemas"]["UserUpdate"];
 export type UserLocation = components["schemas"]["UserLocation"];
+export type ExternalRoot = components["schemas"]["ExternalRoot"];
 export type ExternalEventDetails = components["schemas"]["ExternalEventDetails"];
 export type News = components["schemas"]["EventSiteNews"];
 export type GeoLocation = components["schemas"]["GeoLocation"];
