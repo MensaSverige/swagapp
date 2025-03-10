@@ -43,6 +43,10 @@ export interface paths {
     /** Update User Avatar */
     post: operations["update_user_avatar_v1_users_me_avatar_post"];
   };
+  "/v1/external_root": {
+    /** Get External Root Data */
+    get: operations["get_external_root_data_v1_external_root_get"];
+  };
   "/v1/external_events/booked": {
     /** Get Events For User */
     get: operations["get_events_for_user_v1_external_events_booked_get"];
@@ -348,6 +352,29 @@ export interface components {
       imageUrl300?: string | null;
       /** Eventurl */
       eventUrl: string;
+    };
+    /** ExternalRoot */
+    ExternalRoot: {
+      /** Version */
+      version: number;
+      /** Loginurl */
+      loginUrl: string;
+      /** Resturl */
+      restUrl: string;
+      /** Siteurl */
+      siteUrl: string;
+      /** Dates */
+      dates: string[];
+      /** Header1 */
+      header1: string;
+      /** Header2 */
+      header2: string;
+      /** City */
+      city: string;
+      /** Streetaddress */
+      streetAddress: string;
+      /** Mapurl */
+      mapUrl: string;
     };
     /** GeoLocation */
     GeoLocation: {
@@ -843,6 +870,17 @@ export interface operations {
       422: {
         content: {
           "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  /** Get External Root Data */
+  get_external_root_data_v1_external_root_get: {
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["ExternalRoot"];
         };
       };
     };

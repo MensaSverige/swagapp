@@ -1,7 +1,7 @@
 import apiClient from '../../common/services/apiClient';
 import FutureUserEvent, {isFutureUserEvent} from '../types/futureUserEvent';
 import FutureEvent, {isFutureEvent} from '../types/futureEvent';
-import {ExternalEventDetails, News, UserEvent} from '../../../api_schema/types';
+import {ExternalEventDetails, News, UserEvent, ExternalRoot} from '../../../api_schema/types';
 
 export const fetchUserEvent = async (
   eventId: string,
@@ -46,6 +46,26 @@ export const fetchUserEvents = async (): Promise<FutureUserEvent[]> => {
     )
     .catch(error => {
       console.error('Error fetching user events:', error);
+      throw error;
+    });
+};
+
+export const fetchExternalRoot = async (): Promise<ExternalRoot> => {
+  return apiClient
+    .get('/external_root')
+    .then(
+      response => {
+        if (response.data) {
+          return response.data;
+        }
+        return null;
+      },
+      error => {
+        throw new Error(error.message || error);
+      },
+    )
+    .catch(error => {
+      console.error('Error fetching external root:', error);
       throw error;
     });
 };

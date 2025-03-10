@@ -1,23 +1,41 @@
-import React from 'react';
-import { Card, Text, VStack } from '../../../gluestack-components';
-import {LocationLinkButton} from '../../map/components/LocationLinkIcon';
+import React, { useEffect } from 'react';
+import { Card, Heading, Text, VStack } from '../../../gluestack-components';
+import { LocationLinkButton } from '../../map/components/LocationLinkIcon';
+import { ExternalRoot } from '../../../api_schema/types';
+import { fetchExternalRoot } from '../../events/services/eventService';
 
 const StartscreenFaq = () => {
+    const [eventInfo, setEventInfo] = React.useState<ExternalRoot>();
+
+    useEffect(() => {
+        fetchExternalRoot().then((eventInfo) => {
+            setEventInfo(eventInfo);
+        });
+    }
+        , []);
     return (
-        <Card size="sm" padding={0} borderRadius="$lg" borderColor='$info600' variant="outline" m="$0">
-            <VStack>
-            <Card size="sm" variant="ghost" m="$0" style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <Text style={{ flexShrink: 1 }}><Text color="$info600" style={{ fontWeight: 'bold' }}>Huvudhotell:</Text> Donners Hotell Visby</Text>
-                    <LocationLinkButton landmark='Donners Hotell Visby' address='Donners Plats 6, 621 59, Visby' />
+        <>
+            {eventInfo && (
+                <Card size="sm" padding={0} borderRadius="$lg" borderColor='$info600' variant="outline" m="$0">
+                    <VStack>
+                        {eventInfo && (
+                            <>
+                                <Card size="sm" variant="ghost" m="$0" style={{ flexDirection: 'column', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+                                    <Heading size="xl" >{eventInfo?.header1}</Heading>
+                                    <Heading size="sm" >{eventInfo?.header2}</Heading>
+                                </Card>
+                                <Card size="sm" variant="ghost" m="$0" style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                                    <Text style={{ flexShrink: 1 }}><Text style={{ fontWeight: 'bold' }}>{eventInfo?.streetAddress}</Text> </Text>
+                                    {eventInfo && eventInfo.streetAddress && eventInfo.city && (
+                                        <LocationLinkButton address={eventInfo.streetAddress} />
+                                    )}
+                                </Card>
+                            </>
+                        )}
+                    </VStack>
                 </Card>
-                <Card size="sm" variant="ghost" m="$0" style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <Text style={{ flexShrink: 1 }}><Text color="$info600" style={{ fontWeight: 'bold' }}>Datum Halvårsträff:</Text> 22–24 november 2024</Text>
-                </Card>
-                <Card size="sm" variant="ghost" m="$0" style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <Text style={{ flexShrink: 1 }}><Text color="$info600" style={{ fontWeight: 'bold' }}>Datum Årsträff:</Text> 29 maj - 6 juni 2025</Text>
-                </Card>
-            </VStack>
-        </Card>
+            )}
+        </>
     );
 };
 
