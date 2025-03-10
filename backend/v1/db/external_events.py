@@ -12,6 +12,7 @@ def store_external_root(root: ExternalRoot):
     """
     try:
         root_dict = root.model_dump()
+        root_dict['streetAddress'] = "Donnersgatan 2, 621 57 Visby"  # Override streetAddress, to be removed once the origin is fixed
         external_root_collection.update_one(
             {},  # empty filter to match all documents
             {'$set': root_dict},  # update
