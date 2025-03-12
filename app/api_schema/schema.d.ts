@@ -105,18 +105,6 @@ export interface paths {
     /** Getlocationbyadress */
     get: operations["getLocationByAdress_v1_geolocation__address__get"];
   };
-  "/v1/dev/clear_user_events": {
-    /** Clear User Events */
-    get: operations["clear_user_events_v1_dev_clear_user_events_get"];
-  };
-  "/v1/dev/create_dummy_user_event": {
-    /** Get Dummy User Event */
-    get: operations["get_dummy_user_event_v1_dev_create_dummy_user_event_get"];
-  };
-  "/v1/dev/create_my_dummy_event": {
-    /** Create My Dummy Event */
-    get: operations["create_my_dummy_event_v1_dev_create_my_dummy_event_get"];
-  };
 }
 
 export type webhooks = Record<string, never>;
@@ -1173,39 +1161,6 @@ export interface operations {
       422: {
         content: {
           "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
-    };
-  };
-  /** Clear User Events */
-  clear_user_events_v1_dev_clear_user_events_get: {
-    responses: {
-      /** @description Successful Response */
-      200: {
-        content: {
-          "application/json": components["schemas"]["StatusResponseWithMessage"];
-        };
-      };
-    };
-  };
-  /** Get Dummy User Event */
-  get_dummy_user_event_v1_dev_create_dummy_user_event_get: {
-    responses: {
-      /** @description Successful Response */
-      200: {
-        content: {
-          "application/json": components["schemas"]["ExtendedUserEvent"];
-        };
-      };
-    };
-  };
-  /** Create My Dummy Event */
-  create_my_dummy_event_v1_dev_create_my_dummy_event_get: {
-    responses: {
-      /** @description Successful Response */
-      200: {
-        content: {
-          "application/json": components["schemas"]["ExtendedUserEvent"];
         };
       };
     };
