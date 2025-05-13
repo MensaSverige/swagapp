@@ -48,7 +48,7 @@ def get_external_root() -> ExternalRoot:
     store_external_root(root)
     return root
 
-def get_external_event_details(url: str, date: str):
+def get_external_event_details(url: str, date: str) -> List[ExternalEventDetails]:
     parameters = {
         'operation': 'events',
         'date': date,
@@ -64,6 +64,7 @@ def get_external_event_details(url: str, date: str):
         raise HTTPException(status_code=400, detail="Invalid credentials")
 
     eventdate = convert_string_to_datetime(date)
+
     try:
         response_json = response.json()
         events = response_json['events']
@@ -92,5 +93,6 @@ def get_external_event_details(url: str, date: str):
     try:
         store_external_event_details(validated_events)
         logging.info("Successfully stored external event details.")
+        return validated_events
     except Exception as e:
         logging.error(f"Failed to store external event details: {e}")
