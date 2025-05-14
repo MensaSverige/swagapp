@@ -56,6 +56,8 @@ def store_external_event_details(events: List[ExternalEventDetails]):
     try:
         for event in events:
             event_dict = event.model_dump()
+            # Print the title
+            logging.info(f"Storing event: {event_dict['titel']}")
             external_event_collection.update_one(
                 {'eventId': event_dict['eventId']},  # filter
                 {'$set': event_dict},  # update
@@ -88,3 +90,20 @@ def get_stored_external_event_details(
     except Exception as e:
         logging.error(f"Failed to retrieve events: {e}")
         return []
+
+def clean_external_events(keeping: List[ExternalEventDetails]):
+    """
+    Cleans the external events in the MongoDB database.
+
+    :param keeping: The external event details to keep.
+    """
+    try:
+        # Get all event IDs to keep
+        keeping_ids = [event.eventId for event in keeping]
+        # Delete all events that are not in the keeping list
+        external_event_collection.delete_many({
+            "eventId": {"$nin": keeping_ids}
+        })
+        logging.info("Successfully cleaned external events.")
+    except Exception as e:
+        logging.error(f"Failed to clean external events: {e}")
