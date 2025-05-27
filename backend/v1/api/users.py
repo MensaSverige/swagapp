@@ -22,6 +22,10 @@ async def get_users(show_location: bool = None,
     if show_location:
         users_list = get_users_showing_location()
     else:
+        raise HTTPException(
+            status_code=400,
+            detail="show_location parameter must be set to True to retrieve users."
+        )
         users_list = db_get_users()
     # Enforce privacy: hide email/phone if disabled
     for user in users_list:
