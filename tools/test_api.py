@@ -50,7 +50,7 @@ def main():
     # 2) Update settings: disable email and phone visibility
     settings_payload = {
         "settings": {
-            "show_location": "NO_ONE",
+            "show_location": "EVERYONE",
             "show_email": False,
             "show_phone": False
         }
@@ -81,7 +81,7 @@ def main():
     # 4) List all users with location
     resp = requests.get(
         f"{API_BASE_URL}/v1/users",
-        # params={"show_location": True},
+        params={"show_location": True},
         headers=headers
     )
     resp.raise_for_status()
