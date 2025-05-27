@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from v1.utilities import convert_to_tz_aware, get_current_time
 from v1.db.models.user import User, UserLocation, UserUpdate
 from v1.request_filter import validate_request
-from v1.db.users import get_user, get_users_showing_location, update_user
+from v1.db.users import get_users as db_get_users, get_user, get_users_showing_location, update_user, ShowLocation
 
 users_v1 = APIRouter(prefix="/v1")
 
@@ -20,8 +20,22 @@ async def get_user_by_id(user_id: int):
 async def get_users(show_location: bool = None,
                     _: dict = Depends(validate_request)):
     if show_location:
-        return get_users_showing_location()
-    return get_users()
+        users_list = get_users_showing_location()
+    else:
+        users_list = db_get_users()
+    # Enforce privacy: hide email/phone if disabled
+    for user in users_list:
+        settings = user.get("settings", {})
+        # ensure contact_info dict exists
+        contact = user.get("contact_info") or {}
+        if not settings.get("show_email"):
+            contact["email"] = None
+        if not settings.get("show_phone"):
+            contact["phone"] = None
+        user["contact_info"] = contact
+        if not settings.get("show_location") or settings.get("show_location") == ShowLocation.NO_ONE:
+            user["location"] = None
+    return users_list
 
 
 @users_v1.put("/users/me/location", response_model=User)
