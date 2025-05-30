@@ -34,8 +34,8 @@ jobs:
           arch: x86_64
           target: default
           emulator-options: -no-window -gpu swiftshader_indirect
+          working-directory: app
           script: |
-            cd app
             yarn detox build --configuration android.emu.debug
             mkdir -p e2e/artifacts
             yarn detox test --configuration android.emu.debug --take-screenshots-path e2e/artifacts
