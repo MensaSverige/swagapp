@@ -14,7 +14,8 @@
     "generate-icons": "npx icon-set-creator create ./assets/icon.jpg",
     "cc": "rimraf node_modules/react-native-config/ios/ReactNativeConfig/GeneratedDotEnv.m",
     "postinstall": "patch-package && yarn podinstall",
-    "podinstall": "./setup-ios.sh"
+    "podinstall": "./setup-ios.sh",
+    "e2e": "detox test --configuration android.emu.debug --take-screenshots-path e2e/artifacts"
   },
   "dependencies": {
     "@fortawesome/fontawesome-svg-core": "^6.5.1",
@@ -115,10 +116,25 @@
     "rimraf": "^6.0.1",
     "ts-jest": "^29.1.1",
     "ts-node": "^10.9.2",
-    "typescript": "^5.0.4"
+    "typescript": "^5.0.4",
+    "detox": "^19.11.3"
   },
   "engines": {
     "node": ">=18"
+  },
+    "detox": {
+    "testRunner": "jest",
+    "runnerConfig": "e2e/config.json",
+    "configurations": {
+      "ios.sim.debug": {
+        "device": "simulator",
+        "app": "ios/build/Build/Products/Debug-iphonesimulator/YourApp.app"
+      },
+      "android.emu.debug": {
+        "device": "emulator",
+        "app": "android/app/build/outputs/apk/debug/app-debug.apk"
+      }
+    }
   },
   "packageManager": "yarn@4.5.1+sha512.341db9396b6e289fecc30cd7ab3af65060e05ebff4b3b47547b278b9e67b08f485ecd8c79006b405446262142c7a38154445ef7f17c1d5d1de7d90bf9ce7054d"
 }

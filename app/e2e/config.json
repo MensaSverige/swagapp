@@ -1,0 +1,6 @@
+{
+  "preset": "react-native",
+  "testMatch": ["**/?(*.)+(e2e).js"],
+  "setupFilesAfterEnv": ["./init.js"],
+  "testEnvironment": "node"
+}
