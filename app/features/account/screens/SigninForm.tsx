@@ -139,7 +139,7 @@ export const SigninForm = () => {
 
   const cancelRef = useRef(null);
   return (
-    <SafeAreaView flex={1} key={colorMode}>
+    <SafeAreaView flex={1} key={colorMode} testID="login-form">
       <VStack flex={1} bg="$background0" space="lg" padding={20}>
         <Heading size="lg">Välkommen Swagger</Heading>
 

@@ -1,0 +1,46 @@
+name: E2E Tests
+
+on:
+  pull_request:
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - run: npm install -g detox-cli
+
+      - run: corepack enable
+
+      - run: |
+          cd app
+          yarn install --mode=update-lockfile
+
+      - run: sudo apt-get update && sudo apt-get install -y android-tools-adb
+
+      - name: Run emulator, build & test
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 30
+          arch: x86_64
+          target: default
+          emulator-options: -no-window -gpu swiftshader_indirect
+          script: |
+            cd app
+            yarn detox build --configuration android.emu.debug
+            mkdir -p e2e/artifacts
+            yarn detox test --configuration android.emu.debug --take-screenshots-path e2e/artifacts
+
+      - uses: actions/upload-artifact@v3
+        with:
+          name: login-form-screenshot
+          path: app/e2e/artifacts/login_form.png
+
+      - run: |
+          echo "## Login Form Screenshot" >> $GITHUB_STEP_SUMMARY
+          echo "![Login Form](app/e2e/artifacts/login_form.png)" >> $GITHUB_STEP_SUMMARY
