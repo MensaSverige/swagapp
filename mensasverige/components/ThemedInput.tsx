@@ -61,7 +61,7 @@ export function ThemedInput({
             name={secureTextEntry ? 'eye-off' : 'eye'}
             size={20}
             color={iconColor}
-          />§
+          />
         </TouchableOpacity>
       </View>
     );
