@@ -1,19 +1,9 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
-  ActivityIndicator,
   Alert,
-  Platform,
-  Pressable,
-  SafeAreaView,
   StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
 } from "react-native";
 import * as SecureStore from "expo-secure-store";
-import Constants from "expo-constants";
-import { Ionicons } from "@expo/vector-icons";
 import useStore from "../../common/store/store";
 //import { TEST_MODE } from "@env";
 import { authenticate } from "../../common/services/authService";
@@ -52,6 +42,7 @@ export const SigninForm = () => {
       setIsLoading(true);
       tryGetCurrentUser()
         .then((response) => {
+          console.log('Current user response', response);
           if (response?.user !== undefined) {
             setUser(response.user);
           }
@@ -67,6 +58,7 @@ export const SigninForm = () => {
   }, [user, backendConnection]);
 
   const saveCreds = async (key: "credentials" | "non-member-credentials") => {
+    console.log(`Saving credentials username and password for ${key}`);
     if (!saveCredentials) return;
     try {
       await SecureStore.setItemAsync(
@@ -86,6 +78,7 @@ export const SigninForm = () => {
     setIsLoading(true);
     authenticate(username, password, testMode, true)
       .then((response) => {
+        console.log('Member login response', response.user);
         if (response !== undefined) setUser(response.user);
       })
       .catch((error) => {
