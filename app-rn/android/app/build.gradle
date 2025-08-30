@@ -80,12 +80,12 @@ android {
 
     namespace "com.swagapp"
     defaultConfig {
-        applicationId "se.mensaswag"
+        applicationId "se.mensasverige"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 2
-        versionName "0.0.2"
-        //versionCode project.hasProperty('versionCode') ? project.getProperty('versionCode').toInteger() : 1 //add these back to workflow when possible
+        versionCode 6
+        versionName "1.0.3" 
+        //versionCode project.hasProperty('versionCode') ? project.getProperty('versionCode').toInteger() : 1
         //versionName project.hasProperty('versionName') ? project.getProperty('versionName') : "1.0"
         //resValue "string", "api_url", project.env.get("API_URL")
     }
