@@ -1,53 +1,52 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
+import {
+  ActivityIndicator,
+  Alert,
+  Platform,
+  Pressable,
+  SafeAreaView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import * as SecureStore from "expo-secure-store";
+import Constants from "expo-constants";
+import { Ionicons } from "@expo/vector-icons";
 import useStore from "../../common/store/store";
-import * as Keychain from "react-native-keychain";
-import { TEST_MODE } from "@env";
+//import { TEST_MODE } from "@env";
 import { authenticate } from "../../common/services/authService";
 import { tryGetCurrentUser } from "../services/userService";
-import {
-  Checkbox,
-  CheckboxIcon,
-  CheckboxIndicator,
-  CheckboxLabel,
-  InputSlot,
-  InputIcon,
-  Heading,
-  Input,
-  Spinner,
-  Text, Button, ButtonText, HStack, Pressable, SafeAreaView, VStack,
-  InputField,
-  Modal,
-  ModalContent,
-  ModalCloseButton,
-  ModalBackdrop,
-  ModalHeader,
-  ModalBody,
-  CheckIcon,
-  EyeIcon,
-  EyeOffIcon,
-  Box,
-  Icon,
-  CloseIcon
-} from "../../../gluestack-components";
-import { Link, ModalFooter, useColorMode } from '@gluestack-ui/themed';
-import { LoadingScreen } from '../../common/screens/LoadingScreen';
-import { config } from "../../../gluestack-components/gluestack-ui.config";
-import { TouchableOpacity } from "react-native";
+import ParallaxScrollView from "@/components/ParallaxScrollView";
+import { ThemedView } from "@/components/ThemedView";
+import { ThemedText } from "@/components/ThemedText";
+import { ThemedInput } from "@/components/ThemedInput";
+import { ThemedButton } from "@/components/ThemedButton";
+import { SaveCredentialsCheckBox } from "@/features/common/components/SaveCredentialsCheckBox";
 
 export const SigninForm = () => {
-  const colorMode = useColorMode();
+  // const colorMode = useColorMode();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [saveCredentials, setSaveCredentials] = useState(false);
   const [loginAsNonMember, setLoginAsNonMember] = useState(false);
-  const [showLoginError, setShowLoginError] = useState(false);
   const [loginErrorText, setLoginErrorText] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isTryingStoredCredentials, setIsTryingStoredCredentials] =
     useState(false);
   const { testMode, backendConnection, user, setUser, setIsTryingToLogin } =
     useStore();
+
+  const showLoginError = (errorText: string) => {
+    Alert.alert(
+      "Fel vid inloggning",
+      errorText,
+      [{ text: "OK", style: "default" }],
+      { cancelable: false }
+    );
+  };
   useEffect(() => {
     if (!user && backendConnection) {
       setIsLoading(true);
@@ -67,20 +66,23 @@ export const SigninForm = () => {
     }
   }, [user, backendConnection]);
 
-  const handleMemberLogin = async () => {
+  const saveCreds = async (key: "credentials" | "non-member-credentials") => {
+    if (!saveCredentials) return;
     try {
-      if (saveCredentials) {
-        Keychain.setGenericPassword(username, password, {
-          service: "credentials",
-        });
-      }
+      await SecureStore.setItemAsync(
+        key,
+        JSON.stringify({ username, password })
+      );
     } catch (error) {
       console.error("Save credentials error", error);
-      setLoginErrorText(
-        "Något gick fel. Kunde inte spara dina inloggningsuppgifter.",
+      showLoginError(
+        "Något gick fel. Kunde inte spara dina inloggningsuppgifter."
       );
-      setShowLoginError(true);
     }
+  };
+
+  const handleMemberLogin = async () => {
+    await saveCreds("credentials");
     setIsLoading(true);
     authenticate(username, password, testMode, true)
       .then((response) => {
@@ -89,13 +91,12 @@ export const SigninForm = () => {
       .catch((error) => {
         console.error("Login error", error.message || error);
         if (error.message.includes("Network Error")) {
-          setLoginErrorText(
+          showLoginError(
             `Det går inte att nå servern just nu. ${isTryingStoredCredentials ? "Försöker igen automatiskt" : "Försök igen om en stund."}`,
           );
         } else {
-          setLoginErrorText("Något gick fel. Försök igen senare.");
+          showLoginError("Något gick fel. Försök igen senare.");
         }
-        setShowLoginError(true);
       })
       .finally(() => {
         setIsLoading(false);
@@ -103,19 +104,7 @@ export const SigninForm = () => {
   };
 
   const handleNonMemberLogin = async () => {
-    try {
-      if (saveCredentials) {
-        Keychain.setGenericPassword(username, password, {
-          service: "non-member-credentials",
-        });
-      }
-    } catch (error) {
-      console.error("Save credentials error", error);
-      setLoginErrorText(
-        "Något gick fel. Kunde inte spara dina inloggningsuppgifter.",
-      );
-      setShowLoginError(true);
-    }
+    await saveCreds("non-member-credentials");
     setIsLoading(true);
     authenticate(username, password, testMode, false)
       .then((response) => {
@@ -124,167 +113,76 @@ export const SigninForm = () => {
       .catch((error) => {
         console.error("Login error", error.message || error);
         if (error.message.includes("Network Error")) {
-          setLoginErrorText(
+          showLoginError(
             `Det går inte att nå servern just nu. ${isTryingStoredCredentials ? "Försöker igen automatiskt" : "Försök igen om en stund."}`,
           );
         } else {
-          setLoginErrorText("Något gick fel. Försök igen senare.");
+          showLoginError("Något gick fel. Försök igen senare.");
         }
-        setShowLoginError(true);
       })
       .finally(() => {
         setIsLoading(false);
       });
   };
 
-  const cancelRef = useRef(null);
+  const onSubmit = () => {
+    if (loginAsNonMember) handleNonMemberLogin();
+    else handleMemberLogin();
+  };
+
   return (
-    <SafeAreaView flex={1} key={colorMode}>
-      <VStack flex={1} bg="$background0" space="lg" padding={20}>
-        <Heading size="lg">Välkommen Swagger</Heading>
+    <ParallaxScrollView>
+      <ThemedView>
+        <ThemedText type="title">Välkommen Swagger</ThemedText>
 
-        <VStack flex={1} space="lg" mt={5}>
 
-          <Heading fontWeight="medium" size="xs">
-            {loginAsNonMember ? 'Logga in med dina swag.mensa.se-uppgifter' : 'Logga in med dina Mensa.se-uppgifter'}
-          </Heading>
+        <ThemedText type="defaultSemiBold">
+          {loginAsNonMember ? 'Logga in med dina swag.mensa.se-uppgifter' : 'Logga in med dina Mensa.se-uppgifter'}
+        </ThemedText>
 
-          <Input
-            variant="outline"
-            isDisabled={isLoading}
-            height={48}
-          >
-            <InputField
-              placeholder="Email"
-              keyboardType="email-address"
-              value={username}
-              onChangeText={setUsername}
-              height={48}
-            />
-          </Input>
-          <Input
-            variant="outline"
-            isDisabled={isLoading}
-            height={48}
-          >
-            <InputField
-              placeholder="Lösenord"
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry={!passwordVisible}
-              height={48}
-            />
-            <InputSlot pr="$3" onPress={() => {
-              setPasswordVisible((passwordVisible) => {
-                return !passwordVisible
-              })
-            }}>
-              <InputIcon
-                as={passwordVisible ? EyeIcon : EyeOffIcon}
-                color="$primary500"
-              />
-            </InputSlot>
-          </Input>
-          <Checkbox
-            aria-label="Save Credentials"
-            size="md"
-            isInvalid={false}
-            isDisabled={false}
-            onChange={setSaveCredentials}
-            value={saveCredentials.toString()}
-            height={48}
-            paddingHorizontal={5}>
-            <CheckboxIndicator mr="$2">
-              <CheckboxIcon as={CheckIcon} />
-            </CheckboxIndicator>
-            <CheckboxLabel>Spara inloggning</CheckboxLabel>
-          </Checkbox>
+        <ThemedInput
+          editable={!isLoading}
+          placeholder="Email"
+          keyboardType="email-address"
+          value={username}
+          onChangeText={setUsername}
+        />
+        <ThemedInput
+          editable={!isLoading}
+          placeholder="Lösenord"
+          value={password}
+          onChangeText={setPassword}
+          secureTextEntry={!passwordVisible}
+          showPasswordToggle={true}
+          onPasswordToggle={() => setPasswordVisible(!passwordVisible)}
+        />
+        <SaveCredentialsCheckBox
+          value={saveCredentials}
+          onValueChange={setSaveCredentials}
+        />
 
-          <VStack space="lg" flex={1}>
-            {isLoading ? (
-              <LoadingScreen />
-            ) : (
-              <>
-                <Button
-                  size="md"
-                  height={48}
-                  variant="solid"
-                  action="primary"
-                  bgColor={loginAsNonMember ? "$amber300" : "$primary500"}
-                  onPress={() => {
-                    if (loginAsNonMember) {
-                      handleNonMemberLogin();
-                    } else {
-                      handleMemberLogin();
-                    }
-                  }}
-                  isDisabled={!backendConnection}
-                >
-                  <ButtonText
-                    style={{ textAlign: 'center' }}
-                    color={loginAsNonMember ? (colorMode == 'dark' ? "$text0" : "$text900") : "$text0"}
-                  >
-                    {TEST_MODE ? (loginAsNonMember ? "Logga in som medföljande" : "Logga in") : "Logga in i testläge"}
-                  </ButtonText>
-                </Button>
-                <Box flex={1} paddingTop={40} alignItems="center">
-                  {loginAsNonMember ? (
-                    <>
-                      <Link onPress={() => setLoginAsNonMember(false)} alignItems="center" height={48}>
-                        <Text size="sm">Medlem i Mensa Sverige?</Text>
-                        <Text size="sm" color="$primary700">Logga in här</Text>
-                      </Link>
-                    </>
-                  ) : (
-                    <>
-                      <Link onPress={() => setLoginAsNonMember(true)} alignItems="center" height={48}>
-                        <Text size="sm">Medföljande eller internationell medlem?</Text>
-                        <Text size="sm" color="$primary700">Logga in här</Text>
-                      </Link>
-                    </>
-                  )}
-                </Box>
-              </>
-            )}
-          </VStack>
-          <Box flex={1} />
-        </VStack>
-        <Modal
-          isOpen={showLoginError}
-          onClose={() => setShowLoginError(false)}
-          finalFocusRef={cancelRef}
-          size='lg'
-        >
-          <ModalBackdrop bg="$coolGray500" />
-          <ModalContent>
-            <ModalHeader>
-              <Heading size="lg">Fel vid inloggning</Heading>
-              <ModalCloseButton
-                padding={15}>
-                <Icon as={CloseIcon} />
-              </ModalCloseButton>
-            </ModalHeader>
-            <ModalBody>
-              <Text>{loginErrorText}</Text>
-            </ModalBody>
-            <ModalFooter >
-              <HStack space="lg" justifyContent="center" alignItems="center" padding={20}>
-                <Button
-                  size="md"
-                  variant="solid"
-                  action="primary"
-                  isDisabled={false}
-                  isFocusVisible={false}
-                  onPress={() => setShowLoginError(false)}
-                  flex={1}
-                >
-                  <ButtonText style={{ textAlign: 'center' }}>OK</ButtonText>
-                </Button>
-              </HStack>
-            </ModalFooter>
-          </ModalContent>
-        </Modal>
-      </VStack>
-    </SafeAreaView>
+        <ThemedButton
+          text={loginAsNonMember ? "Logga in som medföljande" : "Logga in"}
+          disabled={!backendConnection}
+          isLoading={isLoading}
+          onPress={onSubmit}
+          variant={loginAsNonMember ? "secondary" : "primary"}
+          style={{
+            opacity: backendConnection ? 1 : 0.5,
+          }}
+        />
+
+
+
+
+      </ThemedView>
+    </ParallaxScrollView>
   );
 };
+
+
+const styles = StyleSheet.create({
+
+  stack: { marginTop: 16, gap: 14, flex: 1 },
+  loadingWrap: { flexDirection: "row", marginTop: 24, justifyContent: "center", alignItems: "center", flex: 1 },
+});

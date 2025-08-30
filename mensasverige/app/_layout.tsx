@@ -16,11 +16,15 @@ export default function RootLayout() {
     // Async font loading only occurs in development.
     return null;
   }
-
+  const isLoggedIn = false;
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        {isLoggedIn ? (
+          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        ) : (
+          <Stack.Screen name="login" options={{ headerShown: false }} />
+        )}
         <Stack.Screen name="+not-found" />
       </Stack>
       <StatusBar style="auto" />

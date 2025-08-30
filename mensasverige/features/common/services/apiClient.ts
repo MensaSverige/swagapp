@@ -18,12 +18,11 @@
  * is for general API requests.
  */
 import axios, {AxiosResponse} from 'axios';
-import {API_URL, API_VERSION} from '@env';
 import useStore from '../store/store';
 import {getOrRefreshAccessToken} from './authService';
 
 const apiClient = axios.create({
-  baseURL: `${API_URL}/${API_VERSION}`,
+  baseURL: `${process.env.API_URL}/${process.env.API_VERSION}`,
 });
 
 apiClient.interceptors.request.use(

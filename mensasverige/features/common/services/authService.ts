@@ -28,12 +28,10 @@
 
 import { AuthRequest, AuthResponse, HTTPValidationError, ValidationError } from '../../../api_schema/types';
 import axios, { AxiosResponse } from 'axios';
-import { API_URL, API_VERSION } from '@env';
-import { UserCredentials } from 'react-native-keychain';
-import * as Keychain from 'react-native-keychain';
+import * as SecureStore from "expo-secure-store";
 
 const authClient = axios.create({
-    baseURL: `${API_URL}/${API_VERSION}`,
+    baseURL: `${process.env.API_URL}/${process.env.API_VERSION}`,
 });
 
 export const authenticate = async (username: string, password: string, testMode: boolean, member: boolean): Promise<AuthResponse> => {
@@ -83,15 +81,15 @@ export const authenticate = async (username: string, password: string, testMode:
 }
 
 export const getOrRefreshAccessToken = async (): Promise<string> => {
-    const accessToken = await Keychain.getGenericPassword({ service: 'accessToken' })
-    const accessTokenExpiry = await Keychain.getGenericPassword({ service: 'accessTokenExpiry' })
-    const refreshToken = await Keychain.getGenericPassword({ service: 'refreshToken' });
+        const accessToken = await SecureStore.getItemAsync('accessToken');
+        const accessTokenExpiry = await SecureStore.getItemAsync('accessTokenExpiry');
+        const refreshToken = await SecureStore.getItemAsync('refreshToken');
 
     if (accessToken && accessTokenExpiry && refreshToken) {
-        const tokenExpiryDate = new Date(accessTokenExpiry.password);
+        const tokenExpiryDate = new Date(accessTokenExpiry);
         if (new Date() > new Date(tokenExpiryDate.getTime() - 60 * 1000)) { // refresh 60 seconds before expiry
             try {
-                const newAccessToken = await refreshAccessToken(refreshToken.password);
+                const newAccessToken = await refreshAccessToken(refreshToken);
                 console.log('Refreshed access token');
                 return newAccessToken;
             } catch (error) {
@@ -102,7 +100,7 @@ export const getOrRefreshAccessToken = async (): Promise<string> => {
                 }
             }
         } else {
-            return accessToken.password;
+            return accessToken;
         }
     }
     return Promise.reject('No access token');
@@ -126,56 +124,52 @@ export const refreshAccessToken = async (refreshToken: string): Promise<string> 
 
 export const attemptLoginWithStoredCredentials = async (): Promise<AuthResponse> => {
     // First try to login with stored credentials for member users
-    return Keychain.getGenericPassword({ service: 'credentials' })
-        .then(async (credentials: UserCredentials | false) => {
-            if (credentials) {
-                return authenticate(credentials.username, credentials.password, false, true)
-                    .catch(async (error: Error) => {
-                        // If that login fails, reset member user credentials storage.
-                        console.error('Login with stored credentials failed', error);
-                        return Keychain.resetGenericPassword({ service: 'credentials' })
-                            .then(() => Promise.reject('Login failed'));
-                    });
-            }
-            // If no stored credentials are found, try to login with stored credentials for non-member users
-            return Keychain.getGenericPassword({ service: 'non-member-credentials' })
-                .then(async (credentials: UserCredentials | false) => {
-                    if (credentials) {
-                        return authenticate(credentials.username, credentials.password, false, false)
-                            // If that login fails, reset non-member user credentials storage.
-                            .catch( async (error: Error) => {
-                                console.error('Login with stored credentials failed', error);
-                                return Keychain.resetGenericPassword({ service: 'non-member-credentials' })
-                                    .then(() => Promise.reject('Login failed'));
-                            });
-                    }
-                    return Promise.reject('No stored credentials');
-                });
-        })
+    const memberCredentials = await SecureStore.getItemAsync('credentials');
+    if (memberCredentials) {
+        try {
+            const credentials = JSON.parse(memberCredentials);
+            return await authenticate(credentials.username, credentials.password, false, true);
+        } catch (error: any) {
+            // If that login fails, reset member user credentials storage.
+            console.error('Login with stored credentials failed', error);
+            await SecureStore.deleteItemAsync('credentials');
+            return Promise.reject('Login failed');
+        }
+    }
+    
+    // If no stored credentials are found, try to login with stored credentials for non-member users
+    const nonMemberCredentials = await SecureStore.getItemAsync('non-member-credentials');
+    if (nonMemberCredentials) {
+        try {
+            const credentials = JSON.parse(nonMemberCredentials);
+            return await authenticate(credentials.username, credentials.password, false, false);
+        } catch (error: any) {
+            // If that login fails, reset non-member user credentials storage.
+            console.error('Login with stored credentials failed', error);
+            await SecureStore.deleteItemAsync('non-member-credentials');
+            return Promise.reject('Login failed');
+        }
+    }
+    
+    return Promise.reject('No stored credentials');
 }
 
 export const resetUserCredentials = async (): Promise<boolean> => {
     return Promise.all([
-        Keychain.resetGenericPassword({ service: 'accessToken' }),
-        Keychain.resetGenericPassword({ service: 'accessTokenExpiry' }),
-        Keychain.resetGenericPassword({ service: 'credentials' }),
-        Keychain.resetGenericPassword({ service: 'non-member-credentials' }),
-        Keychain.resetGenericPassword({ service: 'refreshToken' }),
+        SecureStore.deleteItemAsync('accessToken'),
+        SecureStore.deleteItemAsync('accessTokenExpiry'),
+        SecureStore.deleteItemAsync('credentials'),
+        SecureStore.deleteItemAsync('non-member-credentials'),
+        SecureStore.deleteItemAsync('refreshToken'),
     ])
     .then(() => true)
 }
 
 export const storeAndValidateAuthResponse = async (authresponse: AuthResponse): Promise<AuthResponse> => {
     if (authresponse.accessToken && authresponse.refreshToken && authresponse.accessTokenExpiry && authresponse.user) {
-        await Keychain.setGenericPassword('accessToken', authresponse.accessToken, {
-            service: 'accessToken',
-        });
-        await Keychain.setGenericPassword('accessTokenExpiry', authresponse.accessTokenExpiry.toString(), {
-            service: 'accessTokenExpiry',
-        });
-        await Keychain.setGenericPassword('refreshToken', authresponse.refreshToken, {
-            service: 'refreshToken',
-        });
+        await SecureStore.setItemAsync('accessToken', authresponse.accessToken);
+        await SecureStore.setItemAsync('accessTokenExpiry', authresponse.accessTokenExpiry.toString());
+        await SecureStore.setItemAsync('refreshToken', authresponse.refreshToken);
 
         if (authresponse.user !== null && authresponse.user !== undefined) {
             return authresponse;
