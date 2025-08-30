@@ -22,7 +22,7 @@ import useStore from '../store/store';
 import {getOrRefreshAccessToken} from './authService';
 
 const apiClient = axios.create({
-  baseURL: `${process.env.API_URL}/${process.env.API_VERSION}`,
+  baseURL: `${process.env.EXPO_PUBLIC_API_URL}/${process.env.EXPO_PUBLIC_API_VERSION}`,
 });
 
 apiClient.interceptors.request.use(

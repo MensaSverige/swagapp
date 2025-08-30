@@ -31,13 +31,12 @@ import axios, { AxiosResponse } from 'axios';
 import * as SecureStore from "expo-secure-store";
 
 const authClient = axios.create({
-    baseURL: `${process.env.API_URL}/${process.env.API_VERSION}`,
+    baseURL: `${process.env.EXPO_PUBLIC_API_URL}/${process.env.EXPO_PUBLIC_API_VERSION}`,
 });
 
 export const authenticate = async (username: string, password: string, testMode: boolean, member: boolean): Promise<AuthResponse> => {
     
     const endpoint = member ? 'authm' : 'authb';
-    
     return authClient
         .post(`/${endpoint}`,
             {
