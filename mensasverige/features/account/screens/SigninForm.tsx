@@ -2,6 +2,8 @@ import React, { useEffect, useState } from "react";
 import {
   Alert,
   StyleSheet,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import * as SecureStore from "expo-secure-store";
 import useStore from "../../common/store/store";
@@ -169,13 +171,27 @@ export const SigninForm = () => {
 
 
       </ThemedView>
+      <View style={styles.loginTypeContainer}>
+        {loginAsNonMember ? (
+          <TouchableOpacity onPress={() => setLoginAsNonMember(false)} style={{ alignItems: "center", justifyContent: "center" }}>
+            <ThemedText>Medlem i Mensa Sverige?</ThemedText>
+            <ThemedText type="link">Logga in här</ThemedText>
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity onPress={() => setLoginAsNonMember(true)} style={{ alignItems: "center", justifyContent: "center" }}>
+            <ThemedText>Medföljande eller internationell medlem?</ThemedText>
+            <ThemedText type="link">Logga in här</ThemedText>
+          </TouchableOpacity>
+        )}
+      </View>
+
     </ParallaxScrollView>
   );
 };
 
 
 const styles = StyleSheet.create({
-
+  loginTypeContainer: { flex: 1, marginTop: 16, justifyContent: "center" },
   stack: { marginTop: 16, gap: 14, flex: 1 },
   loadingWrap: { flexDirection: "row", marginTop: 24, justifyContent: "center", alignItems: "center", flex: 1 },
 });
