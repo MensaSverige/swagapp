@@ -158,7 +158,7 @@ export const MyExternalEvents = () => {
     }, [nextEvent, didInitiallyScroll, scrollToCurrentEvent]);
 
     return (
-
+        <>
         <VStack flex={1} space="sm" h="100%" bg="$background0">
             {selectedEvent && (
                 <ExternalEventCardModal
@@ -185,7 +185,7 @@ export const MyExternalEvents = () => {
 
                 )}
             </HStack>
-            <ScrollView flex={1} ref={scrollViewRef}>
+            <ScrollView flex={1} ref={scrollViewRef} contentContainerStyle={{ paddingBottom: 80 }}>
                 <VStack space="lg" flex={1} justifyContent="center">
                     {loading &&
                         <LoadingScreen />
@@ -245,10 +245,11 @@ export const MyExternalEvents = () => {
                 ))}
 
             </ScrollView>
-            {user && !user.isMember && (
-                <NonMemberInfo />
-            )}
         </VStack>
+        {user && !user.isMember && (
+            <NonMemberInfo />
+        )}
+        </>
     );
 }
 
