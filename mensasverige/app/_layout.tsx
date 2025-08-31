@@ -8,6 +8,7 @@ import { useColorScheme } from '@/hooks/useColorScheme';
 import { useEffect, useState } from 'react';
 import useStore from '@/features/common/store/store';
 import apiClient from '@/features/common/services/apiClient';
+import useUserLocation from '@/features/map/hooks/useUserLocation';
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
@@ -28,6 +29,7 @@ export default function RootLayout() {
   //   setUser(null);
   // }, []);
 
+    useUserLocation();
   useEffect(() => {
     console.log('User state changed:', user);
     setIsLoggedIn(!!user);
