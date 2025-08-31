@@ -1,11 +1,107 @@
 import React, { useEffect, useState } from 'react';
+import { View, Text, Modal, StyleSheet, TouchableOpacity, TextInput } from 'react-native';
 import useStore from '../../common/store/store';
 import { FilterProps, filterUsers, defaultFilter } from '../store/LocationSlice';
-import { Button, Card, Heading, HStack, Input, InputField, Modal, ModalBackdrop, ModalBody, ModalCloseButton, ModalContent, ModalHeader, VStack, View, Text, InputSlot, InputIcon, SearchIcon, CloseIcon, Icon } from '../../../gluestack-components';
 import Slider from '@react-native-community/slider';
-import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
-import { config } from '../../../gluestack-components/gluestack-ui.config';
-import { ButtonText } from '@gluestack-ui/themed';
+import { useColorScheme } from '@/hooks/useColorScheme';
+import { Colors } from '@/constants/Colors';
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+
+const createStyles = (colorScheme: string) => StyleSheet.create({
+  searchContainer: {
+    backgroundColor: colorScheme === 'dark' ? '#1f2937' : '#ffffff',
+    borderRadius: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    margin: 16,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 16,
+    color: colorScheme === 'dark' ? '#ffffff' : '#000000',
+    marginLeft: 8,
+  },
+  clearButton: {
+    padding: 4,
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  modalContent: {
+    backgroundColor: colorScheme === 'dark' ? '#1f2937' : '#ffffff',
+    borderRadius: 12,
+    width: '90%',
+    maxHeight: '80%',
+    padding: 20,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: Colors.primary200,
+  },
+  closeButton: {
+    padding: 8,
+  },
+  card: {
+    backgroundColor: colorScheme === 'dark' ? '#374151' : '#f9fafb',
+    borderRadius: 8,
+    padding: 16,
+    marginVertical: 8,
+  },
+  sliderContainer: {
+    marginVertical: 16,
+  },
+  buttonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 20,
+    gap: 12,
+  },
+  button: {
+    flex: 1,
+    padding: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  buttonOutline: {
+    borderWidth: 1,
+    borderColor: Colors.primary300,
+    backgroundColor: 'transparent',
+  },
+  buttonSolid: {
+    backgroundColor: Colors.primary300,
+  },
+  buttonText: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  buttonTextOutline: {
+    color: Colors.primary300,
+  },
+  buttonTextSolid: {
+    color: '#ffffff',
+  },
+  resultText: {
+    fontSize: 14,
+    color: colorScheme === 'dark' ? '#d1d5db' : '#6b7280',
+    textAlign: 'center',
+  },
+  numberHighlight: {
+    color: Colors.primary400,
+    fontWeight: 'bold',
+  },
+});
 
 type FilterMarkersProps = {
     showFilterView: boolean;
@@ -13,6 +109,8 @@ type FilterMarkersProps = {
 };
 export const FilterMarkersComponent: React.FC<FilterMarkersProps> = ({ showFilterView, onClose }) => {
     const ref = React.useRef(null);
+    const colorScheme = useColorScheme();
+    const styles = createStyles(colorScheme ?? 'light');
     const { userFilter, usersShowingLocation, filteredUsers, setUserFilter } = useStore();
     const [filter, setFilter] = useState<FilterProps>(userFilter);
     const [numberOfUsers, setNumberOfUsers] = useState(filteredUsers.length);
@@ -41,103 +139,96 @@ export const FilterMarkersComponent: React.FC<FilterMarkersProps> = ({ showFilte
 
     return (
         <View>
-            <Input bg="$background50"
-                borderWidth={0}
-                borderRadius={0}
-            >
-                <InputSlot pl="$4">
-                    <Icon
-                        size="xl"
-                        as={SearchIcon}
-                        color="$blueGray400"
-                    />
-                </InputSlot>
-                <InputField
+            <View style={styles.searchContainer}>
+                <MaterialIcons name="search" size={20} color={Colors.trueGray400 || '#9ca3af'} />
+                <TextInput
+                    style={styles.searchInput}
                     value={filter.name}
                     placeholder="Sök deltagare..."
-                    onChangeText={(value) => setFilterAndCalculateNumberOfUsers({ ...filter, name: value })}
+                    placeholderTextColor={Colors.trueGray400 || '#9ca3af'}
+                    onChangeText={(value: string) => setFilterAndCalculateNumberOfUsers({ ...filter, name: value })}
                     onEndEditing={saveFilter}
                 />
                 {filter.name && (
-                    <InputSlot p="$4" mr="$2"
+                    <TouchableOpacity 
+                        style={styles.clearButton}
                         onPress={() => setFilterAndCalculateNumberOfUsers({ ...filter, name: '' })}
                     >
-                        <InputIcon
-                            size="xl"
-                            as={CloseIcon}
-                            color="$blueGray400"
-                        />
-                    </InputSlot>
+                        <MaterialIcons name="close" size={20} color={Colors.trueGray400 || '#9ca3af'} />
+                    </TouchableOpacity>
                 )}
-            </Input>
+            </View>
+            
             <Modal
-                isOpen={showFilterView}
-                onClose={() => {
-                    cancelFilter();
-                }}
-                finalFocusRef={ref}
-                size='lg'
+                visible={showFilterView}
+                transparent={true}
+                animationType="slide"
+                onRequestClose={cancelFilter}
             >
-                <ModalBackdrop bg="$coolGray500" />
-                <ModalContent >
-                    <ModalHeader>
-                        <Heading size="lg" color={config.tokens.colors.primary200} >Filter</Heading>
-                        <ModalCloseButton
-                            padding={15}>
-                            <Icon as={CloseIcon} />
-                        </ModalCloseButton>
-                    </ModalHeader>
-                    <ModalBody>
-                        <VStack space="lg" h="100%" flex={1}>
-
-                            <Card size="sm" variant="elevated" m="$0">
-                                <Text>Online senaste <Text color="$vscode_numberLiteral">
-                                    {filter.showHoursAgo || 1}
-                                </Text> timmarna</Text>
-                                <Slider
-                                    style={{ height: 50 }}
-                                    value={filter.showHoursAgo}
-                                    minimumValue={0}
-                                    maximumValue={24}
-                                    step={1}
-                                    thumbTintColor={config.tokens.colors.blue400}
-                                    minimumTrackTintColor={config.tokens.colors.blue400}
-                                    maximumTrackTintColor={config.tokens.colors.blueGray200}
-                                    onValueChange={value =>
-                                        setFilterAndCalculateNumberOfUsers({ ...filter, showHoursAgo: value })
-                                    }
+                <View style={styles.modalContainer}>
+                    <View style={styles.modalContent}>
+                        <View style={styles.modalHeader}>
+                            <Text style={styles.modalTitle}>Filter</Text>
+                            <TouchableOpacity style={styles.closeButton} onPress={cancelFilter}>
+                                <MaterialIcons 
+                                    name="close" 
+                                    size={24} 
+                                    color={colorScheme === 'dark' ? '#ffffff' : '#000000'} 
                                 />
+                            </TouchableOpacity>
+                        </View>
+                        
+                        <View style={{ flex: 1 }}>
+                            <View style={styles.card}>
+                                <Text style={{ color: colorScheme === 'dark' ? '#ffffff' : '#000000', marginBottom: 8 }}>
+                                    Online senaste <Text style={styles.numberHighlight}>
+                                        {filter.showHoursAgo || 1}
+                                    </Text> timmarna
+                                </Text>
+                                <View style={styles.sliderContainer}>
+                                    <Slider
+                                        style={{ height: 50 }}
+                                        value={filter.showHoursAgo}
+                                        minimumValue={0}
+                                        maximumValue={24}
+                                        step={1}
+                                        thumbTintColor={Colors.blue400 || '#60a5fa'}
+                                        minimumTrackTintColor={Colors.blue400 || '#60a5fa'}
+                                        maximumTrackTintColor={Colors.trueGray200 || '#e5e7eb'}
+                                        onValueChange={(value: number) =>
+                                            setFilterAndCalculateNumberOfUsers({ ...filter, showHoursAgo: value })
+                                        }
+                                    />
+                                </View>
+                            </View>
+                            
+                            <Text style={styles.resultText}>
+                                Visar <Text style={styles.numberHighlight}>{numberOfUsers}</Text> personer 
+                            </Text>
+                            
+                            <View style={styles.buttonContainer}>
+                                <TouchableOpacity
+                                    style={[styles.button, styles.buttonOutline]}
+                                    onPress={() => setFilterAndCalculateNumberOfUsers({ ...defaultFilter, showHoursAgo: 24 })}
+                                >
+                                    <Text style={[styles.buttonText, styles.buttonTextOutline]}>
+                                        Nollställ filter
+                                    </Text>
+                                </TouchableOpacity>
 
-                            </Card>
-                            <Text>Visar <Text color="$vscode_numberLiteral">{numberOfUsers}</Text> personer </Text>
-                            <HStack space="lg" h="100%" flex={1} justifyContent="space-evenly" paddingBottom={20} >
-                                <Button
-                                    size="md"
-                                    variant="outline"
-                                    action="secondary"
-                                    borderColor="$vscode_stringLiteral"
-                                    isDisabled={false}
-                                    isFocusVisible={false}
-                                    onPress={() => setFilterAndCalculateNumberOfUsers({ ...defaultFilter, showHoursAgo: 24 })}                            >
-                                    <ButtonText color='$vscode_stringLiteral'>Nollställ filter </ButtonText>
-                                </Button>
-
-                                <Button
-                                    style={{ right: 10 }}
-                                    size="md"
-                                    variant="solid"
-                                    action="primary"
-                                    backgroundColor="$vscode_const"
-                                    isDisabled={false}
-                                    isFocusVisible={false}
+                                <TouchableOpacity
+                                    style={[styles.button, styles.buttonSolid]}
                                     onPress={saveFilter}
                                 >
-                                    <ButtonText>Spara</ButtonText>
-                                </Button>
-                            </HStack>
-                        </VStack>
-                    </ModalBody>
-                </ModalContent>
-            </Modal></View>
+                                    <Text style={[styles.buttonText, styles.buttonTextSolid]}>
+                                        Spara
+                                    </Text>
+                                </TouchableOpacity>
+                            </View>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
+        </View>
     );
 };

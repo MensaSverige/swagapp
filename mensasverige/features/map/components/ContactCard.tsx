@@ -1,13 +1,67 @@
 import React, { useEffect, useState } from 'react';
-import { HStack, VStack, Heading, Pressable, Text, Modal, ModalContent, ModalCloseButton, ModalBody, Icon, CloseIcon } from '../../../gluestack-components';
-import { Linking, Platform } from 'react-native';
+import { Linking, Platform, Modal, View, Text, TouchableOpacity, StyleSheet, Pressable } from 'react-native';
 import UserWithLocation from '../types/userWithLocation';
 import { timeUntil } from '../../events/utilities/TimeLeft';
-import { gluestackUIConfig } from '../../../gluestack-components/gluestack-ui.config';
 import UserAvatar, { getOnlineStatusColor } from './UserAvatar';
-import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
-import { faDiamondTurnRight, faEnvelope, faLocationArrow, faMap, faPhone } from '@fortawesome/free-solid-svg-icons';
 import { LocationLinkButton } from './LocationLinkIcon';
+import { useColorScheme } from '@/hooks/useColorScheme';
+import { Colors } from '@/constants/Colors';
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+
+const createStyles = (colorScheme: string) => StyleSheet.create({
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    paddingBottom: 60,
+  },
+  modalContent: {
+    backgroundColor: colorScheme === 'dark' ? '#1f2937' : '#ffffff',
+    margin: 20,
+    borderRadius: 12,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  closeButton: {
+    alignSelf: 'flex-end',
+    padding: 8,
+  },
+  headerContainer: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginTop: 10,
+  },
+  contentContainer: {
+    flex: 1,
+    marginLeft: 16,
+  },
+  heading: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: Colors.primary400,
+    marginBottom: 4,
+  },
+  timeText: {
+    fontSize: 14,
+    marginBottom: 12,
+  },
+  actionsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+    gap: 16,
+  },
+  actionButton: {
+    padding: 8,
+  },
+});
 
 
 type ContactCardProps = {
@@ -18,7 +72,10 @@ type ContactCardProps = {
 
 const ContactCard: React.FC<ContactCardProps> = ({ user, showCard, onClose }) => {
     const ref = React.useRef(null);
+    const colorScheme = useColorScheme();
+    const styles = createStyles(colorScheme ?? 'light');
     const [comparisonDate, setComparisonDate] = useState(new Date());
+    
     useEffect(() => {
         let intervalId = null;
 
@@ -38,65 +95,72 @@ const ContactCard: React.FC<ContactCardProps> = ({ user, showCard, onClose }) =>
     if (!user) {
         return null;
     }
+    
     return (
         <Modal
-            isOpen={showCard}
-            onClose={onClose}
-            finalFocusRef={ref}
-            size='lg'
-            style={{
-                justifyContent: 'flex-end',
-                bottom: 60,
-            }}
+            visible={showCard}
+            transparent={true}
+            animationType="slide"
+            onRequestClose={onClose}
         >
-            <ModalContent
-                bg="$background50"
-            >
-                <ModalBody >
-                    <ModalCloseButton padding={15} style={{ alignItems: 'flex-end' }}>
-                        <Icon as={CloseIcon} />
-                    </ModalCloseButton>
-                    <HStack space="xl" >
+            <View style={styles.modalContainer}>
+                <View style={styles.modalContent}>
+                    <TouchableOpacity style={styles.closeButton} onPress={onClose}>
+                        <MaterialIcons 
+                            name="close" 
+                            size={24} 
+                            color={colorScheme === 'dark' ? '#ffffff' : '#000000'} 
+                        />
+                    </TouchableOpacity>
+                    
+                    <View style={styles.headerContainer}>
+                        <UserAvatar 
+                            firstName={user.firstName} 
+                            lastName={user.lastName} 
+                            avatar_url={user.avatar_url} 
+                            onlineStatus={user.onlineStatus} 
+                        />
+                        
+                        <View style={styles.contentContainer}>
+                            <Text style={styles.heading}>
+                                {user.firstName} {user.lastName}
+                            </Text>
+                            {user.location.timestamp && (
+                                <Text style={[styles.timeText, { color: getOnlineStatusColor(user.onlineStatus, colorScheme ?? 'light') }]}>
+                                    {timeUntil(comparisonDate, user.location.timestamp)} sedan
+                                </Text>
+                            )}
 
-                        <UserAvatar firstName={user.firstName} lastName={user.lastName} avatar_url={user.avatar_url} onlineStatus={user.onlineStatus} />
-                        <VStack style={{ flex: 1 }}>
-                            <Heading size="sm" color="$primary400" >{user.firstName} {user.lastName}</Heading>
-                            {user.location.timestamp &&
-                                <Text color={getOnlineStatusColor(user.onlineStatus)}>{timeUntil(comparisonDate, user.location.timestamp)} sedan</Text>
-                            }
-
-                            <HStack space="xl" style={{ flex: 1, marginTop: 10, marginBottom: 20, marginRight: 30, justifyContent: 'flex-end' }}>
+                            <View style={styles.actionsContainer}>
                                 {user.contact_info?.phone && user.contact_info.phone.trim() !== '' && (
-                                    <Pressable
-                                        style={{ marginRight: 10 }}
+                                    <TouchableOpacity
+                                        style={styles.actionButton}
                                         onPress={() => {
                                             Linking.openURL(`tel:${user.contact_info?.phone}`);
                                         }}
                                     >
-                                        <FontAwesomeIcon icon={faPhone} size={24} color={gluestackUIConfig.tokens.colors.green500} />
-                                    </Pressable>
+                                        <MaterialIcons name="phone" size={24} color={Colors.green500 || '#10b981'} />
+                                    </TouchableOpacity>
                                 )}
                                 {user.contact_info?.email && user.contact_info.email.trim() !== '' && (
-                                    <Pressable
-                                        style={{ marginRight: 10 }}
+                                    <TouchableOpacity
+                                        style={styles.actionButton}
                                         onPress={() => {
                                             Linking.openURL(`mailto:${user.contact_info?.email}`);
                                         }}
                                     >
-                                        <FontAwesomeIcon icon={faEnvelope} size={28} color={gluestackUIConfig.tokens.colors.warmGray400} />
-                                    </Pressable>
+                                        <MaterialIcons name="email" size={24} color={Colors.warmGray400 || '#9ca3af'} />
+                                    </TouchableOpacity>
                                 )}
 
                                 {user.location && (
-                                    <>
                                     <LocationLinkButton latitude={user.location.latitude} longitude={user.location.longitude} />
-                                    </>
                                 )}
-                            </HStack>
-                        </VStack>
-                    </HStack>
-                </ModalBody>
-            </ModalContent>
+                            </View>
+                        </View>
+                    </View>
+                </View>
+            </View>
         </Modal>
     );
 };

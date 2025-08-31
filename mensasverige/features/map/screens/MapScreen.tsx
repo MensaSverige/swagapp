@@ -5,34 +5,29 @@ import {
   Platform,
   TouchableWithoutFeedback,
   Keyboard,
-} from 'react-native';
-import ReactNativeMapView from 'react-native-maps';
-import {
-  Button,
-  KeyboardAvoidingView,
   View,
   SafeAreaView,
-  VStack
-} from '../../../gluestack-components';
+  KeyboardAvoidingView,
+  TouchableOpacity,
+} from 'react-native';
+import ReactNativeMapView, {PROVIDER_GOOGLE } from 'react-native-maps';
 import UserMarker from '../components/markers/UserMarker';
 import useStore from '../../common/store/store';
 import useRequestLocationPermission from '../hooks/useRequestLocationPermission';
 import useGetUsersShowingLocation from '../hooks/useGetUsersShowingLocation';
 import lightMapstyle from '../styles/light';
 import darkMapstyle from '../styles/dark';
-import { faFilter, faLocation } from '@fortawesome/free-solid-svg-icons';
-import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import ContactCard from '../components/ContactCard';
 import { getFullUrl } from '../../common/functions/GetFullUrl';
 import UserWithLocation from '../types/userWithLocation';
 import { useFocusEffect } from '@react-navigation/native';
 import { FilterMarkersComponent } from '../components/FilterMarkers';
 import IncognitoInfo from '../components/IncognitoInfo';
-import { config } from '../../../gluestack-components/gluestack-ui.config';
-import { useColorMode } from '@gluestack-ui/themed';
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import { Colors } from '@/constants/Colors';
+import { useColorScheme } from '@/hooks/useColorScheme';
 
-
-const createStyles = () =>
+const createStyles = (colorMode: string) =>
   StyleSheet.create({
     map: {
       ...StyleSheet.absoluteFillObject,
@@ -48,7 +43,7 @@ const createStyles = () =>
       gap: 10,
     },
     mapControlsButton: {
-      backgroundColor: `$background0`,
+      backgroundColor: colorMode === 'dark' ? '#1f2937' : '#ffffff',
       borderRadius: 10,
       shadowColor: 'black',
       shadowOffset: { width: 3, height: 3 },
@@ -56,11 +51,14 @@ const createStyles = () =>
       shadowRadius: 5,
       paddingHorizontal: 10,
       paddingVertical: 10,
+      alignItems: 'center',
+      justifyContent: 'center',
     },
   });
 
-const MapView: React.FC = () => {
-  const colorMode = useColorMode();
+const MapScreen: React.FC = () => {
+  const colorScheme = useColorScheme();
+  const colorMode = colorScheme ?? 'light';
   const mapRef = useRef<ReactNativeMapView | null>(null);
   const { region, usersShowingLocation, filteredUsers, selectedUser, userFilter, setSelectedUser, setFilteredUsers } = useStore();
   const [visibleRegion, setVisibleRegion] = useState(region);
@@ -99,7 +97,7 @@ const MapView: React.FC = () => {
   );
   const [followsUserLocation, setFollowsUserLocation] = React.useState(true);
 
-  const styles = createStyles();
+  const styles = createStyles(colorMode);
 
   useRequestLocationPermission();
   useGetUsersShowingLocation();
@@ -180,12 +178,12 @@ const MapView: React.FC = () => {
   }, [userFilter]);
 
   return (
-    <SafeAreaView flex={1} key={colorMode}>
+    <SafeAreaView style={{ flex: 1 }} key={colorMode}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        flex={1}>
+        style={{ flex: 1 }}>
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-          <VStack flex={1}>
+          <View style={{ flex: 1 }}>
             {selectedUser && showContactCard &&
               <ContactCard
                 key={`${selectedUser.userId}-${colorMode}`}
@@ -203,6 +201,7 @@ const MapView: React.FC = () => {
 
             <ReactNativeMapView
               ref={mapRef}
+              // provider={PROVIDER_GOOGLE}
               style={{ flex: 1 }}
               //style={styles.map}
               showsUserLocation={true}
@@ -254,37 +253,35 @@ const MapView: React.FC = () => {
                   ))}
             </ReactNativeMapView>
             <View style={styles.mapControlsWrapper}>
-              <Button
+              <TouchableOpacity
                 style={styles.mapControlsButton}
-                variant="solid"
                 onPress={openFilter}>
-                <FontAwesomeIcon
-                  icon={faFilter}
+                <MaterialIcons
+                  name="filter-list"
                   size={30}
-                  color={userFilter && (userFilter.name || userFilter.showHoursAgo !== 24) ? config.tokens.colors.primary300 : config.tokens.colors.coolGray400}
+                  color={userFilter && (userFilter.name || userFilter.showHoursAgo !== 24) ? Colors.primary300 : Colors.coolGray400}
                 />
-              </Button>
-              <Button
+              </TouchableOpacity>
+              <TouchableOpacity
                 style={styles.mapControlsButton}
-                variant="solid"
                 onPress={() => {
                   setFollowsUserLocation(!followsUserLocation);
                 }}>
-                <FontAwesomeIcon
-                  icon={faLocation}
+                <MaterialIcons
+                  name="my-location"
                   size={30}
                   color={followsUserLocation
-                    ? config.tokens.colors.primary300
-                    : config.tokens.colors.coolGray400}
+                    ? Colors.primary300
+                    : Colors.coolGray400}
                 />
-              </Button>
+              </TouchableOpacity>
             </View>
             <IncognitoInfo />
-          </VStack>
+          </View>
         </TouchableWithoutFeedback>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
 };
 
-export default MapView;
+export default MapScreen;

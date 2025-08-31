@@ -40,7 +40,10 @@
     "react-native-screens": "~4.11.1",
     "react-native-web": "~0.20.0",
     "react-native-webview": "13.13.5",
-    "zustand": "^5.0.8"
+    "zustand": "^5.0.8",
+    "react-native-maps": "1.20.1",
+    "@react-native-community/slider": "4.5.6",
+    "expo-location": "~18.1.6"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
