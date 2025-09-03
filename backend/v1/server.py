@@ -55,10 +55,9 @@ if os.getenv("ENABLE_DEV_ENDPOINTS") == "true":
 def initialize_app():
     initialize_db()
     root = get_external_root()
-    if root.restUrl == "":
-        print("No REST URL found")
+    if not root or not root.restUrl or root.restUrl == "" or not root.dates:
+        logging.error("Failed to fetch external root or missing data.")
         return
-
     all_external_events = []
     for date in root.dates:
         date_external_events = get_external_event_details(root.restUrl, date)

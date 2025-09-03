@@ -2,6 +2,17 @@
 
 # Check if the platform is macOS
 if [[ "$OSTYPE" == "darwin"* ]]; then
+
+  pushd .. > /dev/null
+  # Install bundler if not already installed
+  if ! gem list -i bundler > /dev/null 2>&1; then
+    gem install bundler
+  fi
+  bundle update --bundler
+  bundle install
+
+  popd > /dev/null
+  
   # Create .xcode.env.local file and set NODE_BINARY
   echo -n export NODE_BINARY= > ios/.xcode.env.local
   which node >> ios/.xcode.env.local

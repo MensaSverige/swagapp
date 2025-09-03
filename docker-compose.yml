@@ -8,7 +8,7 @@ services:
     working_dir: /app
     command: bash -c "pip install -r v1/requirements.txt && mkdir -p /static/img/ && uvicorn v1.server:app --host 0.0.0.0 --port 5000 --reload"
     ports:
-      - "5000:5000"
+      - "${BACKEND_PORT:-5000}:5000"
     depends_on:
       - mongo
     restart: unless-stopped
@@ -22,7 +22,7 @@ services:
       URL_MEMBER_API: 'https://medlem.mensa.se/mensa_verify/restlogin.php'
       URL_EXTERNAL_ROOT: 'https://swag.mensa.se/root.php'
       ENABLE_DEV_ENDPOINTS: 'true'
-      MY_USER_ID: ${MY_USER_ID}
+      MY_USER_ID: ${MY_USER_ID:-0}
       TEST_MODE: 'true'
       APPLE_REVIEW_USER: apple@apple.com
       GOOGLE_REVIEW_USER: google@google.com
@@ -37,7 +37,7 @@ services:
   mongo-express:
     image: mongo-express:latest
     ports:
-      - "8082:8081"
+      - "${MONGO_EXPRESS_PORT:-8082}:8081"
     depends_on:
       - mongo
     restart: unless-stopped
