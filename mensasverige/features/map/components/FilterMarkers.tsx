@@ -164,7 +164,7 @@ export const FilterMarkersComponent: React.FC<FilterMarkersProps> = ({ showFilte
                                 <Slider
                                     style={{ height: 35 }}
                                     value={filter.showHoursAgo}
-                                    minimumValue={0}
+                                    minimumValue={1}
                                     maximumValue={24}
                                     step={1}
                                     thumbTintColor={Colors.blue400 || '#60a5fa'}
