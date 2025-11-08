@@ -26,9 +26,6 @@ export function ThemedView({ style = styles.defaultStyle, lightColor, darkColor,
 
 const styles = StyleSheet.create({
   defaultStyle: {
-    // flexDirection: 'row',
-    // alignItems: 'center',
-    // gap: 8,
     flexDirection: 'column',
     alignItems: 'flex-start',
     gap: 16,
