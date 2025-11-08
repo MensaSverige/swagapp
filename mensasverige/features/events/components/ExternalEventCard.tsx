@@ -1,17 +1,13 @@
-import {
-  Box,
-  Card,
-  Divider,
-  Heading,
-  HStack,
-  Image,
-  Link,
-  LinkText,
-  ScrollView,
-  Text,
-  VStack,
-} from '../../../gluestack-components';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  View,
+  Text,
+  ScrollView,
+  Image,
+  StyleSheet,
+  TouchableOpacity,
+  Linking
+} from 'react-native';
 import { ExternalEventDetails, User } from '../../../api_schema/types';
 import UserAvatar from '../../map/components/UserAvatar';
 import { displayLocaleTimeStringDate } from '../screens/MyExternalEvents';
@@ -19,6 +15,118 @@ import { filterHtml } from '../../common/functions/filterHtml';
 import { extractLinks } from '../../common/functions/extractLinks';
 import { AddressLinkAndIcon } from '../../map/components/AddressLinkAndIcon';
 import { parseMapUrl } from '../../map/functions/parseMapUrl';
+
+const styles = StyleSheet.create({
+  container: {
+    width: '100%',
+  },
+  card: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  dateText: {
+    fontSize: 14,
+    fontWeight: 'normal',
+    lineHeight: 18,
+    marginBottom: 0,
+    color: '#374151',
+  },
+  timeText: {
+    fontSize: 14,
+    color: '#0F766E',
+    marginBottom: 12,
+    paddingTop: 2,
+  },
+  eventImage: {
+    width: '100%',
+    height: 200,
+    borderRadius: 8,
+    marginBottom: 8,
+  },
+  heading: {
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 0,
+    color: '#111827',
+  },
+  subHeading: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 4,
+    color: '#111827',
+  },
+  locationText: {
+    fontSize: 14,
+    color: '#6B7280',
+    marginBottom: 12,
+  },
+  speakerContainer: {
+    marginBottom: 16,
+  },
+  speakerRow: {
+    flex: 1,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginBottom: 16,
+  },
+  speakerInfo: {
+    fontSize: 14,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: '#E5E7EB',
+    marginBottom: 16,
+  },
+  descriptionText: {
+    fontSize: 14,
+    lineHeight: 20,
+    color: '#374151',
+  },
+  linksContainer: {
+    flex: 1,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    paddingTop: 10,
+  },
+  linkButton: {
+    marginRight: 12,
+    marginBottom: 8,
+  },
+  linkText: {
+    fontSize: 14,
+    color: '#2563EB',
+    textDecorationLine: 'underline',
+  },
+  adminRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  adminInfo: {
+    flex: 1,
+    marginLeft: 8,
+  },
+  vstack: {
+    flex: 1,
+  },
+  hstack: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+});
+
+const handleLinkPress = (url: string) => {
+  Linking.openURL(url).catch((err) => console.error('Error opening link:', err));
+};
 
 
 function formatSpeakerInfo(description: string): string {
@@ -62,7 +170,7 @@ const ExternalEventCard: React.FC<{
     const searchParameters = parseMapUrl(event.mapUrl);
     if (searchParameters) {
       return (
-        <HStack justifyContent="flex-start" mb="$0">
+        <View style={[styles.hstack, { justifyContent: 'flex-start', marginBottom: 0 }]}>
           <AddressLinkAndIcon
             displayName={event.location || undefined}
             latitude={searchParameters.latitude}
@@ -70,7 +178,7 @@ const ExternalEventCard: React.FC<{
             landmark={searchParameters.landmark || event.location}
             searchParameters={searchParameters.searchParameters}
           />
-        </HStack>
+        </View>
       );
     }
   }, [event.mapUrl, event.location]);
@@ -83,96 +191,79 @@ const ExternalEventCard: React.FC<{
   }, [capitalizedSpeakerInfo, event.description]);
 
   return (
-    <ScrollView width="$full">
-      <Card width="$full">
-        <Text
-          fontSize="$sm"
-          fontStyle="normal"
-          fontFamily="$heading"
-          fontWeight="$normal"
-          lineHeight="$sm"
-          mb="$0"
-        >
+    <ScrollView style={styles.container}>
+      <View style={styles.card}>
+        <Text style={styles.dateText}>
           {displayLocaleTimeStringDate(event.eventDate ?? "")}
-
         </Text>
-        <Text mb="$3" size="sm" color='$teal700' paddingTop={2}>
+        <Text style={styles.timeText}>
           {event.startTime} - {event.endTime}
         </Text>
-        <VStack mb="$2">
+        <View style={styles.vstack}>
           {event.imageUrl300 && (
             <Image
-              mb="$2"
+              style={styles.eventImage}
               source={{ uri: event.imageUrl300 }}
-              alt="Image"
-              width="$full"
-              height={200} // 3:2 aspect ratio
             />
           )}
-          <Heading size="md" fontFamily="$heading" mb="$0">
+          <Text style={styles.heading}>
             {event.titel}
-          </Heading>
+          </Text>
           {event.mapUrl ? 
             renderAddressLinkAndIcon()
             : 
-            <Text color="$vscode_customLiteral" size="sm" fontFamily="$heading" mb="$3"> 
-              {/* todo: add links for all events at the hotel */}
+            <Text style={styles.locationText}> 
               {event.location} 
             </Text>
           }
 
           {event.speaker && (
-            <Box >
-              <VStack flex={1} flexDirection="row" flexWrap='wrap' mb="$4">
-                <Heading size="sm" fontFamily="$heading" mb="$1">
+            <View style={styles.speakerContainer}>
+              <View style={styles.speakerRow}>
+                <Text style={styles.subHeading}>
                   {event.speaker}
-                </Heading>
+                </Text>
                 {capitalizedSpeakerInfo && (
-                  <Text size="sm" fontFamily="$heading">
+                  <Text style={styles.speakerInfo}>
                     {filterHtml(capitalizedSpeakerInfo)}
                   </Text>
                 )}
-              </VStack>
-            </Box>
-
+              </View>
+            </View>
           )}
-          <Divider mb="$4" />
-          <Text size="sm" fontFamily="$heading">
+          <View style={styles.divider} />
+          <Text style={styles.descriptionText}>
             {filterHtml(event.description)}
           </Text>
-          <HStack flex={1} flexDirection="row" flexWrap='wrap' paddingTop={10}>
+          <View style={styles.linksContainer}>
             {extractLinks(event.description)?.map((link, index) => (
-              <Link href={link.url} key={index}>
-                <LinkText>{link.name}</LinkText>
-              </Link>
+              <TouchableOpacity 
+                key={index}
+                style={styles.linkButton}
+                onPress={() => handleLinkPress(link.url)}
+              >
+                <Text style={styles.linkText}>{link.name}</Text>
+              </TouchableOpacity>
             ))}
-          </HStack>
-        </VStack>
+          </View>
+        </View>
         {admins && admins.map((admin) => (
-          <Box flexDirection="row">
+          <View key={admin.userId} style={styles.adminRow}>
             <UserAvatar
-              key={admin.userId}
               avatarSize="sm"
               firstName={admin.firstName}
               lastName={admin.lastName}
               avatar_url={admin.avatar_url ?? ""}
               onlineStatus="offline"
             />
-
-            <VStack flex={1} flexDirection="row" flexWrap='wrap' mb="$4">
-              <Heading size="sm" fontFamily="$heading" mb="$1">
+            <View style={styles.adminInfo}>
+              <Text style={styles.subHeading}>
                 {admin.firstName} {admin.lastName}
-              </Heading>
-            </VStack>
-          </Box>
+              </Text>
+            </View>
+          </View>
         ))}
-
-        {/* <AddressLinkAndIcon
-        address={event.location}
-        latitude={event.latitude}
-        longitude={event.longitude}
-      /> */}
-      </Card>
+      </View>
     </ScrollView>
   );
 };

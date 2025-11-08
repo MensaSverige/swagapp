@@ -1,76 +1,64 @@
 import React from "react";
 import { 
-  Badge,
-  Icon 
-} from "../../../gluestack-components";
-import { 
-  DicesIcon,
-  FootprintsIcon,
-  GlobeIcon, HandIcon,
-  MicVocalIcon, PresentationIcon,
-  SparklesIcon,
-  SproutIcon
-} from "lucide-react-native";
+  View,
+  Text,
+  StyleSheet
+} from "react-native";
 
 export interface EventBadgesProps {
     color: string;
     size?: number;
   }
 
+const styles = StyleSheet.create({
+  badge: {
+    borderRadius: 15,
+    minWidth: 30,
+    minHeight: 30,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  badgeText: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+});
 
-export const DinnerBadge: React.FC<EventBadgesProps> = ({ color, size }) => (
-  <Badge size="sm" bgColor={color} variant="solid" borderRadius="$full" ml="$1">
-  <Icon as={SparklesIcon} color="#fff" />
-</Badge>
+const createBadge = (emoji: string, color: string) => (
+  <View style={[styles.badge, { backgroundColor: color }]}>
+    <Text style={[styles.badgeText, { color: '#fff' }]}>{emoji}</Text>
+  </View>
 );
 
-export const FootprintsBadge: React.FC<EventBadgesProps> = ({ color, size }) => (
-  <Badge size="sm" bgColor={color} variant="solid" borderRadius="$full" ml="$1">
-  <Icon as={FootprintsIcon} color="#fff" />
-</Badge>
-);
+export const DinnerBadge: React.FC<EventBadgesProps> = ({ color, size }) => 
+  createBadge('✨', color);
 
-export const GameBadge: React.FC<EventBadgesProps> = ({ color, size }) => (
-  <Badge size="sm" bgColor={color} variant="solid" borderRadius="$full" ml="$1">
-  <Icon as={DicesIcon} color="#fff" />
-</Badge>
-);
+export const FootprintsBadge: React.FC<EventBadgesProps> = ({ color, size }) => 
+  createBadge('👣', color);
 
-export const GlobeBadge: React.FC<EventBadgesProps> = ({ color, size }) => (
-  <Badge size="sm" bgColor={color} variant="solid" borderRadius="$full" ml="$1">
-  <Icon as={GlobeIcon} color="#fff" />
-</Badge>
-);
+export const GameBadge: React.FC<EventBadgesProps> = ({ color, size }) => 
+  createBadge('🎲', color);
 
-export const TeenBadge: React.FC<EventBadgesProps> = ({ color, size }) => (
-  <Badge size="sm" bgColor={color} variant="solid" borderRadius="$full" ml="$1">
-  <Icon as={SproutIcon} color="#fff" />
-</Badge>
-);
+export const GlobeBadge: React.FC<EventBadgesProps> = ({ color, size }) => 
+  createBadge('🌍', color);
 
-export const PartyBadge: React.FC<EventBadgesProps> = ({ color, size }) => (
-  <Badge size="sm" bgColor={color} variant="solid" borderRadius="$full" ml="$1">
-  <Icon as={SparklesIcon} color="#fff" />
-</Badge>
-);
+export const TeenBadge: React.FC<EventBadgesProps> = ({ color, size }) => 
+  createBadge('🌱', color);
 
-export const MicVocalBadge: React.FC<EventBadgesProps> = ({ color, size }) => (
-  <Badge size="sm" bgColor={color} variant="solid" borderRadius="$full" ml="$1">
-  <Icon as={MicVocalIcon} color="#fff" />
-</Badge>
-);
+export const PartyBadge: React.FC<EventBadgesProps> = ({ color, size }) => 
+  createBadge('🎉', color);
 
-export const LectureBadge: React.FC<EventBadgesProps> = ({ color, size }) => (
-  <Badge size="sm" bgColor={color} variant="solid" borderRadius="$full" ml="$1">
-  <Icon as={PresentationIcon} color="#fff" />
-</Badge>
-);
+export const MicVocalBadge: React.FC<EventBadgesProps> = ({ color, size }) => 
+  createBadge('🎤', color);
 
-export const WorkshopBadge: React.FC<EventBadgesProps> = ({ color, size }) => (
-  <Badge size="sm" bgColor={color} variant="solid" borderRadius="$full" ml="$1">
-  <Icon as={HandIcon} color="#fff" />
-</Badge>
-);
+export const LectureBadge: React.FC<EventBadgesProps> = ({ color, size }) => 
+  createBadge('📊', color);
+
+export const WorkshopBadge: React.FC<EventBadgesProps> = ({ color, size }) => 
+  createBadge('🛠️', color);
 
 
 
