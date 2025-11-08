@@ -10,7 +10,7 @@ import {
   KeyboardAvoidingView,
   TouchableOpacity,
 } from 'react-native';
-import ReactNativeMapView, {PROVIDER_GOOGLE } from 'react-native-maps';
+import ReactNativeMapView, { PROVIDER_GOOGLE } from 'react-native-maps';
 import UserMarker from '../components/markers/UserMarker';
 import useStore from '../../common/store/store';
 import useRequestLocationPermission from '../hooks/useRequestLocationPermission';
@@ -26,6 +26,7 @@ import IncognitoInfo from '../components/IncognitoInfo';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
+import { SearchParticipants } from '../components/SearchParticipants';
 
 const createStyles = (colorMode: string) =>
   StyleSheet.create({
@@ -34,7 +35,7 @@ const createStyles = (colorMode: string) =>
     },
     mapControlsWrapper: {
       position: 'absolute',
-      top: 50,
+      top: 150,
       right: 10,
       zIndex: 1,
       backgroundColor: 'transparent',
@@ -60,7 +61,7 @@ const MapScreen: React.FC = () => {
   const colorScheme = useColorScheme();
   const colorMode = colorScheme ?? 'light';
   const mapRef = useRef<ReactNativeMapView | null>(null);
-  const { region, usersShowingLocation, filteredUsers, selectedUser, userFilter, setSelectedUser, setFilteredUsers } = useStore();
+  const { region, usersShowingLocation, filteredUsers, selectedUser, userFilter, setSelectedUser, setFilteredUsers, setUserFilter, user } = useStore();
   const [visibleRegion, setVisibleRegion] = useState(region);
   const [showContactCard, setShowContactCard] = useState(false);
   const [showFilter, setshowFilter] = useState(false);
@@ -127,10 +128,38 @@ const MapScreen: React.FC = () => {
     }
   }
 
+  const handleSearchChange = (text: string) => {
+    setUserFilter({ ...userFilter, name: text });
+  };
+
+  const handleSearchClear = () => {
+    setUserFilter({ ...userFilter, name: '' });
+  };
+
   const openFilter = () => {
     setShowContactCard(false);
     setSelectedUser(null);
     setshowFilter(true);
+  };
+
+  const handleFollowLocationPress = async () => {
+    const newFollowState = !followsUserLocation;
+    setFollowsUserLocation(newFollowState);
+
+    if (newFollowState && user?.location) {
+      const { latitude, longitude } = user.location;
+      if (latitude && longitude) {
+        mapRef.current?.animateToRegion(
+          {
+            latitude,
+            longitude,
+            latitudeDelta: region.latitudeDelta,
+            longitudeDelta: region.longitudeDelta,
+          },
+          350,
+        );
+      }
+    }
   };
 
   const resetSelectedUser = useMemo(() => () => {
@@ -190,6 +219,12 @@ const MapScreen: React.FC = () => {
                 user={selectedUser}
                 showCard={showContactCard}
                 onClose={onClose} />}
+
+            <SearchParticipants
+              value={userFilter.name || ''}
+              onChangeText={handleSearchChange}
+              onClear={handleSearchClear}
+            />
 
             <FilterMarkersComponent
               showFilterView={showFilter}
@@ -264,9 +299,7 @@ const MapScreen: React.FC = () => {
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.mapControlsButton}
-                onPress={() => {
-                  setFollowsUserLocation(!followsUserLocation);
-                }}>
+                onPress={handleFollowLocationPress}>
                 <MaterialIcons
                   name="my-location"
                   size={30}

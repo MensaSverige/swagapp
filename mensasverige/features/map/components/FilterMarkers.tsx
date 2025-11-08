@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, Modal, StyleSheet, TouchableOpacity, TextInput } from 'react-native';
+import { View, Text, Modal, StyleSheet, TouchableOpacity } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import useStore from '../../common/store/store';
 import { FilterProps, filterUsers, defaultFilter } from '../store/LocationSlice';
 import Slider from '@react-native-community/slider';
@@ -7,25 +8,7 @@ import { useColorScheme } from '@/hooks/useColorScheme';
 import { Colors } from '@/constants/Colors';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 
-const createStyles = (colorScheme: string) => StyleSheet.create({
-  searchContainer: {
-    backgroundColor: colorScheme === 'dark' ? '#1f2937' : '#ffffff',
-    borderRadius: 8,
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    margin: 16,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 16,
-    color: colorScheme === 'dark' ? '#ffffff' : '#000000',
-    marginLeft: 8,
-  },
-  clearButton: {
-    padding: 4,
-  },
+const createStyles = (colorScheme: string, topInset: number) => StyleSheet.create({
   modalContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -36,14 +19,23 @@ const createStyles = (colorScheme: string) => StyleSheet.create({
     backgroundColor: colorScheme === 'dark' ? '#1f2937' : '#ffffff',
     borderRadius: 12,
     width: '90%',
+    maxWidth: 400,
     maxHeight: '80%',
     padding: 20,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: 16,
   },
   modalTitle: {
     fontSize: 20,
@@ -56,21 +48,24 @@ const createStyles = (colorScheme: string) => StyleSheet.create({
   card: {
     backgroundColor: colorScheme === 'dark' ? '#374151' : '#f9fafb',
     borderRadius: 8,
-    padding: 16,
-    marginVertical: 8,
+    padding: 12,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: colorScheme === 'dark' ? '#4b5563' : '#e5e7eb',
   },
   sliderContainer: {
-    marginVertical: 16,
+    marginTop: 8,
+    marginBottom: 4,
   },
   buttonContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 20,
+    marginTop: 12,
     gap: 12,
   },
   button: {
     flex: 1,
-    padding: 12,
+    padding: 10,
     borderRadius: 8,
     alignItems: 'center',
   },
@@ -96,6 +91,7 @@ const createStyles = (colorScheme: string) => StyleSheet.create({
     fontSize: 14,
     color: colorScheme === 'dark' ? '#d1d5db' : '#6b7280',
     textAlign: 'center',
+    marginBottom: 4,
   },
   numberHighlight: {
     color: Colors.primary400,
@@ -110,7 +106,8 @@ type FilterMarkersProps = {
 export const FilterMarkersComponent: React.FC<FilterMarkersProps> = ({ showFilterView, onClose }) => {
     const ref = React.useRef(null);
     const colorScheme = useColorScheme();
-    const styles = createStyles(colorScheme ?? 'light');
+    const insets = useSafeAreaInsets();
+    const styles = createStyles(colorScheme ?? 'light', insets.top);
     const { userFilter, usersShowingLocation, filteredUsers, setUserFilter } = useStore();
     const [filter, setFilter] = useState<FilterProps>(userFilter);
     const [numberOfUsers, setNumberOfUsers] = useState(filteredUsers.length);
@@ -119,7 +116,7 @@ export const FilterMarkersComponent: React.FC<FilterMarkersProps> = ({ showFilte
         // Update the number of users showing location when the filtersettings is shown
         setNumberOfUsers(filterUsers(usersShowingLocation, filter).length);
         setFilter(userFilter);
-    }, [showFilterView]);
+    }, [showFilterView, userFilter]);
 
     const saveFilter = () => {
         setUserFilter(filter);
@@ -138,33 +135,12 @@ export const FilterMarkersComponent: React.FC<FilterMarkersProps> = ({ showFilte
     }
 
     return (
-        <View>
-            <View style={styles.searchContainer}>
-                <MaterialIcons name="search" size={20} color={Colors.trueGray400 || '#9ca3af'} />
-                <TextInput
-                    style={styles.searchInput}
-                    value={filter.name}
-                    placeholder="Sök deltagare..."
-                    placeholderTextColor={Colors.trueGray400 || '#9ca3af'}
-                    onChangeText={(value: string) => setFilterAndCalculateNumberOfUsers({ ...filter, name: value })}
-                    onEndEditing={saveFilter}
-                />
-                {filter.name && (
-                    <TouchableOpacity 
-                        style={styles.clearButton}
-                        onPress={() => setFilterAndCalculateNumberOfUsers({ ...filter, name: '' })}
-                    >
-                        <MaterialIcons name="close" size={20} color={Colors.trueGray400 || '#9ca3af'} />
-                    </TouchableOpacity>
-                )}
-            </View>
-            
-            <Modal
-                visible={showFilterView}
-                transparent={true}
-                animationType="slide"
-                onRequestClose={cancelFilter}
-            >
+        <Modal
+            visible={showFilterView}
+            transparent={true}
+            animationType="slide"
+            onRequestClose={cancelFilter}
+        >
                 <View style={styles.modalContainer}>
                     <View style={styles.modalContent}>
                         <View style={styles.modalHeader}>
@@ -178,57 +154,54 @@ export const FilterMarkersComponent: React.FC<FilterMarkersProps> = ({ showFilte
                             </TouchableOpacity>
                         </View>
                         
-                        <View style={{ flex: 1 }}>
-                            <View style={styles.card}>
-                                <Text style={{ color: colorScheme === 'dark' ? '#ffffff' : '#000000', marginBottom: 8 }}>
-                                    Online senaste <Text style={styles.numberHighlight}>
-                                        {filter.showHoursAgo || 1}
-                                    </Text> timmarna
-                                </Text>
-                                <View style={styles.sliderContainer}>
-                                    <Slider
-                                        style={{ height: 50 }}
-                                        value={filter.showHoursAgo}
-                                        minimumValue={0}
-                                        maximumValue={24}
-                                        step={1}
-                                        thumbTintColor={Colors.blue400 || '#60a5fa'}
-                                        minimumTrackTintColor={Colors.blue400 || '#60a5fa'}
-                                        maximumTrackTintColor={Colors.trueGray200 || '#e5e7eb'}
-                                        onValueChange={(value: number) =>
-                                            setFilterAndCalculateNumberOfUsers({ ...filter, showHoursAgo: value })
-                                        }
-                                    />
-                                </View>
-                            </View>
-                            
-                            <Text style={styles.resultText}>
-                                Visar <Text style={styles.numberHighlight}>{numberOfUsers}</Text> personer 
+                        <View style={styles.card}>
+                            <Text style={{ color: colorScheme === 'dark' ? '#ffffff' : '#000000', marginBottom: 6, fontSize: 15, fontWeight: '500' }}>
+                                Online senaste <Text style={styles.numberHighlight}>
+                                    {filter.showHoursAgo || 1}
+                                </Text> timmarna
                             </Text>
-                            
-                            <View style={styles.buttonContainer}>
-                                <TouchableOpacity
-                                    style={[styles.button, styles.buttonOutline]}
-                                    onPress={() => setFilterAndCalculateNumberOfUsers({ ...defaultFilter, showHoursAgo: 24 })}
-                                >
-                                    <Text style={[styles.buttonText, styles.buttonTextOutline]}>
-                                        Nollställ filter
-                                    </Text>
-                                </TouchableOpacity>
-
-                                <TouchableOpacity
-                                    style={[styles.button, styles.buttonSolid]}
-                                    onPress={saveFilter}
-                                >
-                                    <Text style={[styles.buttonText, styles.buttonTextSolid]}>
-                                        Spara
-                                    </Text>
-                                </TouchableOpacity>
+                            <View style={styles.sliderContainer}>
+                                <Slider
+                                    style={{ height: 35 }}
+                                    value={filter.showHoursAgo}
+                                    minimumValue={0}
+                                    maximumValue={24}
+                                    step={1}
+                                    thumbTintColor={Colors.blue400 || '#60a5fa'}
+                                    minimumTrackTintColor={Colors.blue400 || '#60a5fa'}
+                                    maximumTrackTintColor={Colors.trueGray200 || '#e5e7eb'}
+                                    onValueChange={(value: number) =>
+                                        setFilterAndCalculateNumberOfUsers({ ...filter, showHoursAgo: value })
+                                    }
+                                />
                             </View>
+                        </View>
+                        
+                        <Text style={styles.resultText}>
+                            Visar <Text style={styles.numberHighlight}>{numberOfUsers}</Text> personer 
+                        </Text>
+                        
+                        <View style={styles.buttonContainer}>
+                            <TouchableOpacity
+                                style={[styles.button, styles.buttonOutline]}
+                                onPress={() => setFilterAndCalculateNumberOfUsers({ ...defaultFilter, name: filter.name, showHoursAgo: 24 })}
+                            >
+                                <Text style={[styles.buttonText, styles.buttonTextOutline]}>
+                                    Nollställ filter
+                                </Text>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity
+                                style={[styles.button, styles.buttonSolid]}
+                                onPress={saveFilter}
+                            >
+                                <Text style={[styles.buttonText, styles.buttonTextSolid]}>
+                                    Spara
+                                </Text>
+                            </TouchableOpacity>
                         </View>
                     </View>
                 </View>
             </Modal>
-        </View>
     );
 };
