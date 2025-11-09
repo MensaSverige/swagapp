@@ -27,11 +27,16 @@ const EventListItem: React.FC<EventListItemProps> = ({
     isFirstEventOfDay = false
 }) => {
     console.log(event);
+    
+    // Calculate if event should be grayed out (not bookable and user not attending)
+    const shouldGrayOut = !event.bookable && !event.attending;
+    const eventOpacity = shouldGrayOut ? 0.6 : opacity;
+    
     return (
         <TouchableOpacity
             onPress={() => onPress(event)}
             style={{
-                opacity: opacity
+                opacity: eventOpacity
             }}
         >
             {/* Next event marker - only show if it's the next event but not the first event of the day */}
@@ -39,7 +44,10 @@ const EventListItem: React.FC<EventListItemProps> = ({
                 <View ref={nextEventMarkerRef} />
             )}
 
-            <View style={[styles.eventItem, event.attending && styles.attendingEventItem]}>
+            <View style={[
+                styles.eventItem, 
+                event.attending && styles.attendingEventItem
+            ]}>
                 <View style={styles.timeContainer}>
                     <Text style={styles.startTime}>
                         {DisplayTime(event.start)}
@@ -62,6 +70,11 @@ const EventListItem: React.FC<EventListItemProps> = ({
                         {event.attending && (
                             <View style={{ marginLeft: 4 }}>
                                 <MaterialIcons name="check-circle" size={14} color="#10B981" />
+                            </View>
+                        )}
+                        {shouldGrayOut && (
+                            <View style={{ marginLeft: 4 }}>
+                                <MaterialIcons name="event-busy" size={14} color="#EF4444" />
                             </View>
                         )}
                     </View>
@@ -101,11 +114,11 @@ const styles = StyleSheet.create({
     },
     startTime: {
         fontSize: 14,
-        color: Colors.teal500,
+        color: Colors.teal600,
     },
     endTime: {
         fontSize: 14,
-        color: Colors.teal700,
+        color: Colors.teal800,
     },
     eventContent: {
         flex: 1,
@@ -116,7 +129,7 @@ const styles = StyleSheet.create({
     eventTitle: {
         fontSize: 16,
         fontWeight: '600',
-        color: Colors.info400,
+        color: Colors.info700,
     },
     titleContainer: {
         flexDirection: 'row',
@@ -131,7 +144,7 @@ const styles = StyleSheet.create({
     },
     eventLocation: {
         fontSize: 14,
-        color: Colors.coolGray400,
+        color: Colors.coolGray600,
     },
 });
 

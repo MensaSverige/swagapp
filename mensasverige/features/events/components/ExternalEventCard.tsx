@@ -18,6 +18,7 @@ import { AddressLinkAndIcon } from '../../map/components/AddressLinkAndIcon';
 import { parseMapUrl } from '../../map/functions/parseMapUrl';
 import { MaterialIcons } from '@expo/vector-icons';
 import AttendingBadge from './AttendingBadge';
+import FullyBookedBadge from './FullyBookedBadge';
 
 const styles = StyleSheet.create({
   container: {
@@ -219,10 +220,17 @@ const EventCard: React.FC<{
             <Text style={styles.heading}>
               {event.name}
             </Text>
-            {event.attending && 
-            <AttendingBadge/>
-            // <> <Text> Anmäld</Text> <MaterialIcons name="check-circle" size={20} color="#10B981" /></>
-            }
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              {event.attending && 
+                <AttendingBadge/>
+                // <> <Text> Anmäld</Text> <MaterialIcons name="check-circle" size={20} color="#10B981" /></>
+              }
+              {!event.bookable && (
+                <View style={{ marginLeft: event.attending ? 8 : 0 }}>
+                  <FullyBookedBadge />
+                </View>
+              )}
+            </View>
           </View>
           {/* {event.mapUrl ? 
             renderAddressLinkAndIcon()
