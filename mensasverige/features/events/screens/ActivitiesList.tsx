@@ -15,13 +15,23 @@ import GroupedEventsList from '../components/GroupedEventsList';
 import { ThemedView } from '@/components/ThemedView';
 import { ThemedText } from '@/components/ThemedText';
 import { MaterialIcons } from '@expo/vector-icons';
-import { useScheduleEvents } from '../hooks/useEvents';
+import { useScheduleEventsWithFilter } from '../hooks/useFilteredEvents';
+import { EventFilter, EventFilterOptions } from '../components/EventFilter';
+import { Colors } from '@/constants/Colors';
 
 export const ActivitiesList = () => {
     const { user } = useStore();
-    const { groupedEvents, nextEvent, loading } = useScheduleEvents();
     const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
     const [didInitiallyScroll, setDidInitiallyScroll] = useState(false);
+    const [showFilter, setShowFilter] = useState(false);
+    const [eventFilter, setEventFilter] = useState<EventFilterOptions>({
+        attending: null,
+        bookable: null,
+        official: null,
+        categories: [],
+    });
+
+    const { groupedEvents, nextEvent, loading, filteredEventsCount, totalEventsCount } = useScheduleEventsWithFilter(eventFilter);
 
     const scrollViewRef = useRef<ScrollView>(null);
     const nextEventMarkerRef = useRef<View>(null);
@@ -29,6 +39,19 @@ export const ActivitiesList = () => {
     const handlePress = useCallback((event: Event) => {
         setSelectedEvent(event);
     }, []);
+
+    const handleApplyFilter = useCallback((filter: EventFilterOptions) => {
+        setEventFilter(filter);
+    }, []);
+
+    const isFilterActive = () => {
+        return (
+            eventFilter.attending !== null ||
+            eventFilter.bookable !== null ||
+            eventFilter.official !== null ||
+            (eventFilter.categories && eventFilter.categories.length > 0)
+        );
+    };
 
     const scrollToCurrentEvent = useCallback(() => {
         if (!scrollViewRef.current || !nextEventMarkerRef.current) {
@@ -61,16 +84,37 @@ export const ActivitiesList = () => {
                         setSelectedEvent(null)
                     }} />
             )}
+            
             <View style={styles.header}>
                 <ThemedText type="title">Aktiviteter</ThemedText>
-                {nextEvent && (
+                <View style={styles.headerActions}>
+                    {filteredEventsCount !== totalEventsCount && (
+                        <Text style={styles.filterCount}>
+                            Visar {filteredEventsCount} av {totalEventsCount} aktiviteter
+                        </Text>
+                    )}
                     <TouchableOpacity
-                        onPress={scrollToCurrentEvent}
-                        style={styles.scrollToButton}
+                        onPress={() => setShowFilter(true)}
+                        style={[
+                            styles.filterButton,
+                            isFilterActive() && styles.filterButtonActive
+                        ]}
                     >
-                        <MaterialIcons name="update" size={24} color="#2563EB" />
+                        <MaterialIcons 
+                            name="filter-list" 
+                            size={20} 
+                            color={isFilterActive() ? Colors.white : Colors.primary600} 
+                        />
                     </TouchableOpacity>
-                )}
+                    {nextEvent && (
+                        <TouchableOpacity
+                            onPress={scrollToCurrentEvent}
+                            style={styles.scrollToButton}
+                        >
+                            <MaterialIcons name="update" size={24} color="#2563EB" />
+                        </TouchableOpacity>
+                    )}
+                </View>
             </View>
             <ScrollView ref={scrollViewRef} style={styles.scrollContainer}>
                 {loading && (
@@ -98,6 +142,14 @@ export const ActivitiesList = () => {
             {user && !user.isMember && (
                 <NonMemberInfo />
             )}
+            
+            {/* Side Filter Menu - rendered last to appear on top */}
+            <EventFilter
+                visible={showFilter}
+                onClose={() => setShowFilter(false)}
+                onApplyFilter={handleApplyFilter}
+                currentFilter={eventFilter}
+            />
         </ThemedView>
     );
 }
@@ -110,10 +162,32 @@ const styles = StyleSheet.create({
         height: 50,
         paddingLeft: 20,
     },
-    scrollToButton: {
+    headerActions: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
         paddingRight: 15,
-        width: 50,
-        height: 50,
+    },
+    filterCount: {
+        fontSize: 12,
+        color: '#6B7280',
+        fontWeight: '500',
+    },
+    filterButton: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: Colors.coolGray100,
+    },
+    filterButtonActive: {
+        backgroundColor: Colors.primary600,
+    },
+    scrollToButton: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
         alignItems: 'center',
         justifyContent: 'center',
     },

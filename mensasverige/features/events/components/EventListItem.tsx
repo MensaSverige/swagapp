@@ -2,17 +2,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Event } from '../../../api_schema/types';
 import { DisplayTime } from '../utilities/DisplayTime';
-import {
-    ExploreBadge,
-    GameBadge,
-    GlobeBadge,
-    LectureBadge,
-    MicVocalBadge,
-    PartyBadge,
-    RestaurantBadge,
-    TeenBadge,
-    WorkshopBadge
-} from './EventBadges';
+import { getEventCategoryBadge } from '../utilities/EventCategories';
 import { Colors } from '@/constants/Colors';
 import { MaterialIcons } from '@expo/vector-icons';
 
@@ -25,29 +15,6 @@ interface EventListItemProps {
     isNextEvent?: boolean;
     isFirstEventOfDay?: boolean;
 }
-
-const getEventCategoryBadge = (categoryCode: string, color: string) => {
-    switch (categoryCode) {
-        case 'F': // föreläsning
-            return <LectureBadge color="#6366F1" />;
-        case 'Fö': // föreningsarbete
-            return <GlobeBadge color="#1E3A8A" />;
-        case 'M': // middag/festligheter
-            return <RestaurantBadge color="#BE185D" />;
-        case 'S': // spel/tävling
-            return <GameBadge color="#D97706" />;
-        case 'U': // ungdomsaktivitet
-            return <TeenBadge color="#C026D3" />;
-        case 'Up': //uppträdande
-            return <MicVocalBadge color="#F59E0B" />;
-        case 'Ut': // utflykt
-            return <ExploreBadge color="#65A30D" />;
-        case 'W': // workshop
-            return <WorkshopBadge color="#9333EA" />;
-        default:
-            return null;
-    }
-};
 
 const EventListItem: React.FC<EventListItemProps> = ({
     event,
@@ -102,7 +69,7 @@ const EventListItem: React.FC<EventListItemProps> = ({
 
                         {event.tags?.map((category, index) => (
                             <View key={index} style={styles.categoryBadge}>
-                                {getEventCategoryBadge(category.code, `#${category.colorBackground}`)}
+                                {getEventCategoryBadge(category.code)}
                             </View>
                         ))}
                     </View>
