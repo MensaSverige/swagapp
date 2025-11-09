@@ -19,8 +19,9 @@ async def validate_request(
                 raise HTTPException(status_code=401, detail="Unauthorized")
             user = get_user(int(payload.get("sub")))
             return user
-        except:
+        except Exception as e:
             logging.error("Error validating token: ", bearer.credentials)
+            logging.error(e)
             raise HTTPException(status_code=401, detail="Unauthorized")
     else:
         logging.error("No token provided")
