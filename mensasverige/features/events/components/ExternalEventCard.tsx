@@ -11,7 +11,7 @@ import {
 import { Event, User } from '../../../api_schema/types';
 import { DisplayTime } from '../utilities/DisplayTime';
 import UserAvatar from '../../map/components/UserAvatar';
-import { displayLocaleTimeStringDate } from '../screens/ActivitiesList';
+import { displayLocaleTimeStringDate } from '../utils/eventUtils';
 import { filterHtml } from '../../common/functions/filterHtml';
 import { extractLinks } from '../../common/functions/extractLinks';
 import { AddressLinkAndIcon } from '../../map/components/AddressLinkAndIcon';

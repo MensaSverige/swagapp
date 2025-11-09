@@ -1,86 +1,42 @@
 import React, { useEffect, useState } from 'react';
 import { View, StyleSheet, TouchableOpacity } from 'react-native';
-import { fetchExternalRoot, fetchEvents } from '../services/eventService';
+import { fetchExternalRoot } from '../services/eventService';
 import { ExternalRoot, Event } from '../../../api_schema/types';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import ParentEventDetails from './ParentEventDetails';
-import SiteNews from '../../common/components/SiteNews';
-import EventListItem from './EventListItem';
+import GroupedEventsList from './GroupedEventsList';
 import EventCardModal from './ExternalEventCardModal';
-import { displayLocaleTimeStringDate } from '../screens/ActivitiesList';
 import { MaterialIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import useStore from '../../common/store/store';
 import { Colors } from '@/constants/Colors';
+import { useDashboardEvents } from '../hooks/useEvents';
 
 const ParentEventDashboard = () => {
     const [eventInfo, setEventInfo] = useState<ExternalRoot | null>(null);
-    const [groupedUpcomingEvents, setGroupedUpcomingEvents] = useState<{ [key: string]: Event[] }>({});
-    const [hasMoreEvents, setHasMoreEvents] = useState(false);
     const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
-    const [loading, setLoading] = useState(true);
-    const { setEvents } = useStore();
+    const [parentLoading, setParentLoading] = useState(true);
+    
+    // Use custom hook for dashboard events
+    const { groupedEvents: groupedUpcomingEvents, hasMoreEvents = false, loading: eventsLoading } = useDashboardEvents(3);
 
     useEffect(() => {
-        const loadData = async () => {
+        const loadParentEventInfo = async () => {
             try {
-                // Fetch both parent event info and child events in parallel
-                const [parentEventInfo, events] = await Promise.all([
-                    fetchExternalRoot(),
-                    fetchEvents()
-                ]);
-
+                const parentEventInfo = await fetchExternalRoot();
                 setEventInfo(parentEventInfo);
-
-                if (parentEventInfo && events?.length > 0) {
-                    // Sort events by date and filter upcoming ones that user is attending
-                    const now = new Date();
-                    const myUpcomingEvents = events
-                        .filter(event => {
-                            if (!event.start || !event.end || !event.attending) return false;
-                            const eventDate = new Date(event.start);
-                            const [hours, minutes] = event.end.split(':');
-                            eventDate.setHours(parseInt(hours), parseInt(minutes));
-                            return eventDate > now;
-                        })
-                        .sort((a, b) => {
-                            const dateA = a.start ? new Date(a.start).getTime() : 0;
-                            const dateB = b.start ? new Date(b.start).getTime() : 0;
-                            return dateA - dateB;
-                        });
-                    
-                    const upcomingEventsFiltered = myUpcomingEvents.slice(0, 3); // Get the first 3 for dashboard
-                    setHasMoreEvents(myUpcomingEvents.length > 3); // Check if there are more events
-                    
-                    // Group the filtered events by date
-                    const groupedEvents = upcomingEventsFiltered.reduce((grouped, event) => {
-                        const date = event.start ? new Date(event.start).toDateString() : 'No Date';
-                        if (!grouped[date]) {
-                            grouped[date] = [];
-                        }
-                        grouped[date].push(event);
-                        return grouped;
-                    }, {} as { [key: string]: Event[] });
-                    
-                    setEvents(events); // Store all events in store
-                    setGroupedUpcomingEvents(groupedEvents);
-                } else {
-                    setGroupedUpcomingEvents({});
-                    setHasMoreEvents(false);
-                }
             } catch (error) {
-                console.error('Error loading dashboard data:', error);
+                console.error('Error loading parent event info:', error);
                 setEventInfo(null);
-                setGroupedUpcomingEvents({});
-                setHasMoreEvents(false);
             } finally {
-                setLoading(false);
+                setParentLoading(false);
             }
         };
 
-        loadData();
-    }, [setEvents]);
+        loadParentEventInfo();
+    }, []);
+
+    const loading = parentLoading || eventsLoading;
 
     const navigateToFullSchedule = () => {
         router.push('/(tabs)/schedule');
@@ -141,23 +97,12 @@ const ParentEventDashboard = () => {
                         </TouchableOpacity>
                     </View>
                     
-                    {Object.keys(groupedUpcomingEvents).map((date) => (
-                        <View key={date}>
-                            <View style={styles.dateHeader}>
-                            <ThemedText type="defaultSemiBold">{displayLocaleTimeStringDate(date)}</ThemedText>
-                            </View>
-                            <View style={styles.divider} />
-
-                                {groupedUpcomingEvents[date].map((event) => (
-                                    <EventListItem
-                                        key={event.id}
-                                        event={event}
-                                        onPress={handleEventPress}
-                                        showCategories={true}
-                                    />
-                                ))}
-                        </View>
-                    ))}       
+                    <GroupedEventsList
+                        groupedEvents={groupedUpcomingEvents}
+                        onEventPress={handleEventPress}
+                        showCategories={true}
+                        dateHeaderStyle="default"
+                    />
                 </View>
             )}
             
@@ -175,11 +120,6 @@ const ParentEventDashboard = () => {
                     </TouchableOpacity>
                 </View>
             )}
-
-            {/* Site News Section */}
-            <View style={styles.newsSection}>
-                <SiteNews />
-            </View>
         </ThemedView>
     );
 };
@@ -202,14 +142,6 @@ const styles = StyleSheet.create({
     },
     eventsSection: {
         marginTop: 24
-    },
-    dateHeader: {
-        paddingHorizontal: 0,
-    },
-    divider: {
-        height: 1,
-        backgroundColor: '#E5E7EB',
-        marginBottom: 8,
     },
     sectionHeader: {
         flexDirection: 'row',

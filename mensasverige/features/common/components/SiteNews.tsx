@@ -30,30 +30,25 @@ export const SiteNews = () => {
 
     return (
         <>
-            {loading || (news && news.length === 0)  &&
+            {!loading && news && news.length > 0 && (
                 <View>
                     <ThemedText type='title'>Information från arrangörerna</ThemedText>
 
-                    {news &&
-                        news.map((news) => (
-                            <View key={news.title}>
-                                <ThemedText type='subtitle'>{filterHtml(news.title ?? "")}</ThemedText>
-                                <ThemedText>
-                                    {new Date(news.date ?? "").toLocaleDateString()}{' '}
-                                    {new Date(news.date ?? "").toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                </ThemedText>
-                                <ThemedText>{filterHtml(news.description)}</ThemedText>
-                                {extractLinks(news.description)?.map((link, index) => (
-
-
-                                    <ThemedText type='link' onPress={() => Linking.openURL(link.url)}>{link.name}</ThemedText>
-
-                                ))}
-                            </View>
-                        ))
-                    }
+                    {news.map((newsItem) => (
+                        <View key={newsItem.title}>
+                            <ThemedText type='subtitle'>{filterHtml(newsItem.title ?? "")}</ThemedText>
+                            <ThemedText>
+                                {new Date(newsItem.date ?? "").toLocaleDateString()}{' '}
+                                {new Date(newsItem.date ?? "").toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </ThemedText>
+                            <ThemedText>{filterHtml(newsItem.description)}</ThemedText>
+                            {extractLinks(newsItem.description)?.map((link, index) => (
+                                <ThemedText key={index} type='link' onPress={() => Linking.openURL(link.url)}>{link.name}</ThemedText>
+                            ))}
+                        </View>
+                    ))}
                 </View>
-            }
+            )}
         </>
     );
 };
