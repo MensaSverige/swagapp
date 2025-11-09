@@ -293,7 +293,6 @@ const baseColors = {
       light700: '#44403c',
       light800: '#292524',
       light900: '#1c1917',
-      primary0: '#E5F1FB',
 
 
   // Basic colors

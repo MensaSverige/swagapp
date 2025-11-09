@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, useColorScheme } from 'react-native';
 import { Event } from '../../../api_schema/types';
 import { DisplayTime } from '../utilities/DisplayTime';
 import { getEventCategoryBadge } from '../utilities/EventCategories';
@@ -27,7 +27,8 @@ const EventListItem: React.FC<EventListItemProps> = ({
     isFirstEventOfDay = false
 }) => {
     console.log(event);
-    
+    const colorScheme = useColorScheme();
+      const styles = createStyles(colorScheme ?? 'light');
     // Calculate if event should be grayed out (not bookable and user not attending)
     const shouldGrayOut = !event.bookable && (!!event.maxAttendees || event.maxAttendees === 0);
     const eventOpacity = shouldGrayOut ? 0.6 : opacity;
@@ -99,7 +100,7 @@ const EventListItem: React.FC<EventListItemProps> = ({
     );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (colorScheme: string) => StyleSheet.create({
     eventItem: {
         flexDirection: 'row',
         justifyContent: 'space-between',
@@ -114,11 +115,11 @@ const styles = StyleSheet.create({
     },
     startTime: {
         fontSize: 14,
-        color: Colors.teal600,
+        color: colorScheme === 'dark' ? Colors.teal400 : Colors.teal600,
     },
     endTime: {
         fontSize: 14,
-        color: Colors.teal800,
+        color: colorScheme === 'dark' ? Colors.teal600 : Colors.teal800,
     },
     eventContent: {
         flex: 1,
@@ -129,7 +130,7 @@ const styles = StyleSheet.create({
     eventTitle: {
         fontSize: 16,
         fontWeight: '600',
-        color: Colors.info700,
+        color: colorScheme === 'dark' ? Colors.info500: Colors.info700,
     },
     titleContainer: {
         flexDirection: 'row',
