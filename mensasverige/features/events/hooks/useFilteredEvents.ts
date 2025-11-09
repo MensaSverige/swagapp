@@ -46,6 +46,7 @@ export const useFilteredEvents = (options: UseFilteredEventsOptions = {}): UseFi
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const [allEvents, setAllEvents] = useState<Event[]>([]);
+  const [totalUnfilteredCount, setTotalUnfilteredCount] = useState<number>(0);
   
   const { events, setEvents } = useStore();
 
@@ -126,9 +127,22 @@ export const useFilteredEvents = (options: UseFilteredEventsOptions = {}): UseFi
   const refetch = async (): Promise<void> => {
     try {
       setLoading(true);
+      
+      // Always fetch total unfiltered count first if we have any API filters
+      if (apiFilterParams && Object.keys(apiFilterParams).length > 0) {
+        const totalEvents = await fetchEvents(); // No params = all events
+        setTotalUnfilteredCount(totalEvents.length);
+      }
+      
       const fetchedEvents = await fetchEvents(apiFilterParams);
       setEvents(fetchedEvents); // Update store
       setAllEvents(fetchedEvents);
+      
+      // If no API filters, the fetched events represent the total
+      if (!apiFilterParams || Object.keys(apiFilterParams).length === 0) {
+        setTotalUnfilteredCount(fetchedEvents.length);
+      }
+      
       processEventsData(fetchedEvents);
     } catch (err) {
       setError(err as Error);
@@ -164,7 +178,7 @@ export const useFilteredEvents = (options: UseFilteredEventsOptions = {}): UseFi
   }, [groupedEvents, enableAutoRefresh, refreshIntervalMs]);
 
   // Calculate counts
-  const totalEventsCount = allEvents.length;
+  const totalEventsCount = totalUnfilteredCount;
   const filteredEventsCount = useMemo(() => {
     return Object.values(groupedEvents).flat().length;
   }, [groupedEvents]);
