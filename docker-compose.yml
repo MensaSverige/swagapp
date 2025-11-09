@@ -9,7 +9,7 @@ services:
     working_dir: /app
     command: bash -c "pip install -r v1/requirements.txt && mkdir -p /static/img/ && uvicorn v1.server:app --host 0.0.0.0 --port 5000 --reload"
     ports:
-      - "5000:5000"
+      - "${BACKEND_PORT:-5000}:5000"
     depends_on:
       - mongo
     restart: unless-stopped
