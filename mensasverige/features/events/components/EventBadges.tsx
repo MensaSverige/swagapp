@@ -10,18 +10,15 @@ export interface EventBadgesProps {
     size?: number;
   }
 
-const styles = StyleSheet.create({
-  badge: {
+const createBadge = (iconName: keyof typeof MaterialIcons.glyphMap, color: string, size: number = 18) => (
+  <View style={[{
     borderRadius: 15,
-    minWidth: 30,
-    minHeight: 30,
+    minWidth: size + 6,
+    minHeight: size + 6,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-});
-
-const createBadge = (iconName: keyof typeof MaterialIcons.glyphMap, color: string, size: number = 18) => (
-  <View style={[styles.badge, { backgroundColor: color }]}>
+    backgroundColor: color
+  }]}>
     <MaterialIcons name={iconName} size={size} color="#fff" />
   </View>
 );
@@ -52,6 +49,3 @@ export const LectureBadge: React.FC<EventBadgesProps> = ({ color, size = 18 }) =
 
 export const WorkshopBadge: React.FC<EventBadgesProps> = ({ color, size = 18 }) => 
   createBadge('handyman', color, size);
-
-
-

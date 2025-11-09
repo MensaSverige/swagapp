@@ -8,7 +8,7 @@ import ParentEventDetails from './ParentEventDetails';
 import SiteNews from '../../common/components/SiteNews';
 import EventListItem from './EventListItem';
 import EventCardModal from './ExternalEventCardModal';
-import { displayLocaleTimeStringDate } from '../screens/MyExternalEvents';
+import { displayLocaleTimeStringDate } from '../screens/ActivitiesList';
 import { MaterialIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import useStore from '../../common/store/store';
@@ -20,7 +20,7 @@ const ParentEventDashboard = () => {
     const [hasMoreEvents, setHasMoreEvents] = useState(false);
     const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
     const [loading, setLoading] = useState(true);
-    const { setExternalEvents } = useStore();
+    const { setEvents } = useStore();
 
     useEffect(() => {
         const loadData = async () => {
@@ -63,7 +63,7 @@ const ParentEventDashboard = () => {
                         return grouped;
                     }, {} as { [key: string]: Event[] });
                     
-                    setExternalEvents(events); // Store all events in store
+                    setEvents(events); // Store all events in store
                     setGroupedUpcomingEvents(groupedEvents);
                 } else {
                     setGroupedUpcomingEvents({});
@@ -80,7 +80,7 @@ const ParentEventDashboard = () => {
         };
 
         loadData();
-    }, [setExternalEvents]);
+    }, [setEvents]);
 
     const navigateToFullSchedule = () => {
         router.push('/(tabs)/schedule');
@@ -124,7 +124,7 @@ const ParentEventDashboard = () => {
                 />
             )}
             
-            {/* Parent Event Details */}
+
             <ParentEventDetails />
             
             {/* Upcoming Events Section */}
@@ -143,7 +143,9 @@ const ParentEventDashboard = () => {
                     
                     {Object.keys(groupedUpcomingEvents).map((date) => (
                         <View key={date}>
+                            <View style={styles.dateHeader}>
                             <ThemedText type="defaultSemiBold">{displayLocaleTimeStringDate(date)}</ThemedText>
+                            </View>
                             <View style={styles.divider} />
 
                                 {groupedUpcomingEvents[date].map((event) => (
@@ -154,7 +156,6 @@ const ParentEventDashboard = () => {
                                         showCategories={true}
                                     />
                                 ))}
-
                         </View>
                     ))}       
                 </View>
@@ -185,7 +186,7 @@ const ParentEventDashboard = () => {
 
 const styles = StyleSheet.create({
     container: {
-        padding: 0,
+        padding:16,
         flex: 1
     },
     loadingText: {
@@ -202,17 +203,19 @@ const styles = StyleSheet.create({
     eventsSection: {
         marginTop: 24
     },
+    dateHeader: {
+        paddingHorizontal: 0,
+    },
     divider: {
         height: 1,
-        backgroundColor: Colors.coolGray500,
+        backgroundColor: '#E5E7EB',
         marginBottom: 8,
-        marginTop: 4,
     },
     sectionHeader: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 16,
+        marginBottom: 16
     },
     seeAllButton: {
         flexDirection: 'row',

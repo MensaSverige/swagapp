@@ -13,7 +13,8 @@ import {
     TeenBadge,
     WorkshopBadge
 } from './EventBadges';
-import { Colors } from '@/constants/Colors'
+import { Colors } from '@/constants/Colors';
+import { MaterialIcons } from '@expo/vector-icons';
 
 interface EventListItemProps {
     event: Event;
@@ -70,7 +71,7 @@ const EventListItem: React.FC<EventListItemProps> = ({
                 <View ref={nextEventMarkerRef} />
             )}
 
-            <View style={styles.eventItem}>
+            <View style={[styles.eventItem, event.attending && styles.attendingEventItem]}>
                 <View style={styles.timeContainer}>
                     <Text style={styles.startTime}>
                         {DisplayTime(event.start)}
@@ -79,11 +80,18 @@ const EventListItem: React.FC<EventListItemProps> = ({
                         {event.end ? DisplayTime(event.end) : ''}
                     </Text>
                 </View>
+                
                 <View style={styles.eventContent}>
-
-                    <Text style={styles.eventTitle}>
-                        {event.name}
-                    </Text>
+                    <View style={styles.titleContainer}>
+                        <Text style={styles.eventTitle}>
+                            {event.name}
+                        </Text>
+                        {event.attending && (
+                            <View style={{ marginLeft: 4 }}>
+                                <MaterialIcons name="check-circle" size={14} color="#10B981" />
+                            </View>
+                        )}
+                    </View>
                     <Text style={styles.eventLocation}>
                         {event.locationDescription}
                     </Text>
@@ -91,6 +99,7 @@ const EventListItem: React.FC<EventListItemProps> = ({
                 </View>
                 {showCategories && (
                     <View style={styles.categoriesContainer}>
+
                         {event.tags?.map((category, index) => (
                             <View key={index} style={styles.categoryBadge}>
                                 {getEventCategoryBadge(category.code, `#${category.colorBackground}`)}
@@ -107,8 +116,12 @@ const EventListItem: React.FC<EventListItemProps> = ({
 const styles = StyleSheet.create({
     eventItem: {
         flexDirection: 'row',
-        marginBottom: 20,
         justifyContent: 'space-between',
+        paddingHorizontal: 20,
+        paddingVertical: 8,
+    },
+    attendingEventItem: {
+        backgroundColor: 'rgba(16, 185, 129, 0.1)',
     },
     timeContainer: {
         justifyContent: 'flex-start',
@@ -131,7 +144,10 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: '600',
         color: Colors.info400,
-        flex: 1,
+    },
+    titleContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
     },
     categoriesContainer: {
         flexDirection: 'row',

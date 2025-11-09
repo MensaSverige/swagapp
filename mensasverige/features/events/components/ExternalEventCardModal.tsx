@@ -106,7 +106,7 @@ const EventCardModal: React.FC<EventDetailsProps> = ({
               <Text style={styles.closeButtonText}>×</Text>
             </TouchableOpacity>
             <EventCard
-              eventDetails={event}
+              event={event}
             />
           </View>
         </TouchableOpacity>

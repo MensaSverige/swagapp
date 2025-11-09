@@ -29,21 +29,22 @@ export const displayLocaleTimeStringDate = (datestring: string) => {
     return `${capitalizedWeekday} ${dayMonth}`;
 }
 
-export const MyExternalEvents = () => {
-    const [events, setEvents] = useState<Event[]>();
+export const ActivitiesList = () => {
+    const { user, events } = useStore();
+    const [displayedEvents, setEvents] = useState<Event[]>(events);
     const [groupedEvents, setGroupedEvents] = useState<{ [key: string]: Event[] }>({});
-    const [selectedEvent, setSelectedEvent] = useState<Event | null>(events ? events[0] : null);
-    const [nextEvent, setNextEvent] = useState<Event | null>(events ? events[0] : null);
+    const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
+    const [nextEvent, setNextEvent] = useState<Event | null>(displayedEvents ? displayedEvents[0] : null);
     const [didInitiallyScroll, setDidInitiallyScroll] = useState(false);
     const [loading, setLoading] = useState(true);
-    const { user, externalEvents } = useStore();
+
 
     const scrollViewRef = useRef<ScrollView>(null);
     const nextEventMarkerRef = useRef<View>(null);
 
     useEffect(() => {
         // Use events from store if available, otherwise fetch
-        const eventsToProcess = externalEvents && externalEvents.length > 0 ? externalEvents : null;
+        const eventsToProcess = events && events.length > 0 ? events : null;
         
         if (eventsToProcess) {
             processEvents(eventsToProcess);
@@ -53,7 +54,7 @@ export const MyExternalEvents = () => {
             });
         }
         console.log('Loading events for schedule view');
-    }, [externalEvents]);
+    }, [events]);
 
     const processEvents = (events: Event[]) => {
         const sortedEvents = [...events].sort((a, b) => {
@@ -212,7 +213,7 @@ const styles = StyleSheet.create({
     },
     scrollContainer: {
         paddingBottom: 80,
-        paddingHorizontal: 20,
+        paddingHorizontal: 0,
     },
     loadingIndicator: {
         alignItems: 'center',
@@ -238,4 +239,4 @@ const styles = StyleSheet.create({
     },
 });
 
-export default MyExternalEvents;
+export default ActivitiesList;

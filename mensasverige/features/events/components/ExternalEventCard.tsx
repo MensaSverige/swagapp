@@ -11,11 +11,13 @@ import {
 import { Event, User } from '../../../api_schema/types';
 import { DisplayTime } from '../utilities/DisplayTime';
 import UserAvatar from '../../map/components/UserAvatar';
-import { displayLocaleTimeStringDate } from '../screens/MyExternalEvents';
+import { displayLocaleTimeStringDate } from '../screens/ActivitiesList';
 import { filterHtml } from '../../common/functions/filterHtml';
 import { extractLinks } from '../../common/functions/extractLinks';
 import { AddressLinkAndIcon } from '../../map/components/AddressLinkAndIcon';
 import { parseMapUrl } from '../../map/functions/parseMapUrl';
+import { MaterialIcons } from '@expo/vector-icons';
+import AttendingBadge from './AttendingBadge';
 
 const styles = StyleSheet.create({
   container: {
@@ -58,6 +60,12 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginBottom: 0,
     color: '#111827',
+  },
+  headingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 4,
   },
   subHeading: {
     fontSize: 16,
@@ -207,9 +215,15 @@ const EventCard: React.FC<{
               source={{ uri: event.imageUrl }}
             />
           )}
-          <Text style={styles.heading}>
-            {event.name}
-          </Text>
+          <View style={styles.headingContainer}>
+            <Text style={styles.heading}>
+              {event.name}
+            </Text>
+            {event.attending && 
+            <AttendingBadge/>
+            // <> <Text> Anmäld</Text> <MaterialIcons name="check-circle" size={20} color="#10B981" /></>
+            }
+          </View>
           {/* {event.mapUrl ? 
             renderAddressLinkAndIcon()
             : 
@@ -238,7 +252,7 @@ const EventCard: React.FC<{
           </Text>
           <View style={styles.linksContainer}>
             {extractLinks(event.description ?? "")?.map((link, index) => (
-              <TouchableOpacity 
+              <TouchableOpacity
                 key={index}
                 style={styles.linkButton}
                 onPress={() => handleLinkPress(link.url)}

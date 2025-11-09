@@ -1,2 +1,2 @@
-import MyExternalEvents from "@/features/events/screens/MyExternalEvents";
-export default MyExternalEvents;
+import ActivitiesList from "@/features/events/screens/ActivitiesList";
+export default ActivitiesList;

@@ -1,4 +1,4 @@
-import {Event} from '../../common/types/event';
+import { Event } from '../../../api_schema/types';
 
 export type FutureEvent = Event & {_isFutureEvent: true};
 

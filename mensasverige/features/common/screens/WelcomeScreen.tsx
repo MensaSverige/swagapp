@@ -1,4 +1,4 @@
-import { StyleSheet, Image } from 'react-native';
+import { StyleSheet, Image, View } from 'react-native';
 
 import ParallaxScrollView from '@/components/ParallaxScrollView';
 import { ThemedText } from '@/components/ThemedText';
@@ -19,8 +19,9 @@ export default function WelcomeScreen() {
                         resizeMode="cover"
                     />
                 }
-            >
-                <ThemedText type="title">Mensa Sverige</ThemedText>
+            > <View style={styles.titleContent}>
+                    <ThemedText type="title">Mensa Sverige</ThemedText>
+                </View>
                 <ParentEventDashboard />
             </ParallaxScrollView>
 
@@ -36,5 +37,8 @@ const styles = StyleSheet.create({
         width: '100%',
         height: '100%',
         alignSelf: 'center',
+    },
+    titleContent: {
+        paddingHorizontal: 16,
     },
 });

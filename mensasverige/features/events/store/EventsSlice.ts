@@ -1,4 +1,5 @@
 import {StateCreator} from 'zustand';
+import { Event } from '../../../api_schema/types';
 import EventWithLocation, {
   isEventWithLocation,
 } from '../types/eventWithLocation';
@@ -14,7 +15,7 @@ export interface EventsSlice {
   userEvents: FutureUserEvent[];
   showUserEvents: boolean;
   staticEvents: FutureEvent[];
-  externalEvents: FutureEvent[];
+  events: Event[];
   showStaticEvents: boolean;
   eventsRefreshing: boolean;
   eventsLastFetched: Date | null;
@@ -22,7 +23,7 @@ export interface EventsSlice {
   setUserEvents: (events: FutureUserEvent[]) => void;
   setShowUserEvents: (showUserEvents: boolean) => void;
   setStaticEvents: (events: FutureEvent[]) => void;
-  setExternalEvents: (events: FutureEvent[]) => void;
+  setEvents: (events: Event[]) => void;
   setShowStaticEvents: (showStaticEvents: boolean) => void;
   setEventsRefreshing: (eventsRefreshing: boolean) => void;
   setEventsLastFetched: (eventsLastFetched: Date | null) => void;
@@ -36,7 +37,7 @@ export const createEventsSlice: StateCreator<EventsSlice> = (set, get) => ({
   userEvents: [],
   showUserEvents: true,
   staticEvents: [],
-  externalEvents: [],
+  events: [],
   showStaticEvents: true,
   eventsRefreshing: false,
   eventsLastFetched: null,
@@ -56,8 +57,8 @@ export const createEventsSlice: StateCreator<EventsSlice> = (set, get) => ({
     get().updateVisibleEvents();
     get().updateEventsWithLocation();
   },
-  setExternalEvents: (events: FutureEvent[]) => {
-    set(() => ({externalEvents: events}));
+  setEvents: (events: Event[]) => {
+    set(() => ({events: events}));
     get().updateVisibleEvents();
     get().updateEventsWithLocation();
   },
