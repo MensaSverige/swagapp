@@ -3,1166 +3,2229 @@
  * Do not make direct changes to the file.
  */
 
-
 export interface paths {
-  "/v1/authm": {
-    /** Authm */
-    post: operations["authm_v1_authm_post"];
-  };
-  "/v1/authb": {
-    /** Authb */
-    post: operations["authb_v1_authb_post"];
-  };
-  "/v1/refresh_token": {
-    /** Refresh Token */
-    post: operations["refresh_token_v1_refresh_token_post"];
-  };
-  "/v1/health": {
-    /** Health */
-    get: operations["health_v1_health_get"];
-  };
-  "/v1/users/{user_id}": {
-    /** Get User By Id */
-    get: operations["get_user_by_id_v1_users__user_id__get"];
-  };
-  "/v1/users": {
-    /** Get Users */
-    get: operations["get_users_v1_users_get"];
-  };
-  "/v1/users/me/location": {
-    /** Update User Location */
-    put: operations["update_user_location_v1_users_me_location_put"];
-  };
-  "/v1/users/me": {
-    /** Get Current User */
-    get: operations["get_current_user_v1_users_me_get"];
-    /** Update Current User */
-    put: operations["update_current_user_v1_users_me_put"];
-  };
-  "/v1/users/me/avatar": {
-    /** Update User Avatar */
-    post: operations["update_user_avatar_v1_users_me_avatar_post"];
-  };
-  "/v1/external_root": {
-    /** Get External Root Data */
-    get: operations["get_external_root_data_v1_external_root_get"];
-  };
-  "/v1/external_events/booked": {
-    /** Get Events For User */
-    get: operations["get_events_for_user_v1_external_events_booked_get"];
-  };
-  "/v1/external_events/news": {
-    /** Get News From Event Site */
-    get: operations["get_news_from_event_site_v1_external_events_news_get"];
-  };
-  "/v1/user_events/mine": {
-    /** Get Events I Own */
-    get: operations["get_events_i_own_v1_user_events_mine_get"];
-  };
-  "/v1/user_events/cohosting": {
-    /** Get Events I Host */
-    get: operations["get_events_i_host_v1_user_events_cohosting_get"];
-  };
-  "/v1/user_events/attending": {
-    /** Get Events I Attend */
-    get: operations["get_events_i_attend_v1_user_events_attending_get"];
-  };
-  "/v1/user_events": {
-    /** Get Events */
-    get: operations["get_events_v1_user_events_get"];
-    /** Create Event */
-    post: operations["create_event_v1_user_events_post"];
-  };
-  "/v1/user_events/{event_id}": {
-    /** Get Event */
-    get: operations["get_event_v1_user_events__event_id__get"];
-    /** Update Event */
-    put: operations["update_event_v1_user_events__event_id__put"];
-    /** Delete Event */
-    delete: operations["delete_event_v1_user_events__event_id__delete"];
-  };
-  "/v1/user_events/{event_id}/attend": {
-    /** Attend Event */
-    post: operations["attend_event_v1_user_events__event_id__attend_post"];
-  };
-  "/v1/user_events/{event_id}/unattend": {
-    /** Unattend Event */
-    post: operations["unattend_event_v1_user_events__event_id__unattend_post"];
-  };
-  "/v1/user_events/{event_id}/attendees/{attendee_id}": {
-    /** Remove Attendee */
-    delete: operations["remove_attendee_v1_user_events__event_id__attendees__attendee_id__delete"];
-  };
-  "/v1/user_events/{event_id}/accept_cohosting": {
-    /** Accept Being Cohost */
-    post: operations["accept_being_cohost_v1_user_events__event_id__accept_cohosting_post"];
-  };
-  "/v1/user_events/{event_id}/deny_cohosting": {
-    /** Deny Being Cohost */
-    post: operations["deny_being_cohost_v1_user_events__event_id__deny_cohosting_post"];
-  };
-  "/v1/geolocation/{address}": {
-    /** Getlocationbyadress */
-    get: operations["getLocationByAdress_v1_geolocation__address__get"];
-  };
+    "/v1/authm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Authm */
+        post: operations["authm_v1_authm_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/authb": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Authb */
+        post: operations["authb_v1_authb_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/refresh_token": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Refresh Token */
+        post: operations["refresh_token_v1_refresh_token_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/health": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Health */
+        get: operations["health_v1_health_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/users/{user_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get User By Id */
+        get: operations["get_user_by_id_v1_users__user_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/users": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Users */
+        get: operations["get_users_v1_users_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/users/me/location": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Update User Location */
+        put: operations["update_user_location_v1_users_me_location_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/users/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Current User */
+        get: operations["get_current_user_v1_users_me_get"];
+        /** Update Current User */
+        put: operations["update_current_user_v1_users_me_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/users/me/avatar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Update User Avatar */
+        post: operations["update_user_avatar_v1_users_me_avatar_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/external_root": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get External Root Data */
+        get: operations["get_external_root_data_v1_external_root_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/external_events/booked": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Events For User */
+        get: operations["get_events_for_user_v1_external_events_booked_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/external_events/news": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get News From Event Site */
+        get: operations["get_news_from_event_site_v1_external_events_news_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Events */
+        get: operations["get_events_v1_events_get"];
+        put?: never;
+        /** Create Event Proxy */
+        post: operations["create_event_proxy_v1_events_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/events/{event_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Update Event Proxy */
+        put: operations["update_event_proxy_v1_events__event_id__put"];
+        post?: never;
+        /** Delete Event Proxy */
+        delete: operations["delete_event_proxy_v1_events__event_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/events/attending": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Events Attending */
+        get: operations["get_events_attending_v1_events_attending_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/events/official": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Events Official */
+        get: operations["get_events_official_v1_events_official_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/events/unofficial": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Events Unofficial */
+        get: operations["get_events_unofficial_v1_events_unofficial_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/user_events/mine": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Events I Own */
+        get: operations["get_events_i_own_v1_user_events_mine_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/user_events/cohosting": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Events I Host */
+        get: operations["get_events_i_host_v1_user_events_cohosting_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/user_events/attending": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Events I Attend */
+        get: operations["get_events_i_attend_v1_user_events_attending_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/user_events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Events */
+        get: operations["get_events_v1_user_events_get"];
+        put?: never;
+        /** Create Event */
+        post: operations["create_event_v1_user_events_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/user_events/{event_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Event */
+        get: operations["get_event_v1_user_events__event_id__get"];
+        /** Update Event */
+        put: operations["update_event_v1_user_events__event_id__put"];
+        post?: never;
+        /** Delete Event */
+        delete: operations["delete_event_v1_user_events__event_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/user_events/{event_id}/attend": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Attend Event */
+        post: operations["attend_event_v1_user_events__event_id__attend_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/user_events/{event_id}/unattend": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Unattend Event */
+        post: operations["unattend_event_v1_user_events__event_id__unattend_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/user_events/{event_id}/attendees/{attendee_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove Attendee */
+        delete: operations["remove_attendee_v1_user_events__event_id__attendees__attendee_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/user_events/{event_id}/accept_cohosting": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Accept Being Cohost */
+        post: operations["accept_being_cohost_v1_user_events__event_id__accept_cohosting_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/user_events/{event_id}/deny_cohosting": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Deny Being Cohost */
+        post: operations["deny_being_cohost_v1_user_events__event_id__deny_cohosting_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/geolocation/{address}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Getlocationbyadress */
+        get: operations["getLocationByAdress_v1_geolocation__address__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/dev/clear_user_events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Clear User Events */
+        get: operations["clear_user_events_v1_dev_clear_user_events_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/dev/create_dummy_user_event": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Dummy User Event */
+        get: operations["get_dummy_user_event_v1_dev_create_dummy_user_event_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/dev/create_my_dummy_event": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Create My Dummy Event */
+        get: operations["create_my_dummy_event_v1_dev_create_my_dummy_event_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
-
 export type webhooks = Record<string, never>;
-
 export interface components {
-  schemas: {
-    /** Attendee */
-    Attendee: {
-      /**
-       * Userid
-       * @example 123
-       */
-      userId: number;
+    schemas: {
+        /** Attendee */
+        Attendee: {
+            /**
+             * Userid
+             * @example 123
+             */
+            userId: number;
+        };
+        /** AuthRequest */
+        AuthRequest: {
+            /** Username */
+            username: string;
+            /** Password */
+            password: string;
+        };
+        /** AuthResponse */
+        AuthResponse: {
+            /** Accesstoken */
+            accessToken: string;
+            /** Refreshtoken */
+            refreshToken: string;
+            /**
+             * Accesstokenexpiry
+             * Format: date-time
+             */
+            accessTokenExpiry: string;
+            user: components["schemas"]["User"];
+        };
+        /** Body_update_user_avatar_v1_users_me_avatar_post */
+        Body_update_user_avatar_v1_users_me_avatar_post: {
+            /**
+             * File
+             * Format: binary
+             */
+            file: string;
+        };
+        /** Category */
+        Category: {
+            /** Code */
+            code: string;
+            /** Text */
+            text: string;
+            /** Colortext */
+            colorText: string;
+            /** Colorbackground */
+            colorBackground: string;
+        };
+        /** ContactInfo */
+        ContactInfo: {
+            /**
+             * Email
+             * @example johndoe@example.com
+             */
+            email?: string | null;
+            /**
+             * Phone
+             * @example +1234567890
+             */
+            phone?: string | null;
+        };
+        /**
+         * Event
+         * @description Unified Event model representing both official (external) and user-created events.
+         *
+         *     Fields mostly follow the sketch in notes.md. Additional convenience & source-specific fields are stored under `extras`.
+         * @example {
+         *       "attending": true,
+         *       "bookable": false,
+         *       "end": "2025-11-10T10:00:00Z",
+         *       "id": "ext:12345",
+         *       "name": "Opening Ceremony",
+         *       "official": true,
+         *       "start": "2025-11-10T09:00:00Z"
+         *     }
+         */
+        Event: {
+            /**
+             * Id
+             * @description Globally unique event id, prefixed with source (ext: / usr:)
+             */
+            id: string;
+            /**
+             * Parentevent
+             * @description Optional parent event id
+             */
+            parentEvent?: string | null;
+            /**
+             * Admin
+             * @description User IDs with admin rights (owner for user events)
+             */
+            admin?: number[];
+            /** Hosts */
+            hosts?: components["schemas"]["EventHost"][];
+            /** Name */
+            name: string;
+            /** Tags */
+            tags?: components["schemas"]["Tag"][];
+            /** Locationdescription */
+            locationDescription?: string | null;
+            /** Address */
+            address?: string | null;
+            /** Locationmarker */
+            locationMarker?: string | null;
+            /** Latitude */
+            latitude?: number | null;
+            /** Longitude */
+            longitude?: number | null;
+            /**
+             * Start
+             * Format: date-time
+             */
+            start: string;
+            /** End */
+            end?: string | null;
+            /** Cancelled */
+            cancelled?: string | null;
+            /** Imageurl */
+            imageUrl?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Bookingstart */
+            bookingStart?: string | null;
+            /** Bookingend */
+            bookingEnd?: string | null;
+            /** @default none */
+            showAttendees: components["schemas"]["ShowAttendees"];
+            /** Attendees */
+            attendees?: components["schemas"]["EventAttendee"][];
+            /** Queue */
+            queue?: components["schemas"]["EventAttendee"][];
+            /** Maxattendees */
+            maxAttendees?: number | null;
+            /**
+             * Price
+             * @default 0
+             */
+            price: number;
+            /**
+             * Official
+             * @description True for external official events, false for user events
+             */
+            official: boolean;
+            /**
+             * Attending
+             * @description Current user is attending/booked
+             * @default false
+             */
+            attending: boolean;
+            /**
+             * Bookable
+             * @description Event can still be booked / joined by current user
+             * @default false
+             */
+            bookable: boolean;
+            /**
+             * Extras
+             * @description Source specific raw data
+             */
+            extras?: {
+                [key: string]: unknown;
+            };
+        };
+        /** EventAttendee */
+        EventAttendee: {
+            /** Userid */
+            userId: number;
+        };
+        /** EventHost */
+        EventHost: {
+            /** Userid */
+            userId: number;
+            /** Fullname */
+            fullName: string;
+        };
+        /** EventSiteNews */
+        EventSiteNews: {
+            /** Date */
+            date: string;
+            /** Time */
+            time: string;
+            /** Title */
+            title?: string | null;
+            /** Description */
+            description: string;
+            /** By */
+            by: string;
+        };
+        /** ExtendedUserEvent */
+        ExtendedUserEvent: {
+            /**
+             * Id
+             * @example 507f191e810c19729de860ea
+             */
+            id?: string | null;
+            /**
+             * Userid
+             * @example 123
+             */
+            userId: number;
+            /**
+             * Hosts
+             * @default []
+             * @example [
+             *       {
+             *         "userId": 123
+             *       }
+             *     ]
+             */
+            hosts: components["schemas"]["Host"][] | null;
+            /**
+             * Suggested Hosts
+             * @default []
+             * @example [
+             *       {
+             *         "userId": 123
+             *       }
+             *     ]
+             */
+            suggested_hosts: components["schemas"]["Host"][];
+            /**
+             * Name
+             * @example Event Name
+             */
+            name: string;
+            /**
+             * @example {
+             *       "latitude": 37.7749,
+             *       "longitude": -122.4194
+             *     }
+             */
+            location?: components["schemas"]["Location"] | null;
+            /**
+             * Start
+             * Format: date-time
+             * @example 2021-01-01T00:00:00
+             */
+            start: string;
+            /**
+             * End
+             * @example 2021-01-01T00:00:00
+             */
+            end?: string | null;
+            /**
+             * Description
+             * @example Event Description
+             */
+            description?: string | null;
+            /**
+             * Reports
+             * @default []
+             * @example [
+             *       {
+             *         "text": "Report Text",
+             *         "user": "John Doe"
+             *       }
+             *     ]
+             */
+            reports: components["schemas"]["Report"][];
+            /**
+             * Attendees
+             * @default []
+             * @example [
+             *       {
+             *         "userId": 123
+             *       }
+             *     ]
+             */
+            attendees: components["schemas"]["Attendee"][];
+            /**
+             * Maxattendees
+             * @example 10
+             */
+            maxAttendees?: number | null;
+            /**
+             * Ownername
+             * @example John Doe
+             */
+            ownerName: string;
+            /**
+             * Hostnames
+             * @default []
+             * @example [
+             *       "John Doe"
+             *     ]
+             */
+            hostNames: string[];
+            /**
+             * Attendeenames
+             * @default []
+             * @example [
+             *       "John Doe"
+             *     ]
+             */
+            attendeeNames: string[];
+        };
+        /** ExternalEventDetails */
+        ExternalEventDetails: {
+            /** Eventid */
+            eventId: number;
+            /** Eventdate */
+            eventDate?: string | null;
+            /** Starttime */
+            startTime: string;
+            /** Endtime */
+            endTime: string;
+            /** Titel */
+            titel?: string | null;
+            /** Description */
+            description: string;
+            /** Speaker */
+            speaker: string;
+            /** Location */
+            location: string;
+            /** Locationinfo */
+            locationInfo?: string | null;
+            /** Mapurl */
+            mapUrl?: string | null;
+            /** Admins */
+            admins?: string[] | null;
+            /** Isfree */
+            isFree: boolean;
+            /** Price */
+            price: number;
+            /** Islimited */
+            isLimited: boolean;
+            /** Stock */
+            stock: number;
+            /** Showbooked */
+            showBooked: boolean;
+            /** Booked */
+            booked: number;
+            /** Datebookingstart */
+            dateBookingStart?: string | null;
+            /** Datebookingend */
+            dateBookingEnd?: string | null;
+            /** Categories */
+            categories?: components["schemas"]["Category"][] | null;
+            /** Imageurl150 */
+            imageUrl150?: string | null;
+            /** Imageurl300 */
+            imageUrl300?: string | null;
+            /** Eventurl */
+            eventUrl: string;
+        };
+        /** ExternalRoot */
+        ExternalRoot: {
+            /** Version */
+            version: number;
+            /** Loginurl */
+            loginUrl: string;
+            /** Resturl */
+            restUrl: string;
+            /** Siteurl */
+            siteUrl: string;
+            /** Dates */
+            dates: string[];
+            /** Header1 */
+            header1: string;
+            /** Header2 */
+            header2: string;
+            /** City */
+            city: string;
+            /** Streetaddress */
+            streetAddress: string;
+            /** Mapurl */
+            mapUrl: string;
+        };
+        /** GeoLocation */
+        GeoLocation: {
+            /**
+             * Formatted Address
+             * @example 1234 Main St, San Francisco, CA 94123
+             */
+            formatted_address?: string | null;
+            /**
+             * Latitude
+             * @example 37.7749
+             */
+            latitude?: number | null;
+            /**
+             * Longitude
+             * @example -122.4194
+             */
+            longitude?: number | null;
+        };
+        /** HTTPValidationError */
+        HTTPValidationError: {
+            /** Detail */
+            detail?: components["schemas"]["ValidationError"][];
+        };
+        /** Host */
+        Host: {
+            /**
+             * Userid
+             * @example 123
+             */
+            userId: number;
+        };
+        /** Location */
+        Location: {
+            /**
+             * Description
+             * @example Location Description
+             */
+            description?: string | null;
+            /**
+             * Address
+             * @example 1234 Main St, San Francisco, CA 94123
+             */
+            address?: string | null;
+            /**
+             * Marker
+             * @example 🕑
+             */
+            marker?: string | null;
+            /**
+             * Latitude
+             * @example 37.7749
+             */
+            latitude?: number | null;
+            /**
+             * Longitude
+             * @example -122.4194
+             */
+            longitude?: number | null;
+        };
+        /** RefreshTokenRequest */
+        RefreshTokenRequest: {
+            /** Refresh Token */
+            refresh_token: string;
+        };
+        /** Report */
+        Report: {
+            /**
+             * Userid
+             * @example 123
+             */
+            userId: number;
+            /**
+             * Text
+             * @example Report Text
+             */
+            text: string;
+        };
+        /**
+         * ShowAttendees
+         * @enum {string}
+         */
+        ShowAttendees: "none" | "all" | "toAttending";
+        /**
+         * ShowLocation
+         * @enum {string}
+         */
+        ShowLocation: "NO_ONE" | "ALL_MEMBERS_WHO_SHARE_THEIR_OWN_LOCATION" | "ALL_MEMBERS" | "EVERYONE_WHO_SHARE_THEIR_OWN_LOCATION" | "EVERYONE";
+        /** Tag */
+        Tag: {
+            /** Code */
+            code: string;
+            /** Text */
+            text: string;
+            /** Colortext */
+            colorText: string;
+            /** Colorbackground */
+            colorBackground: string;
+        };
+        /** User */
+        User: {
+            /**
+             * Userid
+             * @example 123
+             */
+            userId: number;
+            /**
+             * Ismember
+             * @default false
+             * @example true
+             */
+            isMember: boolean;
+            settings: components["schemas"]["UserSettings"];
+            /**
+             * @example {
+             *       "accuracy": 10,
+             *       "latitude": 37.7749,
+             *       "longitude": -122.4194,
+             *       "timestamp": "2021-01-01"
+             *     }
+             */
+            location?: components["schemas"]["UserLocation"] | null;
+            /**
+             * @example {
+             *       "email": "johndoe@example.com",
+             *       "phone": "+1234567890"
+             *     }
+             */
+            contact_info?: components["schemas"]["ContactInfo"] | null;
+            /**
+             * Age
+             * @example 30
+             */
+            age?: number | null;
+            /**
+             * Slogan
+             * @example Live and Let Live
+             */
+            slogan?: string | null;
+            /**
+             * Avatar Url
+             * @example https://example.com/avatar.jpg
+             */
+            avatar_url?: string | null;
+            /**
+             * Firstname
+             * @example John Doe
+             */
+            firstName?: string | null;
+            /**
+             * Lastname
+             * @example John Doe
+             */
+            lastName?: string | null;
+        };
+        /** UserEvent */
+        UserEvent: {
+            /**
+             * Id
+             * @example 507f191e810c19729de860ea
+             */
+            _id?: string | null;
+            /**
+             * Userid
+             * @example 123
+             */
+            userId: number;
+            /**
+             * Hosts
+             * @default []
+             * @example [
+             *       {
+             *         "userId": 123
+             *       }
+             *     ]
+             */
+            hosts: components["schemas"]["Host"][] | null;
+            /**
+             * Suggested Hosts
+             * @default []
+             * @example [
+             *       {
+             *         "userId": 123
+             *       }
+             *     ]
+             */
+            suggested_hosts: components["schemas"]["Host"][];
+            /**
+             * Name
+             * @example Event Name
+             */
+            name: string;
+            /**
+             * @example {
+             *       "latitude": 37.7749,
+             *       "longitude": -122.4194
+             *     }
+             */
+            location?: components["schemas"]["Location"] | null;
+            /**
+             * Start
+             * Format: date-time
+             * @example 2021-01-01T00:00:00
+             */
+            start: string;
+            /**
+             * End
+             * @example 2021-01-01T00:00:00
+             */
+            end?: string | null;
+            /**
+             * Description
+             * @example Event Description
+             */
+            description?: string | null;
+            /**
+             * Reports
+             * @default []
+             * @example [
+             *       {
+             *         "text": "Report Text",
+             *         "user": "John Doe"
+             *       }
+             *     ]
+             */
+            reports: components["schemas"]["Report"][];
+            /**
+             * Attendees
+             * @default []
+             * @example [
+             *       {
+             *         "userId": 123
+             *       }
+             *     ]
+             */
+            attendees: components["schemas"]["Attendee"][];
+            /**
+             * Maxattendees
+             * @example 10
+             */
+            maxAttendees?: number | null;
+        };
+        /** UserLocation */
+        UserLocation: {
+            /** Latitude */
+            latitude: number;
+            /** Longitude */
+            longitude: number;
+            /** Timestamp */
+            timestamp: string | null;
+            /** Accuracy */
+            accuracy: number;
+        };
+        /** UserSettings */
+        UserSettings: {
+            /**
+             * @default NO_ONE
+             * @example EVERYONE
+             */
+            show_location: components["schemas"]["ShowLocation"];
+            /**
+             * Show Email
+             * @default false
+             * @example true
+             */
+            show_email: boolean;
+            /**
+             * Show Phone
+             * @default false
+             * @example true
+             */
+            show_phone: boolean;
+        };
+        /** UserUpdate */
+        UserUpdate: {
+            settings: components["schemas"]["UserSettings"];
+            /**
+             * @example {
+             *       "email": "johndoe@example.com",
+             *       "phone": "+1234567890"
+             *     }
+             */
+            contact_info?: components["schemas"]["ContactInfo"] | null;
+            /**
+             * Slogan
+             * @example Live and Let Live
+             */
+            slogan?: string | null;
+        };
+        /** ValidationError */
+        ValidationError: {
+            /** Location */
+            loc: (string | number)[];
+            /** Message */
+            msg: string;
+            /** Error Type */
+            type: string;
+        };
+        /** StatusResponseWithMessage */
+        v1__dev__user_events_dev_api__StatusResponseWithMessage: {
+            /** Message */
+            message: string;
+        };
     };
-    /** AuthRequest */
-    AuthRequest: {
-      /** Username */
-      username: string;
-      /** Password */
-      password: string;
-    };
-    /** AuthResponse */
-    AuthResponse: {
-      /** Accesstoken */
-      accessToken: string;
-      /** Refreshtoken */
-      refreshToken: string;
-      /**
-       * Accesstokenexpiry
-       * Format: date-time
-       */
-      accessTokenExpiry: string;
-      user: components["schemas"]["User"];
-    };
-    /** Body_update_user_avatar_v1_users_me_avatar_post */
-    Body_update_user_avatar_v1_users_me_avatar_post: {
-      /**
-       * File
-       * Format: binary
-       */
-      file: string;
-    };
-    /** Category */
-    Category: {
-      /** Code */
-      code: string;
-      /** Text */
-      text: string;
-      /** Colortext */
-      colorText: string;
-      /** Colorbackground */
-      colorBackground: string;
-    };
-    /** ContactInfo */
-    ContactInfo: {
-      /**
-       * Email
-       * @example johndoe@example.com
-       */
-      email?: string | null;
-      /**
-       * Phone
-       * @example +1234567890
-       */
-      phone?: string | null;
-    };
-    /** EventSiteNews */
-    EventSiteNews: {
-      /** Date */
-      date: string;
-      /** Time */
-      time: string;
-      /** Title */
-      title?: string | null;
-      /** Description */
-      description: string;
-      /** By */
-      by: string;
-    };
-    /** ExtendedUserEvent */
-    ExtendedUserEvent: {
-      /**
-       * Id
-       * @example 507f191e810c19729de860ea
-       */
-      id?: string | null;
-      /**
-       * Userid
-       * @example 123
-       */
-      userId: number;
-      /**
-       * Hosts
-       * @default []
-       * @example [
-       *   {
-       *     "userId": 123
-       *   }
-       * ]
-       */
-      hosts?: components["schemas"]["Host"][] | null;
-      /**
-       * Suggested Hosts
-       * @default []
-       * @example [
-       *   {
-       *     "userId": 123
-       *   }
-       * ]
-       */
-      suggested_hosts?: components["schemas"]["Host"][];
-      /**
-       * Name
-       * @example Event Name
-       */
-      name: string;
-      /**
-       * @example {
-       *   "latitude": 37.7749,
-       *   "longitude": -122.4194
-       * }
-       */
-      location?: components["schemas"]["Location"] | null;
-      /**
-       * Start
-       * Format: date-time
-       * @example 2021-01-01T00:00:00
-       */
-      start: string;
-      /**
-       * End
-       * @example 2021-01-01T00:00:00
-       */
-      end?: string | null;
-      /**
-       * Description
-       * @example Event Description
-       */
-      description?: string | null;
-      /**
-       * Reports
-       * @default []
-       * @example [
-       *   {
-       *     "text": "Report Text",
-       *     "user": "John Doe"
-       *   }
-       * ]
-       */
-      reports?: components["schemas"]["Report"][];
-      /**
-       * Attendees
-       * @default []
-       * @example [
-       *   {
-       *     "userId": 123
-       *   }
-       * ]
-       */
-      attendees?: components["schemas"]["Attendee"][];
-      /**
-       * Maxattendees
-       * @example 10
-       */
-      maxAttendees?: number | null;
-      /**
-       * Ownername
-       * @example John Doe
-       */
-      ownerName: string;
-      /**
-       * Hostnames
-       * @default []
-       * @example [
-       *   "John Doe"
-       * ]
-       */
-      hostNames?: string[];
-      /**
-       * Attendeenames
-       * @default []
-       * @example [
-       *   "John Doe"
-       * ]
-       */
-      attendeeNames?: string[];
-    };
-    /** ExternalEventDetails */
-    ExternalEventDetails: {
-      /** Eventid */
-      eventId: number;
-      /** Eventdate */
-      eventDate?: string | null;
-      /** Starttime */
-      startTime: string;
-      /** Endtime */
-      endTime: string;
-      /** Titel */
-      titel?: string | null;
-      /** Description */
-      description: string;
-      /** Speaker */
-      speaker: string;
-      /** Location */
-      location: string;
-      /** Locationinfo */
-      locationInfo?: string | null;
-      /** Mapurl */
-      mapUrl?: string | null;
-      /** Admins */
-      admins?: string[] | null;
-      /** Isfree */
-      isFree: boolean;
-      /** Price */
-      price: number;
-      /** Islimited */
-      isLimited: boolean;
-      /** Stock */
-      stock: number;
-      /** Showbooked */
-      showBooked: boolean;
-      /** Booked */
-      booked: number;
-      /** Datebookingstart */
-      dateBookingStart?: string | null;
-      /** Datebookingend */
-      dateBookingEnd?: string | null;
-      /** Categories */
-      categories?: components["schemas"]["Category"][] | null;
-      /** Imageurl150 */
-      imageUrl150?: string | null;
-      /** Imageurl300 */
-      imageUrl300?: string | null;
-      /** Eventurl */
-      eventUrl: string;
-    };
-    /** ExternalRoot */
-    ExternalRoot: {
-      /** Version */
-      version: number;
-      /** Loginurl */
-      loginUrl: string;
-      /** Resturl */
-      restUrl: string;
-      /** Siteurl */
-      siteUrl: string;
-      /** Dates */
-      dates: string[];
-      /** Header1 */
-      header1: string;
-      /** Header2 */
-      header2: string;
-      /** City */
-      city: string;
-      /** Streetaddress */
-      streetAddress: string;
-      /** Mapurl */
-      mapUrl: string;
-    };
-    /** GeoLocation */
-    GeoLocation: {
-      /**
-       * Formatted Address
-       * @example 1234 Main St, San Francisco, CA 94123
-       */
-      formatted_address?: string | null;
-      /**
-       * Latitude
-       * @example 37.7749
-       */
-      latitude?: number | null;
-      /**
-       * Longitude
-       * @example -122.4194
-       */
-      longitude?: number | null;
-    };
-    /** HTTPValidationError */
-    HTTPValidationError: {
-      /** Detail */
-      detail?: components["schemas"]["ValidationError"][];
-    };
-    /** Host */
-    Host: {
-      /**
-       * Userid
-       * @example 123
-       */
-      userId: number;
-    };
-    /** Location */
-    Location: {
-      /**
-       * Description
-       * @example Location Description
-       */
-      description?: string | null;
-      /**
-       * Address
-       * @example 1234 Main St, San Francisco, CA 94123
-       */
-      address?: string | null;
-      /**
-       * Marker
-       * @example 🕑
-       */
-      marker?: string | null;
-      /**
-       * Latitude
-       * @example 37.7749
-       */
-      latitude?: number | null;
-      /**
-       * Longitude
-       * @example -122.4194
-       */
-      longitude?: number | null;
-    };
-    /** RefreshTokenRequest */
-    RefreshTokenRequest: {
-      /** Refresh Token */
-      refresh_token: string;
-    };
-    /** Report */
-    Report: {
-      /**
-       * Userid
-       * @example 123
-       */
-      userId: number;
-      /**
-       * Text
-       * @example Report Text
-       */
-      text: string;
-    };
-    /**
-     * ShowLocation
-     * @enum {string}
-     */
-    ShowLocation: "NO_ONE" | "ALL_MEMBERS_WHO_SHARE_THEIR_OWN_LOCATION" | "ALL_MEMBERS" | "EVERYONE_WHO_SHARE_THEIR_OWN_LOCATION" | "EVERYONE";
-    /** StatusResponseWithMessage */
-    StatusResponseWithMessage: {
-      /** Message */
-      message: string;
-    };
-    /** User */
-    User: {
-      /**
-       * Userid
-       * @example 123
-       */
-      userId: number;
-      /**
-       * Ismember
-       * @default false
-       * @example true
-       */
-      isMember?: boolean;
-      settings: components["schemas"]["UserSettings"];
-      /**
-       * @example {
-       *   "accuracy": 10,
-       *   "latitude": 37.7749,
-       *   "longitude": -122.4194,
-       *   "timestamp": "2021-01-01"
-       * }
-       */
-      location?: components["schemas"]["UserLocation"] | null;
-      /**
-       * @example {
-       *   "email": "johndoe@example.com",
-       *   "phone": "+1234567890"
-       * }
-       */
-      contact_info?: components["schemas"]["ContactInfo"] | null;
-      /**
-       * Age
-       * @example 30
-       */
-      age?: number | null;
-      /**
-       * Slogan
-       * @example Live and Let Live
-       */
-      slogan?: string | null;
-      /**
-       * Avatar Url
-       * @example https://example.com/avatar.jpg
-       */
-      avatar_url?: string | null;
-      /**
-       * Firstname
-       * @example John Doe
-       */
-      firstName?: string | null;
-      /**
-       * Lastname
-       * @example John Doe
-       */
-      lastName?: string | null;
-    };
-    /** UserEvent */
-    UserEvent: {
-      /**
-       * Id
-       * @example 507f191e810c19729de860ea
-       */
-      _id?: string | null;
-      /**
-       * Userid
-       * @example 123
-       */
-      userId: number;
-      /**
-       * Hosts
-       * @default []
-       * @example [
-       *   {
-       *     "userId": 123
-       *   }
-       * ]
-       */
-      hosts?: components["schemas"]["Host"][] | null;
-      /**
-       * Suggested Hosts
-       * @default []
-       * @example [
-       *   {
-       *     "userId": 123
-       *   }
-       * ]
-       */
-      suggested_hosts?: components["schemas"]["Host"][];
-      /**
-       * Name
-       * @example Event Name
-       */
-      name: string;
-      /**
-       * @example {
-       *   "latitude": 37.7749,
-       *   "longitude": -122.4194
-       * }
-       */
-      location?: components["schemas"]["Location"] | null;
-      /**
-       * Start
-       * Format: date-time
-       * @example 2021-01-01T00:00:00
-       */
-      start: string;
-      /**
-       * End
-       * @example 2021-01-01T00:00:00
-       */
-      end?: string | null;
-      /**
-       * Description
-       * @example Event Description
-       */
-      description?: string | null;
-      /**
-       * Reports
-       * @default []
-       * @example [
-       *   {
-       *     "text": "Report Text",
-       *     "user": "John Doe"
-       *   }
-       * ]
-       */
-      reports?: components["schemas"]["Report"][];
-      /**
-       * Attendees
-       * @default []
-       * @example [
-       *   {
-       *     "userId": 123
-       *   }
-       * ]
-       */
-      attendees?: components["schemas"]["Attendee"][];
-      /**
-       * Maxattendees
-       * @example 10
-       */
-      maxAttendees?: number | null;
-    };
-    /** UserLocation */
-    UserLocation: {
-      /** Latitude */
-      latitude: number;
-      /** Longitude */
-      longitude: number;
-      /** Timestamp */
-      timestamp: string | null;
-      /** Accuracy */
-      accuracy: number;
-    };
-    /** UserSettings */
-    UserSettings: {
-      /**
-       * @default NO_ONE
-       * @example EVERYONE
-       */
-      show_location?: components["schemas"]["ShowLocation"];
-      /**
-       * Show Email
-       * @default false
-       * @example true
-       */
-      show_email?: boolean;
-      /**
-       * Show Phone
-       * @default false
-       * @example true
-       */
-      show_phone?: boolean;
-    };
-    /** UserUpdate */
-    UserUpdate: {
-      settings: components["schemas"]["UserSettings"];
-      /**
-       * @example {
-       *   "email": "johndoe@example.com",
-       *   "phone": "+1234567890"
-       * }
-       */
-      contact_info?: components["schemas"]["ContactInfo"] | null;
-      /**
-       * Slogan
-       * @example Live and Let Live
-       */
-      slogan?: string | null;
-    };
-    /** ValidationError */
-    ValidationError: {
-      /** Location */
-      loc: (string | number)[];
-      /** Message */
-      msg: string;
-      /** Error Type */
-      type: string;
-    };
-  };
-  responses: never;
-  parameters: never;
-  requestBodies: never;
-  headers: never;
-  pathItems: never;
+    responses: never;
+    parameters: never;
+    requestBodies: never;
+    headers: never;
+    pathItems: never;
 }
-
 export type $defs = Record<string, never>;
-
-export type external = Record<string, never>;
-
 export interface operations {
-
-  /** Authm */
-  authm_v1_authm_post: {
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["AuthRequest"];
-      };
-    };
-    responses: {
-      /** @description Successful Response */
-      200: {
-        content: {
-          "application/json": components["schemas"]["AuthResponse"];
+    authm_v1_authm_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
         };
-      };
-      /** @description Validation Error */
-      422: {
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AuthRequest"];
+            };
         };
-      };
-    };
-  };
-  /** Authb */
-  authb_v1_authb_post: {
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["AuthRequest"];
-      };
-    };
-    responses: {
-      /** @description Successful Response */
-      200: {
-        content: {
-          "application/json": components["schemas"]["AuthResponse"];
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuthResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
         };
-      };
-      /** @description Validation Error */
-      422: {
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
+    };
+    authb_v1_authb_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
         };
-      };
-    };
-  };
-  /** Refresh Token */
-  refresh_token_v1_refresh_token_post: {
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["RefreshTokenRequest"];
-      };
-    };
-    responses: {
-      /** @description Successful Response */
-      200: {
-        content: {
-          "application/json": components["schemas"]["AuthResponse"];
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AuthRequest"];
+            };
         };
-      };
-      /** @description Validation Error */
-      422: {
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuthResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
         };
-      };
     };
-  };
-  /** Health */
-  health_v1_health_get: {
-    responses: {
-      /** @description Successful Response */
-      200: {
-        content: {
-          "application/json": unknown;
+    refresh_token_v1_refresh_token_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
         };
-      };
-    };
-  };
-  /** Get User By Id */
-  get_user_by_id_v1_users__user_id__get: {
-    parameters: {
-      path: {
-        user_id: number;
-      };
-    };
-    responses: {
-      /** @description Successful Response */
-      200: {
-        content: {
-          "application/json": unknown;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RefreshTokenRequest"];
+            };
         };
-      };
-      /** @description Validation Error */
-      422: {
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuthResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
         };
-      };
     };
-  };
-  /** Get Users */
-  get_users_v1_users_get: {
-    parameters: {
-      query?: {
-        show_location?: boolean;
-      };
-    };
-    responses: {
-      /** @description Successful Response */
-      200: {
-        content: {
-          "application/json": components["schemas"]["User"][];
+    health_v1_health_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
         };
-      };
-      /** @description Validation Error */
-      422: {
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
         };
-      };
     };
-  };
-  /** Update User Location */
-  update_user_location_v1_users_me_location_put: {
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["UserLocation"];
-      };
-    };
-    responses: {
-      /** @description Successful Response */
-      200: {
-        content: {
-          "application/json": components["schemas"]["User"];
+    get_user_by_id_v1_users__user_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: number;
+            };
+            cookie?: never;
         };
-      };
-      /** @description Validation Error */
-      422: {
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
         };
-      };
     };
-  };
-  /** Get Current User */
-  get_current_user_v1_users_me_get: {
-    responses: {
-      /** @description Successful Response */
-      200: {
-        content: {
-          "application/json": components["schemas"]["User"];
+    get_users_v1_users_get: {
+        parameters: {
+            query?: {
+                show_location?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
         };
-      };
-    };
-  };
-  /** Update Current User */
-  update_current_user_v1_users_me_put: {
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["UserUpdate"];
-      };
-    };
-    responses: {
-      /** @description Successful Response */
-      200: {
-        content: {
-          "application/json": components["schemas"]["User"];
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["User"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
         };
-      };
-      /** @description Validation Error */
-      422: {
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
+    };
+    update_user_location_v1_users_me_location_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
         };
-      };
-    };
-  };
-  /** Update User Avatar */
-  update_user_avatar_v1_users_me_avatar_post: {
-    requestBody: {
-      content: {
-        "multipart/form-data": components["schemas"]["Body_update_user_avatar_v1_users_me_avatar_post"];
-      };
-    };
-    responses: {
-      /** @description Successful Response */
-      200: {
-        content: {
-          "application/json": components["schemas"]["User"];
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UserLocation"];
+            };
         };
-      };
-      /** @description Validation Error */
-      422: {
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["User"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
         };
-      };
     };
-  };
-  /** Get External Root Data */
-  get_external_root_data_v1_external_root_get: {
-    responses: {
-      /** @description Successful Response */
-      200: {
-        content: {
-          "application/json": components["schemas"]["ExternalRoot"];
+    get_current_user_v1_users_me_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
         };
-      };
-    };
-  };
-  /** Get Events For User */
-  get_events_for_user_v1_external_events_booked_get: {
-    responses: {
-      /** @description Successful Response */
-      200: {
-        content: {
-          "application/json": components["schemas"]["ExternalEventDetails"][];
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["User"];
+                };
+            };
         };
-      };
     };
-  };
-  /** Get News From Event Site */
-  get_news_from_event_site_v1_external_events_news_get: {
-    responses: {
-      /** @description Successful Response */
-      200: {
-        content: {
-          "application/json": components["schemas"]["EventSiteNews"][];
+    update_current_user_v1_users_me_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
         };
-      };
-    };
-  };
-  /** Get Events I Own */
-  get_events_i_own_v1_user_events_mine_get: {
-    responses: {
-      /** @description Successful Response */
-      200: {
-        content: {
-          "application/json": components["schemas"]["ExtendedUserEvent"][];
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UserUpdate"];
+            };
         };
-      };
-    };
-  };
-  /** Get Events I Host */
-  get_events_i_host_v1_user_events_cohosting_get: {
-    responses: {
-      /** @description Successful Response */
-      200: {
-        content: {
-          "application/json": components["schemas"]["ExtendedUserEvent"][];
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["User"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
         };
-      };
     };
-  };
-  /** Get Events I Attend */
-  get_events_i_attend_v1_user_events_attending_get: {
-    responses: {
-      /** @description Successful Response */
-      200: {
-        content: {
-          "application/json": components["schemas"]["ExtendedUserEvent"][];
+    update_user_avatar_v1_users_me_avatar_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
         };
-      };
-    };
-  };
-  /** Get Events */
-  get_events_v1_user_events_get: {
-    responses: {
-      /** @description Successful Response */
-      200: {
-        content: {
-          "application/json": components["schemas"]["ExtendedUserEvent"][];
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_update_user_avatar_v1_users_me_avatar_post"];
+            };
         };
-      };
-    };
-  };
-  /** Create Event */
-  create_event_v1_user_events_post: {
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["UserEvent"];
-      };
-    };
-    responses: {
-      /** @description Successful Response */
-      200: {
-        content: {
-          "application/json": components["schemas"]["ExtendedUserEvent"];
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["User"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
         };
-      };
-      /** @description Validation Error */
-      422: {
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
+    };
+    get_external_root_data_v1_external_root_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
         };
-      };
-    };
-  };
-  /** Get Event */
-  get_event_v1_user_events__event_id__get: {
-    parameters: {
-      path: {
-        event_id: string;
-      };
-    };
-    responses: {
-      /** @description Successful Response */
-      200: {
-        content: {
-          "application/json": components["schemas"]["ExtendedUserEvent"];
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExternalRoot"];
+                };
+            };
         };
-      };
-      /** @description Validation Error */
-      422: {
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
+    };
+    get_events_for_user_v1_external_events_booked_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
         };
-      };
-    };
-  };
-  /** Update Event */
-  update_event_v1_user_events__event_id__put: {
-    parameters: {
-      path: {
-        event_id: string;
-      };
-    };
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["UserEvent"];
-      };
-    };
-    responses: {
-      /** @description Successful Response */
-      200: {
-        content: {
-          "application/json": components["schemas"]["ExtendedUserEvent"];
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExternalEventDetails"][];
+                };
+            };
         };
-      };
-      /** @description Validation Error */
-      422: {
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
     };
-  };
-  /** Delete Event */
-  delete_event_v1_user_events__event_id__delete: {
-    parameters: {
-      path: {
-        event_id: string;
-      };
-    };
-    responses: {
-      /** @description Successful Response */
-      200: {
-        content: {
-          "application/json": components["schemas"]["StatusResponseWithMessage"];
+    get_news_from_event_site_v1_external_events_news_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
         };
-      };
-      /** @description Validation Error */
-      422: {
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventSiteNews"][];
+                };
+            };
         };
-      };
     };
-  };
-  /** Attend Event */
-  attend_event_v1_user_events__event_id__attend_post: {
-    parameters: {
-      path: {
-        event_id: string;
-      };
-    };
-    responses: {
-      /** @description Successful Response */
-      200: {
-        content: {
-          "application/json": components["schemas"]["ExtendedUserEvent"];
+    get_events_v1_events_get: {
+        parameters: {
+            query?: {
+                attending?: boolean | null;
+                bookable?: boolean | null;
+                official?: boolean | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
         };
-      };
-      /** @description Validation Error */
-      422: {
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Event"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
         };
-      };
     };
-  };
-  /** Unattend Event */
-  unattend_event_v1_user_events__event_id__unattend_post: {
-    parameters: {
-      path: {
-        event_id: string;
-      };
-    };
-    responses: {
-      /** @description Successful Response */
-      200: {
-        content: {
-          "application/json": components["schemas"]["StatusResponseWithMessage"];
+    create_event_proxy_v1_events_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
         };
-      };
-      /** @description Validation Error */
-      422: {
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Event"];
+            };
         };
-      };
-    };
-  };
-  /** Remove Attendee */
-  remove_attendee_v1_user_events__event_id__attendees__attendee_id__delete: {
-    parameters: {
-      path: {
-        event_id: string;
-        attendee_id: number;
-      };
-    };
-    responses: {
-      /** @description Successful Response */
-      200: {
-        content: {
-          "application/json": components["schemas"]["StatusResponseWithMessage"];
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Event"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
         };
-      };
-      /** @description Validation Error */
-      422: {
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
     };
-  };
-  /** Accept Being Cohost */
-  accept_being_cohost_v1_user_events__event_id__accept_cohosting_post: {
-    parameters: {
-      path: {
-        event_id: string;
-      };
-    };
-    responses: {
-      /** @description Successful Response */
-      200: {
-        content: {
-          "application/json": components["schemas"]["StatusResponseWithMessage"];
+    update_event_proxy_v1_events__event_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: string;
+            };
+            cookie?: never;
         };
-      };
-      /** @description Validation Error */
-      422: {
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Event"];
+            };
         };
-      };
-    };
-  };
-  /** Deny Being Cohost */
-  deny_being_cohost_v1_user_events__event_id__deny_cohosting_post: {
-    parameters: {
-      path: {
-        event_id: string;
-      };
-    };
-    responses: {
-      /** @description Successful Response */
-      200: {
-        content: {
-          "application/json": components["schemas"]["StatusResponseWithMessage"];
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Event"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
         };
-      };
-      /** @description Validation Error */
-      422: {
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
     };
-  };
-  /** Getlocationbyadress */
-  getLocationByAdress_v1_geolocation__address__get: {
-    parameters: {
-      path: {
-        address: string;
-      };
-    };
-    responses: {
-      /** @description Successful Response */
-      200: {
-        content: {
-          "application/json": components["schemas"]["GeoLocation"];
+    delete_event_proxy_v1_events__event_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: string;
+            };
+            cookie?: never;
         };
-      };
-      /** @description Validation Error */
-      422: {
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
         };
-      };
     };
-  };
+    get_events_attending_v1_events_attending_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Event"][];
+                };
+            };
+        };
+    };
+    get_events_official_v1_events_official_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Event"][];
+                };
+            };
+        };
+    };
+    get_events_unofficial_v1_events_unofficial_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Event"][];
+                };
+            };
+        };
+    };
+    get_events_i_own_v1_user_events_mine_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExtendedUserEvent"][];
+                };
+            };
+        };
+    };
+    get_events_i_host_v1_user_events_cohosting_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExtendedUserEvent"][];
+                };
+            };
+        };
+    };
+    get_events_i_attend_v1_user_events_attending_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExtendedUserEvent"][];
+                };
+            };
+        };
+    };
+    get_events_v1_user_events_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExtendedUserEvent"][];
+                };
+            };
+        };
+    };
+    create_event_v1_user_events_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UserEvent"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExtendedUserEvent"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_event_v1_user_events__event_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExtendedUserEvent"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_event_v1_user_events__event_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UserEvent"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExtendedUserEvent"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_event_v1_user_events__event_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["v1__dev__user_events_dev_api__StatusResponseWithMessage"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    attend_event_v1_user_events__event_id__attend_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExtendedUserEvent"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    unattend_event_v1_user_events__event_id__unattend_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["v1__dev__user_events_dev_api__StatusResponseWithMessage"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    remove_attendee_v1_user_events__event_id__attendees__attendee_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: string;
+                attendee_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["v1__dev__user_events_dev_api__StatusResponseWithMessage"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    accept_being_cohost_v1_user_events__event_id__accept_cohosting_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["v1__dev__user_events_dev_api__StatusResponseWithMessage"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    deny_being_cohost_v1_user_events__event_id__deny_cohosting_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["v1__dev__user_events_dev_api__StatusResponseWithMessage"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    getLocationByAdress_v1_geolocation__address__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                address: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GeoLocation"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    clear_user_events_v1_dev_clear_user_events_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["v1__dev__user_events_dev_api__StatusResponseWithMessage"];
+                };
+            };
+        };
+    };
+    get_dummy_user_event_v1_dev_create_dummy_user_event_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExtendedUserEvent"];
+                };
+            };
+        };
+    };
+    create_my_dummy_event_v1_dev_create_my_dummy_event_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExtendedUserEvent"];
+                };
+            };
+        };
+    };
 }

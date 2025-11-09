@@ -16,7 +16,6 @@ export function ThemedView({ style = styles.defaultStyle, lightColor, darkColor,
 
   const safeAreaStyle = useSafeArea ? {
     paddingTop: insets.top,
-    paddingBottom: insets.bottom,
     paddingLeft: insets.left,
     paddingRight: insets.right,
   } : {};

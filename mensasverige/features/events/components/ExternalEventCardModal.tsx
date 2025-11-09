@@ -7,11 +7,11 @@ import {
   Text,
   Dimensions
 } from 'react-native';
-import ExternalEventCard from './ExternalEventCard';
-import { ExternalEventDetails } from '../../../api_schema/types';
+import EventCard from './ExternalEventCard';
+import { Event } from '../../../api_schema/types';
 
 interface EventDetailsProps {
-  event: ExternalEventDetails,
+  event: Event,
   open: boolean,
   onClose: () => void;
 }
@@ -72,7 +72,7 @@ const styles = StyleSheet.create({
   },
 });
 
-const ExternalEventCardModal: React.FC<EventDetailsProps> = ({
+const EventCardModal: React.FC<EventDetailsProps> = ({
   event, open, onClose
 }) => {
   const ref = React.useRef(null);
@@ -105,7 +105,7 @@ const ExternalEventCardModal: React.FC<EventDetailsProps> = ({
             >
               <Text style={styles.closeButtonText}>×</Text>
             </TouchableOpacity>
-            <ExternalEventCard
+            <EventCard
               eventDetails={event}
             />
           </View>
@@ -115,7 +115,7 @@ const ExternalEventCardModal: React.FC<EventDetailsProps> = ({
   );
 };
 
-export default React.memo(ExternalEventCardModal, (prevProps, nextProps) => {
+export default React.memo(EventCardModal, (prevProps, nextProps) => {
   // Only re-render if the eventId changes or the open state changes
-  return prevProps.event.eventId === nextProps.event.eventId && prevProps.open === nextProps.open;
+  return prevProps.event.id === nextProps.event.id && prevProps.open === nextProps.open;
 });

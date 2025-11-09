@@ -1,7 +1,7 @@
 import apiClient from '../../common/services/apiClient';
 import FutureUserEvent, {isFutureUserEvent} from '../types/futureUserEvent';
 import FutureEvent, {isFutureEvent} from '../types/futureEvent';
-import {ExternalEventDetails, News, UserEvent, ExternalRoot} from '../../../api_schema/types';
+import {ExternalEventDetails, News, UserEvent, ExternalRoot, Event} from '../../../api_schema/types';
 
 export const fetchUserEvent = async (
   eventId: string,
@@ -130,6 +130,71 @@ export const fetchStaticEvents = async (): Promise<FutureEvent[]> => {
       throw error; // Needed to propagate the error to the caller view
     });
 };
+
+export const fetchEvents = async (params?: {
+  attending?: boolean;
+  bookable?: boolean;
+  official?: boolean;
+}): Promise<Event[]> => {
+  return apiClient
+    .get('/events', { params })
+    .then(
+      response => {
+        if (response.data) {
+          return response.data;
+        }
+        return [];
+      },
+      error => {
+        throw new Error(error.message || error);
+      },
+    )
+    .catch(error => {
+      console.error('Error fetching events:', error);
+      throw error;
+    });
+};
+
+export const updateEvent = async (
+  eventId: string,
+  event: Event,
+): Promise<Event> => {
+  return apiClient
+    .put(`/events/${eventId}`, event)
+    .then(
+      response => {
+        if (response.data) {
+          return response.data;
+        }
+        throw new Error('No data received');
+      },
+      error => {
+        throw new Error(error.message || error);
+      },
+    )
+    .catch(error => {
+      console.error('Error updating event:', error);
+      throw error;
+    });
+};
+
+export const deleteEvent = async (eventId: string): Promise<boolean> => {
+  return apiClient
+    .delete(`/events/${eventId}`)
+    .then(
+      response => {
+        return response.status === 200;
+      },
+      error => {
+        throw new Error(error.message || error);
+      },
+    )
+    .catch(error => {
+      console.error('Error deleting event:', error);
+      throw error;
+    });
+};
+
 export const updateUserEvent = async (
   eventId: string,
   event: UserEvent,

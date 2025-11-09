@@ -149,6 +149,17 @@ const baseColors = {
   coolGray800: '#1f2937',
   coolGray900: '#111827',
 
+  teal50: '#f0fdfa',
+  teal100: '#ccfbf1',
+  teal200: '#99f6e4',
+  teal300: '#5eead4',
+  teal400: '#2dd4bf',
+  teal500: '#14b8a6',
+  teal600: '#0d9488',
+  teal700: '#0f766e',
+  teal800: '#115e59',
+  teal900: '#134e4a',
+
   // Basic colors
   white: '#FFFFFF',
   black: '#000000',
@@ -318,26 +329,26 @@ export const Colors = {
     icon: '#687076',
     tabIconDefault: '#687076',
     tabIconSelected: tintColorLight,
-    
+
     // Brand colors
     ...primaryColors,
     ...secondaryColors,
-    
+
     // Base color palette
     ...baseColors,
-    
+
     // Semantic colors
     ...semanticColors,
-    
+
     // Text colors
     ...textColors,
-    
+
     // Background colors
     ...backgroundColors,
-    
+
     // VSCode colors
     ...vscodeColors,
-    
+
     // Special colors
     ...specialColors,
   },
@@ -348,7 +359,7 @@ export const Colors = {
     icon: '#9BA1A6',
     tabIconDefault: '#9BA1A6',
     tabIconSelected: tintColorDark,
-    
+
     // Primary colors (dark theme variants)
     primary0: '#CCFBFF',
     primary50: '#B7F1FF',
@@ -361,7 +372,7 @@ export const Colors = {
     primary700: '#3187C0',
     primary800: '#216AA0',
     primary900: '#124D80',
-    
+
     // Secondary colors (dark theme variants)
     secondary0: '#9EDCCF',
     secondary100: '#83D6C5',
@@ -373,13 +384,13 @@ export const Colors = {
     secondary700: '#349782',
     secondary800: '#277D6B',
     secondary900: '#1A6454',
-    
+
     // Base colors (same for dark theme)
     ...baseColors,
-    
+
     // Semantic colors (same for dark theme)
     ...semanticColors,
-    
+
     // Text colors (inverted for dark theme)
     text0: '#171717',
     text50: '#262626',
@@ -393,7 +404,7 @@ export const Colors = {
     text800: '#E5E5E5',
     text900: '#F5F5F5',
     text950: '#FCFCFC',
-    
+
     // Background colors (dark theme variants)
     background0: '#171717',
     background50: '#262626',
@@ -407,19 +418,19 @@ export const Colors = {
     background800: '#F1F1F1',
     background900: '#F5F5F5',
     background950: '#FCFCFC',
-    
+
     backgroundError: '#422B2B',
     backgroundWarning: '#412F23',
     backgroundSuccess: '#1C2B21',
     backgroundInfo: '#1A282E',
     backgroundMuted: '#252526',
-    
+
     // VSCode dark colors
     ...vscodeDarkColors,
-    
+
     // Special colors (dark variants)
     news_title: specialColors.news_title_dark,
-    
+
     // Amber colors (lighter for dark theme)
     amber50: '#ffffff',
     amber100: '#ffffff',
@@ -431,7 +442,7 @@ export const Colors = {
     amber700: '#f59e0b',
     amber800: '#d97706',
     amber900: '#b45309',
-    
+
     // Info colors (inverted for dark theme)
     info50: '#0c4a6e',
     info100: '#075985',
@@ -444,7 +455,7 @@ export const Colors = {
     info800: '#e0f2fe',
     info900: '#f0f9ff',
   },
-  
+
   // Expose base colors for direct access
   ...baseColors,
   ...primaryColors,

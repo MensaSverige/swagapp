@@ -8,16 +8,17 @@ npx openapi-typescript http://{{api-url}}/openapi.json -o ./api_schema/schema.d.
 // Schema Obj
 export type AuthRequest = components['schemas']['AuthRequest'];
 export type AuthResponse = components['schemas']['AuthResponse'];
+export type Event = components['schemas']['Event'];
+export type ExtendedUserEvent = components['schemas']['ExtendedUserEvent'];
+export type ExternalEventDetails = components["schemas"]["ExternalEventDetails"];
+export type ExternalRoot = components["schemas"]["ExternalRoot"];
+export type GeoLocation = components["schemas"]["GeoLocation"];
+export type HTTPValidationError = components["schemas"]["HTTPValidationError"];
+export type News = components["schemas"]["EventSiteNews"];
+export type ShowLocation = components["schemas"]["ShowLocation"];
 export type User = components['schemas']['User'];
 export type UserEvent = components['schemas']['UserEvent'];
 export type UserEventLocation = components['schemas']['UserEvent']['location'];
-export type ExtendedUserEvent = components['schemas']['ExtendedUserEvent'];
-export type UserUpdate = components["schemas"]["UserUpdate"];
 export type UserLocation = components["schemas"]["UserLocation"];
-export type ExternalRoot = components["schemas"]["ExternalRoot"];
-export type ExternalEventDetails = components["schemas"]["ExternalEventDetails"];
-export type News = components["schemas"]["EventSiteNews"];
-export type GeoLocation = components["schemas"]["GeoLocation"];
-export type HTTPValidationError = components["schemas"]["HTTPValidationError"];
+export type UserUpdate = components["schemas"]["UserUpdate"];
 export type ValidationError = components["schemas"]["ValidationError"];
-export type ShowLocation = components["schemas"]["ShowLocation"];

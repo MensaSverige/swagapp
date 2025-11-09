@@ -1,23 +1,24 @@
 import React, { useEffect, useState } from 'react';
 import { View, StyleSheet, TouchableOpacity } from 'react-native';
-import { fetchExternalRoot, fetchExternalEvents } from '../../events/services/eventService';
-import { ExternalRoot, ExternalEventDetails } from '../../../api_schema/types';
+import { fetchExternalRoot, fetchEvents } from '../services/eventService';
+import { ExternalRoot, Event } from '../../../api_schema/types';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import ParentEventDetails from './ParentEventDetails';
-import SiteNews from './SiteNews';
-import ExternalEventItem from '../../events/components/ExternalEventItem';
-import ExternalEventCardModal from '../../events/components/ExternalEventCardModal';
-import { displayLocaleTimeStringDate } from '../../events/screens/MyExternalEvents';
+import SiteNews from '../../common/components/SiteNews';
+import EventListItem from './EventListItem';
+import EventCardModal from './ExternalEventCardModal';
+import { displayLocaleTimeStringDate } from '../screens/MyExternalEvents';
 import { MaterialIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import useStore from '../store/store';
+import useStore from '../../common/store/store';
+import { Colors } from '@/constants/Colors';
 
 const ParentEventDashboard = () => {
     const [eventInfo, setEventInfo] = useState<ExternalRoot | null>(null);
-    const [groupedUpcomingEvents, setGroupedUpcomingEvents] = useState<{ [key: string]: ExternalEventDetails[] }>({});
+    const [groupedUpcomingEvents, setGroupedUpcomingEvents] = useState<{ [key: string]: Event[] }>({});
     const [hasMoreEvents, setHasMoreEvents] = useState(false);
-    const [selectedEvent, setSelectedEvent] = useState<ExternalEventDetails | null>(null);
+    const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
     const [loading, setLoading] = useState(true);
     const { setExternalEvents } = useStore();
 
@@ -27,40 +28,40 @@ const ParentEventDashboard = () => {
                 // Fetch both parent event info and child events in parallel
                 const [parentEventInfo, events] = await Promise.all([
                     fetchExternalRoot(),
-                    fetchExternalEvents()
+                    fetchEvents()
                 ]);
 
                 setEventInfo(parentEventInfo);
 
                 if (parentEventInfo && events?.length > 0) {
-                    // Sort events by date and filter upcoming ones in a single pass
+                    // Sort events by date and filter upcoming ones that user is attending
                     const now = new Date();
-                    const allUpcomingEvents = events
+                    const myUpcomingEvents = events
                         .filter(event => {
-                            if (!event.eventDate || !event.endTime) return false;
-                            const eventDate = new Date(event.eventDate);
-                            const [hours, minutes] = event.endTime.split(':');
+                            if (!event.start || !event.end || !event.attending) return false;
+                            const eventDate = new Date(event.start);
+                            const [hours, minutes] = event.end.split(':');
                             eventDate.setHours(parseInt(hours), parseInt(minutes));
                             return eventDate > now;
                         })
                         .sort((a, b) => {
-                            const dateA = a.eventDate ? new Date(a.eventDate).getTime() : 0;
-                            const dateB = b.eventDate ? new Date(b.eventDate).getTime() : 0;
+                            const dateA = a.start ? new Date(a.start).getTime() : 0;
+                            const dateB = b.start ? new Date(b.start).getTime() : 0;
                             return dateA - dateB;
                         });
                     
-                    const upcomingEventsFiltered = allUpcomingEvents.slice(0, 6); // Get the first 6 for dashboard
-                    setHasMoreEvents(allUpcomingEvents.length > 6); // Check if there are more events
+                    const upcomingEventsFiltered = myUpcomingEvents.slice(0, 3); // Get the first 3 for dashboard
+                    setHasMoreEvents(myUpcomingEvents.length > 3); // Check if there are more events
                     
                     // Group the filtered events by date
                     const groupedEvents = upcomingEventsFiltered.reduce((grouped, event) => {
-                        const date = event.eventDate ? new Date(event.eventDate).toDateString() : 'No Date';
+                        const date = event.start ? new Date(event.start).toDateString() : 'No Date';
                         if (!grouped[date]) {
                             grouped[date] = [];
                         }
                         grouped[date].push(event);
                         return grouped;
-                    }, {} as { [key: string]: ExternalEventDetails[] });
+                    }, {} as { [key: string]: Event[] });
                     
                     setExternalEvents(events); // Store all events in store
                     setGroupedUpcomingEvents(groupedEvents);
@@ -85,7 +86,7 @@ const ParentEventDashboard = () => {
         router.push('/(tabs)/schedule');
     };
 
-    const handleEventPress = (event: ExternalEventDetails) => {
+    const handleEventPress = (event: Event) => {
         // Show the modal with event details instead of just navigating
         setSelectedEvent(event);
     };
@@ -114,7 +115,7 @@ const ParentEventDashboard = () => {
         <ThemedView style={styles.container}>
             {/* Event Detail Modal */}
             {selectedEvent && (
-                <ExternalEventCardModal
+                <EventCardModal
                     event={selectedEvent}
                     open={!!selectedEvent}
                     onClose={() => {
@@ -136,36 +137,26 @@ const ParentEventDashboard = () => {
                             style={styles.seeAllButton}
                         >
                             <ThemedText style={styles.seeAllText}>Se alla</ThemedText>
-                            <MaterialIcons name="chevron-right" size={16} color="#2563EB" />
+                            <MaterialIcons name="chevron-right" size={16} color={Colors.primary400} />
                         </TouchableOpacity>
                     </View>
                     
                     {Object.keys(groupedUpcomingEvents).map((date) => (
-                        <View key={date} style={styles.dateGroup}>
-                            <ThemedText type="subtitle">{displayLocaleTimeStringDate(date)}</ThemedText>
+                        <View key={date}>
+                            <ThemedText type="defaultSemiBold">{displayLocaleTimeStringDate(date)}</ThemedText>
                             <View style={styles.divider} />
-                            <View style={styles.eventsList}>
+
                                 {groupedUpcomingEvents[date].map((event) => (
-                                    <ExternalEventItem
-                                        key={event.eventId}
+                                    <EventListItem
+                                        key={event.id}
                                         event={event}
                                         onPress={handleEventPress}
                                         showCategories={true}
                                     />
                                 ))}
-                            </View>
+
                         </View>
-                    ))}
-                    
-                    {hasMoreEvents && (
-                        <TouchableOpacity 
-                            onPress={navigateToFullSchedule}
-                            style={styles.viewMoreButton}
-                        >
-                            <ThemedText style={styles.viewMoreText}>Visa fler aktiviteter</ThemedText>
-                            <MaterialIcons name="arrow-forward" size={16} color="#2563EB" />
-                        </TouchableOpacity>
-                    )}
+                    ))}       
                 </View>
             )}
             
@@ -195,29 +186,27 @@ const ParentEventDashboard = () => {
 const styles = StyleSheet.create({
     container: {
         padding: 0,
+        flex: 1
     },
     loadingText: {
         textAlign: 'center',
-        color: '#6B7280',
+        color: Colors.coolGray500,
         marginVertical: 20,
     },
     noEventText: {
-        color: '#6B7280',
+        color: Colors.coolGray500,
         textAlign: 'center',
         marginTop: 8,
         lineHeight: 20,
     },
     eventsSection: {
-        marginTop: 24,
-    },
-    dateGroup: {
-        marginBottom: 20,
+        marginTop: 24
     },
     divider: {
         height: 1,
-        backgroundColor: '#E5E7EB',
-        marginBottom: 12,
-        marginTop: 8,
+        backgroundColor: Colors.coolGray500,
+        marginBottom: 8,
+        marginTop: 4,
     },
     sectionHeader: {
         flexDirection: 'row',
@@ -231,27 +220,7 @@ const styles = StyleSheet.create({
         gap: 4,
     },
     seeAllText: {
-        color: '#2563EB',
-        fontSize: 14,
-        fontWeight: '500',
-    },
-    eventsList: {
-        gap: 12,
-    },
-    viewMoreButton: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 8,
-        marginTop: 16,
-        padding: 12,
-        borderRadius: 8,
-        borderWidth: 1,
-        borderColor: '#2563EB',
-        backgroundColor: 'transparent',
-    },
-    viewMoreText: {
-        color: '#2563EB',
+        color: Colors.primary400,
         fontSize: 14,
         fontWeight: '500',
     },
@@ -262,14 +231,14 @@ const styles = StyleSheet.create({
     },
     noEventsText: {
         fontSize: 16,
-        color: '#6B7280',
+        color: Colors.coolGray500,
         textAlign: 'center',
         marginBottom: 16,
     },
     browseButton: {
         paddingHorizontal: 20,
         paddingVertical: 10,
-        backgroundColor: '#2563EB',
+        backgroundColor: Colors.primary500,
         borderRadius: 8,
     },
     browseButtonText: {

@@ -8,7 +8,8 @@ import {
   TouchableOpacity,
   Linking
 } from 'react-native';
-import { ExternalEventDetails, User } from '../../../api_schema/types';
+import { Event, User } from '../../../api_schema/types';
+import { DisplayTime } from '../utilities/DisplayTime';
 import UserAvatar from '../../map/components/UserAvatar';
 import { displayLocaleTimeStringDate } from '../screens/MyExternalEvents';
 import { filterHtml } from '../../common/functions/filterHtml';
@@ -149,12 +150,12 @@ function removeLastEmTag(description: string): string {
   return description.slice(0, lastIndex) + description.slice(lastIndex + lastEmTag.length);
 }
 
-const ExternalEventCard: React.FC<{
-  eventDetails: ExternalEventDetails;
-}> = ({ eventDetails }) => {
-  const [event, setEvent] = useState<ExternalEventDetails>(eventDetails);
+const EventCard: React.FC<{
+  event: Event;
+}> = ({ event }) => {
+  // const [event, setEvent] = useState<Event>(eventDetails);
   const [admins, setAdmins] = useState<User[] | null>(null);
-  const capitalizedSpeakerInfo = useMemo(() => formatSpeakerInfo(eventDetails.description), [eventDetails.description]);
+  const capitalizedSpeakerInfo = useMemo(() => formatSpeakerInfo(event.description ?? ""), [event.description]);
 
   //TODO: jag är trött 
   // useEffect(() => {
@@ -165,59 +166,59 @@ const ExternalEventCard: React.FC<{
   // }, [eventDetails.admins]);
 
 
-  const renderAddressLinkAndIcon = useCallback(() => {
-    if (!event.mapUrl) return null;
-    const searchParameters = parseMapUrl(event.mapUrl);
-    if (searchParameters) {
-      return (
-        <View style={[styles.hstack, { justifyContent: 'flex-start', marginBottom: 0 }]}>
-          <AddressLinkAndIcon
-            displayName={event.location || undefined}
-            latitude={searchParameters.latitude}
-            longitude={searchParameters.longitude}
-            landmark={searchParameters.landmark || event.location}
-            searchParameters={searchParameters.searchParameters}
-          />
-        </View>
-      );
-    }
-  }, [event.mapUrl, event.location]);
+  // const renderAddressLinkAndIcon = useCallback(() => {
+  //   if (!event.mapUrl) return null;
+  //   const searchParameters = parseMapUrl(event.mapUrl);
+  //   if (searchParameters) {
+  //     return (
+  //       <View style={[styles.hstack, { justifyContent: 'flex-start', marginBottom: 0 }]}>
+  //         <AddressLinkAndIcon
+  //           displayName={event.location || undefined}
+  //           latitude={searchParameters.latitude}
+  //           longitude={searchParameters.longitude}
+  //           landmark={searchParameters.landmark || event.location}
+  //           searchParameters={searchParameters.searchParameters}
+  //         />
+  //       </View>
+  //     );
+  //   }
+  // }, [event.mapUrl, event.location]);
 
-  useEffect(() => {
-    if (capitalizedSpeakerInfo && event.description.includes('<em>')) {
-      const updatedDescription = removeLastEmTag(event.description);
-      setEvent(prevEvent => ({ ...prevEvent, description: updatedDescription }));
-    }
-  }, [capitalizedSpeakerInfo, event.description]);
+  // useEffect(() => {
+  //   if (capitalizedSpeakerInfo && event.description.includes('<em>')) {
+  //     const updatedDescription = removeLastEmTag(event.description);
+  //     setEvent(prevEvent => ({ ...prevEvent, description: updatedDescription }));
+  //   }
+  // }, [capitalizedSpeakerInfo, event.description]);
 
   return (
     <ScrollView style={styles.container}>
       <View style={styles.card}>
         <Text style={styles.dateText}>
-          {displayLocaleTimeStringDate(event.eventDate ?? "")}
+          {displayLocaleTimeStringDate(event.start ?? "")}
         </Text>
         <Text style={styles.timeText}>
-          {event.startTime} - {event.endTime}
+          {DisplayTime(event.start ?? "")} - {DisplayTime(event.end ?? "")}
         </Text>
         <View style={styles.vstack}>
-          {event.imageUrl300 && (
+          {event.imageUrl && (
             <Image
               style={styles.eventImage}
-              source={{ uri: event.imageUrl300 }}
+              source={{ uri: event.imageUrl }}
             />
           )}
           <Text style={styles.heading}>
-            {event.titel}
+            {event.name}
           </Text>
-          {event.mapUrl ? 
+          {/* {event.mapUrl ? 
             renderAddressLinkAndIcon()
             : 
             <Text style={styles.locationText}> 
               {event.location} 
             </Text>
-          }
+          } */}
 
-          {event.speaker && (
+          {/* {event.speaker && (
             <View style={styles.speakerContainer}>
               <View style={styles.speakerRow}>
                 <Text style={styles.subHeading}>
@@ -230,13 +231,13 @@ const ExternalEventCard: React.FC<{
                 )}
               </View>
             </View>
-          )}
+          )} */}
           <View style={styles.divider} />
           <Text style={styles.descriptionText}>
-            {filterHtml(event.description)}
+            {filterHtml(event.description ?? "")}
           </Text>
           <View style={styles.linksContainer}>
-            {extractLinks(event.description)?.map((link, index) => (
+            {extractLinks(event.description ?? "")?.map((link, index) => (
               <TouchableOpacity 
                 key={index}
                 style={styles.linkButton}
@@ -268,4 +269,4 @@ const ExternalEventCard: React.FC<{
   );
 };
 
-export default ExternalEventCard;
+export default EventCard;

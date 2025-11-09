@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { LocationLinkButton } from '../../map/components/LocationLinkIcon';
 import { ExternalRoot } from '../../../api_schema/types';
-import { fetchExternalRoot } from '../../events/services/eventService';
+import { fetchExternalRoot } from '../services/eventService';
 import { View } from 'react-native';
 import { ThemedText } from '@/components/ThemedText';
 

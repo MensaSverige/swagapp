@@ -58,8 +58,8 @@ export default function TabLayout() {
       <Tabs.Screen
         name="schedule"
         options={{
-          title: 'Schema',
-          tabBarIcon: ({ color }) => <MaterialIcons name="schedule" size={28} color={color} />,
+          title: 'Aktiviteter',
+          tabBarIcon: ({ color }) => <MaterialIcons name="local-activity" size={28} color={color} />,
         }}
       />
       <Tabs.Screen
@@ -67,13 +67,6 @@ export default function TabLayout() {
         options={{
           title: 'Karta',
           tabBarIcon: ({ color }) => <MaterialIcons name="person-pin" size={28} color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="event"
-        options={{
-          title: 'Spontant',
-          tabBarIcon: ({ color }) => <MaterialIcons name="celebration" size={28} color={color} />,
         }}
       />
       <Tabs.Screen

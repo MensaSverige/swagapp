@@ -1,20 +1,23 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { ExternalEventDetails } from '../../../api_schema/types';
+import { Event } from '../../../api_schema/types';
+import { DisplayTime } from '../utilities/DisplayTime';
 import {
-    FootprintsBadge,
+    ExploreBadge,
     GameBadge,
     GlobeBadge,
     LectureBadge,
     MicVocalBadge,
     PartyBadge,
+    RestaurantBadge,
     TeenBadge,
     WorkshopBadge
 } from './EventBadges';
+import { Colors } from '@/constants/Colors'
 
-interface ExternalEventItemProps {
-    event: ExternalEventDetails;
-    onPress: (event: ExternalEventDetails) => void;
+interface EventListItemProps {
+    event: Event;
+    onPress: (event: Event) => void;
     opacity?: number;
     showCategories?: boolean;
     nextEventMarkerRef?: React.RefObject<View | null>;
@@ -29,7 +32,7 @@ const getEventCategoryBadge = (categoryCode: string, color: string) => {
         case 'Fö': // föreningsarbete
             return <GlobeBadge color="#1E3A8A" />;
         case 'M': // middag/festligheter
-            return <PartyBadge color="#BE185D" />;
+            return <RestaurantBadge color="#BE185D" />;
         case 'S': // spel/tävling
             return <GameBadge color="#D97706" />;
         case 'U': // ungdomsaktivitet
@@ -37,7 +40,7 @@ const getEventCategoryBadge = (categoryCode: string, color: string) => {
         case 'Up': //uppträdande
             return <MicVocalBadge color="#F59E0B" />;
         case 'Ut': // utflykt
-            return <FootprintsBadge color="#65A30D" />;
+            return <ExploreBadge color="#65A30D" />;
         case 'W': // workshop
             return <WorkshopBadge color="#9333EA" />;
         default:
@@ -45,7 +48,7 @@ const getEventCategoryBadge = (categoryCode: string, color: string) => {
     }
 };
 
-const ExternalEventItem: React.FC<ExternalEventItemProps> = ({
+const EventListItem: React.FC<EventListItemProps> = ({
     event,
     onPress,
     opacity = 1.0,
@@ -54,6 +57,7 @@ const ExternalEventItem: React.FC<ExternalEventItemProps> = ({
     isNextEvent = false,
     isFirstEventOfDay = false
 }) => {
+    console.log(event);
     return (
         <TouchableOpacity
             onPress={() => onPress(event)}
@@ -65,35 +69,36 @@ const ExternalEventItem: React.FC<ExternalEventItemProps> = ({
             {isNextEvent && !isFirstEventOfDay && nextEventMarkerRef && (
                 <View ref={nextEventMarkerRef} />
             )}
-            
+
             <View style={styles.eventItem}>
                 <View style={styles.timeContainer}>
                     <Text style={styles.startTime}>
-                        {event.startTime}
+                        {DisplayTime(event.start)}
                     </Text>
                     <Text style={styles.endTime}>
-                        {event.endTime}
+                        {event.end ? DisplayTime(event.end) : ''}
                     </Text>
                 </View>
                 <View style={styles.eventContent}>
-                    <View style={styles.eventHeader}>
-                        <Text style={styles.eventTitle}>
-                            {event.titel}
-                        </Text>
-                        {showCategories && (
-                            <View style={styles.categoriesContainer}>
-                                {event.categories?.map((category, index) => (
-                                    <View key={index} style={styles.categoryBadge}>
-                                        {getEventCategoryBadge(category.code, `#${category.colorBackground}`)}
-                                    </View>
-                                ))}
-                            </View>
-                        )}
-                    </View>
-                    <Text style={styles.eventLocation}>
-                        {event.location}
+
+                    <Text style={styles.eventTitle}>
+                        {event.name}
                     </Text>
+                    <Text style={styles.eventLocation}>
+                        {event.locationDescription}
+                    </Text>
+
                 </View>
+                {showCategories && (
+                    <View style={styles.categoriesContainer}>
+                        {event.tags?.map((category, index) => (
+                            <View key={index} style={styles.categoryBadge}>
+                                {getEventCategoryBadge(category.code, `#${category.colorBackground}`)}
+                            </View>
+                        ))}
+                    </View>
+                )}
+
             </View>
         </TouchableOpacity>
     );
@@ -102,50 +107,43 @@ const ExternalEventItem: React.FC<ExternalEventItemProps> = ({
 const styles = StyleSheet.create({
     eventItem: {
         flexDirection: 'row',
-        paddingVertical: 10,
+        marginBottom: 20,
+        justifyContent: 'space-between',
     },
     timeContainer: {
         justifyContent: 'flex-start',
-        alignItems: 'center',
-        paddingTop: 2,
     },
     startTime: {
         fontSize: 14,
-        color: '#14B8A6',
-        paddingTop: 2,
+        color: Colors.teal500,
     },
     endTime: {
         fontSize: 14,
-        color: '#0F766E',
+        color: Colors.teal700,
     },
     eventContent: {
         flex: 1,
         marginLeft: 12,
-    },
-    eventHeader: {
-        flexDirection: 'row',
+        flexDirection: 'column',
         justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 4,
     },
     eventTitle: {
         fontSize: 16,
         fontWeight: '600',
-        color: '#2563EB',
+        color: Colors.info400,
         flex: 1,
     },
     categoriesContainer: {
         flexDirection: 'row',
-        gap: 8,
+        gap: 4,
     },
     categoryBadge: {
         width: 30,
     },
     eventLocation: {
         fontSize: 14,
-        color: '#6B7280',
-        marginBottom: 10,
+        color: Colors.coolGray400,
     },
 });
 
-export default ExternalEventItem;
+export default EventListItem;
