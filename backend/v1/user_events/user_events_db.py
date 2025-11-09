@@ -110,6 +110,17 @@ def get_safe_future_user_events() -> list[ExtendedUserEvent]:
         remove_secrets_from_user_events(get_unsafe_future_user_events()))
 
 
+def get_safe_user_events_since(since: datetime) -> list[ExtendedUserEvent]:
+    """
+    Retrieves all user events with start >= `since`.
+    :param since: Lower bound datetime for event start.
+    :return: The user event documents.
+    """
+    query = {"start": {"$gte": since}}
+    events = [UserEvent(**e) for e in user_event_collection.find(query)]
+    return extend_user_events(remove_secrets_from_user_events(events))
+
+
 def get_unsafe_user_events_user_owns(userId: int) -> list[UserEvent]:
     """
     Retrieves all user events that a user is hosting.

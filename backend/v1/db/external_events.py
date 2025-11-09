@@ -90,6 +90,15 @@ def get_stored_external_event_details(
         logging.error(f"Failed to retrieve events: {e}")
         return []
 
+
+def get_all_stored_external_event_details() -> List[ExternalEventDetails]:
+    """Return all stored external events from MongoDB."""
+    try:
+        return [ExternalEventDetails(**event) for event in external_event_collection.find({})]
+    except Exception as e:
+        logging.error(f"Failed to retrieve all external events: {e}")
+        return []
+
 def clean_external_events(keeping: List[ExternalEventDetails]):
     """
     Cleans the external events in the MongoDB database.
