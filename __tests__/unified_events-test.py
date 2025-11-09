@@ -47,6 +47,7 @@ def make_external_event(event_id: int, start_offset_hours: int = 3, is_limited=F
         stock=stock,
         showBooked=True,
         booked=booked,
+        admins=["20210357"],
         eventUrl="http://example.com/event",
     )
     return e
@@ -61,6 +62,12 @@ def test_map_external_event_attending_and_bookable():
     mapped_not_attending = map_external_event(ext, current_user_id=1, booked_ids=set())
     assert mapped_not_attending.attending is False
     assert mapped_not_attending.bookable is True
+
+
+def test_external_admins_are_mapped_to_admin_ids():
+    ext = make_external_event(101)
+    mapped = map_external_event(ext, current_user_id=1, booked_ids=set())
+    assert mapped.admin == [20210357]
 
 
 def test_map_user_event_capacity():

@@ -5,7 +5,7 @@ import logging
 
 from v1.db.models.external_events import ExternalEventDetails
 from v1.user_events.user_events_model import ExtendedUserEvent
-from v1.events.events_model import Event, EventAttendee, EventHost, ShowAttendees
+from v1.events.events_model import Event, EventAttendee, EventHost, ShowAttendees, Tag
 
 
 ISO_VARIANTS = ["%Y-%m-%dT%H:%M:%S", "%Y-%m-%d %H:%M:%S", "%Y-%m-%dT%H:%M:%S.%f", "%Y-%m-%d %H:%M:%S.%f"]
@@ -55,13 +55,39 @@ def map_external_event(details: ExternalEventDetails, current_user_id: int, book
 
         image_url = details.imageUrl300 or details.imageUrl150
 
+        # Convert adminsRaw (strings) to int user IDs where possible
+        admin_ids = []
+        if details.admins:
+            for a in details.admins:
+                try:
+                    admin_ids.append(int(a))
+                except Exception:
+                    # skip non-numeric admin identifiers
+                    continue
+
+        # Construct hosts array from speaker if possible
+        hosts = []
+        if details.speaker:
+            hosts.append(EventHost(userId=0, fullName=details.speaker))
+
+        # Create tags from categories
+        tags = []
+        if details.categories:
+            for category in details.categories:
+                tags.append(Tag(
+                    code=category.code,
+                    text=category.text,
+                    colorText=category.colorText,
+                    colorBackground=category.colorBackground,
+                ))
+
         event = Event(
             id=f"ext:{details.eventId}",
             parentEvent=None,
-            admin=[],  # admins are strings; keep raw in extras
-            hosts=[],
+            admin=admin_ids,
+            hosts=hosts,
             name=details.titel or details.description.split("\n")[0][:60],
-            tags=[],
+            tags=tags,
             locationDescription=details.locationInfo,
             address=details.location,
             locationMarker=None,
@@ -111,7 +137,7 @@ def map_user_event(ue: ExtendedUserEvent, current_user_id: int) -> Event:
         id=f"usr:{ue.id}",
         parentEvent=None,
         admin=[ue.userId],
-        hosts=[EventHost(userId=h.userId) for h in (ue.hosts or [])],
+        hosts=[EventHost(userId=h.userId, fullName="") for h in (ue.hosts or [])],
         name=ue.name,
         tags=[],
         locationDescription=ue.location.description if ue.location else None,
@@ -141,3 +167,39 @@ def map_user_event(ue: ExtendedUserEvent, current_user_id: int) -> Event:
             "reportsCount": len(ue.reports) if getattr(ue, "reports", None) else 0,
         }
     )
+
+
+# TEMPORARY reverse mapping until unified events are stored natively
+# Once unified storage exists, this proxy and reverse mapping can be removed,
+# and the user_events endpoints can be deprecated.
+def map_event_to_user_event(event: Event, owner_id: int, existing: UserEvent | None = None) -> UserEvent:
+    location = None
+    if any([
+        event.locationDescription,
+        event.address,
+        event.locationMarker,
+        event.latitude is not None,
+        event.longitude is not None,
+    ]):
+        location = UELocation(
+            description=event.locationDescription,
+            address=event.address,
+            marker=event.locationMarker,
+            latitude=event.latitude,
+            longitude=event.longitude,
+        )
+
+    ue = UserEvent(
+        userId=owner_id,
+        hosts=[UEHost(userId=h.userId) for h in (event.hosts or [])],
+        suggested_hosts=[],
+        name=event.name,
+        location=location,
+        start=event.start,
+        end=event.end,
+        description=event.description,
+        reports=(existing.reports if existing else []),
+        attendees=[UEAttendee(userId=a.userId) for a in (existing.attendees if existing else [])],
+        maxAttendees=event.maxAttendees,
+    )
+    return ue

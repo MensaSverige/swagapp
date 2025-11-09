@@ -1,13 +1,22 @@
 from __future__ import annotations
 from typing import List, Optional
-from datetime import datetime
+from datetime import datetime, timedelta
 import logging
 
 from v1.events.events_model import Event
-from v1.events.events_mappers import map_external_event, map_user_event
+from v1.events.events_mappers import map_external_event, map_user_event, map_event_to_user_event
 from v1.db.external_events import get_stored_external_event_details, get_all_stored_external_event_details
 from v1.external.event_api import get_booked_external_events
-from v1.user_events.user_events_db import get_safe_future_user_events, get_safe_user_events_since
+from v1.user_events.user_events_db import (
+    get_safe_future_user_events,
+    get_safe_user_events_since,
+    create_user_event as db_create_user_event,
+    update_user_event as db_update_user_event,
+    delete_user_event as db_delete_user_event,
+    get_safe_user_event as db_get_safe_user_event,
+)
+from v1.user_events.user_events_model import UserEvent, Host as UEHost, Attendee as UEAttendee, Location as UELocation
+from fastapi import HTTPException
 
 
 def list_unified_events(
@@ -44,7 +53,7 @@ def list_unified_events(
     # User events (already filtered to future via db function)
     try:
         # Include events starting from one month back
-        one_month_back = datetime.utcnow() - datetime.timedelta(days=30)
+        one_month_back = datetime.utcnow() - timedelta(days=30)
         user_events = get_safe_user_events_since(one_month_back)
     except Exception as e:
         logging.error(f"Failed to fetch user events since range: {e}")
@@ -66,3 +75,59 @@ def list_unified_events(
 
     filtered.sort(key=lambda e: (e.start, e.name.lower()))
     return filtered
+
+
+
+def create_user_event_via_unified(event: Event, current_user: dict) -> Event:
+    if event.official:
+        raise HTTPException(status_code=400, detail="Cannot create official events via this endpoint")
+    owner_id = current_user["userId"]
+    ue = map_event_to_user_event(event, owner_id)
+    created_id = db_create_user_event(ue)
+    if not created_id:
+        raise HTTPException(status_code=500, detail="Failed to create user event")
+    created = db_get_safe_user_event(str(created_id))
+    if not created:
+        raise HTTPException(status_code=500, detail="Failed to load created event")
+    return map_user_event(created, owner_id)
+
+
+def update_user_event_via_unified(unified_event_id: str, event: Event, current_user: dict) -> Event:
+    if event.official:
+        raise HTTPException(status_code=400, detail="Cannot update official events via this endpoint")
+    # Expect unified id like usr:<mongoId>
+    if not unified_event_id.startswith("usr:"):
+        raise HTTPException(status_code=400, detail="Only user events can be updated here")
+    event_id = unified_event_id.split(":", 1)[1]
+
+    existing = db_get_safe_user_event(event_id)
+    if not existing:
+        raise HTTPException(status_code=404, detail="Event not found")
+    if existing.userId != current_user["userId"]:
+        raise HTTPException(status_code=403, detail="Unauthorized")
+
+    # Preserve attendees/reports from existing, rebuild from incoming unified event
+    ue = map_event_to_user_event(event, existing.userId, existing)
+    ok = db_update_user_event(event_id, ue)
+    if not ok:
+        raise HTTPException(status_code=500, detail="Failed to update user event")
+    updated = db_get_safe_user_event(event_id)
+    return map_user_event(updated, current_user["userId"]) if updated else map_user_event(ue, current_user["userId"]) 
+
+
+def delete_user_event_via_unified(unified_event_id: str, current_user: dict) -> dict:
+    # Expect unified id like usr:<mongoId>
+    if not unified_event_id.startswith("usr:"):
+        raise HTTPException(status_code=400, detail="Only user events can be deleted here")
+    event_id = unified_event_id.split(":", 1)[1]
+
+    existing = db_get_safe_user_event(event_id)
+    if not existing:
+        raise HTTPException(status_code=404, detail="Event not found")
+    if existing.userId != current_user["userId"]:
+        raise HTTPException(status_code=403, detail="Unauthorized")
+
+    ok = db_delete_user_event(event_id)
+    if not ok:
+        raise HTTPException(status_code=500, detail="Failed to delete user event")
+    return {"message": "Event deleted successfully"}
