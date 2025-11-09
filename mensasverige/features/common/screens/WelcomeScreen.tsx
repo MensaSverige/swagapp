@@ -1,27 +1,32 @@
-import { StyleSheet } from 'react-native';
+import { StyleSheet, Image } from 'react-native';
 
 import ParallaxScrollView from '@/components/ParallaxScrollView';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
-import StartscreenFaq from '../components/StartscreenFaq';
-import SiteNews from '../components/SiteNews';
 import useStore from '../store/store';
 import NonMemberInfo from '../components/NonMemberInfo';
+import ParentEventDashboard from '../components/ParentEventDashboard';
 
 export default function WelcomeScreen() {
     const { user } = useStore();
     return (
         <>
-            <ParallaxScrollView>
-                <ThemedView style={{ paddingBottom: 80 }}>
-                    <ThemedText type="title">Välkommen!</ThemedText>
-
-                    <StartscreenFaq />
-
-                    <SiteNews />
-
+            <ParallaxScrollView useSafeArea={true}
+                headerImage={
+                    <Image
+                        source={require('@/assets/images/mensa_sverige_1024_500.jpg')}
+                        style={styles.headerImage}
+                        resizeMode="cover"
+                    />
+                }
+            >
+                <ThemedView>
+                    <ThemedText type="title">Mensa Sverige</ThemedText>
+                    <ParentEventDashboard />
                 </ThemedView>
+
             </ParallaxScrollView>
+
             {user && !user.isMember && (
                 <NonMemberInfo />
             )}
@@ -30,7 +35,11 @@ export default function WelcomeScreen() {
 }
 
 const styles = StyleSheet.create({
-
+    headerImage: {
+        width: '100%',
+        height: '100%',
+        alignSelf: 'center',
+    },
 });
 
 

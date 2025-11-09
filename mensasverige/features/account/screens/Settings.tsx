@@ -1,32 +1,25 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { useColorMode } from '@gluestack-ui/themed';
 import {
     KeyboardAvoidingView,
-    Input,
-    VStack,
-    Text,
-    ScrollView,
-    Heading,
-    InputField,
-    Card,
-    useToast,
-    Divider,
-    Button,
-    ButtonText,
-} from '../../../gluestack-components';
-import useStore from '../../common/store/store';
-import Field from '../../common/components/Field';
-import Fields from '../../common/components/Fields';
-import {
-    ActivityIndicator,
     Platform,
     SafeAreaView,
     StyleSheet,
+    ActivityIndicator,
+    View,
+    TextInput,
+    Alert,
+    TouchableOpacity,
+    Switch,
 } from 'react-native';
+import { ThemedView } from '@/components/ThemedView';
+import { ThemedText } from '@/components/ThemedText';
+import ParallaxScrollView from '@/components/ParallaxScrollView';
+import { useColorScheme } from '@/hooks/useColorScheme';
+import { useThemeColor } from '@/hooks/useThemeColor';
+import useStore from '../../common/store/store';
 import { updateUser } from '../services/userService';
 import { ShowLocation, User, UserUpdate } from '../../../api_schema/types';
 import { Picker } from '@react-native-picker/picker';
-import SettingsSwitchField from '../../common/components/SettingsSwitchField';
 import ShowSettingsLabelIconColor from '../../common/components/ShowSettingsLabelIconColor';
 import ShowSettingsLabelIcon from '../../common/components/ShowSettingsLabelIcon';
 import AutosaveSuccessToast from '../../common/components/AutosaveSuccessToast';
@@ -35,9 +28,17 @@ import AutosaveToast from '../../common/components/AutosaveToast';
 import { resetUserCredentials } from '../../common/services/authService';
 import ProfileEditAvatar from '../../common/components/ProfileEditAvatar';
 import { extractNumericValue } from '../../common/functions/extractNumericValue';
+import { FontAwesome, MaterialIcons } from '@expo/vector-icons';
 
 const UserSettings: React.FC = () => {
     const { user, setUser } = useStore();
+    const colorScheme = useColorScheme();
+    const backgroundColor = useThemeColor({}, 'background');
+    const textColor = useThemeColor({}, 'text');
+    const primaryColor = useThemeColor({}, 'primary500');
+    const cardBackgroundColor = useThemeColor({ light: '#ffffff', dark: '#262626' }, 'background');
+    const borderColor = useThemeColor({ light: '#e5e5e5', dark: '#404040' }, 'text');
+    
     const getFormStateFromUser = (user: User) => ({
         contact_info: {
             email: user?.contact_info?.email || '',
@@ -49,13 +50,12 @@ const UserSettings: React.FC = () => {
             show_location: user?.settings?.show_location || 'NO_ONE',
         },
     });
+    
     const [formState, setFormState] = useState<UserUpdate>(
         getFormStateFromUser(user as User),
     );
 
-    const colorMode = useColorMode();
-    const toast = useToast();
-    const styles = createStyles();
+    const styles = createStyles(backgroundColor, textColor, cardBackgroundColor, borderColor);
 
     const [isLoading, setIsLoading] = useState(false);
     const [locationSwitch, setLocationSwitch] = useState<boolean>(
@@ -91,29 +91,26 @@ const UserSettings: React.FC = () => {
             setUser({ ...user, ...returnedUser });
         });
     }, [formState, isEditing]);
+    
     type ToastType = 'save' | 'saved' | 'error';
 
     const showToast = (type: ToastType) => {
-        let content;
+        let message;
         switch (type) {
             case 'save':
-                content = <AutosaveToast id="save" />;
+                message = 'Sparar...';
                 break;
             case 'saved':
-                content = <AutosaveSuccessToast id="saved" />;
+                message = 'Sparat!';
                 break;
             case 'error':
-                content = <AutosaveErrorToast id="error" />;
+                message = 'Fel vid sparande';
                 break;
         }
 
-        toast.closeAll();
-        toast.show({
-            placement: 'bottom',
-            duration: 1000,
-            render: () => content,
-        });
+        Alert.alert('Information', message);
     };
+    
     const autosave = (formState: User): Promise<User> | undefined => {
         if (
             !user ||
@@ -156,237 +153,327 @@ const UserSettings: React.FC = () => {
         {value:                                 "EVERYONE", label: 'Alla'},
     ], [user.isMember]);
 
+    const FieldComponent: React.FC<{
+        label: string;
+        labelIcon?: any;
+        labelIconColor?: string;
+        children: React.ReactNode;
+    }> = ({ label, labelIcon, labelIconColor, children }) => (
+        <View style={styles.card}>
+            <View style={styles.fieldHeader}>
+                <ThemedText type="defaultSemiBold">{label}</ThemedText>
+                {labelIcon && (
+                    <MaterialIcons
+                        name={labelIcon}
+                        size={20}
+                        color={labelIconColor || primaryColor}
+                    />
+                )}
+            </View>
+            {children}
+        </View>
+    );
+
+    const FieldsComponent: React.FC<{
+        heading: string;
+        children: React.ReactNode;
+    }> = ({ heading, children }) => (
+        <View style={styles.fieldsContainer}>
+            <ThemedText type="title" style={styles.sectionHeading}>{heading}</ThemedText>
+            {children}
+        </View>
+    );
+
+    const SwitchFieldComponent: React.FC<{
+        label: string;
+        value: boolean;
+        onValueChange: (value: boolean) => void;
+    }> = ({ label, value, onValueChange }) => (
+        <View style={styles.switchField}>
+            <ThemedText>{label}</ThemedText>
+            <Switch
+                value={value}
+                onValueChange={onValueChange}
+                trackColor={{ false: '#767577', true: primaryColor }}
+                thumbColor={value ? '#ffffff' : '#f4f3f4'}
+            />
+        </View>
+    );
+
     return (
-        //<SafeAreaView style={styles.viewContainer}>
-        <SafeAreaView key={colorMode}>
-            <KeyboardAvoidingView
-                behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-                keyboardVerticalOffset={Platform.OS === 'ios' ? 160 : 0}>
-                <ScrollView
-                    bg="$background0"
-                    w="100%"
-                    h="100%"
-                    contentContainerStyle={styles.contentContainer}>
-                    <VStack
-                        space="md"
-                        h="100%"
-                        bg="$background0"
-                        flex={1}
-                        justifyContent="center"
-                        alignItems="center">
-                        <ProfileEditAvatar
-                            colorMode={colorMode}
-                            onError={error => {
-                                showToast('error');
+        <ThemedView style={styles.container} useSafeArea>
+            <ParallaxScrollView
+                headerImage={<FontAwesome name="user" size={100} color={primaryColor} />}
+                headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}>
+                
+                {/* User Profile Section */}
+                <View style={styles.profileSection}>
+                    {/* <ProfileEditAvatar
+                        colorMode={colorScheme || 'light'}
+                        onError={(error) => {
+                            showToast('error');
+                        }}
+                        onSaved={() => {
+                            console.log('saved received');
+                            showToast('saved');
+                        }}
+                        onSaving={() => {
+                            showToast('save');
+                        }}
+                    /> */}
+                    <ThemedText type="title" style={styles.userName}>
+                        {user.firstName} {user.lastName}
+                    </ThemedText>
+                </View>
+
+                {/* Contact Information Section */}
+                <FieldsComponent heading="Kontaktuppgifter">
+                    <FieldComponent
+                        label="E-post"
+                        labelIcon={ShowSettingsLabelIcon(formState?.settings?.show_email)}
+                        labelIconColor={ShowSettingsLabelIconColor(formState?.settings?.show_email)}>
+                        <ThemedText style={styles.fieldValue}>
+                            {user?.contact_info?.email || ''}
+                        </ThemedText>
+                    </FieldComponent>
+                    
+                    <FieldComponent
+                        label="Telefonnummer"
+                        labelIcon={ShowSettingsLabelIcon(formState?.settings?.show_phone)}
+                        labelIconColor={ShowSettingsLabelIconColor(formState?.settings?.show_phone)}>
+                        <TextInput
+                            style={[styles.textInput, { color: textColor, borderColor }]}
+                            keyboardType="numeric"
+                            placeholder="07xxxxxxxx"
+                            placeholderTextColor={useThemeColor({}, 'text') + '80'}
+                            value={formState?.contact_info?.phone || ''}
+                            onFocus={handleFocus}
+                            onChangeText={(phone: string) => {
+                                if (!formState || !formState.contact_info) {
+                                    return;
+                                }
+                                setFormState({
+                                    ...formState,
+                                    contact_info: {
+                                        ...formState.contact_info,
+                                        phone: extractNumericValue(phone) || '',
+                                    },
+                                });
                             }}
-                            onSaved={() => {
-                                console.log('saved recieved');
-                                showToast('saved');
-                            }}
-                            onSaving={() => {
-                                showToast('save');
+                            onBlur={handleBlur}
+                        />
+                    </FieldComponent>
+                </FieldsComponent>
+
+                {/* Privacy Settings Section */}
+                <FieldsComponent heading="Sekretess">
+                    <View style={styles.card}>
+                        <SwitchFieldComponent
+                            label="Visa e-post"
+                            value={formState?.settings?.show_email || false}
+                            onValueChange={(value) => {
+                                if (!formState || !formState.settings) {
+                                    return;
+                                }
+                                setFormState({
+                                    ...formState,
+                                    settings: {
+                                        ...formState.settings,
+                                        show_email: value,
+                                    },
+                                });
                             }}
                         />
-                        <Heading>
-                            {' '}
-                            {user.firstName} {user.lastName}
-                        </Heading>
-                    </VStack>
-                    <VStack space="lg" h="100%" bg="$background0" flex={1}>
-                        <Fields heading="Kontaktuppgifter">
-                            <Card size="sm" variant="elevated" m="$0">
-                                <Field
-                                    label="E-post "
-                                    labelIcon={ShowSettingsLabelIcon(
-                                        formState?.settings?.show_email,
-                                    )}
-                                    labelIconColor={ShowSettingsLabelIconColor(
-                                        formState?.settings?.show_email,
-                                    )}>
-                                    <Text>
-                                        {user?.contact_info?.email || ''}
-                                    </Text>
-                                </Field>
-                            </Card>
-                            <Card size="sm" variant="elevated" m="$0">
-                                <Field
-                                    label="Telefonnummer"
-                                    labelIcon={ShowSettingsLabelIcon(
-                                        formState?.settings?.show_phone,
-                                    )}
-                                    labelIconColor={ShowSettingsLabelIconColor(
-                                        formState?.settings?.show_phone,
-                                    )}>
-                                    <Input>
-                                        <InputField
-                                            keyboardType="numeric"
-                                            placeholder="07xxxxxxxx"
-                                            value={
-                                                formState?.contact_info
-                                                    ?.phone || ''
-                                            }
-                                            onFocus={handleFocus}
-                                            onChangeText={(phone: string) => {
-                                                if (
-                                                    !formState ||
-                                                    !formState.contact_info
-                                                ) {
-                                                    return;
-                                                }
-                                                setFormState({
-                                                    ...formState,
-                                                    contact_info: {
-                                                        ...formState.contact_info,
-                                                        phone:
-                                                            extractNumericValue(
-                                                                phone,
-                                                            ) || '',
-                                                    },
-                                                });
-                                            }}
-                                            onBlur={handleBlur}
+                    </View>
+                    
+                    <View style={styles.card}>
+                        <SwitchFieldComponent
+                            label="Visa telefonnummer"
+                            value={formState?.settings?.show_phone || false}
+                            onValueChange={(value) => {
+                                if (!formState || !formState.settings) {
+                                    return;
+                                }
+                                setFormState({
+                                    ...formState,
+                                    settings: {
+                                        ...formState.settings,
+                                        show_phone: value,
+                                    },
+                                });
+                            }}
+                        />
+                    </View>
+                    
+                    <View style={styles.card}>
+                        <SwitchFieldComponent
+                            label="Visa platsuppgifter"
+                            value={locationSwitch}
+                            onValueChange={(value) => {
+                                if (!formState || !formState.settings) {
+                                    return;
+                                }
+                                setLocationSwitch(value);
+                                if (value) {
+                                    setFormState({
+                                        ...formState,
+                                        settings: {
+                                            ...formState.settings,
+                                            show_location: user.isMember ? 'ALL_MEMBERS_WHO_SHARE_THEIR_OWN_LOCATION' : 'EVERYONE_WHO_SHARE_THEIR_OWN_LOCATION',
+                                        },
+                                    });
+                                } else {
+                                    setFormState({
+                                        ...formState,
+                                        settings: {
+                                            ...formState.settings,
+                                            show_location: 'NO_ONE',
+                                        },
+                                    });
+                                }
+                            }}
+                        />
+                        
+                        {locationSwitch && (
+                            <View style={styles.pickerContainer}>
+                                <Picker
+                                    selectedValue={formState?.settings?.show_location}
+                                    onValueChange={(itemValue: ShowLocation) => {
+                                        if (!formState || !formState.settings) {
+                                            return;
+                                        }
+                                        setFormState({
+                                            ...formState,
+                                            settings: {
+                                                ...formState.settings,
+                                                show_location: itemValue,
+                                            },
+                                        });
+                                    }}
+                                    style={[styles.picker, { color: textColor }]}>
+                                    {locationSharingOptions.map((option, index) => (
+                                        <Picker.Item
+                                            key={`location-sharing-option-${index}`}
+                                            label={option.label}
+                                            value={option.value}
                                         />
-                                    </Input>
-                                </Field>
-                            </Card>
-                        </Fields>
+                                    ))}
+                                </Picker>
+                            </View>
+                        )}
+                    </View>
+                </FieldsComponent>
 
-                        <Fields heading="Sekretess">
-                            <Card size="sm" variant="elevated" m="$0">
-                                <SettingsSwitchField
-                                    label="Visa e-post"
-                                    value={
-                                        formState?.settings?.show_email || false
-                                    }
-                                    onValueChange={value => {
-                                        if (!formState || !formState.settings) {
-                                            return;
-                                        }
-                                        setFormState({
-                                            ...formState,
-                                            settings: {
-                                                ...formState.settings,
-                                                show_email: value,
-                                            },
-                                        });
-                                    }}
-                                />
-                            </Card>
-                            <Card size="sm" variant="elevated" m="$0">
-                                <SettingsSwitchField
-                                    label="Visa telefonnummer"
-                                    value={
-                                        formState?.settings?.show_phone || false
-                                    }
-                                    onValueChange={value => {
-                                        if (!formState || !formState.settings) {
-                                            return;
-                                        }
-                                        setFormState({
-                                            ...formState,
-                                            settings: {
-                                                ...formState.settings,
-                                                show_phone: value,
-                                            },
-                                        });
-                                    }}
-                                />
-                            </Card>
-                            <Card size="sm" variant="elevated" m="$0">
-                                <SettingsSwitchField
-                                    label="Visa platsuppgifter"
-                                    value={locationSwitch}
-                                    onValueChange={value => {
-                                        if (!formState || !formState.settings) {
-                                            return;
-                                        }
-                                        setLocationSwitch(value);
-                                        if (value) {
-                                            setFormState({
-                                                ...formState,
-                                                settings: {
-                                                    ...formState.settings,
-                                                    show_location: user.isMember ? 'ALL_MEMBERS_WHO_SHARE_THEIR_OWN_LOCATION' : 'EVERYONE_WHO_SHARE_THEIR_OWN_LOCATION',
-                                                },
-                                            });
-                                        } else {
-                                            setFormState({
-                                                ...formState,
-                                                settings: {
-                                                    ...formState.settings,
-                                                    show_location: 'NO_ONE',
-                                                },
-                                            });
-                                        }
-                                    }}
-                                />
-                                {locationSwitch && (
-                                    <Picker
-                                        prompt='Visa platsuppgifter för...'
-                                        selectedValue={
-                                            formState?.settings?.show_location
-                                        }
-                                        onValueChange={(
-                                            itemValue,
-                                            itemIndex,
-                                        ) => {
-                                            if (
-                                                !formState ||
-                                                !formState.settings
-                                            ) {
-                                                return;
-                                            }
-
-                                            setFormState({
-                                                ...formState,
-                                                settings: {
-                                                    ...formState.settings,
-                                                    show_location: itemValue,
-                                                },
-                                            });
-                                        }}
-                                        onBlur={handleBlur}>
-                                        {locationSharingOptions.map(
-                                            (option, index) => (
-                                                <Picker.Item
-                                                    key={`location-sharing-option-${index}`}
-                                                    color={
-                                                        colorMode == 'dark'
-                                                            ? 'white'
-                                                            : 'black'
-                                                    }
-                                                    label={option.label}
-                                                    value={option.value}
-                                                />
-                                            ),
-                                        )}
-                                    </Picker>
-                                )}
-                            </Card>
-                        </Fields>
-                        <Divider style={{ marginTop: 20, marginBottom: 10 }} />
-                        <Button
-                            size="md"
-                            action="primary"
-                            onPress={() => handleLogout()}>
-                            <ButtonText style={{ textAlign: 'center' }}>
-                                Logga ut
-                            </ButtonText>
-                            <ActivityIndicator
-                                size="small"
-                                color="white"
-                                animating={isLoading}
-                            />
-                        </Button>
-                    </VStack>
-                </ScrollView>
-            </KeyboardAvoidingView>
-        </SafeAreaView>
+                {/* Logout Button */}
+                <View style={styles.divider} />
+                <TouchableOpacity
+                    style={[styles.logoutButton, { backgroundColor: primaryColor }]}
+                    onPress={handleLogout}
+                    disabled={isLoading}>
+                    <ThemedText 
+                        style={[styles.logoutButtonText, { color: '#ffffff' }]}
+                        type="defaultSemiBold">
+                        Logga ut
+                    </ThemedText>
+                    {isLoading && (
+                        <ActivityIndicator
+                            size="small"
+                            color="white"
+                            style={styles.loadingIndicator}
+                        />
+                    )}
+                </TouchableOpacity>
+            </ParallaxScrollView>
+        </ThemedView>
     );
 };
 
-const createStyles = () =>
+const createStyles = (backgroundColor: string, textColor: string, cardBackgroundColor: string, borderColor: string) =>
     StyleSheet.create({
+        container: {
+            flex: 1,
+        },
+        profileSection: {
+            alignItems: 'center',
+            marginBottom: 24,
+        },
+        userName: {
+            marginTop: 12,
+            textAlign: 'center',
+        },
+        fieldsContainer: {
+            marginBottom: 24,
+        },
+        sectionHeading: {
+            fontSize: 24,
+            marginBottom: 16,
+        },
+        card: {
+            backgroundColor: cardBackgroundColor,
+            borderRadius: 8,
+            padding: 16,
+            marginBottom: 12,
+            borderWidth: 1,
+            borderColor: borderColor,
+            shadowColor: '#000',
+            shadowOffset: {
+                width: 0,
+                height: 2,
+            },
+            shadowOpacity: 0.1,
+            shadowRadius: 3.84,
+            elevation: 5,
+        },
+        fieldHeader: {
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: 8,
+        },
+        fieldValue: {
+            marginTop: 8,
+        },
+        textInput: {
+            borderWidth: 1,
+            borderRadius: 6,
+            padding: 12,
+            marginTop: 8,
+            fontSize: 16,
+        },
+        switchField: {
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+        },
+        pickerContainer: {
+            marginTop: 12,
+            borderWidth: 1,
+            borderColor: borderColor,
+            borderRadius: 6,
+        },
+        picker: {
+            height: 50,
+        },
+        divider: {
+            height: 1,
+            backgroundColor: borderColor,
+            marginVertical: 20,
+        },
+        logoutButton: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'center',
+            borderRadius: 8,
+            padding: 16,
+            marginBottom: 20,
+        },
+        logoutButtonText: {
+            fontSize: 16,
+            fontWeight: '600',
+        },
+        loadingIndicator: {
+            marginLeft: 8,
+        },
         viewContainer: {
             flex: 1,
         },

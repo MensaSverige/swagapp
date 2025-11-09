@@ -5,7 +5,7 @@ import { fetchExternalRoot } from '../../events/services/eventService';
 import { View } from 'react-native';
 import { ThemedText } from '@/components/ThemedText';
 
-const StartscreenFaq = () => {
+const ParentEventDetails = () => {
     const [eventInfo, setEventInfo] = React.useState<ExternalRoot>();
 
     useEffect(() => {
@@ -21,8 +21,8 @@ const StartscreenFaq = () => {
                     {eventInfo && (
                         <>
                             <View>
-                                <ThemedText>{eventInfo?.header1}</ThemedText>
-                                <ThemedText>{eventInfo?.header2}</ThemedText>
+                                <ThemedText type='title'>{eventInfo?.header1}</ThemedText>
+                                <ThemedText type='subtitle'>{eventInfo?.header2}</ThemedText>
                             </View>
                             {eventInfo && eventInfo.streetAddress && (
                                 <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start', gap: 8 }}  >
@@ -39,4 +39,4 @@ const StartscreenFaq = () => {
     );
 };
 
-export default StartscreenFaq;
+export default ParentEventDetails;

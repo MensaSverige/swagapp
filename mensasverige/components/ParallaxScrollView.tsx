@@ -11,14 +11,16 @@ import { ThemedView } from '@/components/ThemedView';
 import { useBottomTabOverflow } from '@/components/ui/TabBarBackground';
 import { useColorScheme } from '@/hooks/useColorScheme';
 
-const HEADER_HEIGHT = 250;
+const HEADER_HEIGHT = 220;
 
 type Props = PropsWithChildren<{
+  useSafeArea?: boolean;
   headerImage?: ReactElement;
   headerBackgroundColor?: { dark: string; light: string };
 }>;
 
 export default function ParallaxScrollView({
+  useSafeArea = false,
   children,
   headerImage,
   headerBackgroundColor = { dark: '#1D3D47', light: '#A1CEDC' },
@@ -45,7 +47,7 @@ export default function ParallaxScrollView({
   });
 
   return (
-    <ThemedView style={styles.container}>
+    <ThemedView style={styles.container} useSafeArea={useSafeArea}>
       <Animated.ScrollView
         ref={scrollRef}
         scrollEventThrottle={16}

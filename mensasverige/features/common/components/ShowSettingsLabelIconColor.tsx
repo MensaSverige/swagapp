@@ -1,9 +1,9 @@
 import React from 'react';
-import { gluestackUIConfig } from '../../../gluestack-components/gluestack-ui.config';
+import { Colors } from '@/constants/Colors';
 
 
 const ShowSettingsLabelIconColor = (value: boolean | undefined): string => {
-  return value ? gluestackUIConfig.tokens.colors.green200 : gluestackUIConfig.tokens.colors.blueGray400;
+  return value ? Colors.green200 : Colors.trueGray400;
 };
 
 export default ShowSettingsLabelIconColor;
