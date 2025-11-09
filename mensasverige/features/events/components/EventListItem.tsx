@@ -5,6 +5,7 @@ import { DisplayTime } from '../utilities/DisplayTime';
 import { getEventCategoryBadge } from '../utilities/EventCategories';
 import { Colors } from '@/constants/Colors';
 import { MaterialIcons } from '@expo/vector-icons';
+import OfficialEventIcon from '../../../components/icons/OfficialEventIcon';
 
 interface EventListItemProps {
     event: Event;
@@ -53,6 +54,11 @@ const EventListItem: React.FC<EventListItemProps> = ({
                         <Text style={styles.eventTitle}>
                             {event.name}
                         </Text>
+                        {event.official && (
+                            <View style={{ marginLeft: 4 }}>
+                                <OfficialEventIcon size={14} color={Colors.primary500} />
+                            </View>
+                        )}
                         {event.attending && (
                             <View style={{ marginLeft: 4 }}>
                                 <MaterialIcons name="check-circle" size={14} color="#10B981" />

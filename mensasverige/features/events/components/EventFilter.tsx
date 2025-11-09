@@ -5,6 +5,7 @@ import { useColorScheme } from '@/hooks/useColorScheme';
 import { Colors } from '@/constants/Colors';
 import { MaterialIcons } from '@expo/vector-icons';
 import { EVENT_CATEGORIES } from '../utilities/EventCategories';
+import OfficialEventIcon from '../../../components/icons/OfficialEventIcon';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -201,7 +202,12 @@ export const EventFilter: React.FC<EventFilterProps> = ({
             </View>
 
             <View style={styles.filterRow}>
-              <Text style={styles.filterLabel}>Officiell</Text>
+              <View style={styles.filterLabelContainer}>
+                <Text style={styles.filterLabel}>Officiell</Text>
+                <View style={{ marginLeft: 4 }}>
+                  <OfficialEventIcon size={14} color={getTriStateColor(localFilter.official)} />
+                </View>
+              </View>
               <TouchableOpacity
                 style={[styles.triStateButton, { borderColor: getTriStateColor(localFilter.official) }]}
                 onPress={() => toggleTriStateOption('official', localFilter.official)}
@@ -351,6 +357,10 @@ const createStyles = (colorScheme: string) => StyleSheet.create({
   filterLabel: {
     fontSize: 14,
     color: colorScheme === 'dark' ? '#d1d5db' : '#374151',
+  },
+  filterLabelContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   triStateButton: {
     paddingHorizontal: 16,
