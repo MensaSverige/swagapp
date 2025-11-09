@@ -221,11 +221,10 @@ const EventCard: React.FC<{
               {event.name}
             </Text>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              {event.attending && 
-                <AttendingBadge/>
-                // <> <Text> Anmäld</Text> <MaterialIcons name="check-circle" size={20} color="#10B981" /></>
+              {event.attending &&
+                <AttendingBadge />
               }
-              {!event.bookable && (
+              {!event.bookable && (!!event.maxAttendees || event.maxAttendees === 0) && (
                 <View style={{ marginLeft: event.attending ? 8 : 0 }}>
                   <FullyBookedBadge />
                 </View>

@@ -29,7 +29,7 @@ const EventListItem: React.FC<EventListItemProps> = ({
     console.log(event);
     
     // Calculate if event should be grayed out (not bookable and user not attending)
-    const shouldGrayOut = !event.bookable && !event.attending;
+    const shouldGrayOut = !event.bookable && (!!event.maxAttendees || event.maxAttendees === 0);
     const eventOpacity = shouldGrayOut ? 0.6 : opacity;
     
     return (
@@ -74,7 +74,7 @@ const EventListItem: React.FC<EventListItemProps> = ({
                         )}
                         {shouldGrayOut && (
                             <View style={{ marginLeft: 4 }}>
-                                <MaterialIcons name="event-busy" size={14} color="#EF4444" />
+                                <MaterialIcons name="event-busy" size={14} color={Colors.red600} />
                             </View>
                         )}
                     </View>

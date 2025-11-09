@@ -300,7 +300,7 @@ const createStyles = (colorScheme: string) => StyleSheet.create({
     position: 'absolute',
     right: 0,
     width: screenWidth * 0.75,
-    backgroundColor: colorScheme === 'dark' ? Colors.background400 : Colors.background0,
+    backgroundColor: colorScheme === 'dark' ? Colors.dark.background : Colors.light.background,
     shadowColor: '#000',
     shadowOffset: {
       width: -2,

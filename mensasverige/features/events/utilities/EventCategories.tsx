@@ -11,6 +11,7 @@ import {
   ExploreBadge,
   WorkshopBadge,
 } from '../components/EventBadges';
+import { Colors } from '@/constants/Colors';
 
 export interface EventCategory {
   code: string;
@@ -24,21 +25,21 @@ export const EVENT_CATEGORIES: EventCategory[] = [
   {
     code: 'F',
     label: 'Föreläsning',
-    color: '#6366F1', // föreläsning
+    color: Colors.indigo500, // föreläsning
     icon: 'co-present',
     BadgeComponent: LectureBadge,
   },
   {
     code: 'Fö',
     label: 'Föreningsarbete',
-    color: '#1E3A8A', // föreningsarbete
+    color: Colors.primary400, // föreningsarbete
     icon: 'groups',
     BadgeComponent: GlobeBadge,
   },
   {
     code: 'M',
     label: 'Middag/Festligheter',
-    color: '#BE185D', // middag/festligheter
+    color: Colors.pink600, // middag/festligheter
     icon: 'restaurant',
     BadgeComponent: RestaurantBadge,
   },
@@ -52,28 +53,28 @@ export const EVENT_CATEGORIES: EventCategory[] = [
   {
     code: 'U',
     label: 'Ungdomsaktivitet',
-    color: '#C026D3', // ungdomsaktivitet
+    color: Colors.fuchsia600, // ungdomsaktivitet
     icon: 'escalator-warning',
     BadgeComponent: TeenBadge,
   },
   {
     code: 'Up',
     label: 'Uppträdande',
-    color: '#F59E0B', // uppträdande
+    color: Colors.amber600, // uppträdande
     icon: 'mic',
     BadgeComponent: MicVocalBadge,
   },
   {
     code: 'Ut',
     label: 'Utflykt',
-    color: '#65A30D', // utflykt
+    color: Colors.lime600, // utflykt
     icon: 'explore',
     BadgeComponent: ExploreBadge,
   },
   {
     code: 'W',
     label: 'Workshop',
-    color: '#9333EA', // workshop
+    color: Colors.purple600, // workshop
     icon: 'handyman',
     BadgeComponent: WorkshopBadge,
   },
