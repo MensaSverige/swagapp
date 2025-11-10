@@ -5,7 +5,8 @@ import {
     Text,
     TouchableOpacity,
     StyleSheet,
-    ActivityIndicator
+    ActivityIndicator,
+    useColorScheme
 } from 'react-native';
 import { Event } from '../../../api_schema/types';
 import useStore from '../../common/store/store';
@@ -17,10 +18,13 @@ import { ThemedText } from '@/components/ThemedText';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useScheduleEventsWithFilter } from '../hooks/useFilteredEvents';
 import { EventFilter, EventFilterOptions } from '../components/EventFilter';
+import { FilterButton } from '../components/FilterButton';
 import { Colors } from '@/constants/Colors';
 
 export const ActivitiesList = () => {
     const { user } = useStore();
+    const colorScheme = useColorScheme();
+    const styles = createStyles(colorScheme ?? 'light');
     const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
     const [didInitiallyScroll, setDidInitiallyScroll] = useState(false);
     const [showFilter, setShowFilter] = useState(false);
@@ -93,25 +97,21 @@ export const ActivitiesList = () => {
                             Visar {filteredEventsCount} av {totalEventsCount} aktiviteter
                         </Text>
                     )}
-                    <TouchableOpacity
+                    <FilterButton
                         onPress={() => setShowFilter(true)}
-                        style={[
-                            styles.filterButton,
-                            isFilterActive() && styles.filterButtonActive
-                        ]}
-                    >
-                        <MaterialIcons 
-                            name="filter-list" 
-                            size={20} 
-                            color={isFilterActive() ? Colors.white : Colors.primary600} 
-                        />
-                    </TouchableOpacity>
+                        isActive={isFilterActive()}
+                        icon="filter-list"
+                    />
                     {nextEvent && (
                         <TouchableOpacity
                             onPress={scrollToCurrentEvent}
                             style={styles.scrollToButton}
                         >
-                            <MaterialIcons name="update" size={24} color="#2563EB" />
+                            <MaterialIcons 
+                                name="update" 
+                                size={24} 
+                                color={colorScheme === 'dark' ? Colors.primary400 : Colors.primary600} 
+                            />
                         </TouchableOpacity>
                     )}
                 </View>
@@ -119,7 +119,10 @@ export const ActivitiesList = () => {
             <ScrollView ref={scrollViewRef} style={styles.scrollContainer}>
                 {loading && (
                     <View style={styles.loadingIndicator}>
-                        <ActivityIndicator size="large" color="#2563EB" />
+                        <ActivityIndicator 
+                            size="large" 
+                            color={colorScheme === 'dark' ? Colors.primary400 : Colors.primary600} 
+                        />
                         <Text style={styles.loadingText}>Laddar aktiviteter...</Text>
                     </View>
                 )}
@@ -154,7 +157,7 @@ export const ActivitiesList = () => {
     );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colorScheme: string) => StyleSheet.create({
     header: {
         flexDirection: 'row',
         justifyContent: 'space-between',
@@ -170,19 +173,8 @@ const styles = StyleSheet.create({
     },
     filterCount: {
         fontSize: 12,
-        color: '#6B7280',
+        color: colorScheme === 'dark' ? Colors.coolGray400 : Colors.coolGray500,
         fontWeight: '500',
-    },
-    filterButton: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: Colors.coolGray100,
-    },
-    filterButtonActive: {
-        backgroundColor: Colors.primary600,
     },
     scrollToButton: {
         width: 40,
@@ -202,7 +194,7 @@ const styles = StyleSheet.create({
     loadingText: {
         marginTop: 16,
         fontSize: 16,
-        color: '#6B7280',
+        color: colorScheme === 'dark' ? Colors.coolGray400 : Colors.coolGray500,
     },
     noEventsContainer: {
         alignItems: 'center',
@@ -210,7 +202,7 @@ const styles = StyleSheet.create({
     },
     noEventsText: {
         fontSize: 16,
-        color: '#6B7280',
+        color: colorScheme === 'dark' ? Colors.coolGray400 : Colors.coolGray500,
     },
 });
 

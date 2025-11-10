@@ -5,6 +5,7 @@ import { useColorScheme } from '@/hooks/useColorScheme';
 import { Colors } from '@/constants/Colors';
 import { MaterialIcons } from '@expo/vector-icons';
 import { EVENT_CATEGORIES } from '../utilities/EventCategories';
+import { FilterButton } from './FilterButton';
 import OfficialEventIcon from '../../../components/icons/OfficialEventIcon';
 
 const { width: screenWidth } = Dimensions.get('window');
@@ -157,16 +158,16 @@ export const EventFilter: React.FC<EventFilterProps> = ({
         ]}
       >
         {/* Close button positioned to match filter button location */}
-        <TouchableOpacity style={[styles.closeButton, { 
-          top: 5, // Center in the 50px header (since menu already starts below safe area)
-          right: 15 // Match headerActions paddingRight
-        }]} onPress={onClose}>
-          <MaterialIcons
-            name="close"
-            size={20}
-            color={colorScheme === 'dark' ? Colors.coolGray600 : Colors.coolGray500}
-          />
-        </TouchableOpacity>
+        <FilterButton
+          onPress={onClose}
+          icon="close"
+          style={{
+            position: 'absolute',
+            top: 5, // Center in the 50px header (since menu already starts below safe area)
+            right: 15, // Match headerActions paddingRight
+            zIndex: 1001,
+          }}
+        />
         
         <View style={styles.menuHeader}>
           <Text style={styles.menuTitle}>Filtrera aktiviteter</Text>
@@ -321,18 +322,6 @@ const createStyles = (colorScheme: string) => StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     color: Colors.primary200,
-  },
-  closeButton: {
-    position: 'absolute',
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: colorScheme === 'dark' ? Colors.coolGray500: Colors.coolGray200,
-    backgroundColor: 'transparent',
-    zIndex: 1001,
   },
   menuContent: {
     flex: 1,
