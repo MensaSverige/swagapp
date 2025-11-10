@@ -136,7 +136,7 @@ export const ActivitiesList = () => {
                     nextEvent={nextEvent}
                     nextEventMarkerRef={nextEventMarkerRef}
                     showCategories={true}
-                    dateHeaderStyle="subtitle"
+                    dateHeaderStyle="aligned"
                 />
             </ScrollView>
             {user && !user.isMember && (

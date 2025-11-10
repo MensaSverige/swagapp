@@ -31,7 +31,7 @@ const EventListItem: React.FC<EventListItemProps> = ({
       const styles = createStyles(colorScheme ?? 'light');
     // Calculate if event should be grayed out (not bookable and user not attending)
     const shouldGrayOut = !event.bookable && (!!event.maxAttendees || event.maxAttendees === 0);
-    const eventOpacity = shouldGrayOut ? 0.6 : opacity;
+    const eventOpacity = shouldGrayOut ? 0.4 : opacity;
     
     return (
         <TouchableOpacity
@@ -47,20 +47,45 @@ const EventListItem: React.FC<EventListItemProps> = ({
 
             <View style={[
                 styles.eventItem, 
-                event.attending && styles.attendingEventItem
+                event.attending && styles.attendingEventItem,
+                //shouldGrayOut && { backgroundColor: 'rgba(228, 20, 20, 0.1)' }
             ]}>
                 <View style={styles.timeContainer}>
-                    <Text style={styles.startTime}>
+                    <Text style={[styles.startTime,
+                        shouldGrayOut ? { color: Colors.red600 } : { color: Colors.teal400 }
+
+                    ]}>
                         {DisplayTime(event.start)}
                     </Text>
-                    <Text style={styles.endTime}>
+                    <Text style={[styles.endTime,
+                        shouldGrayOut ? { color: Colors.red800 } : { color: Colors.teal800 }
+                    ]}>
                         {event.end ? DisplayTime(event.end) : ''}
                     </Text>
                 </View>
-                
+                        {event.attending && (
+                            <View style={styles.iconContainer}>
+                                <MaterialIcons name="check-circle" size={14} color="#10B981" />
+                            </View>
+                        )}
+                        {shouldGrayOut && (
+                            <View style={styles.iconContainer}>
+                                <MaterialIcons name="event-busy" size={14} color={Colors.red600} />
+                            </View>
+                        )}
+                        {event.bookable && (
+                            <View style={styles.iconContainer}>
+                                <MaterialIcons name="event-available" size={14} color={Colors.info400} />
+                            </View>
+                        )}
                 <View style={styles.eventContent}>
+                    
                     <View style={styles.titleContainer}>
-                        <Text style={styles.eventTitle}>
+
+                        <Text style={[
+                            styles.eventTitle,
+                            shouldGrayOut ? { fontWeight: '400'} : { fontWeight: '600'}
+                        ]}>
                             {event.name}
                         </Text>
                         {event.official && (
@@ -68,16 +93,7 @@ const EventListItem: React.FC<EventListItemProps> = ({
                                 <OfficialEventIcon size={14} color={Colors.primary500} />
                             </View>
                         )}
-                        {event.attending && (
-                            <View style={{ marginLeft: 4 }}>
-                                <MaterialIcons name="check-circle" size={14} color="#10B981" />
-                            </View>
-                        )}
-                        {shouldGrayOut && (
-                            <View style={{ marginLeft: 4 }}>
-                                <MaterialIcons name="event-busy" size={14} color={Colors.red600} />
-                            </View>
-                        )}
+
                     </View>
                     <Text style={styles.eventLocation}>
                         {event.locationDescription}
@@ -123,7 +139,7 @@ const createStyles = (colorScheme: string) => StyleSheet.create({
     },
     eventContent: {
         flex: 1,
-        marginLeft: 12,
+        marginLeft: 0,
         flexDirection: 'column',
         justifyContent: 'space-between',
     },
@@ -138,14 +154,20 @@ const createStyles = (colorScheme: string) => StyleSheet.create({
     },
     categoriesContainer: {
         flexDirection: 'row',
-        gap: 4,
+        gap: 8,
     },
     categoryBadge: {
-        width: 30,
+        width: 20,
     },
     eventLocation: {
         fontSize: 14,
         color: Colors.coolGray600,
+    },
+    iconContainer: {
+        alignItems: 'center',
+        justifyContent: 'flex-start',
+        paddingHorizontal: 6,
+        marginTop: 2,
     },
 });
 

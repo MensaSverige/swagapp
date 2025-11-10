@@ -10,42 +10,45 @@ export interface EventBadgesProps {
     size?: number;
   }
 
-const createBadge = (iconName: keyof typeof MaterialIcons.glyphMap, color: string, size: number = 18) => (
-  <View style={[{
-    borderRadius: 15,
-    minWidth: size + 6,
-    minHeight: size + 6,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: color
-  }]}>
-    <MaterialIcons name={iconName} size={size} color="#fff" />
-  </View>
-);
+const createBadge = (iconName: keyof typeof MaterialIcons.glyphMap, color: string, size: number = 18) => {
+  const badgeSize = size + 4;
+  return (
+    <View style={[{
+      borderRadius: badgeSize / 2,
+      width: badgeSize + 4,
+      height: badgeSize,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: color
+    }]}>
+      <MaterialIcons name={iconName} size={size - 4} color="#fff" />
+    </View>
+  );
+};
 
-export const RestaurantBadge: React.FC<EventBadgesProps> = ({ color, size = 18 }) => 
+export const RestaurantBadge: React.FC<EventBadgesProps> = ({ color, size = 14 }) => 
   createBadge('restaurant', color, size);
 
-export const ExploreBadge: React.FC<EventBadgesProps> = ({ color, size = 18 }) => 
+export const ExploreBadge: React.FC<EventBadgesProps> = ({ color, size = 14 }) => 
   createBadge('explore', color, size);
 
-export const GameBadge: React.FC<EventBadgesProps> = ({ color, size = 18 }) => 
+export const GameBadge: React.FC<EventBadgesProps> = ({ color, size = 14 }) => 
   createBadge('casino', color, size);
 
-export const GlobeBadge: React.FC<EventBadgesProps> = ({ color, size = 18 }) => 
+export const GlobeBadge: React.FC<EventBadgesProps> = ({ color, size = 14 }) => 
   createBadge('groups', color, size);
 
-export const TeenBadge: React.FC<EventBadgesProps> = ({ color, size = 18 }) => 
+export const TeenBadge: React.FC<EventBadgesProps> = ({ color, size = 14 }) => 
   createBadge('escalator-warning', color, size);
 
-export const PartyBadge: React.FC<EventBadgesProps> = ({ color, size = 18 }) => 
+export const PartyBadge: React.FC<EventBadgesProps> = ({ color, size = 14 }) => 
   createBadge('celebration', color, size);
 
-export const MicVocalBadge: React.FC<EventBadgesProps> = ({ color, size = 18 }) => 
+export const MicVocalBadge: React.FC<EventBadgesProps> = ({ color, size = 14 }) => 
   createBadge('mic', color, size);
 
-export const LectureBadge: React.FC<EventBadgesProps> = ({ color, size = 18 }) => 
+export const LectureBadge: React.FC<EventBadgesProps> = ({ color, size = 14 }) => 
   createBadge('co-present', color, size);
 
-export const WorkshopBadge: React.FC<EventBadgesProps> = ({ color, size = 18 }) => 
+export const WorkshopBadge: React.FC<EventBadgesProps> = ({ color, size = 14 }) => 
   createBadge('handyman', color, size);

@@ -11,7 +11,7 @@ interface GroupedEventsListProps {
   nextEvent?: Event | null;
   nextEventMarkerRef?: React.RefObject<View | null>;
   showCategories?: boolean;
-  dateHeaderStyle?: 'default' | 'subtitle';
+  dateHeaderStyle?: 'default' | 'subtitle' | 'aligned';
 }
 
 const GroupedEventsList: React.FC<GroupedEventsListProps> = ({
@@ -20,7 +20,7 @@ const GroupedEventsList: React.FC<GroupedEventsListProps> = ({
   nextEvent,
   nextEventMarkerRef,
   showCategories = true,
-  dateHeaderStyle = 'subtitle'
+  dateHeaderStyle = 'default'
 }) => {
   return (
     <>
@@ -31,12 +31,14 @@ const GroupedEventsList: React.FC<GroupedEventsListProps> = ({
             <View ref={nextEventMarkerRef} />
           )}
           
-          {/* Date header */}
-          {dateHeaderStyle === 'subtitle' ? (
-            <ThemedText type="subtitle">{displayLocaleTimeStringDate(date)}</ThemedText>
-          ) : (
-            <ThemedText type="defaultSemiBold">{displayLocaleTimeStringDate(date)}</ThemedText>
-          )}
+
+          <ThemedText 
+            style={dateHeaderStyle === 'aligned' ? styles.dateHeaderAligned : undefined} 
+            type="defaultSemiBold"
+          >
+            {displayLocaleTimeStringDate(date)}
+          </ThemedText>
+
           
           <View style={styles.divider} />
           
@@ -64,6 +66,10 @@ const GroupedEventsList: React.FC<GroupedEventsListProps> = ({
 };
 
 const styles = StyleSheet.create({
+  dateHeaderAligned: {
+    paddingHorizontal: 20,
+    marginBottom: 8,
+  },
   divider: {
     height: 1,
     backgroundColor: '#E5E7EB',
