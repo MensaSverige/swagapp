@@ -15,6 +15,7 @@ import { navigateToAttendingEvents, navigateToBookableEvents, navigateToSchedule
 
 const ParentEventDashboard = () => {
     const colorScheme = useColorScheme();
+    const styles = createStyles(colorScheme ?? 'light');
     const [eventInfo, setEventInfo] = useState<ExternalRoot | null>(null);
     const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
     const [parentLoading, setParentLoading] = useState(true);
@@ -177,7 +178,7 @@ const ParentEventDashboard = () => {
     );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (colorScheme: string) => StyleSheet.create({
     container: {
         padding:16,
         flex: 1
@@ -250,19 +251,19 @@ const styles = StyleSheet.create({
     },
     shortcutButton: {
         flex: 1,
-        backgroundColor: Colors.coolGray50,
+        backgroundColor: colorScheme === 'dark' ? Colors.background900 : Colors.background50,
         paddingVertical: 16,
         paddingHorizontal: 12,
         borderRadius: 12,
         alignItems: 'center',
         gap: 8,
         borderWidth: 1,
-        borderColor: Colors.coolGray200,
+        borderColor: colorScheme === 'dark' ? Colors.background900 : Colors.background100,
     },
     shortcutText: {
         fontSize: 13,
         fontWeight: '500',
-        color: Colors.coolGray700,
+        color: colorScheme === 'dark' ? Colors.coolGray200 : Colors.coolGray700,
         textAlign: 'center',
     },
 });
