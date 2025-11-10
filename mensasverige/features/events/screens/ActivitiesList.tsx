@@ -6,7 +6,8 @@ import {
     TouchableOpacity,
     StyleSheet,
     ActivityIndicator,
-    useColorScheme
+    useColorScheme,
+    RefreshControl
 } from 'react-native';
 import { Event } from '../../../api_schema/types';
 import useStore from '../../common/store/store';
@@ -15,12 +16,13 @@ import EventCardModal from '../components/ExternalEventCardModal';
 import GroupedEventsList from '../components/GroupedEventsList';
 import { ThemedView } from '@/components/ThemedView';
 import { ThemedText } from '@/components/ThemedText';
+import { ThemedButton } from '@/components/ThemedButton';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useScheduleEventsWithFilter } from '../hooks/useFilteredEvents';
 import { EventFilter, EventFilterOptions } from '../components/EventFilter';
 import { FilterButton } from '../components/FilterButton';
 import { Colors } from '@/constants/Colors';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, router } from 'expo-router';
 
 interface ActivitiesListProps {
     initialFilter?: EventFilterOptions;
@@ -76,7 +78,7 @@ export const ActivitiesList: React.FC<ActivitiesListProps> = ({ initialFilter })
 
     console.log('Current eventFilter state:', eventFilter);
 
-    const { groupedEvents, nextEvent, loading, filteredEventsCount, totalEventsCount } = useScheduleEventsWithFilter(eventFilter);
+    const { groupedEvents, nextEvent, loading, filteredEventsCount, totalEventsCount, refetch } = useScheduleEventsWithFilter(eventFilter);
 
     const scrollViewRef = useRef<ScrollView>(null);
     const nextEventMarkerRef = useRef<View>(null);
@@ -87,6 +89,14 @@ export const ActivitiesList: React.FC<ActivitiesListProps> = ({ initialFilter })
 
     const handleApplyFilter = useCallback((filter: EventFilterOptions) => {
         setEventFilter(filter);
+    }, []);
+
+    const handleRefresh = useCallback(async () => {
+        await refetch();
+    }, [refetch]);
+
+    const handleCreateEvent = useCallback(() => {
+        router.push('/(tabs)/(events)/create');
     }, []);
 
     const isFilterActive = () => {
@@ -157,16 +167,17 @@ export const ActivitiesList: React.FC<ActivitiesListProps> = ({ initialFilter })
                     )}
                 </View>
             </View>
-            <ScrollView ref={scrollViewRef} style={styles.scrollContainer}>
-                {loading && (
-                    <View style={styles.loadingIndicator}>
-                        <ActivityIndicator 
-                            size="large" 
-                            color={colorScheme === 'dark' ? Colors.primary400 : Colors.primary600} 
-                        />
-                        <Text style={styles.loadingText}>Laddar aktiviteter...</Text>
-                    </View>
-                )}
+            <ScrollView 
+                ref={scrollViewRef} 
+                style={styles.scrollContainer}
+                refreshControl={
+                    <RefreshControl
+                        refreshing={loading}
+                        onRefresh={handleRefresh}
+                        tintColor={colorScheme === 'dark' ? Colors.primary400 : Colors.primary600}
+                    />
+                }
+            >
 
                 {!groupedEvents || Object.keys(groupedEvents).length === 0 && !loading && (
                     <View style={styles.noEventsContainer}>
@@ -183,6 +194,16 @@ export const ActivitiesList: React.FC<ActivitiesListProps> = ({ initialFilter })
                     dateHeaderStyle="aligned"
                 />
             </ScrollView>
+            
+            {/* Create Event Button */}
+            <View style={styles.createButtonContainer}>
+                <ThemedButton
+                    text="Skapa event"
+                    variant="primary"
+                    onPress={handleCreateEvent}
+                />
+            </View>
+            
             {user && !user.isMember && (
                 <NonMemberInfo />
             )}
@@ -244,6 +265,11 @@ const createStyles = (colorScheme: string) => StyleSheet.create({
     noEventsText: {
         fontSize: 16,
         color: colorScheme === 'dark' ? Colors.coolGray400 : Colors.coolGray500,
+    },
+    createButtonContainer: {
+        paddingHorizontal: 20,
+        paddingVertical: 10,
+        paddingBottom: 20,
     },
 });
 

@@ -18,7 +18,7 @@ export const navigateToScheduleWithFilter = (filter: EventFilterOptions) => {
         }
     });
     
-    router.push({ pathname: '/(tabs)/schedule', params });
+    router.push({ pathname: '/(tabs)/(events)', params });
 };
 
 // Convenience functions

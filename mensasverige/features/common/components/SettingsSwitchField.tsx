@@ -1,6 +1,5 @@
 import React from 'react';
-import { View, Switch } from 'react-native';
-import { Text } from '../../../gluestack-components';
+import { View, Switch, Text } from 'react-native';
 
 interface SettingsSwitchProps {
   label: string;

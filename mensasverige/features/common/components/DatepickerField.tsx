@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import DatePicker from 'react-native-date-picker';
-import { Dimensions } from 'react-native';
-import { Heading, FormControl, FormControlLabel, Text, Pressable } from '../../../gluestack-components';
+import { Dimensions, View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { formatDateAndTime } from '../functions/FormatDateAndTime';
 
 interface DateFieldProps {
@@ -23,17 +22,17 @@ export const DatepickerField: React.FC<DateFieldProps> = ({
 
   return (
     <>
-      <FormControl paddingVertical={5}>
-        <FormControlLabel flex={1} justifyContent="space-between" alignItems='center'>
-          <Heading size="sm">{label}</Heading>
-          <Pressable
-            p="$1"
+      <View style={styles.formControl}>
+        <View style={styles.formControlLabel}>
+          <Text style={styles.heading}>{label}</Text>
+          <TouchableOpacity
+            style={styles.pressable}
             key={label?.toString()}
             onPress={() => setOpenDateModal(true)}
             >
             <Text>{formatDateAndTime(date || '')}</Text>
-          </Pressable>
-        </FormControlLabel>
+          </TouchableOpacity>
+        </View>
         <DatePicker
           modal
           key={label?.toString()}
@@ -56,19 +55,36 @@ export const DatepickerField: React.FC<DateFieldProps> = ({
           confirmText="Välj"
           cancelText="Avbryt"
         />
-      </FormControl>
+      </View>
     </>
   );
 };
 
-const createStyles = () => ({
-  datepickerField: {
-    flex: 1,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  datepicker: {
-    width: Dimensions.get('window').width,
-  },
-});
+const createStyles = () =>
+  StyleSheet.create({
+    formControl: {
+      paddingVertical: 5,
+    },
+    formControlLabel: {
+      flex: 1,
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    heading: {
+      fontSize: 16,
+      fontWeight: '600',
+    },
+    pressable: {
+      padding: 4,
+    },
+    datepickerField: {
+      flex: 1,
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    datepicker: {
+      width: Dimensions.get('window').width,
+    },
+  });

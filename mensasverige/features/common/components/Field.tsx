@@ -1,15 +1,11 @@
 import React from 'react';
-import { Card, FormControl, FormControlError, FormControlErrorText, FormControlHelper, FormControlHelperText, FormControlLabel, Heading, Text } from '../../../gluestack-components';
-import { Pressable, StyleSheet } from 'react-native';
-import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
-import { IconProp } from '@fortawesome/fontawesome-svg-core';
-import { config } from '../../../gluestack-components/gluestack-ui.config';
+import { View, Text, Pressable, StyleSheet } from 'react-native';
 
 
-const colors = config.tokens.colors;
+
 interface FieldProps {
   label: React.ReactNode;
-  labelIcon?: IconProp;
+  labelIcon?: React.ReactNode; // Changed from IconProp to React.ReactNode
   labelIconColor?: string;
   labelControl?: React.ReactNode;
   help?: string;
@@ -32,47 +28,98 @@ const Field: React.FC<FieldProps> = ({
   error,
   onPress = undefined,
 }) => (
-  <Card size="sm" variant="elevated" m="$0">
-  <Pressable onPress={onPress}>
-    <FormControl
-      isInvalid={error !== undefined}
-      isRequired={required}
-      isDisabled={disabled}>
-      <FormControlLabel  style={styles.label}>
-        <Heading size="sm">{label}</Heading>
-        {labelControl}
-        {labelIcon && <FontAwesomeIcon
-          icon={labelIcon}
-          size={24}
-          color={labelIconColor ? labelIconColor : colors.primary500}
-        />}
+  <View style={[styles.card, disabled && styles.disabled]}>
+    <Pressable onPress={onPress} disabled={disabled || !onPress}>
+      <View style={styles.container}>
+        <View style={styles.label}>
+          <Text style={[styles.labelText, required && styles.required]}>
+            {label}
+            {required && <Text style={styles.asterisk}> *</Text>}
+          </Text>
+          {labelControl}
+          {labelIcon && (
+            <View style={styles.iconContainer}>
+              {labelIcon}
+            </View>
+          )}
+        </View>
+        
+        {children}
 
-      </FormControlLabel>
-      {children}
-
-      {error ? (
-        <FormControlError>
-          <FormControlErrorText>
-            {error}
-          </FormControlErrorText>
-        </FormControlError>
-      ) : (
-        help && (
-          <FormControlHelper>
-            <FormControlHelperText>{help}</FormControlHelperText>
-          </FormControlHelper>
-        )
-      )}
-    </FormControl>
-  </Pressable>
-  </Card>
+        {error ? (
+          <View style={styles.errorContainer}>
+            <Text style={styles.errorText}>
+              {error}
+            </Text>
+          </View>
+        ) : (
+          help && (
+            <View style={styles.helpContainer}>
+              <Text style={styles.helpText}>{help}</Text>
+            </View>
+          )
+        )}
+      </View>
+    </Pressable>
+  </View>
 );
 
 const styles = StyleSheet.create({
-  label: {
+  card: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 8,
+    padding: 16,
+    marginVertical: 4,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  disabled: {
+    opacity: 0.6,
+  },
+  container: {
     flex: 1,
+  },
+  label: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  labelText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1F2937',
+    flex: 1,
+  },
+  iconContainer: {
+    marginLeft: 8,
+  },
+  required: {
+    // Base style for required fields
+  },
+  asterisk: {
+    color: '#EF4444',
+    fontWeight: '600',
+  },
+  errorContainer: {
+    marginTop: 4,
+  },
+  errorText: {
+    fontSize: 14,
+    color: '#EF4444',
+  },
+  helpContainer: {
+    marginTop: 4,
+  },
+  helpText: {
+    fontSize: 14,
+    color: '#6B7280',
   },
 });
 

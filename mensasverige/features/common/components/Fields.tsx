@@ -1,16 +1,26 @@
-import {Heading, VStack} from 'native-base';
 import React from 'react';
-import {StyleProp, ViewStyle} from 'react-native';
+import {StyleProp, ViewStyle, View, Text, StyleSheet} from 'react-native';
 
 const Fields: React.FC<{
   heading?: React.ReactNode;
   children: React.ReactNode;
   style?: StyleProp<ViewStyle>;
 }> = ({heading, children, style}) => (
-  <VStack space={4} style={style}>
-    {heading && <Heading size="lg">{heading}</Heading>}
+  <View style={[styles.container, style]}>
+    {heading && <Text style={styles.heading}>{heading}</Text>}
     {children}
-  </VStack>
+  </View>
 );
+
+const styles = StyleSheet.create({
+  container: {
+    gap: 16, // equivalent to space={4} in native-base (4 * 4px = 16px)
+  },
+  heading: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    lineHeight: 24,
+  },
+});
 
 export default Fields;

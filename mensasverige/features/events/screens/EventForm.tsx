@@ -1,46 +1,44 @@
 import React, { useCallback, useEffect, useState, useMemo } from 'react';
-import { ActivityIndicator, Keyboard, TouchableWithoutFeedback } from 'react-native';
+import { 
+  ActivityIndicator, 
+  Keyboard, 
+  TouchableWithoutFeedback, 
+  ScrollView, 
+  SafeAreaView, 
+  TextInput, 
+  TouchableOpacity, 
+  Text, 
+  View,
+  StyleSheet
+} from 'react-native';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import useStore from '../../common/store/store';
-import { RouteProp, useRoute, useNavigation } from '@react-navigation/native';
 import { useEventLists } from '../hooks/useEventLists';
-import { RootStackParamList } from '../../../navigation/RootStackParamList';
 import Field from '../../common/components/Field';
 import Fields from '../../common/components/Fields';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { createUserEvent, updateUserEvent } from '../services/eventService';
 import { DatepickerField } from '../../common/components/DatepickerField';
-import { ExtendedUserEvent, UserEvent } from '../../../api_schema/types';
-import {
-  Input,
-  ScrollView,
-  Button,
-  ButtonText,
-  HStack,
-  Textarea,
-  SafeAreaView,
-  TextareaInput,
-  InputField,
-} from '../../../gluestack-components';
+import { Event, UserEvent } from '../../../api_schema/types';
 import { extractNumericValue } from '../../common/functions/extractNumericValue';
 import SettingsSwitchField from '../../common/components/SettingsSwitchField';
 import EventMapField from '../components/EventMapField';
 
-type EventFormProps = RouteProp<RootStackParamList, 'EventForm'>;
-
 const EditEventForm: React.FC = () => {
-  const navigation =
-    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const route = useRoute<EventFormProps>();
-  const initialEvent = route.params.event;
+  const router = useRouter();
+  const params = useLocalSearchParams<{ event?: string }>();
+  
+  // Parse the event from params if it exists
+  // To navigate to this screen with an event, use: router.push({ pathname: '/event-form', params: { event: JSON.stringify(eventObject) } })
+  const initialEvent = params.event ? JSON.parse(params.event) as Event : null;
 
   const user = useStore(state => state.user);
 
   //create a formstate based on event type
-  const [formState, setFormState] = useState<ExtendedUserEvent>({
+  const [formState, setFormState] = useState<Event>({
     userId: user?.userId ?? 0,
     name: '',
     start: new Date().toISOString(),
-    ownerName: `${user?.firstName} ${user?.lastName}` ?? '',
+    ownerName: `${user?.firstName} ${user?.lastName}` || '',
     id: null,
     hosts: null,
     suggested_hosts: [],
@@ -110,7 +108,10 @@ const EditEventForm: React.FC = () => {
         marker: formState.location?.marker || undefined,
       },
       hosts: [],
+      suggested_hosts: [],
       userId: user?.userId,
+      reports: [],
+      attendees: [],
     };
     setIsSaving(true);
     (initialEvent && initialEvent.id
@@ -121,7 +122,7 @@ const EditEventForm: React.FC = () => {
     )
       .then(async () => {
         return fetchAllEvents().then(() => {
-          navigation.goBack();
+          router.back();
         });
       })
       .catch(err => {
@@ -134,7 +135,7 @@ const EditEventForm: React.FC = () => {
     fetchAllEvents,
     initialEvent,
     formState,
-    navigation,
+    router,
     user,
   ]);
 
@@ -183,10 +184,67 @@ const handleChangeEndDate = useCallback((newEndDate?: Date) => {
   }
 }, [formState.start, formState.end]);
 
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#ffffff',
+  },
+  scrollView: {
+    flex: 1,
+    padding: 10,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#d1d5db',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    fontSize: 16,
+    backgroundColor: '#ffffff',
+  },
+  textarea: {
+    borderWidth: 1,
+    borderColor: '#d1d5db',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    fontSize: 16,
+    backgroundColor: '#ffffff',
+    minHeight: 80,
+    textAlignVertical: 'top',
+  },
+  buttonContainer: {
+    paddingVertical: 30,
+    paddingHorizontal: 0,
+  },
+  button: {
+    backgroundColor: '#3b82f6',
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
+  },
+  buttonDisabled: {
+    backgroundColor: '#9ca3af',
+  },
+  buttonText: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  buttonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+});
+
   return (
-    <SafeAreaView flex={1} bgColor='$background0'>
+    <SafeAreaView style={styles.container}>
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-        <ScrollView flex={1} flexDirection='column' padding={10}>
+        <ScrollView style={styles.scrollView}>
           <Fields>
             <Field
               label="Titel"
@@ -197,34 +255,35 @@ const handleChangeEndDate = useCallback((newEndDate?: Date) => {
               //     : undefined
               // }
               >
-              <Input>
-                <InputField type="text"
-                  defaultValue={formState.name}
-                  onChangeText={
-                    (value) => {
-                      setFormState({
-                        ...formState,
-                        name: value,
-                      });
-                    }
+              <TextInput
+                style={styles.input}
+                defaultValue={formState.name}
+                onChangeText={
+                  (value: string) => {
+                    setFormState({
+                      ...formState,
+                      name: value,
+                    });
                   }
-                  onBlur={() => {
-                  }} placeholder="Evenemangets titel" />
-              </Input>
+                }
+                onBlur={() => {
+                }} placeholder="Evenemangets titel" />
             </Field>
 
             <Field label="Beskrivning">
-              <Textarea>
-                <TextareaInput
-                  defaultValue={formState.description || ''}
-                  onChangeText={(value) => {
-                    setFormState({
-                      ...formState,
-                      description: value,
-                    });
-                  }}
-                  placeholder="Beskrivning av evenemanget" />
-              </Textarea>
+              <TextInput
+                style={styles.textarea}
+                defaultValue={formState.description || ''}
+                onChangeText={(value: string) => {
+                  setFormState({
+                    ...formState,
+                    description: value,
+                  });
+                }}
+                placeholder="Beskrivning av evenemanget" 
+                multiline
+                numberOfLines={4}
+              />
             </Field>
 
             <Field label="Datum och tid">
@@ -269,25 +328,24 @@ const handleChangeEndDate = useCallback((newEndDate?: Date) => {
                 }}
               />
               {maxParticipantsSwitch &&
-                <Input>
-                  <InputField
-                    inputMode='numeric'
-                    defaultValue={formState.maxAttendees?.toString() || ''}
-                    onChangeText={(value: string) => {
-                      if (value === '') {
-                        setFormState({
-                          ...formState,
-                          maxAttendees: undefined,
-                        });
-                      } else {
-                        setFormState({
-                          ...formState,
-                          maxAttendees: parseInt(extractNumericValue(value) ?? ''),
-                        });
-                      }
-                    }}
-                    placeholder="Max antal deltagare" />
-                </Input>
+                <TextInput
+                  style={styles.input}
+                  inputMode='numeric'
+                  defaultValue={formState.maxAttendees?.toString() || ''}
+                  onChangeText={(value: string) => {
+                    if (value === '') {
+                      setFormState({
+                        ...formState,
+                        maxAttendees: undefined,
+                      });
+                    } else {
+                      setFormState({
+                        ...formState,
+                        maxAttendees: parseInt(extractNumericValue(value) ?? ''),
+                      });
+                    }
+                  }}
+                  placeholder="Max antal deltagare" />
               }
             </Field>
 
@@ -347,44 +405,40 @@ const handleChangeEndDate = useCallback((newEndDate?: Date) => {
                 }}
               />
               {locationDescriptionSwitch &&
-
-
-                <Input>
-                  <InputField type="text" defaultValue={formState.location?.description || ''} placeholder="Rum 107"
-                    onChangeText={(value) => {
-                      setFormState({
-                        ...formState,
-                        location: {
-                          ...formState.location,
-                          description: value,
-                        }
-                      })
-                    }
-                    }
-                  />
-                </Input>
+                <TextInput
+                  style={styles.input}
+                  defaultValue={formState.location?.description || ''} 
+                  placeholder="Rum 107"
+                  onChangeText={(value: string) => {
+                    setFormState({
+                      ...formState,
+                      location: {
+                        ...formState.location,
+                        description: value,
+                      }
+                    })
+                  }}
+                />
               }
             </Field>
 
           </Fields>
-          <HStack space="lg" justifyContent="space-evenly" alignItems='center' paddingVertical={30} >
-            <Button
-              size="md"
-              variant="solid"
-              action="primary"
-              width="100%"
-              isDisabled={isSaving}
-              isFocusVisible={false}
+          <View style={styles.buttonContainer}>
+            <TouchableOpacity
+              style={[styles.button, isSaving && styles.buttonDisabled]}
+              disabled={isSaving}
               onPress={saveEvent}
             >
-              <ButtonText textAlign='center'>
-                Spara
+              <View style={styles.buttonContent}>
+                <Text style={styles.buttonText}>
+                  Spara
+                </Text>
                 {isSaving &&
-                  <ActivityIndicator style={{ marginLeft: 5 }} />
+                  <ActivityIndicator style={{ marginLeft: 5 }} color="#ffffff" />
                 }
-              </ButtonText>
-            </Button>
-          </HStack>
+              </View>
+            </TouchableOpacity>
+          </View>
         </ScrollView>
       </TouchableWithoutFeedback>
     </SafeAreaView>

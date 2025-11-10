@@ -56,7 +56,7 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="schedule"
+        name="(events)"
         options={{
           title: 'Aktiviteter',
           tabBarIcon: ({ color }) => <MaterialIcons name="local-activity" size={28} color={color} />,

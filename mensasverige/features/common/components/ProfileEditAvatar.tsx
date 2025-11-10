@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
-import { Center, Image, Pressable, View } from '../../../gluestack-components';
-import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
-import { faUser, faPlus } from '@fortawesome/free-solid-svg-icons';
+import { View, Image, Pressable, useColorScheme } from 'react-native';
+import { MaterialIcons } from '@expo/vector-icons';
 import { selectImage } from './selectImage';
 import useStore from '../store/store';
-import { config } from '../../../gluestack-components/gluestack-ui.config';
+import { Colors } from '../../../constants/Colors';
 import { getFullUrl } from '../functions/GetFullUrl';
 
 type ProfileEditAvatarProps = {
@@ -17,6 +16,8 @@ type ProfileEditAvatarProps = {
 const ProfileEditAvatar: React.FC<ProfileEditAvatarProps> = ({colorMode, onError, onSaved, onSaving }) => {
     const { user, setUser } = useStore();
     const [imageKey, setImageKey] = useState<number>(Date.now());
+    const systemColorScheme = useColorScheme();
+    const currentColorMode = colorMode || systemColorScheme || 'light';
     
     if (!user) {
         return null;
@@ -42,13 +43,16 @@ const ProfileEditAvatar: React.FC<ProfileEditAvatarProps> = ({colorMode, onError
             onError(error.message || error);
         })
     };
+
     return (
-        <Center pt={10}>
+        <View style={{
+            justifyContent: 'center',
+            alignItems: 'center',
+            paddingTop: 40
+        }}>
             {user.avatar_url ? (
                 <Image
                     source={{ uri: `${getFullUrl(user.avatar_url)}?${imageKey}` }} // Append image key as a query parameter to reload the image
-                    alt="Profile image"
-                    size="md"
                     style={{ 
                         width: 160, 
                         height: 160, 
@@ -57,27 +61,26 @@ const ProfileEditAvatar: React.FC<ProfileEditAvatarProps> = ({colorMode, onError
                 />
             ) : (
                 <View style={{
-                    backgroundColor: colorMode === 'light' ? config.tokens.colors.primary700 : config.tokens.colors.info900,
-                    //borderWidth: 4,
-                    borderColor: colorMode === 'light' ? config.tokens.colors.primary500 : config.tokens.colors.info600,
+                    backgroundColor: currentColorMode === 'light' ? Colors.light.primary700 : Colors.dark.info900,
+                    borderColor: currentColorMode === 'light' ? Colors.light.primary500 : Colors.dark.info600,
                     borderRadius: 80,
                     width: 160,
                     height: 160,
                     justifyContent: 'center',
                     alignItems: 'center'
                 }}>
-                <FontAwesomeIcon
-                    icon={faUser}
-                    size={100}
-                    color={colorMode === 'light' ? config.tokens.colors.primary200 : config.tokens.colors.info500}
-                />
+                    <MaterialIcons
+                        name="person"
+                        size={100}
+                        color={currentColorMode === 'light' ? Colors.light.primary200 : Colors.dark.info500}
+                    />
                 </View>
             )}
             <Pressable style={{
                 position: 'absolute',
                 right: 0,
                 bottom: 0,
-                backgroundColor: colorMode === 'light' ? config.tokens.colors.blueGray200 : config.tokens.colors.blueGray100,
+                backgroundColor: currentColorMode === 'light' ? Colors.light.blueGray200 : Colors.dark.blueGray100,
                 borderRadius: 25,
                 width: 50,
                 height: 50,
@@ -86,13 +89,13 @@ const ProfileEditAvatar: React.FC<ProfileEditAvatarProps> = ({colorMode, onError
             }}
                 onPress={handlePress}
             >
-                <FontAwesomeIcon
-                    icon={faPlus}
+                <MaterialIcons
+                    name="add"
                     size={16}
-                    color={colorMode === 'light' ? config.tokens.colors.primary800 : config.tokens.colors.info800}
+                    color={currentColorMode === 'light' ? Colors.light.primary800 : Colors.dark.info800}
                 />
             </Pressable>
-        </Center>
+        </View>
     );
 };
 

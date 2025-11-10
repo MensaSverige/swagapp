@@ -1,26 +1,30 @@
-import { faEdit } from '@fortawesome/free-solid-svg-icons';
-import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
-import { ICustomTheme, useTheme } from 'native-base';
-import { Pressable } from '../../../gluestack-components';
+import React from 'react';
+import { Pressable, StyleSheet, useColorScheme } from 'react-native';
+import { MaterialIcons } from '@expo/vector-icons';
+import { Colors } from '../../../constants/Colors';
 
 export const EditButton: React.FC<{
   onPress: () => void;
 }> = ({ onPress }) => {
-  const theme = useTheme() as ICustomTheme;
-  const styles = createStyles(theme);
+  const colorScheme = useColorScheme();
+  const styles = createStyles(colorScheme);
 
   return (
     <Pressable
-      p="$4"
+      style={styles.button}
       onPress={onPress}>
-      <FontAwesomeIcon icon={faEdit} size={20} style={styles.editButton} />
+      <MaterialIcons 
+        name="edit" 
+        size={20} 
+        color={Colors[colorScheme ?? 'light'].primary500} 
+      />
     </Pressable>
-
   );
 };
 
-const createStyles = (theme: ICustomTheme) => ({
-  editButton: {
-    color: theme.colors.accent[500],
-  },
-});
+const createStyles = (colorScheme: 'light' | 'dark' | null | undefined) => 
+  StyleSheet.create({
+    button: {
+      padding: 16,
+    },
+  });
