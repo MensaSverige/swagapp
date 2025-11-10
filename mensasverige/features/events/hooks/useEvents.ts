@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Event } from '../../../api_schema/types';
 import { 
     getAllEventsGrouped, 
@@ -43,7 +43,7 @@ export const useEvents = (options: UseEventsOptions = {}): UseEventsReturn => {
   
   const { events, setEvents } = useStore();
 
-  const processEventsData = (eventsData: Event[]) => {
+  const processEventsData = useCallback((eventsData: Event[]) => {
     try {
       let processedGroupedEvents: GroupedEvents;
       let hasMore: boolean | undefined = undefined;
@@ -77,9 +77,9 @@ export const useEvents = (options: UseEventsOptions = {}): UseEventsReturn => {
       setError(err as Error);
       console.error('Error processing events:', err);
     }
-  };
+  }, [filter]);
 
-  const refetch = async (): Promise<void> => {
+  const refetch = useCallback(async (): Promise<void> => {
     try {
       setLoading(true);
       const fetchedEvents = await fetchEvents();
@@ -91,7 +91,7 @@ export const useEvents = (options: UseEventsOptions = {}): UseEventsReturn => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [setEvents, processEventsData]);
 
   // Initial load
   useEffect(() => {

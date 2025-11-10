@@ -20,20 +20,61 @@ import { useScheduleEventsWithFilter } from '../hooks/useFilteredEvents';
 import { EventFilter, EventFilterOptions } from '../components/EventFilter';
 import { FilterButton } from '../components/FilterButton';
 import { Colors } from '@/constants/Colors';
+import { useLocalSearchParams } from 'expo-router';
 
-export const ActivitiesList = () => {
+interface ActivitiesListProps {
+    initialFilter?: EventFilterOptions;
+}
+
+export const ActivitiesList: React.FC<ActivitiesListProps> = ({ initialFilter }) => {
     const { user } = useStore();
     const colorScheme = useColorScheme();
     const styles = createStyles(colorScheme ?? 'light');
     const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
     const [didInitiallyScroll, setDidInitiallyScroll] = useState(false);
     const [showFilter, setShowFilter] = useState(false);
-    const [eventFilter, setEventFilter] = useState<EventFilterOptions>({
-        attending: null,
-        bookable: null,
-        official: null,
-        categories: [],
-    });
+    
+    // Get URL parameters
+    const params = useLocalSearchParams();
+    
+    // Helper function to parse current URL parameters into filter object
+    const parseURLParams = useCallback((currentParams: typeof params): EventFilterOptions => {
+        console.log('Parsing URL params:', currentParams);
+        
+        // Parse URL parameters into filter object
+        const urlFilter: EventFilterOptions = {
+            attending: currentParams.attending === 'true' ? true : currentParams.attending === 'false' ? false : null,
+            bookable: currentParams.bookable === 'true' ? true : currentParams.bookable === 'false' ? false : null,
+            official: currentParams.official === 'true' ? true : currentParams.official === 'false' ? false : null,
+            categories: currentParams.categories ? String(currentParams.categories).split(',').filter(Boolean) : [],
+        };
+        
+        console.log('Parsed filter:', urlFilter);
+        
+        // Return URL filter if any parameters exist, otherwise default
+        const hasParams = Object.values(currentParams).some(Boolean);
+        return hasParams ? urlFilter : { attending: null, bookable: null, official: null, categories: [] };
+    }, []);
+    
+    // Determine initial filter from props, URL params, or default
+    const getInitialFilter = useCallback((): EventFilterOptions => {
+        if (initialFilter) {
+            return initialFilter;
+        }
+        
+        return parseURLParams(params);
+    }, [initialFilter, params, parseURLParams]);
+    
+    const [eventFilter, setEventFilter] = useState<EventFilterOptions>(getInitialFilter());
+
+    // Reset filter when URL parameters change (e.g., from shortcut navigation)
+    useEffect(() => {
+        const newFilter = parseURLParams(params);
+        console.log('Setting new filter from URL params:', newFilter);
+        setEventFilter(newFilter);
+    }, [params.attending, params.bookable, params.official, params.categories, parseURLParams]);
+
+    console.log('Current eventFilter state:', eventFilter);
 
     const { groupedEvents, nextEvent, loading, filteredEventsCount, totalEventsCount } = useScheduleEventsWithFilter(eventFilter);
 

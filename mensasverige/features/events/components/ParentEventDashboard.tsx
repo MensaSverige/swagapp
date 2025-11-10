@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { View, StyleSheet, TouchableOpacity } from 'react-native';
+import React, { useEffect, useState, useCallback } from 'react';
+import { View, StyleSheet, TouchableOpacity, useColorScheme } from 'react-native';
 import { fetchExternalRoot } from '../services/eventService';
 import { ExternalRoot, Event } from '../../../api_schema/types';
 import { ThemedText } from '@/components/ThemedText';
@@ -10,15 +10,17 @@ import EventCardModal from './ExternalEventCardModal';
 import { MaterialIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { Colors } from '@/constants/Colors';
-import { useDashboardEvents } from '../hooks/useEvents';
+import { useDashboardEventsIndependent } from '../hooks/useDashboardEventsIndependent';
+import { navigateToAttendingEvents, navigateToBookableEvents, navigateToScheduleWithFilter } from '../utilities/navigationUtils';
 
 const ParentEventDashboard = () => {
+    const colorScheme = useColorScheme();
     const [eventInfo, setEventInfo] = useState<ExternalRoot | null>(null);
     const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
     const [parentLoading, setParentLoading] = useState(true);
     
-    // Use custom hook for dashboard events
-    const { groupedEvents: groupedUpcomingEvents, hasMoreEvents = false, loading: eventsLoading } = useDashboardEvents(3);
+    // Use independent dashboard events hook - maintains separate state from activities list
+    const { groupedEvents: groupedUpcomingEvents, hasMoreEvents = false, loading: eventsLoading, refetch } = useDashboardEventsIndependent(3);
 
     useEffect(() => {
         const loadParentEventInfo = async () => {
@@ -39,7 +41,28 @@ const ParentEventDashboard = () => {
     const loading = parentLoading || eventsLoading;
 
     const navigateToFullSchedule = () => {
-        router.push('/(tabs)/schedule');
+        // Navigate to schedule with attending filter set to true
+        navigateToAttendingEvents();
+    };
+
+    const navigateToMealsEvents = () => {
+        // Navigate to schedule showing bookable meal/dinner events (category 'M' AND bookable)
+        navigateToScheduleWithFilter({
+            attending: null,
+            bookable: true, 
+            official: null,
+            categories: ['M']
+        });
+    };
+
+    const navigateToAllEvents = () => {
+        // Navigate to schedule showing bookable events (for discovery)
+        navigateToScheduleWithFilter({
+            attending: null,
+            bookable: true, 
+            official: null,
+            categories: []
+        });
     };
 
     const handleEventPress = (event: Event) => {
@@ -83,11 +106,41 @@ const ParentEventDashboard = () => {
 
             <ParentEventDetails />
             
+            {/* Quick Navigation Shortcuts */}
+            <View style={styles.shortcutsSection}>
+                <ThemedText type="subtitle" style={styles.shortcutsTitle}>Aktiviteter</ThemedText>
+                <View style={styles.shortcutsRow}>
+                    <TouchableOpacity 
+                        style={styles.shortcutButton}
+                        onPress={navigateToAllEvents}
+                    >
+                        <MaterialIcons 
+                            name="explore" 
+                            size={20} 
+                            color={colorScheme === 'dark' ? Colors.primary400 : Colors.primary600} 
+                        />
+                        <ThemedText style={styles.shortcutText}>Upptäck mer</ThemedText>
+                    </TouchableOpacity>
+                    
+                    <TouchableOpacity 
+                        style={styles.shortcutButton}
+                        onPress={navigateToMealsEvents}
+                    >
+                        <MaterialIcons 
+                            name="restaurant" 
+                            size={20} 
+                            color={colorScheme === 'dark' ? Colors.pink400 : Colors.pink600} 
+                        />
+                        <ThemedText style={styles.shortcutText}>Middag & Fest</ThemedText>
+                    </TouchableOpacity>
+                </View>
+            </View>
+            
             {/* Upcoming Events Section */}
             {Object.keys(groupedUpcomingEvents).length > 0 && (
                 <View style={styles.eventsSection}>
                     <View style={styles.sectionHeader}>
-                        <ThemedText type="subtitle">Mina aktiviteter</ThemedText>
+                        <ThemedText type="subtitle">Mina bokningar</ThemedText>
                         <TouchableOpacity 
                             onPress={navigateToFullSchedule}
                             style={styles.seeAllButton}
@@ -183,6 +236,34 @@ const styles = StyleSheet.create({
     },
     newsSection: {
         marginTop: 24,
+    },
+    shortcutsSection: {
+        marginTop: 16,
+        marginBottom: 8,
+    },
+    shortcutsTitle: {
+        marginBottom: 12,
+    },
+    shortcutsRow: {
+        flexDirection: 'row',
+        gap: 12,
+    },
+    shortcutButton: {
+        flex: 1,
+        backgroundColor: Colors.coolGray50,
+        paddingVertical: 16,
+        paddingHorizontal: 12,
+        borderRadius: 12,
+        alignItems: 'center',
+        gap: 8,
+        borderWidth: 1,
+        borderColor: Colors.coolGray200,
+    },
+    shortcutText: {
+        fontSize: 13,
+        fontWeight: '500',
+        color: Colors.coolGray700,
+        textAlign: 'center',
     },
 });
 

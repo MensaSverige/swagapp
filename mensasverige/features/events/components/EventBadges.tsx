@@ -15,7 +15,7 @@ const createBadge = (iconName: keyof typeof MaterialIcons.glyphMap, color: strin
   return (
     <View style={[{
       borderRadius: badgeSize / 2,
-      width: badgeSize + 4,
+      width: badgeSize,
       height: badgeSize,
       alignItems: 'center',
       justifyContent: 'center',
