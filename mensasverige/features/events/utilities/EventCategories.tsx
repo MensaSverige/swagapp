@@ -38,14 +38,14 @@ export const EVENT_CATEGORIES: EventCategory[] = [
   },
   {
     code: 'M',
-    label: 'Middag/Festligheter',
-    color: Colors.pink600, // middag/festligheter
+    label: 'Middag',
+    color: Colors.pink600, // middag/festligheter in swagsite
     icon: 'restaurant',
     BadgeComponent: RestaurantBadge,
   },
   {
     code: 'S',
-    label: 'Spel/Tävling',
+    label: 'Spel',
     color: '#D97706', // spel/tävling
     icon: 'casino',
     BadgeComponent: GameBadge,

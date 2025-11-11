@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { View, StyleSheet, TouchableOpacity, useColorScheme } from 'react-native';
-import { fetchExternalRoot } from '../services/eventService';
+import { fetchExternalRoot, fetchEvents } from '../services/eventService';
 import { ExternalRoot, Event } from '../../../api_schema/types';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
@@ -12,6 +12,7 @@ import { router } from 'expo-router';
 import { Colors } from '@/constants/Colors';
 import { useDashboardEventsIndependent } from '../hooks/useDashboardEventsIndependent';
 import { navigateToAttendingEvents, navigateToBookableEvents, navigateToScheduleWithFilter } from '../utilities/navigationUtils';
+import { EVENT_CATEGORIES } from '../utilities/EventCategories';
 
 const ParentEventDashboard = () => {
     const colorScheme = useColorScheme();
@@ -19,6 +20,8 @@ const ParentEventDashboard = () => {
     const [eventInfo, setEventInfo] = useState<ExternalRoot | null>(null);
     const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
     const [parentLoading, setParentLoading] = useState(true);
+    const [availableCategories, setAvailableCategories] = useState<string[]>([]);
+    const [categoriesLoading, setCategoriesLoading] = useState(true);
     
     // Use independent dashboard events hook - maintains separate state from activities list
     const { groupedEvents: groupedUpcomingEvents, hasMoreEvents = false, loading: eventsLoading, refetch } = useDashboardEventsIndependent(3);
@@ -36,24 +39,50 @@ const ParentEventDashboard = () => {
             }
         };
 
+        const loadAvailableCategories = async () => {
+            try {
+                setCategoriesLoading(true);
+                // Fetch all events to see which categories have events
+                const allEvents = await fetchEvents();
+                
+                // Count bookable events per category
+                const categoryEventCounts: Record<string, number> = {};
+                allEvents
+                    .filter(event => event.bookable) // Only count bookable events
+                    .forEach(event => {
+                        event.tags?.forEach(tag => {
+                            if (tag.code) {
+                                categoryEventCounts[tag.code] = (categoryEventCounts[tag.code] || 0) + 1;
+                            }
+                        });
+                    });
+                
+                // Sort categories by event count and take top 4
+                const sortedCategories = Object.entries(categoryEventCounts)
+                    .sort(([, countA], [, countB]) => countB - countA)
+                    .slice(0, 4)
+                    .map(([code]) => code);
+                
+                console.log('Bookable events per category:', categoryEventCounts);
+                console.log('Top 4 categories by bookable events:', sortedCategories);
+                setAvailableCategories(sortedCategories);
+            } catch (error) {
+                console.error('Error loading available categories:', error);
+                setAvailableCategories([]);
+            } finally {
+                setCategoriesLoading(false);
+            }
+        };
+
         loadParentEventInfo();
+        loadAvailableCategories();
     }, []);
 
-    const loading = parentLoading || eventsLoading;
+    const loading = parentLoading || eventsLoading || categoriesLoading;
 
     const navigateToFullSchedule = () => {
         // Navigate to schedule with attending filter set to true
         navigateToAttendingEvents();
-    };
-
-    const navigateToMealsEvents = () => {
-        // Navigate to schedule showing bookable meal/dinner events (category 'M' AND bookable)
-        navigateToScheduleWithFilter({
-            attending: null,
-            bookable: true, 
-            official: null,
-            categories: ['M']
-        });
     };
 
     const navigateToAllEvents = () => {
@@ -70,6 +99,36 @@ const ParentEventDashboard = () => {
         // Show the modal with event details instead of just navigating
         setSelectedEvent(event);
     };
+
+    // Helper function to check if a category has events available
+    const hasCategoryEvents = (categoryCode: string): boolean => {
+        return availableCategories.includes(categoryCode);
+    };
+
+    // Create navigation functions for each category
+    const createNavigateToCategory = (categoryCode: string) => () => {
+        navigateToScheduleWithFilter({
+            attending: null,
+            bookable: categoryCode === 'M' ? true : null, // Only meals/dinner events need to be bookable
+            official: null,
+            categories: [categoryCode]
+        });
+    };
+
+    // Define shortcut configurations using EVENT_CATEGORIES
+    const shortcutConfigs = EVENT_CATEGORIES
+        .filter(category => hasCategoryEvents(category.code)) // Only show categories that have events
+        .map(category => ({
+            key: category.code,
+            label: category.label,
+            icon: category.icon,
+            color: category.color,
+            onPress: createNavigateToCategory(category.code),
+            showCondition: hasCategoryEvents(category.code)
+        }));
+
+    // Filter shortcuts to only show available ones
+    const visibleShortcuts = shortcutConfigs.filter(shortcut => shortcut.showCondition);
 
     if (loading) {
         return (
@@ -109,31 +168,22 @@ const ParentEventDashboard = () => {
             
             {/* Quick Navigation Shortcuts */}
             <View style={styles.shortcutsSection}>
-                <ThemedText type="subtitle" style={styles.shortcutsTitle}>Aktiviteter</ThemedText>
+                <ThemedText type="subtitle" style={styles.shortcutsTitle}>Vad vill du göra nu?</ThemedText>
                 <View style={styles.shortcutsRow}>
-                    <TouchableOpacity 
-                        style={styles.shortcutButton}
-                        onPress={navigateToAllEvents}
-                    >
-                        <MaterialIcons 
-                            name="explore" 
-                            size={20} 
-                            color={colorScheme === 'dark' ? Colors.primary400 : Colors.primary600} 
-                        />
-                        <ThemedText style={styles.shortcutText}>Upptäck mer</ThemedText>
-                    </TouchableOpacity>
-                    
-                    <TouchableOpacity 
-                        style={styles.shortcutButton}
-                        onPress={navigateToMealsEvents}
-                    >
-                        <MaterialIcons 
-                            name="restaurant" 
-                            size={20} 
-                            color={colorScheme === 'dark' ? Colors.pink400 : Colors.pink600} 
-                        />
-                        <ThemedText style={styles.shortcutText}>Middag & Fest</ThemedText>
-                    </TouchableOpacity>
+                    {visibleShortcuts.map((shortcut) => (
+                        <TouchableOpacity 
+                            key={shortcut.key}
+                            style={styles.shortcutButton}
+                            onPress={shortcut.onPress}
+                        >
+                            <MaterialIcons 
+                                name={shortcut.icon} 
+                                size={14} 
+                                color={shortcut.color} 
+                            />
+                            <ThemedText style={styles.shortcutText}>{shortcut.label}</ThemedText>
+                        </TouchableOpacity>
+                    ))}
                 </View>
             </View>
             
@@ -239,32 +289,34 @@ const createStyles = (colorScheme: string) => StyleSheet.create({
         marginTop: 24,
     },
     shortcutsSection: {
-        marginTop: 16,
-        marginBottom: 8,
+        marginTop: 16
     },
     shortcutsTitle: {
         marginBottom: 12,
     },
     shortcutsRow: {
         flexDirection: 'row',
-        gap: 12,
+        gap: 8,
+        marginBottom: 8,
     },
     shortcutButton: {
         flex: 1,
         backgroundColor: colorScheme === 'dark' ? Colors.background900 : Colors.background50,
-        paddingVertical: 16,
-        paddingHorizontal: 12,
-        borderRadius: 12,
+        paddingVertical: 4,
+        paddingHorizontal: 4,
+        borderRadius: 6,
         alignItems: 'center',
-        gap: 8,
+        gap: 2,
         borderWidth: 1,
         borderColor: colorScheme === 'dark' ? Colors.background900 : Colors.background100,
+        minHeight: 38,
     },
     shortcutText: {
-        fontSize: 13,
+        fontSize: 9,
         fontWeight: '500',
         color: colorScheme === 'dark' ? Colors.coolGray200 : Colors.coolGray700,
         textAlign: 'center',
+        lineHeight: 11,
     },
 });
 
