@@ -16,6 +16,7 @@ from v1.user_events.user_events_db import (
     get_safe_user_event as db_get_safe_user_event,
 )
 from v1.user_events.user_events_model import UserEvent, Host as UEHost, Attendee as UEAttendee, Location as UELocation
+from v1.utilities import get_current_time
 from fastapi import HTTPException
 
 
@@ -53,8 +54,8 @@ def list_unified_events(
     # User events (already filtered to future via db function)
     try:
         # Include events starting from one month back
-        one_month_back = datetime.utcnow() - timedelta(days=30)
-        user_events = get_safe_user_events_since(one_month_back)
+        one_month_back = get_current_time() - timedelta(days=30)
+        user_events = get_safe_user_events_since(one_month_back.replace(tzinfo=None))
     except Exception as e:
         logging.error(f"Failed to fetch user events since range: {e}")
         user_events = []

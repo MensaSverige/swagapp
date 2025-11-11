@@ -3,6 +3,7 @@ from typing import List
 from bson import ObjectId
 from v1.user_events.user_events_model import ExtendedUserEvent, UserEvent
 from v1.db.mongo import user_event_collection, user_collection
+from v1.utilities import get_current_time
 
 
 def create_user_event(user_event: dict) -> ObjectId:
@@ -82,14 +83,15 @@ def get_unsafe_future_user_events() -> list[UserEvent]:
 
     :return: The user event documents.
     """
+    current_time = get_current_time().replace(tzinfo=None)
     query = {
         "$or": [{
             "end": {
-                "$gte": datetime.now()
+                "$gte": current_time
             }
         }, {
             "start": {
-                "$gte": datetime.now() - timedelta(hours=1)
+                "$gte": current_time - timedelta(hours=1)
             },
             "end": None
         }]
