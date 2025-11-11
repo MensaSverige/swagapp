@@ -8,6 +8,8 @@ interface DateFieldProps {
   date?: Date;
   minimumDate?: Date;
   optional?: boolean;
+  mode?: 'date' | 'datetime' | 'time';
+  placeholder?: string;
   onDateChange: (date?: Date) => void;
 }
 
@@ -15,6 +17,8 @@ export const DatepickerField: React.FC<DateFieldProps> = ({
   label,
   date,
   minimumDate,
+  mode = 'datetime',
+  placeholder,
   onDateChange,
 }) => {
   const [openDateModal, setOpenDateModal] = useState(false);
@@ -30,7 +34,7 @@ export const DatepickerField: React.FC<DateFieldProps> = ({
             key={label?.toString()}
             onPress={() => setOpenDateModal(true)}
             >
-            <Text>{formatDateAndTime(date || '')}</Text>
+            <Text>{date ? formatDateAndTime(date) : (placeholder || formatDateAndTime(''))}</Text>
           </TouchableOpacity>
         </View>
         <DatePicker
@@ -49,7 +53,7 @@ export const DatepickerField: React.FC<DateFieldProps> = ({
           }}
           style={[styles.datepicker]}
           date={date ?? new Date()}
-          mode="datetime"
+          mode={mode}
           locale="sv"
           is24hourSource="locale"
           confirmText="Välj"

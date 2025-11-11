@@ -19,9 +19,7 @@ export default function WelcomeScreen() {
                         resizeMode="cover"
                     />
                 }
-            > <View style={styles.titleContent}>
-                    <ThemedText type="title">Mensa Sverige</ThemedText>
-                </View>
+            >
                 <ParentEventDashboard />
             </ParallaxScrollView>
 
@@ -37,8 +35,5 @@ const styles = StyleSheet.create({
         width: '100%',
         height: '100%',
         alignSelf: 'center',
-    },
-    titleContent: {
-        paddingHorizontal: 16,
     },
 });

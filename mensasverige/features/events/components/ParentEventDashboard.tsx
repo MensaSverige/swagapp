@@ -7,11 +7,12 @@ import { ThemedView } from '@/components/ThemedView';
 import ParentEventDetails from './ParentEventDetails';
 import GroupedEventsList from './GroupedEventsList';
 import EventCardModal from './ExternalEventCardModal';
+import CreateEventModal from './CreateEventModal';
 import { MaterialIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { Colors } from '@/constants/Colors';
 import { useDashboardEventsIndependent } from '../hooks/useDashboardEventsIndependent';
-import { navigateToAttendingEvents, navigateToBookableEvents, navigateToScheduleWithFilter } from '../utilities/navigationUtils';
+import { navigateToAttendingEvents, navigateToBookableEvents, navigateToScheduleWithFilter, navigateToLastMinuteEvents, filterLastMinuteEvents } from '../utilities/navigationUtils';
 import { EVENT_CATEGORIES } from '../utilities/EventCategories';
 
 const ParentEventDashboard = () => {
@@ -22,6 +23,9 @@ const ParentEventDashboard = () => {
     const [parentLoading, setParentLoading] = useState(true);
     const [availableCategories, setAvailableCategories] = useState<string[]>([]);
     const [categoriesLoading, setCategoriesLoading] = useState(true);
+    const [showCreateForm, setShowCreateForm] = useState(false);
+    const [hasLastMinuteEvents, setHasLastMinuteEvents] = useState(false);
+    const [lastMinuteCount, setLastMinuteCount] = useState(0);
     
     // Use independent dashboard events hook - maintains separate state from activities list
     const { groupedEvents: groupedUpcomingEvents, hasMoreEvents = false, loading: eventsLoading, refetch } = useDashboardEventsIndependent(3);
@@ -60,15 +64,23 @@ const ParentEventDashboard = () => {
                 // Sort categories by event count and take top 4
                 const sortedCategories = Object.entries(categoryEventCounts)
                     .sort(([, countA], [, countB]) => countB - countA)
-                    .slice(0, 4)
+                    .slice(0, 5)
                     .map(([code]) => code);
                 
                 console.log('Bookable events per category:', categoryEventCounts);
-                console.log('Top 4 categories by bookable events:', sortedCategories);
+                console.log('Top 5 categories by bookable events:', sortedCategories);
                 setAvailableCategories(sortedCategories);
+                
+                // Check for last minute events using shared utility
+                const lastMinuteEvents = filterLastMinuteEvents(allEvents);
+                setHasLastMinuteEvents(lastMinuteEvents.length > 0);
+                setLastMinuteCount(lastMinuteEvents.length);
+                console.log('Last minute events found:', lastMinuteEvents.length);
             } catch (error) {
                 console.error('Error loading available categories:', error);
                 setAvailableCategories([]);
+                setHasLastMinuteEvents(false);
+                setLastMinuteCount(0);
             } finally {
                 setCategoriesLoading(false);
             }
@@ -99,6 +111,18 @@ const ParentEventDashboard = () => {
         // Show the modal with event details instead of just navigating
         setSelectedEvent(event);
     };
+
+    const handleEventCreated = useCallback((event: Event) => {
+        setShowCreateForm(false);
+        // Refresh the events list to show the new event
+        refetch();
+        // Optionally show the created event details after a brief delay
+        setTimeout(() => setSelectedEvent(event), 500);
+    }, [refetch]);
+
+    const handleCancelCreate = useCallback(() => {
+        setShowCreateForm(false);
+    }, []);
 
     // Helper function to check if a category has events available
     const hasCategoryEvents = (categoryCode: string): boolean => {
@@ -163,35 +187,102 @@ const ParentEventDashboard = () => {
                 />
             )}
             
+            {/* Create Event Modal */}
+            <CreateEventModal
+                visible={showCreateForm}
+                onClose={handleCancelCreate}
+                onEventCreated={handleEventCreated}
+            />
+            
 
             <ParentEventDetails />
             
+ 
             {/* Quick Navigation Shortcuts */}
             <View style={styles.shortcutsSection}>
-                <ThemedText type="subtitle" style={styles.shortcutsTitle}>Vad vill du göra nu?</ThemedText>
-                <View style={styles.shortcutsRow}>
+                <View style={styles.sectionTitleContainer}>
+                    <MaterialIcons name="explore" size={20} color={Colors.primary600} />
+                    <ThemedText type="subtitle" style={styles.shortcutsTitle}>Hitta aktiviteter</ThemedText>
+                </View>
+                <View style={styles.shortcutsGrid}>
                     {visibleShortcuts.map((shortcut) => (
                         <TouchableOpacity 
                             key={shortcut.key}
                             style={styles.shortcutButton}
                             onPress={shortcut.onPress}
                         >
-                            <MaterialIcons 
-                                name={shortcut.icon} 
-                                size={14} 
-                                color={shortcut.color} 
-                            />
+                            <View style={[styles.shortcutIconContainer, { backgroundColor: shortcut.color + '20' }]}>
+                                <MaterialIcons 
+                                    name={shortcut.icon} 
+                                    size={16} 
+                                    color={shortcut.color} 
+                                />
+                            </View>
                             <ThemedText style={styles.shortcutText}>{shortcut.label}</ThemedText>
                         </TouchableOpacity>
                     ))}
                 </View>
             </View>
             
+           {/* Last Minute and Create Activity Side by Side */}
+            <View style={styles.actionsRow}>
+                {/* Last Minute Section */}
+                {hasLastMinuteEvents && (
+                    <TouchableOpacity 
+                        style={[
+                            styles.actionCard, 
+                            styles.lastMinuteCard,
+                            styles.equalWidth
+                        ]}
+                        onPress={navigateToLastMinuteEvents}
+                        activeOpacity={0.7}
+                    >
+                        <View style={styles.actionContent}>
+                            <View style={styles.titleContainer}>
+                                <MaterialIcons name="schedule" size={20} color={colorScheme === 'dark' ? Colors.amber300 : Colors.amber600} />
+                                <ThemedText type="subtitle" style={styles.lastMinuteTitle}>Sista minuten</ThemedText>
+                            </View>
+                            <ThemedText style={styles.lastMinuteDescription}>
+                                 Hinner du med? {lastMinuteCount} {lastMinuteCount === 1 ? 'aktivitet' : 'aktiviteter'} startar snart!
+                            </ThemedText>
+
+                            <MaterialIcons name="arrow-forward" size={16} color={colorScheme === 'dark' ? Colors.amber400 : Colors.amber700} style={styles.actionArrow} />
+                        </View>
+                    </TouchableOpacity>
+                )}
+
+                {/* Create Activity Invitation Section */}
+                <TouchableOpacity 
+                    style={[
+                        styles.actionCard, 
+                        styles.createCard,
+                        hasLastMinuteEvents ? styles.equalWidth : styles.fullWidthSingle
+                    ]}
+                    onPress={() => setShowCreateForm(true)}
+                    activeOpacity={0.7}
+                >
+                    <View style={styles.actionContent}>
+                        <View style={styles.titleContainer}>
+                            <MaterialIcons name="celebration" size={20} color={Colors.primary300} />
+                            <ThemedText type="subtitle" style={styles.createTitle}>Bjud in andra!</ThemedText>
+                        </View>
+                        <ThemedText style={styles.createDescription}>
+                            Skapa dina egna aktiviteter och träffa nya vänner.
+                        </ThemedText>
+                        <MaterialIcons name="arrow-forward" size={16} color={Colors.primary400} style={styles.actionArrow} />
+                    </View>
+                </TouchableOpacity>
+            </View>
+
+
             {/* Upcoming Events Section */}
             {Object.keys(groupedUpcomingEvents).length > 0 && (
                 <View style={styles.eventsSection}>
                     <View style={styles.sectionHeader}>
-                        <ThemedText type="subtitle">Mina bokningar</ThemedText>
+                        <View style={styles.sectionTitleContainer}>
+                            <MaterialIcons name="event-available" size={20} color={Colors.primary600} />
+                            <ThemedText type="subtitle">Mina bokningar</ThemedText>
+                        </View>
                         <TouchableOpacity 
                             onPress={navigateToFullSchedule}
                             style={styles.seeAllButton}
@@ -213,15 +304,29 @@ const ParentEventDashboard = () => {
             {/* No upcoming events message */}
             {Object.keys(groupedUpcomingEvents).length === 0 && eventInfo && (
                 <View style={styles.noEventsContainer}>
+                    <MaterialIcons name="event-note" size={48} color={Colors.coolGray400} style={styles.noEventsIcon} />
                     <ThemedText style={styles.noEventsText}>
                         Inga bokade aktiviteter för närvarande
                     </ThemedText>
-                    <TouchableOpacity 
-                        onPress={navigateToFullSchedule}
-                        style={styles.browseButton}
-                    >
-                        <ThemedText style={styles.browseButtonText}>Bläddra bland aktiviteter</ThemedText>
-                    </TouchableOpacity>
+                    <ThemedText style={styles.noEventsSubtext}>
+                        Upptäck intressanta aktiviteter eller skapa din egen!
+                    </ThemedText>
+                    <View style={styles.noEventsActions}>
+                        <TouchableOpacity 
+                            onPress={navigateToFullSchedule}
+                            style={styles.browseButton}
+                        >
+                            <MaterialIcons name="explore" size={16} color="white" />
+                            <ThemedText style={styles.browseButtonText}>Bläddra aktiviteter</ThemedText>
+                        </TouchableOpacity>
+                        <TouchableOpacity 
+                            onPress={() => setShowCreateForm(true)}
+                            style={styles.createAltButton}
+                        >
+                            <MaterialIcons name="add" size={16} color={Colors.primary500} />
+                            <ThemedText style={styles.createAltButtonText}>Skapa egen</ThemedText>
+                        </TouchableOpacity>
+                    </View>
                 </View>
             )}
         </ThemedView>
@@ -253,6 +358,11 @@ const createStyles = (colorScheme: string) => StyleSheet.create({
         alignItems: 'center',
         marginBottom: 16
     },
+    sectionTitleContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+    },
     seeAllButton: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -268,55 +378,189 @@ const createStyles = (colorScheme: string) => StyleSheet.create({
         paddingVertical: 32,
         paddingHorizontal: 16,
     },
+    noEventsIcon: {
+        marginBottom: 16,
+        opacity: 0.6,
+    },
     noEventsText: {
         fontSize: 16,
         color: Colors.coolGray500,
         textAlign: 'center',
-        marginBottom: 16,
+        marginBottom: 8,
+        fontWeight: '500',
+    },
+    noEventsSubtext: {
+        fontSize: 14,
+        color: Colors.coolGray400,
+        textAlign: 'center',
+        marginBottom: 24,
+        lineHeight: 20,
+    },
+    noEventsActions: {
+        flexDirection: 'row',
+        gap: 12,
     },
     browseButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
         paddingHorizontal: 20,
-        paddingVertical: 10,
+        paddingVertical: 12,
         backgroundColor: Colors.primary500,
         borderRadius: 8,
+        gap: 8,
     },
     browseButtonText: {
         color: 'white',
         fontSize: 14,
         fontWeight: '500',
     },
+    createAltButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 20,
+        paddingVertical: 12,
+        backgroundColor: 'transparent',
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: Colors.primary500,
+        gap: 8,
+    },
+    createAltButtonText: {
+        color: Colors.primary500,
+        fontSize: 14,
+        fontWeight: '500',
+    },
     newsSection: {
         marginTop: 24,
     },
-    shortcutsSection: {
-        marginTop: 16
-    },
-    shortcutsTitle: {
-        marginBottom: 12,
-    },
-    shortcutsRow: {
+    // Side by side action cards
+    actionsRow: {
         flexDirection: 'row',
         gap: 8,
-        marginBottom: 8,
+        marginTop: 10,
+    },
+    actionCard: {
+        paddingVertical: 10,
+        paddingHorizontal: 12,
+        borderRadius: 8,
+    },
+    equalWidth: {
+        flex: 1,
+    },
+    fullWidthSingle: {
+        flex: 1,
+    },
+    fullWidth: {
+        flex: 2, // Take up full width when no last minute section
+    },
+    lastMinuteCard: {
+        backgroundColor: colorScheme === 'dark' ? Colors.amber900 : Colors.amber100,
+        borderWidth: 1,
+        borderColor: colorScheme === 'dark' ? Colors.amber800 : Colors.amber200,
+    },
+    createCard: {
+        backgroundColor: colorScheme === 'dark' ? Colors.primary900 : Colors.primary50,
+    },
+    actionContent: {
+        alignItems: 'center',
+        gap: 4,
+    },
+    titleContainer: {
+        flexDirection: 'column',
+        alignItems: 'center',
+        gap: 2,
+    },
+    createTitle: {
+        textAlign: 'center',
+        color: colorScheme === 'dark' ? Colors.primary300 : Colors.primary600,
+    },
+    lastMinuteTitle: {
+        textAlign: 'center',
+        color: colorScheme === 'dark' ? Colors.amber300 : Colors.amber600,
+    },
+    createDescription: {
+        fontSize: 12,
+        color: colorScheme === 'dark' ? Colors.primary200 : Colors.primary700,
+        lineHeight: 16,
+        textAlign: 'center',
+        marginBottom: 1,
+    },
+    lastMinuteDescription: {
+        fontSize: 12,
+        color: colorScheme === 'dark' ? Colors.amber200 : Colors.amber700,
+        lineHeight: 16,
+        textAlign: 'center',
+        marginBottom: 1,
+    },
+    actionArrow: {
+        opacity: 0.6,
+    },
+    // Legacy styles (can be removed if not used elsewhere)
+    createSection: {
+        marginTop: 10,
+        backgroundColor: colorScheme === 'dark' ? Colors.primary900 : Colors.primary50,
+        paddingVertical: 10,
+        paddingHorizontal: 12,
+        borderRadius: 8
+    },
+    createContent: {
+        alignItems: 'center',
+        gap: 4,
+    },
+    createArrow: {
+        opacity: 0.6,
+    },
+    shortcutsSection: {
+        marginTop: 10
+    },
+    shortcutsTitle: {
+        marginBottom: 0,
+    },
+    shortcutsGrid: {
+        flexDirection: 'row',
+        gap: 4,
+        marginTop: 10,
     },
     shortcutButton: {
         flex: 1,
-        backgroundColor: colorScheme === 'dark' ? Colors.background900 : Colors.background50,
-        paddingVertical: 4,
+        paddingVertical: 8,
         paddingHorizontal: 4,
-        borderRadius: 6,
         alignItems: 'center',
-        gap: 2,
-        borderWidth: 1,
-        borderColor: colorScheme === 'dark' ? Colors.background900 : Colors.background100,
-        minHeight: 38,
+        gap: 4,
+    },
+    shortcutIconContainer: {
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     shortcutText: {
-        fontSize: 9,
+        fontSize: 10,
         fontWeight: '500',
         color: colorScheme === 'dark' ? Colors.coolGray200 : Colors.coolGray700,
         textAlign: 'center',
-        lineHeight: 11,
+    },
+    lastMinuteSection: {
+        backgroundColor: colorScheme === 'dark' ? Colors.amber900 : Colors.amber100,
+        marginTop: 10,
+        paddingVertical: 12,
+        paddingHorizontal: 16,
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: colorScheme === 'dark' ? Colors.amber800 : Colors.amber200,
+    },
+    lastMinuteContent: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        justifyContent: 'space-between',
+        gap: 6
+    },
+    lastMinuteLeft: {
+        flex: 1,
+    },
+    lastMinuteArrow: {
+        marginLeft: 8,
     },
 });
 

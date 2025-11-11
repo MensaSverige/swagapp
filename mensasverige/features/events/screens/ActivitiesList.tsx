@@ -52,13 +52,15 @@ export const ActivitiesList: React.FC<ActivitiesListProps> = ({ initialFilter })
             bookable: currentParams.bookable === 'true' ? true : currentParams.bookable === 'false' ? false : null,
             official: currentParams.official === 'true' ? true : currentParams.official === 'false' ? false : null,
             categories: currentParams.categories ? String(currentParams.categories).split(',').filter(Boolean) : [],
+            dateFrom: currentParams.dateFrom ? new Date(String(currentParams.dateFrom)) : null,
+            dateTo: currentParams.dateTo ? new Date(String(currentParams.dateTo)) : null,
         };
         
         console.log('Parsed filter:', urlFilter);
         
         // Return URL filter if any parameters exist, otherwise default
         const hasParams = Object.values(currentParams).some(Boolean);
-        return hasParams ? urlFilter : { attending: null, bookable: null, official: null, categories: [] };
+        return hasParams ? urlFilter : { attending: null, bookable: null, official: null, categories: [], dateFrom: null, dateTo: null };
     }, []);
     
     // Determine initial filter from props, URL params, or default
@@ -77,7 +79,7 @@ export const ActivitiesList: React.FC<ActivitiesListProps> = ({ initialFilter })
         const newFilter = parseURLParams(params);
         console.log('Setting new filter from URL params:', newFilter);
         setEventFilter(newFilter);
-    }, [params.attending, params.bookable, params.official, params.categories, parseURLParams]);
+    }, [params.attending, params.bookable, params.official, params.categories, params.dateFrom, params.dateTo, parseURLParams]);
 
     console.log('Current eventFilter state:', eventFilter);
 
@@ -122,7 +124,9 @@ export const ActivitiesList: React.FC<ActivitiesListProps> = ({ initialFilter })
             eventFilter.attending !== null ||
             eventFilter.bookable !== null ||
             eventFilter.official !== null ||
-            (eventFilter.categories && eventFilter.categories.length > 0)
+            (eventFilter.categories && eventFilter.categories.length > 0) ||
+            eventFilter.dateFrom !== null ||
+            eventFilter.dateTo !== null
         );
     };
 
@@ -214,7 +218,13 @@ export const ActivitiesList: React.FC<ActivitiesListProps> = ({ initialFilter })
 
                 {!groupedEvents || Object.keys(groupedEvents).length === 0 && !loading && (
                     <View style={styles.noEventsContainer}>
-                        <Text style={styles.noEventsText}>Inga bokade aktiviteter</Text>
+                        <MaterialIcons name="event-note" size={48} color={colorScheme === 'dark' ? Colors.coolGray500 : Colors.coolGray400} style={styles.noEventsIcon} />
+                        <Text style={styles.noEventsText}>Inga aktiviteter hittades</Text>
+                        <Text style={styles.noEventsSubtext}>
+                            {isFilterActive() 
+                                ? 'Prova att justera dina filter eller skapa en egen aktivitet!' 
+                                : 'Bli den första att skapa en aktivitet och bjud in andra!'}
+                        </Text>
                     </View>
                 )}
 
@@ -232,7 +242,7 @@ export const ActivitiesList: React.FC<ActivitiesListProps> = ({ initialFilter })
             {!showCreateForm && (
                 <View style={styles.createButtonContainer}>
                     <ThemedButton
-                        text="Bjud in till aktivitet"
+                        text="✨ Skapa din aktivitet"
                         variant="primary"
                         onPress={handleCreateEvent}
                     />
@@ -295,11 +305,26 @@ const createStyles = (colorScheme: string) => StyleSheet.create({
     },
     noEventsContainer: {
         alignItems: 'center',
-        paddingVertical: 40,
+        paddingVertical: 60,
+        paddingHorizontal: 20,
+    },
+    noEventsIcon: {
+        marginBottom: 16,
+        opacity: 0.6,
     },
     noEventsText: {
-        fontSize: 16,
+        fontSize: 18,
         color: colorScheme === 'dark' ? Colors.coolGray400 : Colors.coolGray500,
+        fontWeight: '600',
+        marginBottom: 8,
+        textAlign: 'center',
+    },
+    noEventsSubtext: {
+        fontSize: 14,
+        color: colorScheme === 'dark' ? Colors.coolGray500 : Colors.coolGray600,
+        textAlign: 'center',
+        lineHeight: 20,
+        paddingHorizontal: 20,
     },
     createButtonContainer: {
         paddingHorizontal: 20,

@@ -72,17 +72,39 @@ export const useFilteredEvents = (options: UseFilteredEventsOptions = {}): UseFi
 
   // Apply client-side category filtering
   const applyClientSideFilters = (eventsData: Event[]): Event[] => {
-    if (!eventFilter?.categories || eventFilter.categories.length === 0) {
-      return eventsData;
+    let filteredEvents = eventsData;
+    
+    // Apply category filtering
+    if (eventFilter?.categories && eventFilter.categories.length > 0) {
+      filteredEvents = filteredEvents.filter(event => {
+        if (!event.tags || event.tags.length === 0) {
+          return false;
+        }
+        
+        return event.tags.some(tag => eventFilter.categories!.includes(tag.code));
+      });
     }
     
-    return eventsData.filter(event => {
-      if (!event.tags || event.tags.length === 0) {
-        return false;
+    // Apply date range filtering - always filter from "now" by default
+    filteredEvents = filteredEvents.filter(event => {
+      if (!event.start) return false;
+      
+      const eventDate = new Date(event.start);
+      
+      // Use dateFrom if explicitly set, otherwise use current time as default
+      const fromDate = eventFilter?.dateFrom ? new Date(eventFilter.dateFrom) : new Date();
+      if (eventDate < fromDate) return false;
+      
+      // Check if event is before dateTo (if specified) - use exact datetime
+      if (eventFilter?.dateTo) {
+        const toDate = new Date(eventFilter.dateTo);
+        if (eventDate > toDate) return false;
       }
       
-      return event.tags.some(tag => eventFilter.categories!.includes(tag.code));
+      return true;
     });
+    
+    return filteredEvents;
   };
 
   const processEventsData = (eventsData: Event[]) => {
@@ -162,7 +184,7 @@ export const useFilteredEvents = (options: UseFilteredEventsOptions = {}): UseFi
     if (allEvents.length > 0) {
       processEventsData(allEvents);
     }
-  }, [eventFilter?.categories, JSON.stringify(filter)]);
+  }, [eventFilter?.categories, eventFilter?.dateFrom, eventFilter?.dateTo, JSON.stringify(filter)]);
 
   // Auto-refresh next event detection
   useEffect(() => {

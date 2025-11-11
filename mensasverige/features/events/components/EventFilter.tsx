@@ -7,6 +7,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { EVENT_CATEGORIES } from '../utilities/EventCategories';
 import { FilterButton } from './FilterButton';
 import OfficialEventIcon from '../../../components/icons/OfficialEventIcon';
+import { DatepickerField } from '../../common/components/DatepickerField';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -15,6 +16,8 @@ export interface EventFilterOptions {
   bookable?: boolean | null;
   official?: boolean | null;
   categories?: string[];
+  dateFrom?: Date | null;
+  dateTo?: Date | null;
 }
 
 interface EventFilterProps {
@@ -85,6 +88,8 @@ export const EventFilter: React.FC<EventFilterProps> = ({
       bookable: null,
       official: null,
       categories: [],
+      dateFrom: null, // Don't set a default date - let it be null
+      dateTo: null,
     };
     setLocalFilter(resetFilter);
   };
@@ -127,6 +132,19 @@ export const EventFilter: React.FC<EventFilterProps> = ({
   const getTriStateColor = (value: boolean | null | undefined): string => {
     if (value === null || value === undefined) return colorScheme === 'dark' ? '#6b7280' : '#9ca3af';
     return value ? Colors.primary300 : '#ef4444';
+  };
+
+  const handleDateFromChange = (date?: Date) => {
+    setLocalFilter(prev => ({ 
+      ...prev, 
+      dateFrom: date || null,
+      // Reset dateTo if it's before the new dateFrom
+      dateTo: (date && prev.dateTo && prev.dateTo < date) ? null : prev.dateTo
+    }));
+  };
+
+  const handleDateToChange = (date?: Date) => {
+    setLocalFilter(prev => ({ ...prev, dateTo: date || null }));
   };
 
   const styles = createStyles(colorScheme ?? 'light');
@@ -217,6 +235,29 @@ export const EventFilter: React.FC<EventFilterProps> = ({
                   {getTriStateLabel(localFilter.official)}
                 </Text>
               </TouchableOpacity>
+            </View>
+          </View>
+
+          {/* Date Range Filters */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Tidsintervall</Text>
+            
+            <View style={styles.datePickerContainer}>
+              <DatepickerField
+                label="Från"
+                date={localFilter.dateFrom || undefined}
+                placeholder="Nu"
+                onDateChange={handleDateFromChange}
+              />
+            </View>
+            
+            <View style={styles.datePickerContainer}>
+              <DatepickerField
+                label="Till"
+                date={localFilter.dateTo || undefined}
+                minimumDate={localFilter.dateFrom || undefined}
+                onDateChange={handleDateToChange}
+              />
             </View>
           </View>
 
@@ -416,5 +457,8 @@ const createStyles = (colorScheme: string) => StyleSheet.create({
   },
   buttonTextSolid: {
     color: '#ffffff',
+  },
+  datePickerContainer: {
+    marginBottom: 12,
   },
 });
