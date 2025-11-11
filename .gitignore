@@ -3,7 +3,6 @@
 .env
 /app/ios/.xcode.env.local
 /app/.watchman-cookie*
-package-lock.json
 
 
 # Obsidian
