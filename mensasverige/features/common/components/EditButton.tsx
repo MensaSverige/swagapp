@@ -15,8 +15,8 @@ export const EditButton: React.FC<{
       onPress={onPress}>
       <MaterialIcons 
         name="edit" 
-        size={20} 
-        color={Colors[colorScheme ?? 'light'].primary500} 
+        size={16} 
+        color={Colors[colorScheme ?? 'light'].blueGray400} 
       />
     </Pressable>
   );
@@ -25,6 +25,6 @@ export const EditButton: React.FC<{
 const createStyles = (colorScheme: 'light' | 'dark' | null | undefined) => 
   StyleSheet.create({
     button: {
-      padding: 16,
+      padding: 20
     },
   });

@@ -155,6 +155,26 @@ export const fetchEvents = async (params?: {
     });
 };
 
+export const createEvent = async (event: Event): Promise<Event> => {
+  return apiClient
+    .post('/events', event)
+    .then(
+      response => {
+        if (response.data) {
+          return response.data;
+        }
+        throw new Error('No data received');
+      },
+      error => {
+        throw new Error(error.message || error);
+      },
+    )
+    .catch(error => {
+      console.error('Error creating event:', error);
+      throw error;
+    });
+};
+
 export const updateEvent = async (
   eventId: string,
   event: Event,

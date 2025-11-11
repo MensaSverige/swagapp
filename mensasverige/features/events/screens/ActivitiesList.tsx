@@ -7,13 +7,14 @@ import {
     StyleSheet,
     ActivityIndicator,
     useColorScheme,
-    RefreshControl
+    RefreshControl,
 } from 'react-native';
 import { Event } from '../../../api_schema/types';
 import useStore from '../../common/store/store';
 import NonMemberInfo from '../../common/components/NonMemberInfo';
 import EventCardModal from '../components/ExternalEventCardModal';
 import GroupedEventsList from '../components/GroupedEventsList';
+import CreateEventModal from '../components/CreateEventModal';
 import { ThemedView } from '@/components/ThemedView';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedButton } from '@/components/ThemedButton';
@@ -35,6 +36,8 @@ export const ActivitiesList: React.FC<ActivitiesListProps> = ({ initialFilter })
     const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
     const [didInitiallyScroll, setDidInitiallyScroll] = useState(false);
     const [showFilter, setShowFilter] = useState(false);
+    const [showCreateForm, setShowCreateForm] = useState(false);
+    const [showSuccessMessage, setShowSuccessMessage] = useState(false);
     
     // Get URL parameters
     const params = useLocalSearchParams();
@@ -96,7 +99,22 @@ export const ActivitiesList: React.FC<ActivitiesListProps> = ({ initialFilter })
     }, [refetch]);
 
     const handleCreateEvent = useCallback(() => {
-        router.push('/(tabs)/(events)/create');
+        setShowCreateForm(true);
+    }, []);
+
+    const handleEventCreated = useCallback((event: Event) => {
+        setShowCreateForm(false);
+        setShowSuccessMessage(true);
+        // Hide success message after 3 seconds
+        setTimeout(() => setShowSuccessMessage(false), 3000);
+        // Refresh the events list to show the new event
+        refetch();
+        // Optionally show the created event details after a brief delay
+        setTimeout(() => setSelectedEvent(event), 500);
+    }, [refetch]);
+
+    const handleCancelCreate = useCallback(() => {
+        setShowCreateForm(false);
     }, []);
 
     const isFilterActive = () => {
@@ -140,6 +158,13 @@ export const ActivitiesList: React.FC<ActivitiesListProps> = ({ initialFilter })
                     }} />
             )}
             
+            {/* Create Event Modal */}
+            <CreateEventModal
+                visible={showCreateForm}
+                onClose={handleCancelCreate}
+                onEventCreated={handleEventCreated}
+            />
+            
             <View style={styles.header}>
                 <ThemedText type="title">Aktiviteter</ThemedText>
                 <View style={styles.headerActions}>
@@ -167,6 +192,14 @@ export const ActivitiesList: React.FC<ActivitiesListProps> = ({ initialFilter })
                     )}
                 </View>
             </View>
+            
+            {/* Success Message */}
+            {showSuccessMessage && (
+                <View style={styles.successMessage}>
+                    <MaterialIcons name="check-circle" size={20} color="#059669" />
+                    <Text style={styles.successMessageText}>Event skapat!</Text>
+                </View>
+            )}
             <ScrollView 
                 ref={scrollViewRef} 
                 style={styles.scrollContainer}
@@ -196,13 +229,15 @@ export const ActivitiesList: React.FC<ActivitiesListProps> = ({ initialFilter })
             </ScrollView>
             
             {/* Create Event Button */}
-            <View style={styles.createButtonContainer}>
-                <ThemedButton
-                    text="Skapa event"
-                    variant="primary"
-                    onPress={handleCreateEvent}
-                />
-            </View>
+            {!showCreateForm && (
+                <View style={styles.createButtonContainer}>
+                    <ThemedButton
+                        text="Bjud in till aktivitet"
+                        variant="primary"
+                        onPress={handleCreateEvent}
+                    />
+                </View>
+            )}
             
             {user && !user.isMember && (
                 <NonMemberInfo />
@@ -270,6 +305,22 @@ const createStyles = (colorScheme: string) => StyleSheet.create({
         paddingHorizontal: 20,
         paddingVertical: 10,
         paddingBottom: 20,
+    },
+    successMessage: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#D1FAE5',
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+        marginHorizontal: 20,
+        marginTop: 8,
+        borderRadius: 8,
+        gap: 8,
+    },
+    successMessageText: {
+        color: '#065F46',
+        fontSize: 14,
+        fontWeight: '600',
     },
 });
 

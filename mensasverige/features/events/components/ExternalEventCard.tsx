@@ -9,9 +9,7 @@ import {
   Linking
 } from 'react-native';
 import { Event, User } from '../../../api_schema/types';
-import { DisplayTime } from '../utilities/DisplayTime';
 import UserAvatar from '../../map/components/UserAvatar';
-import { displayLocaleTimeStringDate } from '../utils/eventUtils';
 import { filterHtml } from '../../common/functions/filterHtml';
 import { extractLinks } from '../../common/functions/extractLinks';
 import { AddressLinkAndIcon } from '../../map/components/AddressLinkAndIcon';
@@ -19,6 +17,7 @@ import { parseMapUrl } from '../../map/functions/parseMapUrl';
 import { MaterialIcons } from '@expo/vector-icons';
 import AttendingBadge from './AttendingBadge';
 import FullyBookedBadge from './FullyBookedBadge';
+import EventDateTimeDisplay from './EventDateTimeDisplay';
 
 const styles = StyleSheet.create({
   container: {
@@ -203,12 +202,11 @@ const EventCard: React.FC<{
   return (
     <ScrollView style={styles.container}>
       <View style={styles.card}>
-        <Text style={styles.dateText}>
-          {displayLocaleTimeStringDate(event.start ?? "")}
-        </Text>
-        <Text style={styles.timeText}>
-          {DisplayTime(event.start ?? "")} - {DisplayTime(event.end ?? "")}
-        </Text>
+        <EventDateTimeDisplay
+          start={event.start ?? ""}
+          end={event.end}
+          isEditable={false}
+        />
         <View style={styles.vstack}>
           {event.imageUrl && (
             <Image
