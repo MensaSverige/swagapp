@@ -19,6 +19,8 @@ import { DatepickerField } from '../../common/components/DatepickerField';
 import { createEvent } from '../services/eventService';
 import EventDateTimeDisplay from './EventDateTimeDisplay';
 import { Colors } from '@/constants/Colors';
+import useStore from '@/features/common/store/store';
+import EventMapField from './EventMapField';
 
 const styles = StyleSheet.create({
   container: {
@@ -202,6 +204,7 @@ interface EditableFieldProps {
   onSave: (value: string) => void;
   multiline?: boolean;
   style?: any;
+  keyboardType?: 'default' | 'numeric' | 'email-address' | 'phone-pad';
 }
 
 const EditableField: React.FC<EditableFieldProps> = ({
@@ -213,6 +216,7 @@ const EditableField: React.FC<EditableFieldProps> = ({
   onSave,
   multiline = false,
   style,
+  keyboardType = 'default',
 }) => {
   const [editValue, setEditValue] = useState(value);
 
@@ -236,6 +240,7 @@ const EditableField: React.FC<EditableFieldProps> = ({
             placeholder={placeholder}
             placeholderTextColor="#9CA3AF"
             multiline={multiline}
+            keyboardType={keyboardType}
             onBlur={handleSave}
             onEndEditing={handleSave}
             autoFocus
@@ -269,6 +274,7 @@ const CreateEventCard: React.FC<CreateEventCardProps> = ({
   onCancel,
   hideButtons = false 
 }) => {
+  const { user } = useStore();
   const [editingField, setEditingField] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   
@@ -278,6 +284,8 @@ const CreateEventCard: React.FC<CreateEventCardProps> = ({
     description: '',
     locationDescription: '',
     address: '',
+    latitude: null,
+    longitude: null,
     start: new Date().toISOString(),
     end: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(), // 2 hours later
     imageUrl: '',
@@ -295,6 +303,7 @@ const CreateEventCard: React.FC<CreateEventCardProps> = ({
 
   const handleDateChange = useCallback((field: 'start' | 'end') => (date?: Date) => {
     if (date) {
+        console.log(`Date changed for ${field}:`, date);
       setEventData(prev => ({ ...prev, [field]: date.toISOString() }));
     }
   }, []);
@@ -329,9 +338,9 @@ const CreateEventCard: React.FC<CreateEventCardProps> = ({
         start: eventData.start,
         end: eventData.end || null,
         imageUrl: eventData.imageUrl || null,
-        price: eventData.price || 0,
+        price: 0,
         official: false, // User-created events are not official
-        attending: false,
+        attending: true, 
         bookable: eventData.bookable || true,
         maxAttendees: eventData.maxAttendees || null,
         showAttendees: 'none' as any, // Default value
@@ -345,10 +354,11 @@ const CreateEventCard: React.FC<CreateEventCardProps> = ({
         admin: [],
         hosts: [],
         tags: [],
-        attendees: [],
+        attendees: user ? [{ userId: user.userId }] : [],
         queue: [],
         extras: {},
       };
+      console.log('Creating event:', eventToCreate);
 
       const createdEvent = await createEvent(eventToCreate);
       onEventCreated?.(createdEvent);
@@ -452,8 +462,8 @@ const CreateEventCard: React.FC<CreateEventCardProps> = ({
 
           {/* Location */}
           <EditableField
-            label="Location"
-            value={eventData.locationDescription || eventData.address || ''}
+            label="Mötesplats"
+            value={eventData.locationDescription || ''}
             placeholder="Scandic Elmia, Rum 107"
             isEditing={editingField === 'location'}
             onEdit={() => setEditingField('location')}
@@ -461,15 +471,22 @@ const CreateEventCard: React.FC<CreateEventCardProps> = ({
           />
 
           {/* Address */}
-          <EditableField
-            label="Address"
-            value={eventData.address || ''}
-            placeholder="Elmiavägen 8, 554 54, Jönkoping"
+          <EventMapField
+            location={{ address: eventData.address, latitude: eventData.latitude, longitude: eventData.longitude }}
+            onLocationChanged={(newLocation) => {
+              setEventData(prev => ({
+                ...prev,
+                address: newLocation.address,
+                latitude: newLocation.latitude,
+                longitude: newLocation.longitude
+              }));
+              if ((newLocation.latitude && newLocation.longitude) || !newLocation.address) {
+                setEditingField(null);
+              }
+            }}
             isEditing={editingField === 'address'}
             onEdit={() => setEditingField('address')}
-            onSave={(value) => updateField('address', value)}
           />
-
           {/* Price */}
           {/* <EditableField
             label="Price (SEK)"
@@ -488,6 +505,7 @@ const CreateEventCard: React.FC<CreateEventCardProps> = ({
             isEditing={editingField === 'maxAttendees'}
             onEdit={() => setEditingField('maxAttendees')}
             onSave={(value) => updateField('maxAttendees', value ? parseInt(value) : null)}
+            keyboardType="numeric"
           />
 
           <View style={styles.divider} />
@@ -522,7 +540,7 @@ const CreateEventCard: React.FC<CreateEventCardProps> = ({
                 {isCreating ? (
                   <ActivityIndicator color={Colors.white} />
                 ) : (
-                  <Text style={styles.buttonText}>Skicka inbjudan</Text>
+                  <Text style={styles.buttonText}>Spara</Text>
                 )}
               </TouchableOpacity>
             </View>
