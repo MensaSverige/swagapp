@@ -12,9 +12,8 @@ import {
 import { Event } from '../../../api_schema/types';
 import useStore from '../../common/store/store';
 import NonMemberInfo from '../../common/components/NonMemberInfo';
-import EventCardModal from '../components/ExternalEventCardModal';
+import UnifiedEventModal from '../components/UnifiedEventModal';
 import GroupedEventsList from '../components/GroupedEventsList';
-import CreateEventModal from '../components/CreateEventModal';
 import { ThemedView } from '@/components/ThemedView';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedButton } from '@/components/ThemedButton';
@@ -104,7 +103,7 @@ export const ActivitiesList: React.FC<ActivitiesListProps> = ({ initialFilter })
         setShowCreateForm(true);
     }, []);
 
-    const handleEventCreated = useCallback((event: Event) => {
+    const handleEventSaved = useCallback((event: Event) => {
         setShowCreateForm(false);
         setShowSuccessMessage(true);
         // Hide success message after 3 seconds
@@ -112,7 +111,7 @@ export const ActivitiesList: React.FC<ActivitiesListProps> = ({ initialFilter })
         // Refresh the events list to show the new event
         refetch();
         // Optionally show the created event details after a brief delay
-        setTimeout(() => setSelectedEvent(event), 500);
+        // setTimeout(() => setSelectedEvent(event), 500);
     }, [refetch]);
 
     const handleCancelCreate = useCallback(() => {
@@ -153,20 +152,17 @@ export const ActivitiesList: React.FC<ActivitiesListProps> = ({ initialFilter })
 
     return (
         <ThemedView useSafeArea={true} style={{ flex: 1 }}>
-            {selectedEvent && (
-                <EventCardModal
-                    event={selectedEvent}
-                    open={!!selectedEvent}
-                    onClose={() => {
-                        setSelectedEvent(null)
-                    }} />
-            )}
-            
-            {/* Create Event Modal */}
-            <CreateEventModal
-                visible={showCreateForm}
-                onClose={handleCancelCreate}
-                onEventCreated={handleEventCreated}
+            {/* Unified Event Modal - handles both view/edit and create modes */}
+            <UnifiedEventModal
+                event={selectedEvent || undefined}
+                open={!!selectedEvent || showCreateForm}
+                mode={showCreateForm ? 'create' : 'view'}
+                onClose={() => {
+                    setSelectedEvent(null);
+                    setShowCreateForm(false);
+                }}
+                onEventUpdated={handleEventSaved}
+                onEventCreated={handleEventSaved}
             />
             
             <View style={styles.header}>
@@ -201,7 +197,7 @@ export const ActivitiesList: React.FC<ActivitiesListProps> = ({ initialFilter })
             {showSuccessMessage && (
                 <View style={styles.successMessage}>
                     <MaterialIcons name="check-circle" size={20} color="#059669" />
-                    <Text style={styles.successMessageText}>Event skapat!</Text>
+                    <Text style={styles.successMessageText}>Event sparat!</Text>
                 </View>
             )}
             <ScrollView 

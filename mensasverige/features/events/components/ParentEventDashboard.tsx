@@ -6,8 +6,7 @@ import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import ParentEventDetails from './ParentEventDetails';
 import GroupedEventsList from './GroupedEventsList';
-import EventCardModal from './ExternalEventCardModal';
-import CreateEventModal from './CreateEventModal';
+import UnifiedEventModal from './UnifiedEventModal';
 import { MaterialIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { Colors } from '@/constants/Colors';
@@ -176,21 +175,21 @@ const ParentEventDashboard = () => {
 
     return (
         <ThemedView style={styles.container}>
-            {/* Event Detail Modal */}
-            {selectedEvent && (
-                <EventCardModal
-                    event={selectedEvent}
-                    open={!!selectedEvent}
-                    onClose={() => {
-                        setSelectedEvent(null);
-                    }}
-                />
-            )}
-            
-            {/* Create Event Modal */}
-            <CreateEventModal
-                visible={showCreateForm}
-                onClose={handleCancelCreate}
+            {/* Unified Event Modal - handles both view/edit and create modes */}
+            <UnifiedEventModal
+                event={selectedEvent || undefined}
+                open={!!selectedEvent || showCreateForm}
+                mode={showCreateForm ? 'create' : 'view'}
+                onClose={() => {
+                    setSelectedEvent(null);
+                    setShowCreateForm(false);
+                }}
+                onEventUpdated={(updatedEvent: Event) => {
+                    // The event has been updated, refresh the events
+                    console.log('Event updated:', updatedEvent);
+                    refetch();
+                    setSelectedEvent(null);
+                }}
                 onEventCreated={handleEventCreated}
             />
             
