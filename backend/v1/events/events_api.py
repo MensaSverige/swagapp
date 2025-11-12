@@ -8,6 +8,8 @@ from v1.events.events_service import (
     create_user_event_via_unified,
     update_user_event_via_unified,
     delete_user_event_via_unified,
+    attend_event_via_unified,
+    unattend_event_via_unified,
 )
 from v1.events.events_model import Event as UnifiedEvent
 from fastapi import HTTPException
@@ -60,4 +62,14 @@ async def get_events_official(current_user: dict = Depends(require_member)):
 @unified_events_v1.get("/events/unofficial", response_model=List[Event])
 async def get_events_unofficial(current_user: dict = Depends(require_member)):
     return list_unified_events(current_user_id=current_user["userId"], official=False)
+
+
+@unified_events_v1.post("/events/{event_id}/attend", response_model=Event)
+async def attend_event(event_id: str, current_user: dict = Depends(require_member)):
+    return attend_event_via_unified(event_id, current_user)
+
+
+@unified_events_v1.post("/events/{event_id}/unattend")
+async def unattend_event(event_id: str, current_user: dict = Depends(require_member)):
+    return unattend_event_via_unified(event_id, current_user)
 

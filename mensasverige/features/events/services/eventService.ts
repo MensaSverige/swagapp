@@ -316,3 +316,40 @@ export const removeAttendeeFromUserEvent = async (
       throw error; // Needed to propagate the error to the caller view
     });
 };
+
+export const attendEvent = async (eventId: string): Promise<Event> => {
+  return apiClient
+    .post(`/events/${eventId}/attend`)
+    .then(
+      response => {
+        if (response.data) {
+          return response.data;
+        }
+        throw new Error('No data received');
+      },
+      error => {
+        throw new Error(error.message || error);
+      },
+    )
+    .catch(error => {
+      console.error('Error attending event:', error);
+      throw error;
+    });
+};
+
+export const unattendEvent = async (eventId: string): Promise<boolean> => {
+  return apiClient
+    .post(`/events/${eventId}/unattend`)
+    .then(
+      response => {
+        return response.status === 200;
+      },
+      error => {
+        throw new Error(error.message || error);
+      },
+    )
+    .catch(error => {
+      console.error('Error unattending event:', error);
+      throw error;
+    });
+};

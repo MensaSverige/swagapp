@@ -83,7 +83,7 @@ def map_external_event(details: ExternalEventDetails, current_user_id: int, book
         within_window = (not booking_start or booking_start <= now) and (not booking_end or now <= booking_end)
         capacity_ok = True
         if details.isLimited:
-            capacity_ok = details.booked < details.stock
+            capacity_ok = details.stock > 0
         bookable = within_window and capacity_ok and not attending and start_dt >= now
 
         image_url = details.imageUrl300 or details.imageUrl150
@@ -136,7 +136,7 @@ def map_external_event(details: ExternalEventDetails, current_user_id: int, book
             showAttendees=ShowAttendees.none,
             attendees=[],
             queue=[],
-            maxAttendees=details.stock if details.isLimited else None,
+            maxAttendees=(details.booked + details.stock) if details.isLimited else None,
             price=float(details.price) if not details.isFree else 0.0,
             official=True,
             attending=attending,

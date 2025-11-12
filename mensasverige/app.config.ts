@@ -19,10 +19,10 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       supportsTablet: true,
     },
     android: {
-      adaptiveIcon: {
-        foregroundImage: "./assets/images/adaptive-icon.png",
-        backgroundColor: "#ffffff"
-      },
+      // adaptiveIcon: {
+      //   foregroundImage: "./assets/images/adaptive-icon.png",
+      //   backgroundColor: "#ffffff"
+      // },
       edgeToEdgeEnabled: true,
       package: "se.mensasverige"
     },
@@ -36,7 +36,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       [
         "expo-splash-screen",
         {
-          image: "./assets/images/splash-icon.png",
+          image: "./assets/images/icon.png",
           imageWidth: 200,
           resizeMode: "contain",
           backgroundColor: "#ffffff"

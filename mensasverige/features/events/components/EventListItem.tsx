@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, useColorScheme } from 'react-native';
 import { Event } from '../../../api_schema/types';
 import { DisplayTime } from '../utilities/DisplayTime';
-import { getEventCategoryBadge } from '../utilities/EventCategories';
+import CategoryBadge from './CategoryBadge';
 import { Colors } from '@/constants/Colors';
 import { MaterialIcons } from '@expo/vector-icons';
 import OfficialEventIcon from '../../../components/icons/OfficialEventIcon';
@@ -78,16 +78,12 @@ const EventListItem: React.FC<EventListItemProps> = ({
                                 <MaterialIcons name="event-available" size={14} color={Colors.info400} />
                             </View>
                         )} */}
-                {event.official ? (
-                    <View style={styles.iconContainer}>
-                        <OfficialEventIcon size={14} color={Colors.primary500} />
-                    </View>
-                ) : (
-                    <View style={styles.iconContainer}>
-                        <MaterialIcons name="person-add-alt-1" size={14} color={Colors.info300} />
-                    </View>
-                )
-                }
+                       {/* Event type badge */}
+                        <CategoryBadge
+                            eventType={event.official ? 'official' : 'non-official'}
+                            showLabel={false}
+                            size="x-small"
+                        />
                 <View style={styles.eventContent}>
 
                     <View style={styles.titleContainer}>
@@ -109,10 +105,15 @@ const EventListItem: React.FC<EventListItemProps> = ({
                 {showCategories && (
                     <View style={styles.categoriesContainer}>
 
+                        
+                        {/* Category badges */}
                         {event.tags?.map((category, index) => (
-                            <View key={index} style={styles.categoryBadge}>
-                                {getEventCategoryBadge(category.code)}
-                            </View>
+                            <CategoryBadge
+                                key={index}
+                                categoryCode={category.code || ''}
+                                showLabel={false}
+                                size="small"
+                            />
                         ))}
                     </View>
                 )}
@@ -160,10 +161,7 @@ const createStyles = (colorScheme: string) => StyleSheet.create({
     },
     categoriesContainer: {
         flexDirection: 'row',
-        gap: 18,
-    },
-    categoryBadge: {
-        width: 20,
+        gap: 8,
     },
     eventLocation: {
         fontSize: 14,

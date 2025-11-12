@@ -7,6 +7,7 @@ import { ThemedView } from '@/components/ThemedView';
 import ParentEventDetails from './ParentEventDetails';
 import GroupedEventsList from './GroupedEventsList';
 import UnifiedEventModal from './UnifiedEventModal';
+import CategoryBadge from './CategoryBadge';
 import { MaterialIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { Colors } from '@/constants/Colors';
@@ -138,11 +139,22 @@ const ParentEventDashboard = () => {
         });
     };
 
+    // Create navigation functions for event types
+    const createNavigateToEventType = (official: boolean) => () => {
+        navigateToScheduleWithFilter({
+            attending: null,
+            bookable: null,
+            official: official,
+            categories: []
+        });
+    };
+
     // Define shortcut configurations using EVENT_CATEGORIES
-    const shortcutConfigs = EVENT_CATEGORIES
+    const categoryShortcuts = EVENT_CATEGORIES
         .filter(category => hasCategoryEvents(category.code)) // Only show categories that have events
         .map(category => ({
             key: category.code,
+            type: 'category' as const,
             label: category.label,
             icon: category.icon,
             color: category.color,
@@ -150,8 +162,31 @@ const ParentEventDashboard = () => {
             showCondition: hasCategoryEvents(category.code)
         }));
 
-    // Filter shortcuts to only show available ones
-    const visibleShortcuts = shortcutConfigs.filter(shortcut => shortcut.showCondition);
+    // Define event type shortcuts
+    const eventTypeShortcuts = [
+        {
+            key: 'official',
+            type: 'eventType' as const,
+            eventType: 'official' as const,
+            label: 'Officiella',
+            onPress: createNavigateToEventType(true),
+            showCondition: true // Always show these
+        },
+        {
+            key: 'non-official', 
+            type: 'eventType' as const,
+            eventType: 'non-official' as const,
+            label: 'Medlemsaktiviteter',
+            onPress: createNavigateToEventType(false),
+            showCondition: true // Always show these
+        }
+    ];
+
+    // Combine all shortcuts - put event type shortcuts first, then categories
+    const allShortcuts = [...eventTypeShortcuts, ...categoryShortcuts];
+    
+    // Filter shortcuts to only show available ones (limit to first 6 to fit nicely)
+    const visibleShortcuts = allShortcuts.filter(shortcut => shortcut.showCondition).slice(0, 6);
 
     if (loading) {
         return (
@@ -205,20 +240,16 @@ const ParentEventDashboard = () => {
                 </View>
                 <View style={styles.shortcutsGrid}>
                     {visibleShortcuts.map((shortcut) => (
-                        <TouchableOpacity 
-                            key={shortcut.key}
-                            style={styles.shortcutButton}
-                            onPress={shortcut.onPress}
-                        >
-                            <View style={[styles.shortcutIconContainer, { backgroundColor: shortcut.color + '20' }]}>
-                                <MaterialIcons 
-                                    name={shortcut.icon} 
-                                    size={16} 
-                                    color={shortcut.color} 
-                                />
-                            </View>
-                            <ThemedText style={styles.shortcutText}>{shortcut.label}</ThemedText>
-                        </TouchableOpacity>
+                        <View key={shortcut.key} style={styles.shortcutButton}>
+                            <CategoryBadge
+                                categoryCode={shortcut.type === 'category' ? shortcut.key : undefined}
+                                eventType={shortcut.type === 'eventType' ? shortcut.eventType : undefined}
+                                label={shortcut.label}
+                                showLabel={true}
+                                size="small"
+                                onPress={shortcut.onPress}
+                            />
+                        </View>
                     ))}
                 </View>
             </View>
@@ -524,21 +555,6 @@ const createStyles = (colorScheme: string) => StyleSheet.create({
         flex: 1,
         paddingVertical: 8,
         paddingHorizontal: 4,
-        alignItems: 'center',
-        gap: 4,
-    },
-    shortcutIconContainer: {
-        width: 32,
-        height: 32,
-        borderRadius: 16,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    shortcutText: {
-        fontSize: 10,
-        fontWeight: '500',
-        color: colorScheme === 'dark' ? Colors.coolGray200 : Colors.coolGray700,
-        textAlign: 'center',
     },
     lastMinuteSection: {
         backgroundColor: colorScheme === 'dark' ? Colors.amber900 : Colors.amber100,

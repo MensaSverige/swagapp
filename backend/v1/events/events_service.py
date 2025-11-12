@@ -14,6 +14,8 @@ from v1.user_events.user_events_db import (
     update_user_event as db_update_user_event,
     delete_user_event as db_delete_user_event,
     get_safe_user_event as db_get_safe_user_event,
+    add_attendee_to_user_event as db_add_attendee_to_user_event,
+    remove_attendee_from_user_event as db_remove_attendee_from_user_event,
 )
 from v1.user_events.user_events_model import UserEvent, Host as UEHost, Attendee as UEAttendee, Location as UELocation
 from v1.utilities import get_current_time
@@ -132,3 +134,49 @@ def delete_user_event_via_unified(unified_event_id: str, current_user: dict) -> 
     if not ok:
         raise HTTPException(status_code=500, detail="Failed to delete user event")
     return {"message": "Event deleted successfully"}
+
+
+def attend_event_via_unified(unified_event_id: str, current_user: dict) -> Event:
+    """Attend a unified event (only user events can be attended via this endpoint)."""
+    # Only user events support attendance via this unified API
+    if not unified_event_id.startswith("usr"):
+        raise HTTPException(status_code=400, detail="Only user events can be attended via this endpoint")
+    
+    event_id = unified_event_id[3:]  # Remove 'usr' prefix
+    
+    existing = db_get_safe_user_event(event_id)
+    if not existing:
+        raise HTTPException(status_code=404, detail="Event not found")
+    if existing.userId == current_user["userId"]:
+        raise HTTPException(status_code=400, detail="Owner cannot attend their own event")
+    
+    ok = db_add_attendee_to_user_event(event_id, current_user["userId"])
+    if not ok:
+        raise HTTPException(status_code=500, detail="Failed to attend event")
+    
+    updated = db_get_safe_user_event(event_id)
+    if not updated:
+        raise HTTPException(status_code=500, detail="Failed to load updated event")
+    
+    return map_user_event(updated, current_user["userId"])
+
+
+def unattend_event_via_unified(unified_event_id: str, current_user: dict) -> dict:
+    """Unattend a unified event (only user events can be unattended via this endpoint)."""
+    # Only user events support attendance via this unified API
+    if not unified_event_id.startswith("usr"):
+        raise HTTPException(status_code=400, detail="Only user events can be unattended via this endpoint")
+    
+    event_id = unified_event_id[3:]  # Remove 'usr' prefix
+    
+    existing = db_get_safe_user_event(event_id)
+    if not existing:
+        raise HTTPException(status_code=404, detail="Event not found")
+    if existing.userId == current_user["userId"]:
+        raise HTTPException(status_code=400, detail="Owner cannot unattend their own event")
+    
+    ok = db_remove_attendee_from_user_event(event_id, current_user["userId"])
+    if not ok:
+        raise HTTPException(status_code=500, detail="Failed to unattend event")
+    
+    return {"message": "Successfully unattended event"}

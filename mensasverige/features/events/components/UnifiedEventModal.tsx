@@ -7,7 +7,7 @@ import {
   Text,
   Dimensions
 } from 'react-native';
-import EventCard from './ExternalEventCard';
+import EventCard from './UnifiedEventCard';
 import CreateEventCard from './CreateEventCard';
 import { Event } from '../../../api_schema/types';
 import { canUserEditEvent } from '../utils/eventPermissions';
@@ -41,7 +41,6 @@ const styles = StyleSheet.create({
     maxWidth: screenWidth - 40,
     maxHeight: screenHeight - 80,
     width: '100%',
-    flex: 1,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
@@ -53,7 +52,6 @@ const styles = StyleSheet.create({
   },
   modalBody: {
     position: 'relative',
-    flex: 1,
   },
   closeButton: {
     position: 'absolute',

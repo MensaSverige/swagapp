@@ -1,16 +1,4 @@
-import React from 'react';
 import { MaterialIcons } from '@expo/vector-icons';
-import { View } from 'react-native';
-import {
-  LectureBadge,
-  GlobeBadge,
-  RestaurantBadge,
-  GameBadge,
-  TeenBadge,
-  MicVocalBadge,
-  ExploreBadge,
-  WorkshopBadge,
-} from '../components/EventBadges';
 import { Colors } from '@/constants/Colors';
 
 export interface EventCategory {
@@ -18,65 +6,56 @@ export interface EventCategory {
   label: string;
   color: string;
   icon: keyof typeof MaterialIcons.glyphMap;
-  BadgeComponent: React.FC<{ color: string; size?: number }>;
 }
 
 export const EVENT_CATEGORIES: EventCategory[] = [
   {
     code: 'F',
     label: 'Föreläsning',
-    color: Colors.indigo500, // föreläsning
+    color: Colors.indigo500,
     icon: 'co-present',
-    BadgeComponent: LectureBadge,
   },
   {
     code: 'Fö',
     label: 'Föreningsarbete',
-    color: Colors.primary400, // föreningsarbete
+    color: Colors.primary400,
     icon: 'groups',
-    BadgeComponent: GlobeBadge,
   },
   {
     code: 'M',
     label: 'Middag',
-    color: Colors.pink600, // middag/festligheter in swagsite
+    color: Colors.pink600,
     icon: 'restaurant',
-    BadgeComponent: RestaurantBadge,
   },
   {
     code: 'S',
     label: 'Spel',
-    color: '#D97706', // spel/tävling
+    color: '#D97706',
     icon: 'casino',
-    BadgeComponent: GameBadge,
   },
   {
     code: 'U',
     label: 'Ungdomsaktivitet',
-    color: Colors.fuchsia600, // ungdomsaktivitet
+    color: Colors.fuchsia600,
     icon: 'escalator-warning',
-    BadgeComponent: TeenBadge,
   },
   {
     code: 'Up',
     label: 'Uppträdande',
-    color: Colors.amber600, // uppträdande
+    color: Colors.amber600,
     icon: 'mic',
-    BadgeComponent: MicVocalBadge,
   },
   {
     code: 'Ut',
     label: 'Utflykt',
-    color: Colors.lime600, // utflykt
+    color: Colors.lime600,
     icon: 'explore',
-    BadgeComponent: ExploreBadge,
   },
   {
     code: 'W',
     label: 'Workshop',
-    color: Colors.purple600, // workshop
+    color: Colors.purple600,
     icon: 'handyman',
-    BadgeComponent: WorkshopBadge,
   },
 ];
 
@@ -85,13 +64,3 @@ export const getCategoryByCode = (code: string): EventCategory | undefined => {
   return EVENT_CATEGORIES.find(category => category.code === code);
 };
 
-// Helper function to get event category badge
-export const getEventCategoryBadge = (categoryCode: string, customColor?: string, size?: number) => {
-  const category = getCategoryByCode(categoryCode);
-  if (!category) return null;
-  
-  const { BadgeComponent } = category;
-  const color = customColor || category.color;
-  
-  return <BadgeComponent color={color} size={size} />;
-};

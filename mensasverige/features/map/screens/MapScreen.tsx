@@ -239,7 +239,7 @@ const MapScreen: React.FC = () => {
               provider={PROVIDER_GOOGLE}
               style={{ flex: 1 }}
               //style={styles.map}
-              showsUserLocation={true}
+              //showsUserLocation={true}
               initialRegion={region}
               followsUserLocation={followsUserLocation}
               showsMyLocationButton={false}
