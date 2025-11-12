@@ -115,7 +115,7 @@ def map_external_event(details: ExternalEventDetails, current_user_id: int, book
                 ))
 
         event = Event(
-            id=f"ext:{details.eventId}",
+            id=f"ext{details.eventId}",
             parentEvent=None,
             admin=admin_ids,
             hosts=hosts,
@@ -167,7 +167,7 @@ def map_user_event(ue: ExtendedUserEvent, current_user_id: int) -> Event:
     bookable = capacity_ok and not attending and ue.start >= now
 
     return Event(
-        id=f"usr:{ue.id}",
+        id=f"usr{ue.id}",
         parentEvent=None,
         admin=[ue.userId],
         hosts=[EventHost(userId=h.userId, fullName="") for h in (ue.hosts or [])],

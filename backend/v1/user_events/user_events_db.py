@@ -56,7 +56,7 @@ def update_user_event(event_id: str, user_event: UserEvent) -> bool:
 
     # The incoming user event won't contain any of the secret fields,
     # so we need to copy them from the existing event before updating.
-    event = restore_secret_fields_on_user_event(user_event)
+    event = restore_secret_fields_on_user_event(user_event, event_id)
     if not event:
         return 0
 
@@ -455,16 +455,21 @@ def remove_secrets_from_user_events(
     return [make_user_event_safe(event) for event in events]
 
 
-def restore_secret_fields_on_user_event(event: UserEvent) -> UserEvent | None:
+def restore_secret_fields_on_user_event(event: UserEvent, event_id: str = None) -> UserEvent | None:
     """
     Restore secret fields to their original values in a user event document.
 
     :param event: The user event document.
-    :param original_event: The original user event document.
+    :param event_id: The event ID to fetch original data from (optional, falls back to event.id)
     :return: The user event document with secrets restored.
     """
 
-    original_event = get_unsafe_user_event(event.id)
+    # Use provided event_id or fall back to event.id for backward compatibility
+    lookup_id = event_id or event.id
+    if not lookup_id:
+        return None
+        
+    original_event = get_unsafe_user_event(lookup_id)
 
     if not original_event:
         return None

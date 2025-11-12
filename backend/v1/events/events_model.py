@@ -40,7 +40,7 @@ class Event(BaseModel):
 
     Fields mostly follow the sketch in notes.md. Additional convenience & source-specific fields are stored under `extras`.
     """
-    id: str = Field(..., description="Globally unique event id, prefixed with source (ext: / usr:)")
+    id: str = Field(..., description="Globally unique event id, prefixed with source (ext / usr)")
     parentEvent: Optional[str] = Field(None, description="Optional parent event id")
     admin: List[int] = Field(default_factory=list, description="User IDs with admin rights (owner for user events)")
     hosts: List[EventHost] = Field(default_factory=list)
@@ -99,7 +99,7 @@ class Event(BaseModel):
     class Config:
         json_schema_extra = {
             "example": {
-                "id": "ext:12345",
+                "id": "ext12345",
                 "name": "Opening Ceremony",
                 "official": True,
                 "start": "2025-11-10T09:00:00Z",

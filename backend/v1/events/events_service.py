@@ -96,11 +96,11 @@ def create_user_event_via_unified(event: Event, current_user: dict) -> Event:
 def update_user_event_via_unified(unified_event_id: str, event: Event, current_user: dict) -> Event:
     if event.official:
         raise HTTPException(status_code=400, detail="Cannot update official events via this endpoint")
-    # Expect unified id like usr:<mongoId>
-    if not unified_event_id.startswith("usr:"):
+    # Expect unified id like usr<mongoId>
+    if not unified_event_id.startswith("usr"):
         raise HTTPException(status_code=400, detail="Only user events can be updated here")
-    event_id = unified_event_id.split(":", 1)[1]
-
+    event_id = unified_event_id[3:]  # Remove 'usr' prefix
+    
     existing = db_get_safe_user_event(event_id)
     if not existing:
         raise HTTPException(status_code=404, detail="Event not found")
@@ -117,10 +117,10 @@ def update_user_event_via_unified(unified_event_id: str, event: Event, current_u
 
 
 def delete_user_event_via_unified(unified_event_id: str, current_user: dict) -> dict:
-    # Expect unified id like usr:<mongoId>
-    if not unified_event_id.startswith("usr:"):
+    # Expect unified id like usr<mongoId>
+    if not unified_event_id.startswith("usr"):
         raise HTTPException(status_code=400, detail="Only user events can be deleted here")
-    event_id = unified_event_id.split(":", 1)[1]
+    event_id = unified_event_id[3:]  # Remove 'usr' prefix
 
     existing = db_get_safe_user_event(event_id)
     if not existing:
