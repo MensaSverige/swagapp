@@ -239,7 +239,7 @@ const ParentEventDashboard = () => {
                     >
                         <View style={styles.actionContent}>
                             <View style={styles.titleContainer}>
-                                <MaterialIcons name="schedule" size={20} color={colorScheme === 'dark' ? Colors.amber300 : Colors.amber600} />
+                                <MaterialIcons name="downhill-skiing" size={20} color={colorScheme === 'dark' ? Colors.amber300 : Colors.amber600} />
                                 <ThemedText type="subtitle" style={styles.lastMinuteTitle}>Sista minuten</ThemedText>
                             </View>
                             <ThemedText style={styles.lastMinuteDescription}>

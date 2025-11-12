@@ -3,20 +3,13 @@ import {
   View,
   Text,
   ScrollView,
-  Image,
   StyleSheet,
   TouchableOpacity,
-  TextInput,
   Alert,
   ActivityIndicator,
   KeyboardAvoidingView,
-  Platform,
 } from 'react-native';
 import { Event } from '../../../api_schema/types';
-import { DisplayTime } from '../utilities/DisplayTime';
-import { displayLocaleTimeStringDate } from '../utils/eventUtils';
-import { MaterialIcons } from '@expo/vector-icons';
-import { EditButton } from '../../common/components/EditButton';
 import { DatepickerField } from '../../common/components/DatepickerField';
 import EditableField from '../../common/components/EditableField';
 import { createEvent } from '../services/eventService';
@@ -58,10 +51,7 @@ const CreateEventCard: React.FC<CreateEventCardProps> = ({
     maxAttendees: null,
   });
 
-  const updateField = useCallback((field: string, value: any) => {
-    setEventData(prev => ({ ...prev, [field]: value }));
-    setEditingField(null);
-  }, []);
+
 
   const handleDateChange = useCallback((field: 'start' | 'end') => (date?: Date) => {
     if (date) {
@@ -137,9 +127,10 @@ const CreateEventCard: React.FC<CreateEventCardProps> = ({
 
   return (
     <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      behavior={'padding'}
       keyboardVerticalOffset={90}
       enabled={editingField !== 'dateTime'}
+      style={{ flex: 1 }}
     >
       <ScrollView style={styles.formContainer}>
         <View style={styles.card}>
@@ -178,40 +169,6 @@ const CreateEventCard: React.FC<CreateEventCardProps> = ({
           {/* Divider after date/time fields */}
           <View style={styles.divider} />
 
-
-          {/* Image Container - Always shown */}
-          {/* <TouchableOpacity
-              style={styles.imageContainer}
-              onPress={() => setEditingField('imageUrl')}
-              activeOpacity={0.8}
-            >
-              {eventData.imageUrl ? (
-                <>
-                  <Image
-                    style={styles.eventImage}
-                    source={{ uri: eventData.imageUrl }}
-                    onError={() => {
-                      Alert.alert('Invalid Image', 'The provided image URL is not valid');
-                      updateField('imageUrl', '');
-                    }}
-                  />
-                </>
-              ) : (
-                <View style={styles.imagePlaceholder}>
-                  <View style={styles.placeholderContent}>
-                    <MaterialIcons
-                      name="add-photo-alternate"
-                      size={48}
-                      color={Colors.blueGray600}
-                      style={styles.placeholderIcon}
-                    />
-                    <Text style={styles.placeholderTextMain}>Lägg till bild</Text>
-                    <Text style={styles.placeholderTextSub}>Tryck för att lägga till en bild</Text>
-                  </View>
-                </View>
-              )}
-            </TouchableOpacity> */}
-
           {/* Event Name */}
 
           <EditableField
@@ -220,7 +177,11 @@ const CreateEventCard: React.FC<CreateEventCardProps> = ({
             placeholder="Aktivitetens namn *"
             isEditing={editingField === 'name'}
             onEdit={() => setEditingField('name')}
-            onSave={(value) => updateField('name', value)}
+            onSave={(value) => {
+              setEventData(prev => ({ ...prev, name: value }));
+              setEditingField(null);
+            }}
+            onValueChange={(value) => setEventData(prev => ({ ...prev, name: value }))}
             style={styles.editableInputHeading}
           />
 
@@ -231,7 +192,11 @@ const CreateEventCard: React.FC<CreateEventCardProps> = ({
             placeholder="Scandic Elmia, Rum 107"
             isEditing={editingField === 'location'}
             onEdit={() => setEditingField('location')}
-            onSave={(value) => updateField('locationDescription', value)}
+            onSave={(value) => {
+              setEventData(prev => ({ ...prev, locationDescription: value }));
+              setEditingField(null);
+            }}
+            onValueChange={(value) => setEventData(prev => ({ ...prev, locationDescription: value }))}
           />
 
           {/* Address */}
@@ -258,7 +223,11 @@ const CreateEventCard: React.FC<CreateEventCardProps> = ({
             placeholder="Max antal personer"
             isEditing={editingField === 'maxAttendees'}
             onEdit={() => setEditingField('maxAttendees')}
-            onSave={(value) => updateField('maxAttendees', value ? parseInt(value) : null)}
+            onSave={(value) => {
+              setEventData(prev => ({ ...prev, maxAttendees: value ? parseInt(value) : null }));
+              setEditingField(null);
+            }}
+            onValueChange={(value) => setEventData(prev => ({ ...prev, maxAttendees: value ? parseInt(value) : null }))}
             keyboardType="numeric"
           />
 
@@ -270,7 +239,11 @@ const CreateEventCard: React.FC<CreateEventCardProps> = ({
             placeholder="Beskrivning av aktiviteten"
             isEditing={editingField === 'description'}
             onEdit={() => setEditingField('description')}
-            onSave={(value) => updateField('description', value)}
+            onSave={(value) => {
+              setEventData(prev => ({ ...prev, description: value }));
+              setEditingField(null);
+            }}
+            onValueChange={(value) => setEventData(prev => ({ ...prev, description: value }))}
             multiline
           />
 
@@ -317,61 +290,9 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
   },
-  dateText: {
-    fontSize: 14,
-    fontWeight: 'normal',
-    lineHeight: 18,
-    marginBottom: 0,
-    color: Colors.blueGray500
-  },
-  eventImage: {
-    width: '100%',
-    height: 200,
-    borderRadius: 8,
-    marginBottom: 8,
-  },
-  imageContainer: {
-    position: 'relative',
-    width: '100%',
-    height: 200,
-    borderRadius: 8,
-    marginBottom: 8,
-    overflow: 'hidden',
-  },
-  imagePlaceholder: {
-    width: '100%',
-    height: 200,
-    borderRadius: 8,
-    backgroundColor: Colors.background50,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: Colors.blueGray200,
-    borderStyle: 'dashed',
-  },
-  placeholderContent: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  placeholderIcon: {
-    marginBottom: 8,
-  },
-  placeholderTextMain: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: Colors.blueGray500,
-    marginBottom: 4,
-  },
-  placeholderTextSub: {
-    fontSize: 14,
-    color: Colors.blueGray400,
-    textAlign: 'center',
-  },
-  heading: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#111827',
-  },
+
+
+
   divider: {
     height: 1,
     backgroundColor: Colors.blueGray200,

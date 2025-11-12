@@ -13,6 +13,7 @@ interface EditableFieldProps {
   multiline?: boolean;
   style?: any;
   keyboardType?: 'default' | 'numeric' | 'email-address' | 'phone-pad';
+  onValueChange?: (value: string) => void;
 }
 
 const EditableField: React.FC<EditableFieldProps> = ({
@@ -25,6 +26,7 @@ const EditableField: React.FC<EditableFieldProps> = ({
   multiline = false,
   style,
   keyboardType = 'default',
+  onValueChange,
 }) => {
   const [editValue, setEditValue] = useState(value);
 
@@ -44,13 +46,22 @@ const EditableField: React.FC<EditableFieldProps> = ({
               style,
             ]}
             value={editValue}
-            onChangeText={setEditValue}
+            onChangeText={(text) => {
+              setEditValue(text);
+              // Use onValueChange if provided (doesn't close edit mode), otherwise use onSave
+              if (onValueChange) {
+                onValueChange(text);
+              } else {
+                onSave(text);
+              }
+            }}
             placeholder={placeholder}
             placeholderTextColor="#9CA3AF"
             multiline={multiline}
             keyboardType={keyboardType}
             onBlur={handleSave}
             onEndEditing={handleSave}
+            onSubmitEditing={multiline ? undefined : handleSave}
             autoFocus
           />
         </View>
@@ -106,6 +117,18 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: Colors.blueGray500,
     marginBottom: 4,
+  },
+  doneButton: {
+    backgroundColor: Colors.teal600,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 6,
+    marginLeft: 8,
+  },
+  doneButtonText: {
+    color: Colors.white,
+    fontSize: 12,
+    fontWeight: '600',
   },
 });
 

@@ -28,11 +28,11 @@ const EventListItem: React.FC<EventListItemProps> = ({
 }) => {
     console.log(event);
     const colorScheme = useColorScheme();
-      const styles = createStyles(colorScheme ?? 'light');
+    const styles = createStyles(colorScheme ?? 'light');
     // Calculate if event should be grayed out (not bookable and user not attending)
     const shouldGrayOut = !event.bookable && (!!event.maxAttendees || event.maxAttendees === 0);
     const eventOpacity = shouldGrayOut ? 0.4 : opacity;
-    
+
     return (
         <TouchableOpacity
             onPress={() => onPress(event)}
@@ -46,24 +46,24 @@ const EventListItem: React.FC<EventListItemProps> = ({
             )}
 
             <View style={[
-                styles.eventItem, 
+                styles.eventItem,
                 event.attending && styles.attendingEventItem,
                 //shouldGrayOut && { backgroundColor: 'rgba(228, 20, 20, 0.1)' }
             ]}>
                 <View style={styles.timeContainer}>
                     <Text style={[styles.startTime,
-                        shouldGrayOut ? { color: Colors.red600 } : { color: Colors.teal400 }
+                    shouldGrayOut ? { color: Colors.red600 } : { color: Colors.teal400 }
 
                     ]}>
                         {DisplayTime(event.start)}
                     </Text>
                     <Text style={[styles.endTime,
-                        shouldGrayOut ? { color: Colors.red800 } : { color: Colors.teal800 }
+                    shouldGrayOut ? { color: Colors.red800 } : { color: Colors.teal800 }
                     ]}>
                         {event.end ? DisplayTime(event.end) : ''}
                     </Text>
                 </View>
-                        {event.attending && (
+                {/* {event.attending && (
                             <View style={styles.iconContainer}>
                                 <MaterialIcons name="check-circle" size={14} color="#10B981" />
                             </View>
@@ -77,22 +77,28 @@ const EventListItem: React.FC<EventListItemProps> = ({
                             <View style={styles.iconContainer}>
                                 <MaterialIcons name="event-available" size={14} color={Colors.info400} />
                             </View>
-                        )}
+                        )} */}
+                {event.official ? (
+                    <View style={styles.iconContainer}>
+                        <OfficialEventIcon size={14} color={Colors.primary500} />
+                    </View>
+                ) : (
+                    <View style={styles.iconContainer}>
+                        <MaterialIcons name="person-add-alt-1" size={14} color={Colors.info300} />
+                    </View>
+                )
+                }
                 <View style={styles.eventContent}>
-                    
+
                     <View style={styles.titleContainer}>
 
                         <Text style={[
                             styles.eventTitle,
-                            shouldGrayOut ? { fontWeight: '400'} : { fontWeight: '600'}
+                            shouldGrayOut ? { fontWeight: '400' } : { fontWeight: '600' }
                         ]}>
                             {event.name}
                         </Text>
-                        {event.official && (
-                            <View style={{ marginLeft: 4 }}>
-                                <OfficialEventIcon size={14} color={Colors.primary500} />
-                            </View>
-                        )}
+
 
                     </View>
                     <Text style={styles.eventLocation}>
@@ -146,7 +152,7 @@ const createStyles = (colorScheme: string) => StyleSheet.create({
     eventTitle: {
         fontSize: 16,
         fontWeight: '600',
-        color: colorScheme === 'dark' ? Colors.info500: Colors.info700,
+        color: colorScheme === 'dark' ? Colors.info500 : Colors.info700,
     },
     titleContainer: {
         flexDirection: 'row',
@@ -154,7 +160,7 @@ const createStyles = (colorScheme: string) => StyleSheet.create({
     },
     categoriesContainer: {
         flexDirection: 'row',
-        gap: 8,
+        gap: 18,
     },
     categoryBadge: {
         width: 20,
