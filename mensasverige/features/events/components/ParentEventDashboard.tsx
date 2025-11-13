@@ -179,7 +179,6 @@ const ParentEventDashboard = () => {
                         <View key={shortcut.key} style={styles.shortcutButton}>
                             <CategoryBadge
                                 categoryCode={shortcut.type === 'category' ? shortcut.key : undefined}
-                                eventType={shortcut.type === 'eventType' ? shortcut.eventType : undefined}
                                 label={shortcut.label}
                                 showLabel={true}
                                 size="small"
