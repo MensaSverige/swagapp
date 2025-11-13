@@ -24,24 +24,24 @@ const ProfileEditAvatar: React.FC<ProfileEditAvatarProps> = ({colorMode, onError
     }
 
     const handlePress = () => {
-        onSaving();
-        selectImage().then((response) => {
-            if (!response) {
-                return;
-            }
-            if (response?.avatar_url) {
-                setUser({ ...user, avatar_url: response.avatar_url });
-                setImageKey(Date.now()); // Update the image key
-                console.log('saved');
-                onSaved();
-            }
-            else {
-                onError('Could not save image');
-            }    
-        })
-        .catch((error) => {
-            onError(error.message || error);
-        })
+        // onSaving();
+        // selectImage().then((response) => {
+        //     if (!response) {
+        //         return;
+        //     }
+        //     if (response?.avatar_url) {
+        //         setUser({ ...user, avatar_url: response.avatar_url });
+        //         setImageKey(Date.now()); // Update the image key
+        //         console.log('saved');
+        //         onSaved();
+        //     }
+        //     else {
+        //         onError('Could not save image');
+        //     }    
+        // })
+        // .catch((error) => {
+        //     onError(error.message || error);
+        // })
     };
 
     return (

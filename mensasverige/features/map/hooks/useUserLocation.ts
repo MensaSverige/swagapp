@@ -18,8 +18,13 @@ const useUserLocation = () => {
       clearInterval(intervalRef.current);
     }
 
+    // Don't start location tracking if user is not logged in
+    if (!user) {
+      return;
+    }
+
     const fetchLocation = async () => {
-      if (!hasLocationPermission) {
+      if (!hasLocationPermission || !user) {
         return;
       }
       try {
@@ -54,7 +59,14 @@ const useUserLocation = () => {
 
     fetchLocation();
     intervalRef.current = setInterval(fetchLocation, locationUpdateInterval);
-  }, [locationUpdateInterval, hasLocationPermission, user?.settings.show_location]);
+
+    // Cleanup function to clear interval when user becomes null
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    };
+  }, [locationUpdateInterval, hasLocationPermission, user?.settings.show_location, user]);
 };
 
 export default useUserLocation;

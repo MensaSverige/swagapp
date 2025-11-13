@@ -109,16 +109,26 @@ const filterEvents = (events: ExtendedEvent[], eventFilter: EventFilterOptions):
   filteredEvents = filteredEvents.filter(event => {
     if (!event.start) return false;
     
-    const eventDate = new Date(event.start);
+    const eventStartDate = new Date(event.start);
+    const now = new Date();
     
     // Use dateFrom if explicitly set, otherwise use current time as default
-    const fromDate = eventFilter?.dateFrom ? new Date(eventFilter.dateFrom) : new Date();
-    if (eventDate < fromDate) return false;
+    const fromDate = eventFilter?.dateFrom ? new Date(eventFilter.dateFrom) : now;
+    
+    // Check if event has started but not ended yet (ongoing events)
+    if (event.end) {
+      const eventEndDate = new Date(event.end);
+      const isOngoing = eventStartDate <= now && eventEndDate >= now;
+      if (isOngoing) return true; // Include ongoing events
+    }
+    
+    // For events without end time or future events, check start time against fromDate
+    if (eventStartDate < fromDate) return false;
     
     // Check if event is before dateTo (if specified) - use exact datetime
     if (eventFilter?.dateTo) {
       const toDate = new Date(eventFilter.dateTo);
-      if (eventDate > toDate) return false;
+      if (eventStartDate > toDate) return false;
     }
     
     return true;

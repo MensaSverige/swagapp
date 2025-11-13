@@ -1,2 +1,10 @@
 import WelcomeScreen from "@/features/common/screens/WelcomeScreen";
-export default WelcomeScreen;
+import AuthGuard from "@/components/AuthGuard";
+
+const WelcomeWithGuard = () => (
+  <AuthGuard>
+    <WelcomeScreen />
+  </AuthGuard>
+);
+
+export default WelcomeWithGuard;

@@ -1,2 +1,10 @@
 import MapScreen from "@/features/map/screens/MapScreen";
-export default MapScreen;
+import AuthGuard from "@/components/AuthGuard";
+
+const MapWithGuard = () => (
+  <AuthGuard>
+    <MapScreen />
+  </AuthGuard>
+);
+
+export default MapWithGuard;

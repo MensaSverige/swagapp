@@ -127,7 +127,7 @@ export const SigninForm = () => {
 
   return (
     <ParallaxScrollView>
-      <ThemedView>
+      <ThemedView style={{ padding: 20, gap: 16,paddingTop: 60 }}>
         <ThemedText type="title">Välkommen Swagger</ThemedText>
 
 

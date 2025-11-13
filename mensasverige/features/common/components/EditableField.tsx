@@ -72,7 +72,7 @@ const EditableField: React.FC<EditableFieldProps> = ({
   return (
     <TouchableOpacity onPress={onEdit} style={styles.editableField}>
       <Text style={[
-        value ? { color: '#374151' } : styles.placeholderText,
+        value ? { color: Colors.coolGray700 } : styles.placeholderText,
         style,
       ]}>
         {value || placeholder}

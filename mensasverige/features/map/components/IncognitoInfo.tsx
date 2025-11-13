@@ -35,13 +35,15 @@ const createStyles = (colorMode: string) => StyleSheet.create({
 
 const IncognitoInfo: React.FC = () => {   
     const { user } = useStore();
-    const colorScheme = useColorScheme();
-    const colorMode = colorScheme ?? 'light';
-    const styles = createStyles(colorMode);
-
+    
+    // Early return MUST be before any other hooks to avoid hooks count mismatch
     if (!user || user.settings.show_location !== "NO_ONE") {
         return null;
     }
+    
+    const colorScheme = useColorScheme();
+    const colorMode = colorScheme ?? 'light';
+    const styles = createStyles(colorMode);
     
     return (
         <View style={styles.container}>

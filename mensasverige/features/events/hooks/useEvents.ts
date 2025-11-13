@@ -92,6 +92,11 @@ export const useEvents = (options: UseEventsOptions = {}): UseEventsReturn => {
 
   // Refetch function that updates both schedule and dashboard
   const refetch = useCallback(async (): Promise<void> => {
+    // Don't fetch events if user is not logged in
+    if (!user) {
+      return;
+    }
+
     try {
       setEventsRefreshing(true);
       setDashboardLoading(true);
@@ -116,30 +121,43 @@ export const useEvents = (options: UseEventsOptions = {}): UseEventsReturn => {
     setEventsRefreshing,
     setEventsLastFetched,
     setDashboardLoading,
-    setDashboardError
+    setDashboardError,
+    user
   ]);
 
   // Initial load
   useEffect(() => {
     const loadEvents = async () => {
-      // Only fetch if we don't have events or they're stale
-      if (events.length === 0) {
+      // Only fetch if we have a user and don't have events or they're stale
+      if (user && events.length === 0) {
         await refetch();
+      } else if (!user) {
+        // Clear events when logged out
+        setEvents([]);
       }
     };
 
     loadEvents();
-  }, [events.length, refetch]);
+  }, [events.length, refetch, user, setEvents]);
 
   // Auto-refresh next event detection
   useEffect(() => {
-    if (!enableAutoRefresh) return;
+    // Early exit if conditions aren't met
+    if (!enableAutoRefresh || !user) {
+      return;
+    }
 
     const intervalId = setInterval(() => {
-      refetch();
+      // Double-check user is still logged in before refetching
+      if (user) {
+        refetch();
+      }
     }, refreshIntervalMs);
-    return () => clearInterval(intervalId);
-  }, [enableAutoRefresh, refreshIntervalMs, refetch]);
+    
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, [enableAutoRefresh, refreshIntervalMs, refetch, user]);
 
   // Event attendance functions
   const attendEventById = useCallback(

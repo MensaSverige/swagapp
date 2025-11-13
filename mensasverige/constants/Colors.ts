@@ -6,7 +6,7 @@
 const tintColorLight = '#0077E6'; // primary500
 const tintColorDark = '#4FC1FF'; // primary500 dark theme
 
-// Base color palette from gluestack
+// Base color palette from previous implementation
 const baseColors = {
       rose50: '#fff1f2',
       rose100: '#ffe4e6',

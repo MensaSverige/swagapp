@@ -1,2 +1,10 @@
 import UserSettings from "@/features/account/screens/Settings";
-export default UserSettings;
+import AuthGuard from "@/components/AuthGuard";
+
+const SettingsWithGuard = () => (
+  <AuthGuard>
+    <UserSettings />
+  </AuthGuard>
+);
+
+export default SettingsWithGuard;

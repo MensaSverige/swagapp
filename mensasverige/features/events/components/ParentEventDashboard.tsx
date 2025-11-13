@@ -23,13 +23,13 @@ const ParentEventDashboard = () => {
     const [parentLoading, setParentLoading] = useState(true);
     const [showCreateForm, setShowCreateForm] = useState(false);
     
-    const { 
-        dashboardGroupedEvents, 
-        loading: eventsLoading, 
-        refetch, 
+    const {
+        dashboardGroupedEvents,
+        loading: eventsLoading,
+        refetch,
         addOrUpdateEvent,
         topCategories,
-        lastMinuteEvents 
+        lastMinuteEvents
     } = useEvents();
 
     useEffect(() => {
@@ -57,12 +57,7 @@ const ParentEventDashboard = () => {
 
     const navigateToAllEvents = () => {
         // Navigate to schedule showing bookable events (for discovery)
-        navigateToScheduleWithFilter({
-            attendingOrHost: null,
-            bookable: true, 
-            official: null,
-            categories: []
-        });
+        navigateToBookableEvents();
     };
 
     const handleEventPress = (event: ExtendedEvent) => {
@@ -119,11 +114,11 @@ const ParentEventDashboard = () => {
             onPress: createNavigateToCategory(category.code),
             showCondition: hasCategoryEvents(category.code)
         }));
-    
+
     // Filter shortcuts to only show available ones (limit to first 6 to fit nicely)
     const visibleShortcuts = categoryShortcuts.filter(shortcut => shortcut.showCondition).slice(0, 6);
 
-    if (loading) {
+    if (loading && !eventInfo) {
         return (
             <ThemedView style={styles.container}>
                 <ThemedText style={styles.loadingText}>Laddar...</ThemedText>
@@ -162,11 +157,11 @@ const ParentEventDashboard = () => {
                 }}
                 onEventCreated={handleEventCreated}
             />
-            
+
 
             <ParentEventDetails />
-            
- 
+
+
             {/* Quick Navigation Shortcuts */}
             <View style={styles.shortcutsSection}>
                 <View style={styles.sectionTitleContainer}>
@@ -187,14 +182,14 @@ const ParentEventDashboard = () => {
                     ))}
                 </View>
             </View>
-            
-           {/* Last Minute and Create Activity Side by Side */}
+
+            {/* Last Minute and Create Activity Side by Side */}
             <View style={styles.actionsRow}>
                 {/* Last Minute Section */}
                 {lastMinuteEvents.length > 0 && (
-                    <TouchableOpacity 
+                    <TouchableOpacity
                         style={[
-                            styles.actionCard, 
+                            styles.actionCard,
                             styles.lastMinuteCard,
                             styles.equalWidth
                         ]}
@@ -207,7 +202,7 @@ const ParentEventDashboard = () => {
                                 <ThemedText type="subtitle" style={styles.lastMinuteTitle}>Sista minuten</ThemedText>
                             </View>
                             <ThemedText style={styles.lastMinuteDescription}>
-                                 Hinner du med? {lastMinuteEvents.length} {lastMinuteEvents.length === 1 ? 'aktivitet' : 'aktiviteter'} startar snart!
+                                Hinner du med? {lastMinuteEvents.length} {lastMinuteEvents.length === 1 ? 'aktivitet' : 'aktiviteter'} startar snart!
                             </ThemedText>
 
                             <MaterialIcons name="arrow-forward" size={16} color={colorScheme === 'dark' ? Colors.amber400 : Colors.amber700} style={styles.actionArrow} />
@@ -216,9 +211,10 @@ const ParentEventDashboard = () => {
                 )}
 
                 {/* Create Activity Invitation Section */}
-                <TouchableOpacity 
+                {!loading && Object.keys(dashboardGroupedEvents).length !== 0 && eventInfo && ( 
+                <TouchableOpacity
                     style={[
-                        styles.actionCard, 
+                        styles.actionCard,
                         styles.createCard,
                         lastMinuteEvents.length > 0 ? styles.equalWidth : styles.fullWidthSingle
                     ]}
@@ -236,6 +232,7 @@ const ParentEventDashboard = () => {
                         <MaterialIcons name="arrow-forward" size={16} color={Colors.primary400} style={styles.actionArrow} />
                     </View>
                 </TouchableOpacity>
+                )}
             </View>
 
 
@@ -247,7 +244,7 @@ const ParentEventDashboard = () => {
                             <MaterialIcons name="event-available" size={20} color={Colors.primary600} />
                             <ThemedText type="subtitle">Mina bokningar</ThemedText>
                         </View>
-                        <TouchableOpacity 
+                        <TouchableOpacity
                             onPress={navigateToFullSchedule}
                             style={styles.seeAllButton}
                         >
@@ -255,7 +252,7 @@ const ParentEventDashboard = () => {
                             <MaterialIcons name="chevron-right" size={16} color={Colors.primary400} />
                         </TouchableOpacity>
                     </View>
-                    
+
                     <GroupedEventsList
                         groupedEvents={dashboardGroupedEvents}
                         onEventPress={handleEventPress}
@@ -264,34 +261,27 @@ const ParentEventDashboard = () => {
                     />
                 </View>
             )}
-            
+
             {/* No upcoming events message */}
-            {Object.keys(dashboardGroupedEvents).length === 0 && eventInfo && (
-                <View style={styles.noEventsContainer}>
-                    <MaterialIcons name="event-note" size={48} color={Colors.coolGray400} style={styles.noEventsIcon} />
-                    <ThemedText style={styles.noEventsText}>
-                        Inga bokade aktiviteter för närvarande
-                    </ThemedText>
-                    <ThemedText style={styles.noEventsSubtext}>
-                        Upptäck intressanta aktiviteter eller skapa din egen!
-                    </ThemedText>
-                    <View style={styles.noEventsActions}>
-                        <TouchableOpacity 
-                            onPress={navigateToFullSchedule}
-                            style={styles.browseButton}
-                        >
-                            <MaterialIcons name="explore" size={16} color="white" />
-                            <ThemedText style={styles.browseButtonText}>Bläddra aktiviteter</ThemedText>
-                        </TouchableOpacity>
-                        <TouchableOpacity 
-                            onPress={() => setShowCreateForm(true)}
-                            style={styles.createAltButton}
-                        >
-                            <MaterialIcons name="add" size={16} color={Colors.primary500} />
-                            <ThemedText style={styles.createAltButtonText}>Skapa egen</ThemedText>
-                        </TouchableOpacity>
+            {!loading && Object.keys(dashboardGroupedEvents).length === 0 && eventInfo && (
+                <TouchableOpacity
+                    onPress={navigateToAllEvents}
+                //style={styles.browseButton}
+                >
+                    <View style={[styles.noEventsContainer, styles.actionCard]}>
+                        <MaterialIcons name="event-note" size={48} color={Colors.coolGray400} style={styles.noEventsIcon} />
+                        <ThemedText style={styles.noEventsText}>
+                            Inga bokade aktiviteter för närvarande
+                        </ThemedText>
+                        <ThemedText style={styles.noEventsSubtext}>
+                            Upptäck intressanta aktiviteter eller skapa din egen!
+                        </ThemedText>
+                        <View style={styles.noEventsActions}>
+
+                            <MaterialIcons name="arrow-forward" size={16} color={Colors.coolGray600} style={styles.actionArrow} />
+                        </View>
                     </View>
-                </View>
+                </TouchableOpacity>
             )}
         </ThemedView>
     );
@@ -299,7 +289,7 @@ const ParentEventDashboard = () => {
 
 const createStyles = (colorScheme: string) => StyleSheet.create({
     container: {
-        padding:16,
+        padding: 16,
         flex: 1
     },
     loadingText: {
@@ -339,11 +329,13 @@ const createStyles = (colorScheme: string) => StyleSheet.create({
     },
     noEventsContainer: {
         alignItems: 'center',
-        paddingVertical: 32,
+        marginTop: 12,
+        paddingVertical: 50,
         paddingHorizontal: 16,
+        backgroundColor: colorScheme === 'dark' ? 'rgba(31, 41, 55, 0.6)' : 'rgba(243, 244, 246, 0.6)',
     },
     noEventsIcon: {
-        marginBottom: 16,
+        marginVertical: 12,
         opacity: 0.6,
     },
     noEventsText: {
@@ -363,20 +355,6 @@ const createStyles = (colorScheme: string) => StyleSheet.create({
     noEventsActions: {
         flexDirection: 'row',
         gap: 12,
-    },
-    browseButton: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingHorizontal: 20,
-        paddingVertical: 12,
-        backgroundColor: Colors.primary500,
-        borderRadius: 8,
-        gap: 8,
-    },
-    browseButtonText: {
-        color: 'white',
-        fontSize: 14,
-        fontWeight: '500',
     },
     createAltButton: {
         flexDirection: 'row',

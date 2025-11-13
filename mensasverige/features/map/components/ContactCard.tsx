@@ -71,6 +71,11 @@ type ContactCardProps = {
 };
 
 const ContactCard: React.FC<ContactCardProps> = ({ user, showCard, onClose }) => {
+    // Early return MUST be before any hooks to avoid hooks count mismatch
+    if (!user) {
+        return null;
+    }
+    
     const ref = React.useRef(null);
     const colorScheme = useColorScheme();
     const styles = createStyles(colorScheme ?? 'light');
@@ -91,10 +96,6 @@ const ContactCard: React.FC<ContactCardProps> = ({ user, showCard, onClose }) =>
             }
         };
     }, [showCard]);
-
-    if (!user) {
-        return null;
-    }
     
     return (
         <Modal

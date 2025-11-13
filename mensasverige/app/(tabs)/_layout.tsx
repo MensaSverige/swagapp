@@ -74,8 +74,6 @@ export default function TabLayout() {
         options={{
           title: 'Inställningar',
           tabBarIcon: ({ color }) => <MaterialIcons name="settings" size={28} color={color} />,
-          //href: null, // This hides the tab from the tab bar
-          headerShown: true, // Show header on settings screen
         }}
       />
     </Tabs>

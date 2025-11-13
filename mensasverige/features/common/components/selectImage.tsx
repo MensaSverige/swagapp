@@ -1,37 +1,41 @@
-import { ImageLibraryOptions, launchImageLibrary } from 'react-native-image-picker';
+import * as ImagePicker from 'expo-image-picker';
 import { uploadAvatar } from '../../account/services/userService';
 import { User } from '../../../api_schema/types';
 
-const options: ImageLibraryOptions = {
-  mediaType: 'photo',
+const options: ImagePicker.ImagePickerOptions = {
+  mediaTypes: ImagePicker.MediaTypeOptions.Images,
   quality: 1,
-  maxHeight: 500,
-  maxWidth: 500,
+  aspect: [1, 1],
+  allowsEditing: true,
 };
 export const selectImage = async (): Promise<User | null> => {
-  return launchImageLibrary(options)
-    .then((response) => {
-      if (response.didCancel) {
-        console.log('User cancelled image picker');
-        return null;
-      } else if (response.errorCode) {
-        console.log('ImagePicker Error: ', response.errorMessage);
-        return Promise.reject('ImagePicker Error: ' + response.errorMessage);
-      } else
-      if (response.assets && response.assets && response.assets[0].uri) {
-        const sourceuri = response.assets[0].uri;
-          return uploadAvatar(sourceuri).then((user) => {
-            console.log('Uploaded avatar', user.avatar_url);
-            return user;
-          });
-      }
-      else {
-        console.log('no assets in response')
-        return Promise.reject('no assets in response');
-      }
-    })
-    .catch((error) => {
-      console.error('Failed to select image:', error.message || error);
-      return Promise.reject('Failed to select image');
-    });
+  try {
+    // Request media library permissions
+    const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    
+    if (!permissionResult.granted) {
+      console.log('Media library permission denied');
+      return Promise.reject('Media library permission denied');
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync(options);
+    
+    if (result.canceled) {
+      console.log('User cancelled image picker');
+      return null;
+    }
+    
+    if (result.assets && result.assets.length > 0 && result.assets[0].uri) {
+      const sourceuri = result.assets[0].uri;
+      const user = await uploadAvatar(sourceuri);
+      console.log('Uploaded avatar', user.avatar_url);
+      return user;
+    } else {
+      console.log('no assets in response');
+      return Promise.reject('no assets in response');
+    }
+  } catch (error) {
+    console.error('Failed to select image:', error);
+    return Promise.reject('Failed to select image');
+  }
 }
