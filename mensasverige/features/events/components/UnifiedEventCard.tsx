@@ -20,7 +20,7 @@ import FullyBookedBadge from './FullyBookedBadge';
 import PlacesLeftBadge from './PlacesLeftBadge';
 import EventDateTimeDisplay from './EventDateTimeDisplay';
 import useStore from '../../common/store/store';
-import { useEventAttendance } from '../hooks/useEventAttendance';
+import { useEvents } from '../hooks/useEvents';
 import CategoryBadge from './CategoryBadge';
 import { eventCardStyles, dateTimeStyles } from '../styles/eventCardStyles';
 
@@ -37,7 +37,7 @@ const AttendingComponent: React.FC<{
   userId: number;
 }> = ({ event, userId }) => {
   const [changingAttendance, setChangingAttendance] = useState<boolean>(false);
-  const { attendEventById, unattendEventById } = useEventAttendance();
+  const { attendEventById, unattendEventById } = useEvents();
 
   const handlePressAttend = async () => {
     if (!event.id) return;

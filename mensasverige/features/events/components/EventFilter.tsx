@@ -76,7 +76,7 @@ export const EventFilter: React.FC<EventFilterProps> = ({
 
   const handleReset = () => {
     const resetFilter: EventFilterOptions = {
-      attending: null,
+      attendingOrHost: null,
       bookable: null,
       official: null,
       categories: [],
@@ -87,7 +87,7 @@ export const EventFilter: React.FC<EventFilterProps> = ({
   };
 
   const toggleTriStateOption = (
-    key: 'attending' | 'bookable' | 'official',
+    key: 'attendingOrHost' | 'bookable' | 'official',
     currentValue: boolean | null | undefined
   ) => {
     let newValue: boolean | null;
@@ -191,11 +191,11 @@ export const EventFilter: React.FC<EventFilterProps> = ({
             <View style={styles.filterRow}>
               <Text style={styles.filterLabel}>Deltagande</Text>
               <TouchableOpacity
-                style={[styles.triStateButton, { borderColor: getTriStateColor(localFilter.attending) }]}
-                onPress={() => toggleTriStateOption('attending', localFilter.attending)}
+                style={[styles.triStateButton, { borderColor: getTriStateColor(localFilter.attendingOrHost) }]}
+                onPress={() => toggleTriStateOption('attendingOrHost', localFilter.attendingOrHost)}
               >
-                <Text style={[styles.triStateButtonText, { color: getTriStateColor(localFilter.attending) }]}>
-                  {getTriStateLabel(localFilter.attending)}
+                <Text style={[styles.triStateButtonText, { color: getTriStateColor(localFilter.attendingOrHost) }]}>
+                  {getTriStateLabel(localFilter.attendingOrHost)}
                 </Text>
               </TouchableOpacity>
             </View>

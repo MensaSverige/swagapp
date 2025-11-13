@@ -14,12 +14,13 @@ import { Colors } from '@/constants/Colors';
 import { useEvents } from '../hooks/useEvents';
 import { navigateToAttendingEvents, navigateToBookableEvents, navigateToScheduleWithFilter, navigateToLastMinuteEvents } from '../utilities/navigationUtils';
 import { EVENT_CATEGORIES } from '../utilities/EventCategories';
+import { ExtendedEvent } from '../utils/eventUtils';
 
 const ParentEventDashboard = () => {
     const colorScheme = useColorScheme();
     const styles = createStyles(colorScheme ?? 'light');
     const [eventInfo, setEventInfo] = useState<ExternalRoot | null>(null);
-    const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
+    const [selectedEvent, setSelectedEvent] = useState<ExtendedEvent | null>(null);
     const [parentLoading, setParentLoading] = useState(true);
     const [showCreateForm, setShowCreateForm] = useState(false);
     
@@ -59,19 +60,19 @@ const ParentEventDashboard = () => {
     const navigateToAllEvents = () => {
         // Navigate to schedule showing bookable events (for discovery)
         navigateToScheduleWithFilter({
-            attending: null,
+            attendingOrHost: null,
             bookable: true, 
             official: null,
             categories: []
         });
     };
 
-    const handleEventPress = (event: Event) => {
+    const handleEventPress = (event: ExtendedEvent) => {
         // Show the modal with event details instead of just navigating
         setSelectedEvent(event);
     };
 
-    const handleEventCreated = useCallback((event: Event) => {
+    const handleEventCreated = useCallback((event: ExtendedEvent) => {
         setShowCreateForm(false);
         // Add the new event to the store - this will automatically update all views
         addOrUpdateEvent(event);
@@ -91,7 +92,7 @@ const ParentEventDashboard = () => {
     // Create navigation functions for each category
     const createNavigateToCategory = (categoryCode: string) => () => {
         navigateToScheduleWithFilter({
-            attending: null,
+            attendingOrHost: null,
             bookable: categoryCode === 'M' ? true : null, // Only meals/dinner events need to be bookable
             official: null,
             categories: [categoryCode]
@@ -101,7 +102,7 @@ const ParentEventDashboard = () => {
     // Create navigation functions for event types
     const createNavigateToEventType = (official: boolean) => () => {
         navigateToScheduleWithFilter({
-            attending: null,
+            attendingOrHost: null,
             bookable: null,
             official: official,
             categories: []
@@ -155,7 +156,7 @@ const ParentEventDashboard = () => {
                     setSelectedEvent(null);
                     setShowCreateForm(false);
                 }}
-                onEventUpdated={(updatedEvent: Event) => {
+                onEventUpdated={(updatedEvent: ExtendedEvent) => {
                     // The event has been updated, add/update it in the store
                     console.log('Event updated:', updatedEvent);
                     addOrUpdateEvent(updatedEvent);

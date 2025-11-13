@@ -17,13 +17,14 @@ import { Colors } from '@/constants/Colors';
 import useStore from '@/features/common/store/store';
 import EventMapField from './EventMapField';
 import { eventCardStyles, editableFieldStyles } from '../styles/eventCardStyles';
+import { createExtendedEvent, ExtendedEvent } from '../utils/eventUtils';
 
 interface CreateEventCardProps {
-  onEventCreated?: (event: Event) => void;
-  onEventUpdated?: (event: Event) => void;
+  onEventCreated?: (event: ExtendedEvent) => void;
+  onEventUpdated?: (event: ExtendedEvent) => void;
   onCancel?: () => void;
   hideButtons?: boolean;
-  existingEvent?: Event;
+  existingEvent?: ExtendedEvent;
 }
 
 const CreateEventCard: React.FC<CreateEventCardProps> = ({
@@ -122,7 +123,7 @@ const CreateEventCard: React.FC<CreateEventCardProps> = ({
         console.log('Updating event:', eventToUpdate);
 
         const updatedEvent = await updateEvent(existingEvent.id, eventToUpdate);
-        onEventUpdated?.(updatedEvent);
+        onEventUpdated?.(createExtendedEvent(updatedEvent, user?.userId));
       } else {
         // Create new event
         const eventToCreate: Event = {
@@ -157,7 +158,7 @@ const CreateEventCard: React.FC<CreateEventCardProps> = ({
         console.log('Creating event:', eventToCreate);
 
         const createdEvent = await createEvent(eventToCreate);
-        onEventCreated?.(createdEvent);
+        onEventCreated?.(createExtendedEvent(createdEvent, user?.userId));
       }
     } catch (error) {
       console.error('Error saving event:', error);

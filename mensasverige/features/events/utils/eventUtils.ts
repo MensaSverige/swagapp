@@ -1,13 +1,71 @@
 import { Event } from '../../../api_schema/types';
 
 export interface EventFilter {
-  attending?: boolean;
+  attendingOrHost?: boolean;
   upcoming?: boolean;
   limit?: number;
 }
 
+/**
+ * Extended Event type with computed properties
+ */
+export interface ExtendedEvent extends Event {
+  /** Whether the user is attending or is a host/admin */
+  attendingOrHost: boolean;
+  /** Whether the event is in the future */
+  isFutureEvent: boolean;
+}
+
+/**
+ * Check if user is effectively attending an event (including admin/host status)
+ */
+export const isUserEffectivelyAttending = (event: Event, currentUserId?: number): boolean => {
+  if (!currentUserId) return event.attending || false;
+  
+  // Check if user is explicitly attending
+  if (event.attending) return true;
+  
+  // Check if user is an admin
+  if (event.admin && event.admin.includes(currentUserId)) return true;
+  
+  // Check if user is a host
+  if (event.hosts && event.hosts.some(host => host.userId === currentUserId)) return true;
+  
+  return false;
+};
+
+/**
+ * Check if an event is in the future
+ */
+export const isFutureEvent = (event: Event): boolean => {
+  if (!event.start) return false;
+  
+  const now = new Date();
+  const eventStartDate = new Date(event.start);
+  
+  return eventStartDate > now;
+};
+
+/**
+ * Convert a regular Event to an ExtendedEvent with computed properties
+ */
+export const createExtendedEvent = (event: Event, currentUserId?: number): ExtendedEvent => {
+  return {
+    ...event,
+    attendingOrHost: isUserEffectivelyAttending(event, currentUserId),
+    isFutureEvent: isFutureEvent(event)
+  };
+};
+
+/**
+ * Convert an array of Events to ExtendedEvents with computed properties
+ */
+export const createExtendedEvents = (events: Event[], currentUserId?: number): ExtendedEvent[] => {
+  return events.map(event => createExtendedEvent(event, currentUserId));
+};
+
 export interface GroupedEvents {
-  [key: string]: Event[];
+  [key: string]: ExtendedEvent[];
 }
 
 export const displayLocaleTimeStringDate = (datestring: string) => {
@@ -32,7 +90,7 @@ export const createUpcomingEventsFilter = () => {
 /**
  * Sort events by start date in ascending order
  */
-export const sortEventsByDate = (events: Event[]): Event[] => {
+export const sortEventsByDate = (events: ExtendedEvent[]): ExtendedEvent[] => {
   return [...events].sort((a, b) => {
     const dateA = a.start ? new Date(a.start).getTime() : 0;
     const dateB = b.start ? new Date(b.start).getTime() : 0;
@@ -43,7 +101,7 @@ export const sortEventsByDate = (events: Event[]): Event[] => {
 /**
  * Check if an event is upcoming (end time is in the future)
  */
-export const isEventUpcoming = (event: Event): boolean => {
+export const isEventUpcoming = (event: ExtendedEvent): boolean => {
   if (!event.start || !event.end) return false;
   
   const now = new Date();
@@ -59,13 +117,13 @@ export const isEventUpcoming = (event: Event): boolean => {
 /**
  * Filter events based on provided criteria
  */
-export const filterEvents = (events: Event[], filter: EventFilter = {}): Event[] => {
+export const filterEvents = (events: ExtendedEvent[], filter: EventFilter = {}): ExtendedEvent[] => {
   let filteredEvents = [...events];
 
-  // Filter by attending status
-  if (filter.attending !== undefined) {
+  // Filter by attending status (including admin/host status)
+  if (filter.attendingOrHost !== undefined) {
     filteredEvents = filteredEvents.filter(event => 
-      Boolean(event.attending) === filter.attending
+      event.attendingOrHost === filter.attendingOrHost
     );
   }
 
@@ -88,7 +146,7 @@ export const filterEvents = (events: Event[], filter: EventFilter = {}): Event[]
 /**
  * Group events by date string
  */
-export const groupEventsByDate = (events: Event[]): GroupedEvents => {
+export const groupEventsByDate = (events: ExtendedEvent[]): GroupedEvents => {
   return events.reduce((grouped, event) => {
     const date = event.start ? new Date(event.start).toDateString() : 'No Date';
     if (!grouped[date]) {
@@ -102,7 +160,7 @@ export const groupEventsByDate = (events: Event[]): GroupedEvents => {
 /**
  * Process events with filtering, sorting, and grouping
  */
-export const processEvents = (events: Event[], filter: EventFilter = {}): GroupedEvents => {
+export const processEvents = (events: ExtendedEvent[], filter: EventFilter = {}): GroupedEvents => {
   const filteredEvents = filterEvents(events, filter);
   return groupEventsByDate(filteredEvents);
 };
@@ -110,11 +168,11 @@ export const processEvents = (events: Event[], filter: EventFilter = {}): Groupe
 /**
  * Find the next upcoming event from grouped events
  */
-export const findNextEvent = (groupedEvents: GroupedEvents, excludeFirstEvent: boolean = false): Event | null => {
+export const findNextEvent = (groupedEvents: GroupedEvents, excludeFirstEvent: boolean = false): ExtendedEvent | null => {
   if (!groupedEvents || Object.keys(groupedEvents).length === 0) return null;
 
   const now = new Date();
-  let nextEventTemp: Event | null = null;
+  let nextEventTemp: ExtendedEvent | null = null;
 
   for (const date in groupedEvents) {
     for (const event of groupedEvents[date]) {
@@ -143,12 +201,12 @@ export const findNextEvent = (groupedEvents: GroupedEvents, excludeFirstEvent: b
 /**
  * Get upcoming events with attending filter for dashboard
  */
-export const getUpcomingAttendingEvents = (events: Event[], limit: number = 3): {
+export const getUpcomingAttendingEvents = (events: ExtendedEvent[], limit: number = 3): {
   groupedEvents: GroupedEvents;
   hasMore: boolean;
 } => {
   const upcomingAttendingEvents = filterEvents(events, { 
-    attending: true, 
+    attendingOrHost: true, 
     upcoming: true 
   });
   
@@ -164,6 +222,6 @@ export const getUpcomingAttendingEvents = (events: Event[], limit: number = 3): 
 /**
  * Get all events processed and grouped (for schedule view)
  */
-export const getAllEventsGrouped = (events: Event[]): GroupedEvents => {
+export const getAllEventsGrouped = (events: ExtendedEvent[]): GroupedEvents => {
   return processEvents(events);
 };

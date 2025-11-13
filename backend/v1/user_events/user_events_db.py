@@ -25,9 +25,11 @@ def get_unsafe_user_event(event_id: str) -> UserEvent | None:
     :param event_id: The event ID.
     :return: The user event document or None.
     """
-
-    event = user_event_collection.find_one({"_id": ObjectId(event_id)})
-    return UserEvent(**event) if event else None
+    try:
+        event = user_event_collection.find_one({"_id": ObjectId(event_id)})
+        return UserEvent(**event) if event else None
+    except Exception:
+        return None
 
 
 def get_safe_user_event(event_id: str) -> ExtendedUserEvent | None:
@@ -207,18 +209,20 @@ def add_attendee_to_user_event(event_id: str, user_id: int) -> bool:
     :param user_id: The ID of the user to add.
     :return: The number of modified documents.
     """
-    event = get_unsafe_user_event(event_id)
-    if event and "max_attendees" in event and len(
-            event["attendees"]) >= event["max_attendees"]:
-        return 0
-    result = user_event_collection.update_one(
-        {"_id": ObjectId(event_id)},
-        {"$addToSet": {
-            "attendees": {
-                "userId": user_id
-            }
-        }})
-    return result.acknowledged and result.matched_count > 0
+    try:
+        event = get_unsafe_user_event(event_id)
+        if event and event.maxAttendees is not None and len(event.attendees) >= event.maxAttendees:
+            return False
+        result = user_event_collection.update_one(
+            {"_id": ObjectId(event_id)},
+            {"$addToSet": {
+                "attendees": {
+                    "userId": user_id
+                }
+            }})
+        return result.acknowledged and result.matched_count > 0
+    except Exception:
+        return False
 
 
 def remove_attendee_from_user_event(event_id: str, user_id: int) -> bool:

@@ -24,6 +24,7 @@ import { EventFilterOptions } from '../store/EventsSlice';
 import { FilterButton } from '../components/FilterButton';
 import { Colors } from '@/constants/Colors';
 import { useLocalSearchParams, router } from 'expo-router';
+import { ExtendedEvent } from '../utils/eventUtils';
 
 interface ActivitiesListProps {
     initialFilter?: EventFilterOptions;
@@ -33,7 +34,7 @@ export const ActivitiesList: React.FC<ActivitiesListProps> = ({ initialFilter })
     const { user } = useStore();
     const colorScheme = useColorScheme();
     const styles = createStyles(colorScheme ?? 'light');
-    const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
+    const [selectedEvent, setSelectedEvent] = useState<ExtendedEvent | null>(null);
     const [didInitiallyScroll, setDidInitiallyScroll] = useState(false);
     const [showFilter, setShowFilter] = useState(false);
     const [showCreateForm, setShowCreateForm] = useState(false);
@@ -48,7 +49,7 @@ export const ActivitiesList: React.FC<ActivitiesListProps> = ({ initialFilter })
         
         // Parse URL parameters into filter object
         const urlFilter: EventFilterOptions = {
-            attending: currentParams.attending === 'true' ? true : currentParams.attending === 'false' ? false : null,
+            attendingOrHost: currentParams.attendingOrHost === 'true' ? true : currentParams.attendingOrHost === 'false' ? false : null,
             bookable: currentParams.bookable === 'true' ? true : currentParams.bookable === 'false' ? false : null,
             official: currentParams.official === 'true' ? true : currentParams.official === 'false' ? false : null,
             categories: currentParams.categories ? String(currentParams.categories).split(',').filter(Boolean) : [],
@@ -60,7 +61,7 @@ export const ActivitiesList: React.FC<ActivitiesListProps> = ({ initialFilter })
         
         // Return URL filter if any parameters exist, otherwise default
         const hasParams = Object.values(currentParams).some(Boolean);
-        return hasParams ? urlFilter : { attending: null, bookable: null, official: null, categories: [], dateFrom: null, dateTo: null };
+        return hasParams ? urlFilter : { attendingOrHost: null, bookable: null, official: null, categories: [], dateFrom: null, dateTo: null };
     }, []);
     
     // Determine initial filter from props, URL params, or default
@@ -98,12 +99,13 @@ export const ActivitiesList: React.FC<ActivitiesListProps> = ({ initialFilter })
     // Apply the filter to the store when eventFilter changes
     useEffect(() => {
         setCurrentEventFilter(eventFilter);
+        console.log('Applied event filter to store:', eventFilter);
     }, [eventFilter, setCurrentEventFilter]);
 
     const scrollViewRef = useRef<ScrollView>(null);
     const nextEventMarkerRef = useRef<View>(null);
 
-    const handlePress = useCallback((event: Event) => {
+    const handlePress = useCallback((event: ExtendedEvent) => {
         setSelectedEvent(event);
     }, []);
 
@@ -119,7 +121,7 @@ export const ActivitiesList: React.FC<ActivitiesListProps> = ({ initialFilter })
         setShowCreateForm(true);
     }, []);
 
-    const handleEventSaved = useCallback((event: Event) => {
+    const handleEventSaved = useCallback((event: ExtendedEvent) => {
         setShowCreateForm(false);
         setShowSuccessMessage(true);
         // Hide success message after 3 seconds
@@ -136,7 +138,7 @@ export const ActivitiesList: React.FC<ActivitiesListProps> = ({ initialFilter })
 
     const isFilterActive = () => {
         return (
-            eventFilter.attending !== null ||
+            eventFilter.attendingOrHost !== null ||
             eventFilter.bookable !== null ||
             eventFilter.official !== null ||
             (eventFilter.categories && eventFilter.categories.length > 0) ||

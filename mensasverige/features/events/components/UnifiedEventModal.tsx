@@ -9,17 +9,17 @@ import {
 } from 'react-native';
 import EventCard from './UnifiedEventCard';
 import CreateEventCard from './CreateEventCard';
-import { Event } from '../../../api_schema/types';
 import { canUserEditEvent } from '../utils/eventPermissions';
 import useStore from '@/features/common/store/store';
 import { MaterialIcons } from '@expo/vector-icons';
+import { ExtendedEvent } from '../utils/eventUtils';
 
 interface EventDetailsProps {
-  event?: Event,
+  event?: ExtendedEvent,
   open: boolean,
   onClose: () => void;
-  onEventUpdated?: (event: Event) => void;
-  onEventCreated?: (event: Event) => void;
+  onEventUpdated?: (event: ExtendedEvent) => void;
+  onEventCreated?: (event: ExtendedEvent) => void;
   mode?: 'view' | 'edit' | 'create';
   initialEditMode?: boolean;
 }
@@ -50,13 +50,13 @@ const UnifiedEventModal: React.FC<EventDetailsProps> = ({
     setIsEditing(true);
   }, []);
 
-  const handleEventUpdated = useCallback((updatedEvent: Event) => {
+  const handleEventUpdated = useCallback((updatedEvent: ExtendedEvent) => {
     setIsEditing(false);
     onEventUpdated?.(updatedEvent);
     onClose();
   }, [onEventUpdated, onClose]);
 
-  const handleEventCreated = useCallback((createdEvent: Event) => {
+  const handleEventCreated = useCallback((createdEvent: ExtendedEvent) => {
     setIsEditing(false);
     onEventCreated?.(createdEvent);
     onClose();

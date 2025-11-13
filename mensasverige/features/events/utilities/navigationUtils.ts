@@ -38,14 +38,14 @@ export const navigateToScheduleWithFilter = (filter: EventFilterOptions) => {
 };
 
 // Convenience functions
-export const navigateToAttendingEvents = () => navigateToScheduleWithFilter({ attending: true, bookable: null, official: null, categories: [] });
-export const navigateToBookableEvents = () => navigateToScheduleWithFilter({ attending: null, bookable: true, official: null, categories: [] });
-export const navigateToOfficialEvents = () => navigateToScheduleWithFilter({ attending: null, bookable: null, official: true, categories: [] });
+export const navigateToAttendingEvents = () => navigateToScheduleWithFilter({ attendingOrHost: true, bookable: null, official: null, categories: [] });
+export const navigateToBookableEvents = () => navigateToScheduleWithFilter({ attendingOrHost: null, bookable: true, official: null, categories: [] });
+export const navigateToOfficialEvents = () => navigateToScheduleWithFilter({ attendingOrHost: null, bookable: null, official: true, categories: [] });
 export const navigateToLastMinuteEvents = () => {
     const { now, twoHoursFromNow } = getLastMinuteDateRange();
     
     return navigateToScheduleWithFilter({ 
-        attending: null, 
+        attendingOrHost: null, 
         bookable: true, // Only show bookable events for last minute
         official: null, 
         categories: [],

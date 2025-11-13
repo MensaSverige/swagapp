@@ -1,10 +1,11 @@
 import { useEffect, useCallback } from 'react';
-import { Event } from '../../../api_schema/types';
-import { 
-    GroupedEvents,
-    findNextEvent
+import {
+  GroupedEvents,
+  ExtendedEvent,
+  findNextEvent,
+  createExtendedEvent
 } from '../utils/eventUtils';
-import { fetchEvents } from '../services/eventService';
+import { fetchEvents, attendEvent, unattendEvent } from '../services/eventService';
 import useStore from '../../common/store/store';
 import { EventFilterOptions } from '../store/EventsSlice';
 
@@ -15,55 +16,54 @@ interface UseEventsOptions {
 }
 
 interface UseEventsReturn {
-  // All events data
-  allEvents: Event[];
-  
-  // Schedule events (all events)
-  scheduleGroupedEvents: GroupedEvents;
-  scheduleNextEvent: Event | null;
-  
+  // All events data (extended events only)
+  allEvents: ExtendedEvent[];
   // Dashboard events (attending + upcoming with limit)
   dashboardGroupedEvents: GroupedEvents;
-  dashboardNextEvent: Event | null;
+  dashboardNextEvent: ExtendedEvent | null;
   dashboardHasMoreEvents: boolean;
-  
+
   // Filtered events (based on current filters in store)
   filteredGroupedEvents: GroupedEvents;
-  filteredNextEvent: Event | null;
+  filteredNextEvent: ExtendedEvent | null;
   filteredHasMore: boolean;
   filteredTotalCount: number;
   filteredCount: number;
-  
+
   // Shared loading and error states
   loading: boolean;
   error: Error | null;
   refreshing: boolean;
   lastFetched: Date | null;
-  
+
   // Filter state and actions
   currentEventFilter: EventFilterOptions;
   setCurrentEventFilter: (filter: EventFilterOptions) => void;
   resetFilters: () => void;
-  
+
   // Derived analytics
   categoryEventCounts: Record<string, number>;
   topCategories: string[];
-  lastMinuteEvents: Event[];
+  lastMinuteEvents: ExtendedEvent[];
   hasLastMinuteEvents: boolean;
-  
+
   // Actions
   refetch: () => Promise<void>;
-  addOrUpdateEvent: (event: Event) => void;
+  addOrUpdateEvent: (event: ExtendedEvent) => void;
+
+  // Event attendance actions
+  attendEventById: (eventId: string) => Promise<boolean>;
+  unattendEventById: (eventId: string) => Promise<boolean>;
 }
 
 export const useEvents = (options: UseEventsOptions = {}): UseEventsReturn => {
-  const { 
-    enableAutoRefresh = true, 
+  const {
+    enableAutoRefresh = true,
     refreshIntervalMs = 60000,
     dashboardLimit = 3
   } = options;
-  
-  const { 
+
+  const {
     // Raw events
     events,
     eventsRefreshing,
@@ -71,15 +71,7 @@ export const useEvents = (options: UseEventsOptions = {}): UseEventsReturn => {
     setEvents,
     setEventsRefreshing,
     setEventsLastFetched,
-    
-    // Schedule events (all events)
-    scheduleGroupedEvents,
-    scheduleNextEvent,
-    scheduleLoading,
-    scheduleError,
-    setScheduleLoading,
-    setScheduleError,
-    
+
     // Dashboard events (attending + upcoming with limit)
     dashboardGroupedEvents,
     dashboardNextEvent,
@@ -93,14 +85,14 @@ export const useEvents = (options: UseEventsOptions = {}): UseEventsReturn => {
     currentEventFilter,
     setCurrentEventFilter,
     resetFilters,
-    
+
     // Filtered events
     filteredGroupedEvents,
     filteredNextEvent,
     filteredHasMore,
     filteredTotalCount,
     filteredCount,
-    
+
     // Event management actions
     addOrUpdateEvent,
 
@@ -108,39 +100,35 @@ export const useEvents = (options: UseEventsOptions = {}): UseEventsReturn => {
     categoryEventCounts,
     topCategories,
     lastMinuteEvents,
-    hasLastMinuteEvents
+    hasLastMinuteEvents,
+    user
   } = useStore();
 
   // Refetch function that updates both schedule and dashboard
   const refetch = useCallback(async (): Promise<void> => {
     try {
       setEventsRefreshing(true);
-      setScheduleLoading(true);
       setDashboardLoading(true);
-      
+
       // Fetch all events - the store will automatically update derived lists
       const allEvents = await fetchEvents();
-      
+
       // Setting events in store will automatically update both schedule and dashboard
-      setEvents(allEvents);
+      setEvents(allEvents.map(event => createExtendedEvent(event, user?.userId)));
       setEventsLastFetched(new Date());
-      
+
     } catch (err) {
       const error = err as Error;
-      setScheduleError(error);
       setDashboardError(error);
       console.error('Error fetching events:', err);
     } finally {
       setEventsRefreshing(false);
-      setScheduleLoading(false);
       setDashboardLoading(false);
     }
   }, [
-    setEvents, 
-    setEventsRefreshing, 
+    setEvents,
+    setEventsRefreshing,
     setEventsLastFetched,
-    setScheduleLoading, 
-    setScheduleError,
     setDashboardLoading,
     setDashboardError
   ]);
@@ -159,65 +147,98 @@ export const useEvents = (options: UseEventsOptions = {}): UseEventsReturn => {
 
   // Auto-refresh next event detection
   useEffect(() => {
-    if (!enableAutoRefresh || Object.keys(scheduleGroupedEvents).length === 0) return;
+    if (!enableAutoRefresh) return;
 
-    const updateNextEvent = () => {
-      const nextEventFound = findNextEvent(scheduleGroupedEvents, true);
-      // Update next event through store actions if different
-      if (nextEventFound?.id !== scheduleNextEvent?.id) {
-        // The store will handle updating both schedule and dashboard next events
-        setEvents(events); // This will trigger auto-update of derived data
-      }
-    };
 
-    const intervalId = setInterval(updateNextEvent, refreshIntervalMs);
+    const intervalId = setInterval(() => {
+      refetch();
+    }, refreshIntervalMs);
     return () => clearInterval(intervalId);
-  }, [scheduleGroupedEvents, enableAutoRefresh, refreshIntervalMs, scheduleNextEvent, events, setEvents]);
+  }, [enableAutoRefresh, refreshIntervalMs, events, setEvents]);
+
+  // Event attendance functions
+  const attendEventById = useCallback(
+    async (eventId: string): Promise<boolean> => {
+      try {
+        const updatedEvent = await attendEvent(eventId);
+        // Update the event in the store with the returned data
+        const updatedEvents = events.map(event =>
+          event.id === eventId ? createExtendedEvent(updatedEvent, user?.userId) : event
+        );
+        setEvents(updatedEvents);
+        return true;
+      } catch (error) {
+        console.error('Error attending event:', error);
+        throw error;
+      }
+    },
+    [events, setEvents]
+  );
+
+  const unattendEventById = useCallback(
+    async (eventId: string): Promise<boolean> => {
+      try {
+        await unattendEvent(eventId);
+        // Update the event in the store to set attending to false
+        const updatedEvents = events.map(event =>
+          event.id === eventId
+            ? createExtendedEvent({ ...event, attending: false }, user?.userId)
+            : event
+        );
+        setEvents(updatedEvents);
+        return true;
+      } catch (error) {
+        console.error('Error unattending event:', error);
+        throw error;
+      }
+    },
+    [events, setEvents]
+  );
 
   // Determine overall loading and error states
-  const isLoading = scheduleLoading || dashboardLoading;
-  const hasError = scheduleError || dashboardError;
+  const isLoading = dashboardLoading;
+  const hasError = dashboardError;
 
   return {
     // All events data
     allEvents: events,
-    
-    // Schedule events (all events)
-    scheduleGroupedEvents,
-    scheduleNextEvent,
-    
+
     // Dashboard events (attending + upcoming with limit)
     dashboardGroupedEvents,
     dashboardNextEvent,
     dashboardHasMoreEvents: dashboardHasMore,
-    
+
     // Filtered events (based on current filters in store)
     filteredGroupedEvents,
     filteredNextEvent,
     filteredHasMore,
     filteredTotalCount,
     filteredCount,
-    
+
     // Shared loading and error states
     loading: isLoading,
     error: hasError,
     refreshing: eventsRefreshing,
     lastFetched: eventsLastFetched,
-    
+
     // Filter state and actions
     currentEventFilter,
     setCurrentEventFilter,
     resetFilters,
-    
+
     // Derived analytics
     categoryEventCounts,
     topCategories,
     lastMinuteEvents,
     hasLastMinuteEvents,
-    
+
     // Actions
     refetch,
-    addOrUpdateEvent
+    addOrUpdateEvent,
+
+    // Event attendance actions
+    attendEventById,
+    unattendEventById
   };
 };
 

@@ -2,6 +2,7 @@ import apiClient from '../../common/services/apiClient';
 import FutureUserEvent, {isFutureUserEvent} from '../types/futureUserEvent';
 import FutureEvent, {isFutureEvent} from '../types/futureEvent';
 import {ExternalEventDetails, News, UserEvent, ExternalRoot, Event} from '../../../api_schema/types';
+import { ExtendedEvent } from '../utils/eventUtils';
 
 export const fetchUserEvent = async (
   eventId: string,

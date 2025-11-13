@@ -66,7 +66,14 @@ async def get_events_unofficial(current_user: dict = Depends(require_member)):
 
 @unified_events_v1.post("/events/{event_id}/attend", response_model=Event)
 async def attend_event(event_id: str, current_user: dict = Depends(require_member)):
-    return attend_event_via_unified(event_id, current_user)
+    try:
+        return attend_event_via_unified(event_id, current_user)
+    except HTTPException:
+        raise
+    except Exception as e:
+        import logging
+        logging.error(f"Unexpected error in attend_event: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
 
 
 @unified_events_v1.post("/events/{event_id}/unattend")

@@ -3,12 +3,12 @@ import { View, StyleSheet } from 'react-native';
 import { Event } from '../../../api_schema/types';
 import { ThemedText } from '@/components/ThemedText';
 import EventListItem from './EventListItem';
-import { GroupedEvents, displayLocaleTimeStringDate } from '../utils/eventUtils';
+import { ExtendedEvent, GroupedEvents, displayLocaleTimeStringDate } from '../utils/eventUtils';
 
 interface GroupedEventsListProps {
   groupedEvents: GroupedEvents;
-  onEventPress: (event: Event) => void;
-  nextEvent?: Event | null;
+  onEventPress: (event: ExtendedEvent) => void;
+  nextEvent?: ExtendedEvent | null;
   nextEventMarkerRef?: React.RefObject<View | null>;
   showCategories?: boolean;
   dateHeaderStyle?: 'default' | 'subtitle' | 'aligned';
