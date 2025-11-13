@@ -1,10 +1,6 @@
 import { useEffect, useCallback } from 'react';
-import {
-  GroupedEvents,
-  ExtendedEvent,
-  findNextEvent,
-  createExtendedEvent
-} from '../utils/eventUtils';
+import { GroupedEvents, ExtendedEvent } from '../types/eventUtilTypes';
+import { createExtendedEvent } from '../utils/eventUtils';
 import { fetchEvents, attendEvent, unattendEvent } from '../services/eventService';
 import useStore from '../../common/store/store';
 import { EventFilterOptions } from '../store/EventsSlice';
@@ -12,7 +8,6 @@ import { EventFilterOptions } from '../store/EventsSlice';
 interface UseEventsOptions {
   enableAutoRefresh?: boolean;
   refreshIntervalMs?: number;
-  dashboardLimit?: number;
 }
 
 interface UseEventsReturn {
@@ -20,13 +15,10 @@ interface UseEventsReturn {
   allEvents: ExtendedEvent[];
   // Dashboard events (attending + upcoming with limit)
   dashboardGroupedEvents: GroupedEvents;
-  dashboardNextEvent: ExtendedEvent | null;
   dashboardHasMoreEvents: boolean;
 
   // Filtered events (based on current filters in store)
   filteredGroupedEvents: GroupedEvents;
-  filteredNextEvent: ExtendedEvent | null;
-  filteredHasMore: boolean;
   filteredTotalCount: number;
   filteredCount: number;
 
@@ -45,7 +37,6 @@ interface UseEventsReturn {
   categoryEventCounts: Record<string, number>;
   topCategories: string[];
   lastMinuteEvents: ExtendedEvent[];
-  hasLastMinuteEvents: boolean;
 
   // Actions
   refetch: () => Promise<void>;
@@ -59,8 +50,7 @@ interface UseEventsReturn {
 export const useEvents = (options: UseEventsOptions = {}): UseEventsReturn => {
   const {
     enableAutoRefresh = true,
-    refreshIntervalMs = 60000,
-    dashboardLimit = 3
+    refreshIntervalMs = 60000
   } = options;
 
   const {
@@ -74,7 +64,6 @@ export const useEvents = (options: UseEventsOptions = {}): UseEventsReturn => {
 
     // Dashboard events (attending + upcoming with limit)
     dashboardGroupedEvents,
-    dashboardNextEvent,
     dashboardHasMore,
     dashboardLoading,
     dashboardError,
@@ -88,8 +77,6 @@ export const useEvents = (options: UseEventsOptions = {}): UseEventsReturn => {
 
     // Filtered events
     filteredGroupedEvents,
-    filteredNextEvent,
-    filteredHasMore,
     filteredTotalCount,
     filteredCount,
 
@@ -100,7 +87,6 @@ export const useEvents = (options: UseEventsOptions = {}): UseEventsReturn => {
     categoryEventCounts,
     topCategories,
     lastMinuteEvents,
-    hasLastMinuteEvents,
     user
   } = useStore();
 
@@ -149,12 +135,11 @@ export const useEvents = (options: UseEventsOptions = {}): UseEventsReturn => {
   useEffect(() => {
     if (!enableAutoRefresh) return;
 
-
     const intervalId = setInterval(() => {
       refetch();
     }, refreshIntervalMs);
     return () => clearInterval(intervalId);
-  }, [enableAutoRefresh, refreshIntervalMs, events, setEvents]);
+  }, [enableAutoRefresh, refreshIntervalMs, refetch]);
 
   // Event attendance functions
   const attendEventById = useCallback(
@@ -172,7 +157,7 @@ export const useEvents = (options: UseEventsOptions = {}): UseEventsReturn => {
         throw error;
       }
     },
-    [events, setEvents]
+    [events, setEvents, user?.userId]
   );
 
   const unattendEventById = useCallback(
@@ -192,7 +177,7 @@ export const useEvents = (options: UseEventsOptions = {}): UseEventsReturn => {
         throw error;
       }
     },
-    [events, setEvents]
+    [events, setEvents, user?.userId]
   );
 
   // Determine overall loading and error states
@@ -205,13 +190,10 @@ export const useEvents = (options: UseEventsOptions = {}): UseEventsReturn => {
 
     // Dashboard events (attending + upcoming with limit)
     dashboardGroupedEvents,
-    dashboardNextEvent,
     dashboardHasMoreEvents: dashboardHasMore,
 
     // Filtered events (based on current filters in store)
     filteredGroupedEvents,
-    filteredNextEvent,
-    filteredHasMore,
     filteredTotalCount,
     filteredCount,
 
@@ -230,7 +212,6 @@ export const useEvents = (options: UseEventsOptions = {}): UseEventsReturn => {
     categoryEventCounts,
     topCategories,
     lastMinuteEvents,
-    hasLastMinuteEvents,
 
     // Actions
     refetch,

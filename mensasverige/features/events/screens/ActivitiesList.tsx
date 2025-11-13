@@ -24,7 +24,7 @@ import { EventFilterOptions } from '../store/EventsSlice';
 import { FilterButton } from '../components/FilterButton';
 import { Colors } from '@/constants/Colors';
 import { useLocalSearchParams, router } from 'expo-router';
-import { ExtendedEvent } from '../utils/eventUtils';
+import { ExtendedEvent } from '../types/eventUtilTypes';
 
 interface ActivitiesListProps {
     initialFilter?: EventFilterOptions;
@@ -87,7 +87,6 @@ export const ActivitiesList: React.FC<ActivitiesListProps> = ({ initialFilter })
     // Use the main events hook and get filtered events
     const { 
         filteredGroupedEvents, 
-        filteredNextEvent, 
         loading, 
         filteredCount, 
         filteredTotalCount, 
@@ -161,13 +160,6 @@ export const ActivitiesList: React.FC<ActivitiesListProps> = ({ initialFilter })
         );
     }, [nextEventMarkerRef, scrollViewRef]);
 
-    useEffect(() => {
-        if (filteredNextEvent && !didInitiallyScroll) {
-            scrollToCurrentEvent();
-            setDidInitiallyScroll(true);
-        }
-    }, [filteredNextEvent, didInitiallyScroll, scrollToCurrentEvent]);
-
     return (
         <ThemedView useSafeArea={true} style={{ flex: 1 }}>
             {/* Unified Event Modal - handles both view/edit and create modes */}
@@ -196,18 +188,6 @@ export const ActivitiesList: React.FC<ActivitiesListProps> = ({ initialFilter })
                         isActive={isFilterActive()}
                         icon="filter-list"
                     />
-                    {filteredNextEvent && (
-                        <TouchableOpacity
-                            onPress={scrollToCurrentEvent}
-                            style={styles.scrollToButton}
-                        >
-                            <MaterialIcons 
-                                name="update" 
-                                size={24} 
-                                color={colorScheme === 'dark' ? Colors.primary400 : Colors.primary600} 
-                            />
-                        </TouchableOpacity>
-                    )}
                 </View>
             </View>
             
@@ -245,7 +225,6 @@ export const ActivitiesList: React.FC<ActivitiesListProps> = ({ initialFilter })
                 <GroupedEventsList
                     groupedEvents={filteredGroupedEvents}
                     onEventPress={handlePress}
-                    nextEvent={filteredNextEvent}
                     nextEventMarkerRef={nextEventMarkerRef}
                     showCategories={true}
                     dateHeaderStyle="aligned"

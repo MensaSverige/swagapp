@@ -1,5 +1,6 @@
 import {StateCreator} from 'zustand';
-import { GroupedEvents, getAllEventsGrouped, getUpcomingAttendingEvents, findNextEvent, EventFilter, ExtendedEvent, groupEventsByDate } from '../utils/eventUtils';
+import { GroupedEvents, ExtendedEvent } from '../types/eventUtilTypes';
+import { groupEventsByDate } from '../utils/eventUtils';
 
 // Import EventFilterOptions type
 export interface EventFilterOptions {
@@ -18,19 +19,13 @@ export interface EventsSlice {
   eventsLastFetched: Date | null;
 
   // Dashboard events (attending + upcoming with limit)
-  dashboardEvents: ExtendedEvent[];
   dashboardGroupedEvents: GroupedEvents;
   dashboardHasMore: boolean;
-  dashboardNextEvent: ExtendedEvent | null;
   dashboardLoading: boolean;
   dashboardError: Error | null;
 
   // Filtered events (for screens with active filters)
   filteredGroupedEvents: GroupedEvents;
-  filteredNextEvent: ExtendedEvent | null;
-  filteredHasMore: boolean;
-  filteredLoading: boolean;
-  filteredError: Error | null;
   filteredTotalCount: number;
   filteredCount: number;
 
@@ -41,34 +36,25 @@ export interface EventsSlice {
   categoryEventCounts: Record<string, number>;
   topCategories: string[];
   lastMinuteEvents: ExtendedEvent[];
-  hasLastMinuteEvents: boolean;
 
   setEvents: (events: ExtendedEvent[]) => void;
   setEventsRefreshing: (eventsRefreshing: boolean) => void;
   setEventsLastFetched: (eventsLastFetched: Date | null) => void;
 
   // Dashboard events actions
-  setDashboardEvents: (events: ExtendedEvent[]) => void;
   setDashboardGroupedEvents: (groupedEvents: GroupedEvents) => void;
   setDashboardHasMore: (hasMore: boolean) => void;
-  setDashboardNextEvent: (event: ExtendedEvent | null) => void;
   setDashboardLoading: (loading: boolean) => void;
   setDashboardError: (error: Error | null) => void;
 
   // Filtered events actions
   setFilteredGroupedEvents: (groupedEvents: GroupedEvents) => void;
-  setFilteredNextEvent: (event: ExtendedEvent | null) => void;
-  setFilteredHasMore: (hasMore: boolean) => void;
-  setFilteredLoading: (loading: boolean) => void;
-  setFilteredError: (error: Error | null) => void;
   setFilteredCounts: (total: number, filtered: number) => void;
 
   // Filter actions
   setCurrentEventFilter: (filter: EventFilterOptions) => void;
   resetFilters: () => void;
-  
-  // Utility action to apply filters and update filtered events
-  // applyFiltersAndUpdateEvents: (events?: ExtendedEvent[]) => void;
+  updateFilteredEvents: (eventsToFilter?: ExtendedEvent[]) => void;
   
   // Action to add or update a single event
   addOrUpdateEvent: (event: ExtendedEvent) => void;
@@ -82,8 +68,6 @@ const defaultEventFilter: EventFilterOptions = {
   dateFrom: new Date(),
   dateTo: null,
 };
-
-const defaultApiFilter: EventFilter = {};
 
 // Helper function to apply client-side filtering
 const filterEvents = (events: ExtendedEvent[], eventFilter: EventFilterOptions): ExtendedEvent[] => {
@@ -175,19 +159,13 @@ export const createEventsSlice: StateCreator<EventsSlice> = (set, get) => ({
   eventsLastFetched: null,
 
   // Dashboard events
-  dashboardEvents: [],
   dashboardGroupedEvents: {},
   dashboardHasMore: false,
-  dashboardNextEvent: null,
   dashboardLoading: false,
   dashboardError: null,
 
   // Filtered events
   filteredGroupedEvents: {},
-  filteredNextEvent: null,
-  filteredHasMore: false,
-  filteredLoading: false,
-  filteredError: null,
   filteredTotalCount: 0,
   filteredCount: 0,
 
@@ -198,7 +176,6 @@ export const createEventsSlice: StateCreator<EventsSlice> = (set, get) => ({
   categoryEventCounts: {},
   topCategories: [],
   lastMinuteEvents: [],
-  hasLastMinuteEvents: false,
 
   setEvents: (events: ExtendedEvent[]) => {
     set(() => ({events: events}));
@@ -207,10 +184,6 @@ export const createEventsSlice: StateCreator<EventsSlice> = (set, get) => ({
     const state = get();
     
     try {
-      // Update schedule events (all events grouped)
-      const allGroupedEvents = getAllEventsGrouped(events);
-      const nextEvent = findNextEvent(allGroupedEvents, true);
-      
       // Update dashboard events (attending events only)
       const dashboardFilter: EventFilterOptions = { 
         attendingOrHost: true, 
@@ -223,10 +196,6 @@ export const createEventsSlice: StateCreator<EventsSlice> = (set, get) => ({
 
       const dashboardGroupedEvents = groupEventsByDate(dashboardEvents.slice(0, 3));
       
-      // update filtered events 
-      const filteredEvents = filterEvents(events, state.currentEventFilter);
-      const filteredGroupedEvents = groupEventsByDate(filteredEvents);
-
       // Calculate derived analytics
       const categoryEventCounts = calculateCategoryEventCounts(events);
       const topCategories = getTopCategories(categoryEventCounts);
@@ -238,20 +207,17 @@ export const createEventsSlice: StateCreator<EventsSlice> = (set, get) => ({
         dateFrom: new Date(),
         dateTo: new Date(new Date().getTime() + 2 * 60 * 60 * 1000) // next 2 hours
       });
-      const hasLastMinuteEventsData = lastMinuteEventsData.length > 0;
 
       set({
-        dashboardEvents,
         dashboardGroupedEvents,
         dashboardHasMore: dashboardEvents.length > 3,
-        filteredGroupedEvents,
-        filteredCount: filteredEvents.length,
-        filteredTotalCount: events.length,
         categoryEventCounts,
         topCategories,
-        lastMinuteEvents: lastMinuteEventsData,
-        hasLastMinuteEvents: hasLastMinuteEventsData,
+        lastMinuteEvents: lastMinuteEventsData
       });
+
+      // Update filtered events using the new helper method
+      get().updateFilteredEvents(events);
 
     } catch (error) {
       console.error('Error updating derived event lists:', error);
@@ -265,35 +231,32 @@ export const createEventsSlice: StateCreator<EventsSlice> = (set, get) => ({
     set({eventsLastFetched}),
 
   // Dashboard events actions
-  setDashboardEvents: (events: ExtendedEvent[]) => set({dashboardEvents: events}),
   setDashboardGroupedEvents: (groupedEvents: GroupedEvents) => set({dashboardGroupedEvents: groupedEvents}),
   setDashboardHasMore: (hasMore: boolean) => set({dashboardHasMore: hasMore}),
-  setDashboardNextEvent: (event: ExtendedEvent | null) => set({dashboardNextEvent: event}),
   setDashboardLoading: (loading: boolean) => set({dashboardLoading: loading}),
   setDashboardError: (error: Error | null) => set({dashboardError: error}),
 
   // Filtered events actions
   setFilteredGroupedEvents: (groupedEvents: GroupedEvents) => set({filteredGroupedEvents: groupedEvents}),
-  setFilteredNextEvent: (event: ExtendedEvent | null) => set({filteredNextEvent: event}),
-  setFilteredHasMore: (hasMore: boolean) => set({filteredHasMore: hasMore}),
-  setFilteredLoading: (loading: boolean) => set({filteredLoading: loading}),
-  setFilteredError: (error: Error | null) => set({filteredError: error}),
   setFilteredCounts: (total: number, filtered: number) => set({filteredTotalCount: total, filteredCount: filtered}),
 
   // Filter actions
+  updateFilteredEvents: (eventsToFilter?: ExtendedEvent[]) => {
+    const state = get();
+    const events = eventsToFilter || state.events;
+    const filteredEvents = filterEvents(events, state.currentEventFilter);
+    const filteredGroupedEvents = groupEventsByDate(filteredEvents);
+    set({ filteredGroupedEvents, filteredCount: filteredEvents.length, filteredTotalCount: events.length });
+  },
   setCurrentEventFilter: (filter: EventFilterOptions) => {
     set({currentEventFilter: filter});
-    const filteredEvents = filterEvents(get().events, filter);
-    const filteredGroupedEvents = groupEventsByDate(filteredEvents);
-    set({ filteredGroupedEvents, filteredCount: filteredEvents.length, filteredTotalCount: get().events.length });
+    get().updateFilteredEvents();
   },
   resetFilters: () => {
     set({
       currentEventFilter: defaultEventFilter
     });
-    const filteredEvents = filterEvents(get().events, defaultEventFilter);
-    const filteredGroupedEvents = groupEventsByDate(filteredEvents);
-    set({ filteredGroupedEvents, filteredCount: filteredEvents.length, filteredTotalCount: get().events.length });
+    get().updateFilteredEvents();
   },
 
 

@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { View, StyleSheet, TouchableOpacity, useColorScheme } from 'react-native';
-import { fetchExternalRoot, fetchEvents } from '../services/eventService';
-import { ExternalRoot, Event } from '../../../api_schema/types';
+import { fetchExternalRoot } from '../services/eventService';
+import { ExternalRoot } from '../../../api_schema/types';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import ParentEventDetails from './ParentEventDetails';
@@ -9,12 +9,11 @@ import GroupedEventsList from './GroupedEventsList';
 import UnifiedEventModal from './UnifiedEventModal';
 import CategoryBadge from './CategoryBadge';
 import { MaterialIcons } from '@expo/vector-icons';
-import { router } from 'expo-router';
 import { Colors } from '@/constants/Colors';
 import { useEvents } from '../hooks/useEvents';
 import { navigateToAttendingEvents, navigateToBookableEvents, navigateToScheduleWithFilter, navigateToLastMinuteEvents } from '../utilities/navigationUtils';
 import { EVENT_CATEGORIES } from '../utilities/EventCategories';
-import { ExtendedEvent } from '../utils/eventUtils';
+import { ExtendedEvent } from '../types/eventUtilTypes';
 
 const ParentEventDashboard = () => {
     const colorScheme = useColorScheme();
@@ -30,7 +29,6 @@ const ParentEventDashboard = () => {
         refetch, 
         addOrUpdateEvent,
         topCategories,
-        hasLastMinuteEvents,
         lastMinuteEvents 
     } = useEvents();
 
@@ -193,7 +191,7 @@ const ParentEventDashboard = () => {
            {/* Last Minute and Create Activity Side by Side */}
             <View style={styles.actionsRow}>
                 {/* Last Minute Section */}
-                {hasLastMinuteEvents && (
+                {lastMinuteEvents.length > 0 && (
                     <TouchableOpacity 
                         style={[
                             styles.actionCard, 
@@ -222,7 +220,7 @@ const ParentEventDashboard = () => {
                     style={[
                         styles.actionCard, 
                         styles.createCard,
-                        hasLastMinuteEvents ? styles.equalWidth : styles.fullWidthSingle
+                        lastMinuteEvents.length > 0 ? styles.equalWidth : styles.fullWidthSingle
                     ]}
                     onPress={() => setShowCreateForm(true)}
                     activeOpacity={0.7}

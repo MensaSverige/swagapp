@@ -6,7 +6,7 @@ import CategoryBadge from './CategoryBadge';
 import { Colors } from '@/constants/Colors';
 import { MaterialIcons } from '@expo/vector-icons';
 import OfficialEventIcon from '../../../components/icons/OfficialEventIcon';
-import { ExtendedEvent } from '../utils/eventUtils';
+import { ExtendedEvent } from '../types/eventUtilTypes';
 
 interface EventListItemProps {
     event: ExtendedEvent;

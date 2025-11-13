@@ -17,7 +17,8 @@ import { Colors } from '@/constants/Colors';
 import useStore from '@/features/common/store/store';
 import EventMapField from './EventMapField';
 import { eventCardStyles, editableFieldStyles } from '../styles/eventCardStyles';
-import { createExtendedEvent, ExtendedEvent } from '../utils/eventUtils';
+import { ExtendedEvent } from '../types/eventUtilTypes';
+import { createExtendedEvent } from '../utils/eventUtils';
 
 interface CreateEventCardProps {
   onEventCreated?: (event: ExtendedEvent) => void;

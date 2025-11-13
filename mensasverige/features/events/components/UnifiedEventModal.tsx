@@ -12,7 +12,7 @@ import CreateEventCard from './CreateEventCard';
 import { canUserEditEvent } from '../utils/eventPermissions';
 import useStore from '@/features/common/store/store';
 import { MaterialIcons } from '@expo/vector-icons';
-import { ExtendedEvent } from '../utils/eventUtils';
+import { ExtendedEvent } from '../types/eventUtilTypes';
 
 interface EventDetailsProps {
   event?: ExtendedEvent,
@@ -68,7 +68,6 @@ const UnifiedEventModal: React.FC<EventDetailsProps> = ({
       transparent={true}
       animationType="fade"
       onRequestClose={handleClose}
-      presentationStyle="fullScreen"
     >
       <View style={styles.modalOverlay}>
         <TouchableOpacity

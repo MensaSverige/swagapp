@@ -3,7 +3,8 @@ import { View, StyleSheet } from 'react-native';
 import { Event } from '../../../api_schema/types';
 import { ThemedText } from '@/components/ThemedText';
 import EventListItem from './EventListItem';
-import { ExtendedEvent, GroupedEvents, displayLocaleTimeStringDate } from '../utils/eventUtils';
+import { ExtendedEvent, GroupedEvents } from '../types/eventUtilTypes';
+import { displayLocaleTimeStringDate } from '../utils/eventUtils';
 
 interface GroupedEventsListProps {
   groupedEvents: GroupedEvents;
