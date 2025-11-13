@@ -9,6 +9,7 @@ import {
 } from '../utils/eventUtils';
 import { fetchEvents } from '../services/eventService';
 import useStore from '../../common/store/store';
+import { useDashboardEventsIndependent } from './useDashboardEventsIndependent';
 
 interface UseEventsOptions {
   filter?: EventFilter;
@@ -35,13 +36,20 @@ export const useEvents = (options: UseEventsOptions = {}): UseEventsReturn => {
     refreshIntervalMs = 60000 
   } = options;
   
-  const [groupedEvents, setGroupedEvents] = useState<GroupedEvents>({});
-  const [nextEvent, setNextEvent] = useState<Event | null>(null);
   const [hasMoreEvents, setHasMoreEvents] = useState<boolean | undefined>(undefined);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
   
-  const { events, setEvents } = useStore();
+  const { 
+    events, 
+    setEvents,
+    scheduleGroupedEvents: groupedEvents,
+    scheduleNextEvent: nextEvent,
+    scheduleLoading: loading,
+    scheduleError: error,
+    setScheduleGroupedEvents,
+    setScheduleNextEvent,
+    setScheduleLoading,
+    setScheduleError
+  } = useStore();
 
   const processEventsData = useCallback((eventsData: Event[]) => {
     try {
@@ -65,33 +73,33 @@ export const useEvents = (options: UseEventsOptions = {}): UseEventsReturn => {
         processedGroupedEvents = getAllEventsGrouped(eventsData);
       }
 
-      setGroupedEvents(processedGroupedEvents);
+      setScheduleGroupedEvents(processedGroupedEvents);
       setHasMoreEvents(hasMore);
 
       // Find next event
       const nextEventFound = findNextEvent(processedGroupedEvents, true);
-      setNextEvent(nextEventFound);
+      setScheduleNextEvent(nextEventFound);
 
-      setError(null);
+      setScheduleError(null);
     } catch (err) {
-      setError(err as Error);
+      setScheduleError(err as Error);
       console.error('Error processing events:', err);
     }
-  }, [filter]);
+  }, [filter, setScheduleGroupedEvents, setScheduleNextEvent, setScheduleError]);
 
   const refetch = useCallback(async (): Promise<void> => {
     try {
-      setLoading(true);
+      setScheduleLoading(true);
       const fetchedEvents = await fetchEvents();
       setEvents(fetchedEvents); // Update store
       processEventsData(fetchedEvents);
     } catch (err) {
-      setError(err as Error);
+      setScheduleError(err as Error);
       console.error('Error fetching events:', err);
     } finally {
-      setLoading(false);
+      setScheduleLoading(false);
     }
-  }, [setEvents, processEventsData]);
+  }, [setEvents, processEventsData, setScheduleLoading, setScheduleError]);
 
   // Initial load
   useEffect(() => {
@@ -99,14 +107,14 @@ export const useEvents = (options: UseEventsOptions = {}): UseEventsReturn => {
       // Use events from store if available, otherwise fetch
       if (events && events.length > 0) {
         processEventsData(events);
-        setLoading(false);
+        setScheduleLoading(false);
       } else {
         await refetch();
       }
     };
 
     loadEvents();
-  }, [events]);
+  }, [events, processEventsData, refetch, setScheduleLoading]);
 
   // Auto-refresh next event detection
   useEffect(() => {
@@ -114,12 +122,12 @@ export const useEvents = (options: UseEventsOptions = {}): UseEventsReturn => {
 
     const updateNextEvent = () => {
       const nextEventFound = findNextEvent(groupedEvents, true);
-      setNextEvent(nextEventFound);
+      setScheduleNextEvent(nextEventFound);
     };
 
     const intervalId = setInterval(updateNextEvent, refreshIntervalMs);
     return () => clearInterval(intervalId);
-  }, [groupedEvents, enableAutoRefresh, refreshIntervalMs]);
+  }, [groupedEvents, enableAutoRefresh, refreshIntervalMs, setScheduleNextEvent]);
 
   return {
     groupedEvents,
@@ -133,12 +141,10 @@ export const useEvents = (options: UseEventsOptions = {}): UseEventsReturn => {
 
 /**
  * Hook specifically for dashboard events (upcoming + attending)
+ * Uses the independent dashboard hook with Zustand store
  */
 export const useDashboardEvents = (limit: number = 3) => {
-  return useEvents({
-    filter: { attending: true, upcoming: true, limit },
-    enableAutoRefresh: false
-  });
+  return useDashboardEventsIndependent(limit);
 };
 
 /**

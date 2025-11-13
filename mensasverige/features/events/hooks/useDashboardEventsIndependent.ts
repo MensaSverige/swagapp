@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useEffect, useCallback } from 'react';
 import { Event } from '../../../api_schema/types';
 import { 
     getUpcomingAttendingEvents, 
@@ -6,6 +6,7 @@ import {
     GroupedEvents
 } from '../utils/eventUtils';
 import { fetchEvents } from '../services/eventService';
+import useStore from '../../common/store/store';
 
 interface UseDashboardEventsReturn {
   groupedEvents: GroupedEvents;
@@ -17,16 +18,24 @@ interface UseDashboardEventsReturn {
 }
 
 /**
- * Custom hook for dashboard events - independent local state that fetches its own data
- * This ensures the dashboard events list doesn't get affected by navigation to other screens
+ * Custom hook for dashboard events - uses Zustand store for state management
+ * This ensures the dashboard events list is maintained globally across navigation
  */
 export const useDashboardEventsIndependent = (limit: number = 3): UseDashboardEventsReturn => {
-  const [groupedEvents, setGroupedEvents] = useState<GroupedEvents>({});
-  const [nextEvent, setNextEvent] = useState<Event | null>(null);
-  const [hasMoreEvents, setHasMoreEvents] = useState<boolean | undefined>(undefined);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
-  const [dashboardEvents, setDashboardEvents] = useState<Event[]>([]);
+  const {
+    dashboardEvents,
+    dashboardGroupedEvents: groupedEvents,
+    dashboardHasMore: hasMoreEvents,
+    dashboardNextEvent: nextEvent,
+    dashboardLoading: loading,
+    dashboardError: error,
+    setDashboardEvents,
+    setDashboardGroupedEvents,
+    setDashboardHasMore,
+    setDashboardNextEvent,
+    setDashboardLoading,
+    setDashboardError
+  } = useStore();
 
   const processEventsData = useCallback((eventsData: Event[]) => {
     try {
@@ -49,23 +58,23 @@ export const useDashboardEventsIndependent = (limit: number = 3): UseDashboardEv
         hasMore: result.hasMore
       });
       
-      setGroupedEvents(result.groupedEvents);
-      setHasMoreEvents(result.hasMore);
+      setDashboardGroupedEvents(result.groupedEvents);
+      setDashboardHasMore(result.hasMore);
 
       // Find next event
       const nextEventFound = findNextEvent(result.groupedEvents, true);
-      setNextEvent(nextEventFound);
+      setDashboardNextEvent(nextEventFound);
 
-      setError(null);
+      setDashboardError(null);
     } catch (err) {
-      setError(err as Error);
+      setDashboardError(err as Error);
       console.error('Error processing dashboard events:', err);
     }
-  }, [limit]);
+  }, [limit, setDashboardGroupedEvents, setDashboardHasMore, setDashboardNextEvent, setDashboardError]);
 
   const fetchDashboardEvents = useCallback(async () => {
     try {
-      setLoading(true);
+      setDashboardLoading(true);
       console.log('Fetching events for dashboard...');
       
       // Fetch events that the user is attending
@@ -84,12 +93,12 @@ export const useDashboardEventsIndependent = (limit: number = 3): UseDashboardEv
       setDashboardEvents(fetchedEvents);
       processEventsData(fetchedEvents);
     } catch (err) {
-      setError(err as Error);
+      setDashboardError(err as Error);
       console.error('Error fetching dashboard events:', err);
     } finally {
-      setLoading(false);
+      setDashboardLoading(false);
     }
-  }, [processEventsData]);
+  }, [processEventsData, setDashboardLoading, setDashboardEvents, setDashboardError]);
 
   const refetch = useCallback(() => {
     fetchDashboardEvents();

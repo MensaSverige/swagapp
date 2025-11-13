@@ -2,7 +2,6 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   View,
   Text,
-  ScrollView,
   Image,
   StyleSheet,
   TouchableOpacity,
@@ -23,6 +22,7 @@ import EventDateTimeDisplay from './EventDateTimeDisplay';
 import useStore from '../../common/store/store';
 import { useEventAttendance } from '../hooks/useEventAttendance';
 import CategoryBadge from './CategoryBadge';
+import { eventCardStyles, dateTimeStyles } from '../styles/eventCardStyles';
 
 
 const handleLinkPress = (url: string) => {
@@ -69,7 +69,7 @@ const AttendingComponent: React.FC<{
 
   if (changingAttendance) {
     return (
-      <View style={styles.attendingButtonContainer}>
+      <View style={eventCardStyles.attendingButtonContainer}>
         <ActivityIndicator size="small" color="#0F766E" />
       </View>
     );
@@ -77,18 +77,18 @@ const AttendingComponent: React.FC<{
 
   if (event.attending) {
     return (
-      <View style={styles.attendingButtonContainer}>
-        <TouchableOpacity onPress={handlePressUnattend} style={styles.unattendButton}>
-          <Text style={styles.buttonText}>Ta bort anmälan</Text>
+      <View style={eventCardStyles.attendingButtonContainer}>
+        <TouchableOpacity onPress={handlePressUnattend} style={eventCardStyles.unattendButton}>
+          <Text style={eventCardStyles.buttonText}>Ta bort anmälan</Text>
         </TouchableOpacity>
       </View>
     );
   } else {
     if (event.bookable) {
       return (
-        <View style={styles.attendingButtonContainer}>
-          <TouchableOpacity onPress={handlePressAttend} style={styles.attendingButton}>
-            <Text style={styles.buttonText}>Anmäl mig!</Text>
+        <View style={eventCardStyles.attendingButtonContainer}>
+          <TouchableOpacity onPress={handlePressAttend} style={eventCardStyles.attendingButton}>
+            <Text style={eventCardStyles.buttonText}>Anmäl mig!</Text>
           </TouchableOpacity>
         </View>
       );
@@ -133,23 +133,21 @@ const UnifiedEventCard: React.FC<{
   }, [event.maxAttendees, event.attendees, event.extras]);
 
   return (
-    <ScrollView style={styles.container}>
-      <View style={styles.card}>
+    <View>
         <EventDateTimeDisplay
           start={event.start ?? ""}
           end={event.end}
           isEditable={false}
         />
-        <View style={styles.vstack}>
           {event.imageUrl && (
             <Image
-              style={styles.eventImage}
+              style={eventCardStyles.eventImage}
               source={{ uri: event.imageUrl }}
               resizeMode="contain"
             />
           )}
-          <View style={styles.headingContainer}>
-            <Text style={styles.heading}>
+          <View style={eventCardStyles.headingContainer}>
+            <Text style={eventCardStyles.heading}>
               {event.name}
             </Text>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
@@ -166,7 +164,7 @@ const UnifiedEventCard: React.FC<{
           </View>
 
           {(event.address || event.locationDescription) && (
-            <View style={styles.locationSection}>
+            <View style={eventCardStyles.locationSection}>
               {event.address && (
                 <AddressLinkAndIcon
                   displayName={
@@ -178,15 +176,15 @@ const UnifiedEventCard: React.FC<{
                 />
               )}
               {event.locationDescription && (
-                <Text style={styles.locationText}>{event.locationDescription}</Text>
+                <Text style={eventCardStyles.locationText}>{event.locationDescription}</Text>
               )}
             </View>
           )}
 
           {/* Tags */}
           { ((event.tags && event.tags.length > 0) || (event.official !== undefined)) && (
-            <View style={styles.tagsSection}>
-              <View style={styles.tagsContainer}>
+            <View style={eventCardStyles.tagsSection}>
+              <View style={eventCardStyles.tagsContainer}>
                 {/* Event type badge */}
                         <CategoryBadge
                             eventType={event.official ? 'official' : 'non-official'}
@@ -206,23 +204,23 @@ const UnifiedEventCard: React.FC<{
           )}
           {/* Event Status and Type */}
           {(event.cancelled || (event.price !== undefined && event.price > 0) || event.parentEvent) && (
-            <View style={styles.eventStatusSection}>
+            <View style={eventCardStyles.eventStatusSection}>
               {event.cancelled && (
-                <View style={styles.statusRow}>
-                  <Text style={styles.statusLabel}>Status:</Text>
-                  <Text style={[styles.statusText, styles.cancelledText]}>Inställt</Text>
+                <View style={eventCardStyles.statusRow}>
+                  <Text style={eventCardStyles.statusLabel}>Status:</Text>
+                  <Text style={[eventCardStyles.statusText, eventCardStyles.cancelledText]}>Inställt</Text>
                 </View>
               )}
               {event.price !== undefined && event.price > 0 && (
-                <View style={styles.statusRow}>
-                  <Text style={styles.statusLabel}>Pris:</Text>
-                  <Text style={styles.statusText}>{event.price} SEK</Text>
+                <View style={eventCardStyles.statusRow}>
+                  <Text style={eventCardStyles.statusLabel}>Pris:</Text>
+                  <Text style={eventCardStyles.statusText}>{event.price} SEK</Text>
                 </View>
               )}
               {event.parentEvent && (
-                <View style={styles.statusRow}>
-                  <Text style={styles.statusLabel}>Del av:</Text>
-                  <Text style={styles.statusText}>{event.parentEvent}</Text>
+                <View style={eventCardStyles.statusRow}>
+                  <Text style={eventCardStyles.statusLabel}>Del av:</Text>
+                  <Text style={eventCardStyles.statusText}>{event.parentEvent}</Text>
                 </View>
               )}
             </View>
@@ -230,10 +228,10 @@ const UnifiedEventCard: React.FC<{
 
           {/* Hosts */}
           {event.hosts && event.hosts.length > 0 && (
-            <View style={styles.hostsSection}>
-              <Text style={styles.subHeading}>Värdar</Text>
+            <View style={eventCardStyles.hostsSection}>
+              <Text style={eventCardStyles.subHeading}>Värdar</Text>
               {event.hosts.map((host, index) => (
-                <Text key={index} style={styles.detailText}>{host.fullName || `Värd ${index + 1}`}</Text>
+                <Text key={index} style={eventCardStyles.detailText}>{host.fullName || `Värd ${index + 1}`}</Text>
               ))}
             </View>
           )}
@@ -246,27 +244,27 @@ const UnifiedEventCard: React.FC<{
             if (!hasAttendees || event.showAttendees === 'none') return null;
             
             return (
-              <View style={styles.attendeesSection}>
-                <Text style={styles.subHeading}>
+              <View style={eventCardStyles.attendeesSection}>
+                <Text style={eventCardStyles.subHeading}>
                   Deltagare ({currentCount}{event.maxAttendees ? `/${event.maxAttendees}` : ''})
                 </Text>
                 {event.showAttendees === 'all' && event.attendees && (
-                  <View style={styles.attendeesList}>
+                  <View style={eventCardStyles.attendeesList}>
                     {event.attendees.slice(0, 10).map((attendee, index) => (
-                      <Text key={index} style={styles.attendeeText}>
+                      <Text key={index} style={eventCardStyles.attendeeText}>
                         {`Deltagare ${attendee.userId}`}
                       </Text>
                     ))}
                     {event.attendees.length > 10 && (
-                      <Text style={styles.moreAttendeesText}>
+                      <Text style={eventCardStyles.moreAttendeesText}>
                         ... och {event.attendees.length - 10} till
                       </Text>
                     )}
                   </View>
                 )}
                 {event.showAttendees === 'all' && !event.attendees && currentCount > 0 && (
-                  <View style={styles.attendeesList}>
-                    <Text style={styles.attendeeText}>
+                  <View style={eventCardStyles.attendeesList}>
+                    <Text style={eventCardStyles.attendeeText}>
                       {currentCount} anmälda deltagare
                     </Text>
                   </View>
@@ -283,18 +281,18 @@ const UnifiedEventCard: React.FC<{
             </View>
           )} */}
 
-          <View style={styles.divider} />
-          <Text style={styles.descriptionText}>
+          <View style={eventCardStyles.divider} />
+          <Text style={eventCardStyles.descriptionText}>
             {filterHtml(event.description ?? "")}
           </Text>
-          <View style={styles.linksContainer}>
+          <View style={eventCardStyles.linksContainer}>
             {extractLinks(event.description ?? "")?.map((link, index) => (
               <TouchableOpacity
                 key={index}
-                style={styles.linkButton}
+                style={eventCardStyles.linkButton}
                 onPress={() => handleLinkPress(link.url)}
               >
-                <Text style={styles.linkText}>{link.name}</Text>
+                <Text style={eventCardStyles.linkText}>{link.name}</Text>
               </TouchableOpacity>
             ))}
           </View>
@@ -314,7 +312,7 @@ const UnifiedEventCard: React.FC<{
           )} */}
 
           {admins && admins.map((admin) => (
-            <View key={admin.userId} style={styles.adminRow}>
+            <View key={admin.userId} style={eventCardStyles.adminRow}>
               <UserAvatar
                 avatarSize="sm"
                 firstName={admin.firstName}
@@ -322,227 +320,19 @@ const UnifiedEventCard: React.FC<{
                 avatar_url={admin.avatar_url ?? ""}
                 onlineStatus="offline"
               />
-              <View style={styles.adminInfo}>
-                <Text style={styles.subHeading}>
+              <View style={eventCardStyles.adminInfo}>
+                <Text style={eventCardStyles.subHeading}>
                   {admin.firstName} {admin.lastName}
                 </Text>
               </View>
             </View>
           ))}
-        </View>
-      </View>
-    </ScrollView>
+
+    </View>
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    width: '100%',
-  },
-  card: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 16,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  dateText: {
-    fontSize: 14,
-    fontWeight: 'normal',
-    lineHeight: 18,
-    marginBottom: 0,
-    color: '#374151',
-  },
-  timeText: {
-    fontSize: 14,
-    color: '#0F766E',
-    marginBottom: 12,
-    paddingTop: 2,
-  },
-  eventImage: {
-    width: '100%',
-    height: 150,
-    borderRadius: 8,
-    marginBottom: 8,
-  },
-  heading: {
-    fontSize: 18,
-    fontWeight: '600',
-    marginBottom: 0,
-    color: '#111827',
-  },
-  headingContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 4,
-  },
-  subHeading: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 4,
-    color: '#111827',
-  },
-  locationText: {
-    fontSize: 14,
-    color: '#6B7280',
-    marginBottom: 12,
-  },
-
-  divider: {
-    height: 1,
-    backgroundColor: '#E5E7EB',
-    marginBottom: 16,
-  },
-  descriptionText: {
-    fontSize: 14,
-    lineHeight: 20,
-    color: '#374151',
-  },
-  linksContainer: {
-    flex: 1,
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    paddingTop: 10,
-  },
-  linkButton: {
-    marginRight: 12,
-    marginBottom: 8,
-  },
-  linkText: {
-    fontSize: 14,
-    color: '#2563EB',
-    textDecorationLine: 'underline',
-  },
-  adminRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  adminInfo: {
-    flex: 1,
-    marginLeft: 8,
-  },
-  vstack: {
-    flex: 1,
-  },
-  hstack: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  locationSection: {
-    marginBottom: 12,
-  },
-  attendingButtonContainer: {
-    marginTop: 16,
-  },
-  attendingButton: {
-    backgroundColor: '#0F766E',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  unattendButton: {
-    backgroundColor: '#DC2626',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  buttonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  eventStatusSection: {
-    marginBottom: 12,
-  },
-  statusRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 4,
-  },
-  statusLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#111827',
-    minWidth: 60,
-  },
-  statusText: {
-    fontSize: 14,
-    color: '#374151',
-  },
-  cancelledText: {
-    color: '#DC2626',
-    fontWeight: '600',
-  },
-  bookingSection: {
-    marginBottom: 12,
-  },
-  detailLabel: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#111827',
-    minWidth: 100,
-  },
-  detailText: {
-    fontSize: 14,
-    color: '#374151',
-  },
-  tagsSection: {
-    marginBottom: 12,
-  },
-  tagsContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginTop: 4,
-  },
-  tagBadge: {
-    backgroundColor: '#F3F4F6',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  tagText: {
-    fontSize: 12,
-    color: '#374151',
-    fontWeight: '500',
-  },
-  hostsSection: {
-    marginBottom: 12,
-  },
-  attendeesSection: {
-    marginBottom: 12,
-  },
-  attendeesList: {
-    marginTop: 4,
-  },
-  attendeeText: {
-    fontSize: 14,
-    color: '#374151',
-    marginBottom: 2,
-  },
-  moreAttendeesText: {
-    fontSize: 14,
-    color: '#6B7280',
-    fontStyle: 'italic',
-    marginTop: 4,
-  },
-  queueSection: {
-    marginBottom: 12,
-  },
-  adminSection: {
-    marginBottom: 12,
-  },
-});
+// Styles are now imported from ../styles/eventCardStyles
 
 
 export default UnifiedEventCard;

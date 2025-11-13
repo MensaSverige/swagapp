@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Event } from '../../../api_schema/types';
 import { 
     getAllEventsGrouped, 
@@ -40,15 +40,22 @@ export const useFilteredEvents = (options: UseFilteredEventsOptions = {}): UseFi
     refreshIntervalMs = 60000 
   } = options;
   
-  const [groupedEvents, setGroupedEvents] = useState<GroupedEvents>({});
-  const [nextEvent, setNextEvent] = useState<Event | null>(null);
   const [hasMoreEvents, setHasMoreEvents] = useState<boolean | undefined>(undefined);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
   const [allEvents, setAllEvents] = useState<Event[]>([]);
   const [totalUnfilteredCount, setTotalUnfilteredCount] = useState<number>(0);
   
-  const { events, setEvents } = useStore();
+  const { 
+    events, 
+    setEvents,
+    scheduleGroupedEvents: groupedEvents,
+    scheduleNextEvent: nextEvent,
+    scheduleLoading: loading,
+    scheduleError: error,
+    setScheduleGroupedEvents,
+    setScheduleNextEvent,
+    setScheduleLoading,
+    setScheduleError
+  } = useStore();
 
   // Create API filter params from EventFilterOptions
   const apiFilterParams = useMemo(() => {
@@ -71,7 +78,7 @@ export const useFilteredEvents = (options: UseFilteredEventsOptions = {}): UseFi
   }, [eventFilter]);
 
   // Apply client-side category filtering
-  const applyClientSideFilters = (eventsData: Event[]): Event[] => {
+  const applyClientSideFilters = useCallback((eventsData: Event[]): Event[] => {
     let filteredEvents = eventsData;
     
     // Apply category filtering
@@ -105,9 +112,9 @@ export const useFilteredEvents = (options: UseFilteredEventsOptions = {}): UseFi
     });
     
     return filteredEvents;
-  };
+  }, [eventFilter]);
 
-  const processEventsData = (eventsData: Event[]) => {
+  const processEventsData = useCallback((eventsData: Event[]) => {
     try {
       // First apply client-side filtering
       const clientFilteredEvents = applyClientSideFilters(eventsData);
@@ -132,23 +139,23 @@ export const useFilteredEvents = (options: UseFilteredEventsOptions = {}): UseFi
         processedGroupedEvents = getAllEventsGrouped(clientFilteredEvents);
       }
 
-      setGroupedEvents(processedGroupedEvents);
+      setScheduleGroupedEvents(processedGroupedEvents);
       setHasMoreEvents(hasMore);
 
       // Find next event
       const nextEventFound = findNextEvent(processedGroupedEvents, true);
-      setNextEvent(nextEventFound);
+      setScheduleNextEvent(nextEventFound);
 
-      setError(null);
+      setScheduleError(null);
     } catch (err) {
-      setError(err as Error);
+      setScheduleError(err as Error);
       console.error('Error processing events:', err);
     }
-  };
+  }, [filter, setScheduleGroupedEvents, setScheduleNextEvent, setScheduleError, applyClientSideFilters]);
 
-  const refetch = async (): Promise<void> => {
+  const refetch = useCallback(async (): Promise<void> => {
     try {
-      setLoading(true);
+      setScheduleLoading(true);
       
       // Always fetch total unfiltered count first if we have any API filters
       if (apiFilterParams && Object.keys(apiFilterParams).length > 0) {
@@ -167,24 +174,24 @@ export const useFilteredEvents = (options: UseFilteredEventsOptions = {}): UseFi
       
       processEventsData(fetchedEvents);
     } catch (err) {
-      setError(err as Error);
+      setScheduleError(err as Error);
       console.error('Error fetching events:', err);
     } finally {
-      setLoading(false);
+      setScheduleLoading(false);
     }
-  };
+  }, [apiFilterParams, setScheduleLoading, setScheduleError, setEvents, processEventsData]);
 
   // Refetch when API filter parameters change
   useEffect(() => {
     refetch();
-  }, [JSON.stringify(apiFilterParams)]);
+  }, [JSON.stringify(apiFilterParams), refetch]);
 
   // Reprocess events when client-side filters change
   useEffect(() => {
     if (allEvents.length > 0) {
       processEventsData(allEvents);
     }
-  }, [eventFilter?.categories, eventFilter?.dateFrom, eventFilter?.dateTo, JSON.stringify(filter)]);
+  }, [allEvents, processEventsData, eventFilter?.categories, eventFilter?.dateFrom, eventFilter?.dateTo, JSON.stringify(filter)]);
 
   // Auto-refresh next event detection
   useEffect(() => {
@@ -192,12 +199,12 @@ export const useFilteredEvents = (options: UseFilteredEventsOptions = {}): UseFi
 
     const updateNextEvent = () => {
       const nextEventFound = findNextEvent(groupedEvents, true);
-      setNextEvent(nextEventFound);
+      setScheduleNextEvent(nextEventFound);
     };
 
     const intervalId = setInterval(updateNextEvent, refreshIntervalMs);
     return () => clearInterval(intervalId);
-  }, [groupedEvents, enableAutoRefresh, refreshIntervalMs]);
+  }, [groupedEvents, enableAutoRefresh, refreshIntervalMs, setScheduleNextEvent]);
 
   // Calculate counts
   const totalEventsCount = totalUnfilteredCount;
@@ -217,15 +224,7 @@ export const useFilteredEvents = (options: UseFilteredEventsOptions = {}): UseFi
   };
 };
 
-/**
- * Hook specifically for dashboard events (upcoming + attending)
- */
-export const useDashboardEvents = (limit: number = 3) => {
-  return useFilteredEvents({
-    filter: { attending: true, upcoming: true, limit },
-    enableAutoRefresh: false
-  });
-};
+// Note: useDashboardEvents is now defined in useEvents.ts to avoid duplication
 
 /**
  * Hook for schedule view (all events with next event tracking and filtering)

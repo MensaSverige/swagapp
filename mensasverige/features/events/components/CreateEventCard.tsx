@@ -2,7 +2,6 @@ import React, { useCallback, useState } from 'react';
 import {
   View,
   Text,
-  ScrollView,
   StyleSheet,
   TouchableOpacity,
   Alert,
@@ -17,6 +16,7 @@ import EventDateTimeDisplay from './EventDateTimeDisplay';
 import { Colors } from '@/constants/Colors';
 import useStore from '@/features/common/store/store';
 import EventMapField from './EventMapField';
+import { eventCardStyles, editableFieldStyles } from '../styles/eventCardStyles';
 
 interface CreateEventCardProps {
   onEventCreated?: (event: Event) => void;
@@ -24,7 +24,6 @@ interface CreateEventCardProps {
   onCancel?: () => void;
   hideButtons?: boolean;
   existingEvent?: Event;
-  isInModal?: boolean;
 }
 
 const CreateEventCard: React.FC<CreateEventCardProps> = ({
@@ -33,7 +32,6 @@ const CreateEventCard: React.FC<CreateEventCardProps> = ({
   onCancel,
   hideButtons = false,
   existingEvent,
-  isInModal = false
 }) => {
   const { user } = useStore();
   const [editingField, setEditingField] = useState<string | null>(null);
@@ -172,13 +170,12 @@ const CreateEventCard: React.FC<CreateEventCardProps> = ({
   const startDate = eventData.start ? new Date(eventData.start) : new Date();
   const endDate = eventData.end ? new Date(eventData.end) : null;
 
-  return isInModal ? (
-    <ScrollView style={styles.formContainer}>
-      <View style={styles.card}>
+  return (
+    <View>
         {/* Date and Time - Editable */}
         {editingField === 'dateTime' ? (
-          <View style={styles.editModeContainer}>
-            <Text style={styles.fieldLabel}>Välj datum och tid</Text>
+          <View style={eventCardStyles.editModeContainer}>
+            <Text style={eventCardStyles.fieldLabel}>Välj datum och tid</Text>
             <DatepickerField
               label="Starttid"
               date={startDate}
@@ -192,10 +189,10 @@ const CreateEventCard: React.FC<CreateEventCardProps> = ({
               onDateChange={handleDateChange('end')}
             />
             <TouchableOpacity
-              style={[styles.button, styles.createButton, { marginTop: 12, paddingVertical: 8 }]}
+              style={[eventCardStyles.button, eventCardStyles.createButton, { marginTop: 12, paddingVertical: 8 }]}
               onPress={() => setEditingField(null)}
             >
-              <Text style={[styles.buttonText, { fontSize: 14 }]}>Klar</Text>
+              <Text style={[eventCardStyles.buttonText, { fontSize: 14 }]}>Klar</Text>
             </TouchableOpacity>
           </View>
         ) : (
@@ -208,7 +205,7 @@ const CreateEventCard: React.FC<CreateEventCardProps> = ({
         )}
 
         {/* Divider after date/time fields */}
-        <View style={styles.divider} />
+        <View style={eventCardStyles.divider} />
 
         {/* Event Name */}
 
@@ -223,7 +220,7 @@ const CreateEventCard: React.FC<CreateEventCardProps> = ({
             setEditingField(null);
           }}
           onValueChange={(value) => setEventData(prev => ({ ...prev, name: value }))}
-          style={styles.editableInputHeading}
+          style={editableFieldStyles.editableInputHeading}
         />
 
         {/* Location */}
@@ -272,7 +269,7 @@ const CreateEventCard: React.FC<CreateEventCardProps> = ({
           keyboardType="numeric"
         />
 
-        <View style={styles.divider} />
+        <View style={eventCardStyles.divider} />
 
         <EditableField
           label="Description"
@@ -289,255 +286,35 @@ const CreateEventCard: React.FC<CreateEventCardProps> = ({
         />
 
         {!hideButtons && (
-          <View style={styles.buttonContainer}>
+          <View style={eventCardStyles.buttonContainer}>
             <TouchableOpacity
-              style={[styles.button, styles.cancelButton]}
+              style={[eventCardStyles.button, eventCardStyles.cancelButton]}
               onPress={onCancel}
               disabled={isCreating}
             >
-              <Text style={styles.buttonText}>Avbryt</Text>
+              <Text style={eventCardStyles.buttonText}>Avbryt</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[styles.button, styles.createButton]}
+              style={[eventCardStyles.button, eventCardStyles.createButton]}
               onPress={validateAndSaveEvent}
               disabled={isCreating || !eventData.name?.trim()}
             >
               {isCreating ? (
                 <ActivityIndicator color={Colors.white} />
               ) : (
-                <Text style={styles.buttonText}>
+                <Text style={eventCardStyles.buttonText}>
                   {existingEvent ? 'Uppdatera' : 'Spara'}
                 </Text>
               )}
             </TouchableOpacity>
           </View>
         )}
-      </View>
-    </ScrollView>
-  ) : (
-    <KeyboardAvoidingView
-      behavior={'padding'}
-      keyboardVerticalOffset={90}
-      enabled={editingField !== 'dateTime'}
-      style={{ flex: 1 }}
-    >
-      <ScrollView style={styles.formContainer}>
-        <View style={styles.card}>
-          {/* Date and Time - Editable */}
-          {editingField === 'dateTime' ? (
-            <View style={styles.editModeContainer}>
-              <Text style={styles.fieldLabel}>Välj datum och tid</Text>
-              <DatepickerField
-                label="Starttid"
-                date={startDate}
-                minimumDate={new Date()}
-                onDateChange={handleDateChange('start')}
-              />
-              <DatepickerField
-                label="Sluttid"
-                date={endDate || undefined}
-                minimumDate={startDate}
-                onDateChange={handleDateChange('end')}
-              />
-              <TouchableOpacity
-                style={[styles.button, styles.createButton, { marginTop: 12, paddingVertical: 8 }]}
-                onPress={() => setEditingField(null)}
-              >
-                <Text style={[styles.buttonText, { fontSize: 14 }]}>Klar</Text>
-              </TouchableOpacity>
-            </View>
-          ) : (
-            <EventDateTimeDisplay
-              start={eventData.start || new Date().toISOString()}
-              end={eventData.end}
-              isEditable={true}
-              onEdit={() => setEditingField('dateTime')}
-            />
-          )}
-
-          {/* Divider after date/time fields */}
-          <View style={styles.divider} />
-
-          {/* Event Name */}
-
-          <EditableField
-            label="Event Name"
-            value={eventData.name || ''}
-            placeholder="Aktivitetens namn *"
-            isEditing={editingField === 'name'}
-            onEdit={() => setEditingField('name')}
-            onSave={(value) => {
-              setEventData(prev => ({ ...prev, name: value }));
-              setEditingField(null);
-            }}
-            onValueChange={(value) => setEventData(prev => ({ ...prev, name: value }))}
-            style={styles.editableInputHeading}
-          />
-
-          {/* Location */}
-          <EditableField
-            label="Mötesplats"
-            value={eventData.locationDescription || ''}
-            placeholder="Scandic Elmia, Rum 107"
-            isEditing={editingField === 'location'}
-            onEdit={() => setEditingField('location')}
-            onSave={(value) => {
-              setEventData(prev => ({ ...prev, locationDescription: value }));
-              setEditingField(null);
-            }}
-            onValueChange={(value) => setEventData(prev => ({ ...prev, locationDescription: value }))}
-          />
-
-          {/* Address */}
-          <EventMapField
-            location={{ address: eventData.address, latitude: eventData.latitude, longitude: eventData.longitude }}
-            onLocationChanged={(newLocation) => {
-              setEventData(prev => ({
-                ...prev,
-                address: newLocation.address,
-                latitude: newLocation.latitude,
-                longitude: newLocation.longitude
-              }));
-              if ((newLocation.latitude && newLocation.longitude) || !newLocation.address) {
-                setEditingField(null);
-              }
-            }}
-            isEditing={editingField === 'address'}
-            onEdit={() => setEditingField('address')}
-          />
-
-          <EditableField
-            label="Max Attendees"
-            value={eventData.maxAttendees?.toString() || ''}
-            placeholder="Max antal personer"
-            isEditing={editingField === 'maxAttendees'}
-            onEdit={() => setEditingField('maxAttendees')}
-            onSave={(value) => {
-              setEventData(prev => ({ ...prev, maxAttendees: value ? parseInt(value) : null }));
-              setEditingField(null);
-            }}
-            onValueChange={(value) => setEventData(prev => ({ ...prev, maxAttendees: value ? parseInt(value) : null }))}
-            keyboardType="numeric"
-          />
-
-          <View style={styles.divider} />
-
-          <EditableField
-            label="Description"
-            value={eventData.description || ''}
-            placeholder="Beskrivning av aktiviteten"
-            isEditing={editingField === 'description'}
-            onEdit={() => setEditingField('description')}
-            onSave={(value) => {
-              setEventData(prev => ({ ...prev, description: value }));
-              setEditingField(null);
-            }}
-            onValueChange={(value) => setEventData(prev => ({ ...prev, description: value }))}
-            multiline
-          />
-
-          {!hideButtons && (
-            <View style={styles.buttonContainer}>
-              <TouchableOpacity
-                style={[styles.button, styles.cancelButton]}
-                onPress={onCancel}
-                disabled={isCreating}
-              >
-                <Text style={styles.buttonText}>Avbryt</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.button, styles.createButton]}
-                onPress={validateAndSaveEvent}
-                disabled={isCreating || !eventData.name?.trim()}
-              >
-                {isCreating ? (
-                  <ActivityIndicator color={Colors.white} />
-                ) : (
-                  <Text style={styles.buttonText}>
-                    {existingEvent ? 'Uppdatera' : 'Spara'}
-                  </Text>
-                )}
-              </TouchableOpacity>
-            </View>
-          )}
-        </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
-  );
+    </View>
+  )
 };
 
-const styles = StyleSheet.create({
-  card: {
-    backgroundColor: Colors.white,
-    borderRadius: 12,
-    padding: 16,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-
-
-
-  divider: {
-    height: 1,
-    backgroundColor: Colors.blueGray200,
-    marginBottom: 16,
-  },
-  formContainer: {
-    paddingTop: 16,
-    flex: 1,
-  },
-  editableInputHeading: {
-    flex: 1,
-    fontSize: 18,
-    fontWeight: '600',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  buttonContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 16,
-    gap: 12,
-  },
-  button: {
-    flex: 1,
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  createButton: {
-    backgroundColor: Colors.teal600,
-  },
-  cancelButton: {
-    backgroundColor: Colors.blueGray500,
-  },
-  buttonText: {
-    color: Colors.white,
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  editModeContainer: {
-    backgroundColor: Colors.background50,
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 8,
-  },
-  fieldLabel: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: Colors.blueGray500,
-    marginBottom: 4,
-  },
-});
+// Styles are now imported from ../styles/eventCardStyles
+// Only component-specific styles remain here if any are needed
 
 export default CreateEventCard;
