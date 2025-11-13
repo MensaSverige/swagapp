@@ -1,158 +1,224 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useEffect, useCallback } from 'react';
 import { Event } from '../../../api_schema/types';
 import { 
-    getAllEventsGrouped, 
-    getUpcomingAttendingEvents, 
-    findNextEvent,
     GroupedEvents,
-    EventFilter 
+    findNextEvent
 } from '../utils/eventUtils';
 import { fetchEvents } from '../services/eventService';
 import useStore from '../../common/store/store';
-import { useDashboardEventsIndependent } from './useDashboardEventsIndependent';
+import { EventFilterOptions } from '../store/EventsSlice';
 
 interface UseEventsOptions {
-  filter?: EventFilter;
   enableAutoRefresh?: boolean;
   refreshIntervalMs?: number;
+  dashboardLimit?: number;
 }
 
 interface UseEventsReturn {
-  groupedEvents: GroupedEvents;
-  nextEvent: Event | null;
-  hasMoreEvents?: boolean;
+  // All events data
+  allEvents: Event[];
+  
+  // Schedule events (all events)
+  scheduleGroupedEvents: GroupedEvents;
+  scheduleNextEvent: Event | null;
+  
+  // Dashboard events (attending + upcoming with limit)
+  dashboardGroupedEvents: GroupedEvents;
+  dashboardNextEvent: Event | null;
+  dashboardHasMoreEvents: boolean;
+  
+  // Filtered events (based on current filters in store)
+  filteredGroupedEvents: GroupedEvents;
+  filteredNextEvent: Event | null;
+  filteredHasMore: boolean;
+  filteredTotalCount: number;
+  filteredCount: number;
+  
+  // Shared loading and error states
   loading: boolean;
   error: Error | null;
+  refreshing: boolean;
+  lastFetched: Date | null;
+  
+  // Filter state and actions
+  currentEventFilter: EventFilterOptions;
+  setCurrentEventFilter: (filter: EventFilterOptions) => void;
+  resetFilters: () => void;
+  
+  // Derived analytics
+  categoryEventCounts: Record<string, number>;
+  topCategories: string[];
+  lastMinuteEvents: Event[];
+  hasLastMinuteEvents: boolean;
+  
+  // Actions
   refetch: () => Promise<void>;
+  addOrUpdateEvent: (event: Event) => void;
 }
 
-/**
- * Custom hook for managing event data with filtering, grouping, and auto-refresh
- */
 export const useEvents = (options: UseEventsOptions = {}): UseEventsReturn => {
   const { 
-    filter, 
-    enableAutoRefresh = false, 
-    refreshIntervalMs = 60000 
+    enableAutoRefresh = true, 
+    refreshIntervalMs = 60000,
+    dashboardLimit = 3
   } = options;
   
-  const [hasMoreEvents, setHasMoreEvents] = useState<boolean | undefined>(undefined);
-  
   const { 
-    events, 
+    // Raw events
+    events,
+    eventsRefreshing,
+    eventsLastFetched,
     setEvents,
-    scheduleGroupedEvents: groupedEvents,
-    scheduleNextEvent: nextEvent,
-    scheduleLoading: loading,
-    scheduleError: error,
-    setScheduleGroupedEvents,
-    setScheduleNextEvent,
+    setEventsRefreshing,
+    setEventsLastFetched,
+    
+    // Schedule events (all events)
+    scheduleGroupedEvents,
+    scheduleNextEvent,
+    scheduleLoading,
+    scheduleError,
     setScheduleLoading,
-    setScheduleError
+    setScheduleError,
+    
+    // Dashboard events (attending + upcoming with limit)
+    dashboardGroupedEvents,
+    dashboardNextEvent,
+    dashboardHasMore,
+    dashboardLoading,
+    dashboardError,
+    setDashboardLoading,
+    setDashboardError,
+
+    // Filters
+    currentEventFilter,
+    setCurrentEventFilter,
+    resetFilters,
+    
+    // Filtered events
+    filteredGroupedEvents,
+    filteredNextEvent,
+    filteredHasMore,
+    filteredTotalCount,
+    filteredCount,
+    
+    // Event management actions
+    addOrUpdateEvent,
+
+    // Derived analytics
+    categoryEventCounts,
+    topCategories,
+    lastMinuteEvents,
+    hasLastMinuteEvents
   } = useStore();
 
-  const processEventsData = useCallback((eventsData: Event[]) => {
-    try {
-      let processedGroupedEvents: GroupedEvents;
-      let hasMore: boolean | undefined = undefined;
-
-      if (filter) {
-        // Apply custom filtering if provided
-        if (filter.attending !== undefined && filter.upcoming && filter.limit) {
-          // Dashboard use case - get upcoming attending events with limit
-          const result = getUpcomingAttendingEvents(eventsData, filter.limit);
-          processedGroupedEvents = result.groupedEvents;
-          hasMore = result.hasMore;
-        } else {
-          // Custom filtering - process with provided filter
-          processedGroupedEvents = getAllEventsGrouped(eventsData);
-          // TODO: Apply other custom filters if needed
-        }
-      } else {
-        // No filter - get all events grouped (schedule view)
-        processedGroupedEvents = getAllEventsGrouped(eventsData);
-      }
-
-      setScheduleGroupedEvents(processedGroupedEvents);
-      setHasMoreEvents(hasMore);
-
-      // Find next event
-      const nextEventFound = findNextEvent(processedGroupedEvents, true);
-      setScheduleNextEvent(nextEventFound);
-
-      setScheduleError(null);
-    } catch (err) {
-      setScheduleError(err as Error);
-      console.error('Error processing events:', err);
-    }
-  }, [filter, setScheduleGroupedEvents, setScheduleNextEvent, setScheduleError]);
-
+  // Refetch function that updates both schedule and dashboard
   const refetch = useCallback(async (): Promise<void> => {
     try {
+      setEventsRefreshing(true);
       setScheduleLoading(true);
-      const fetchedEvents = await fetchEvents();
-      setEvents(fetchedEvents); // Update store
-      processEventsData(fetchedEvents);
+      setDashboardLoading(true);
+      
+      // Fetch all events - the store will automatically update derived lists
+      const allEvents = await fetchEvents();
+      
+      // Setting events in store will automatically update both schedule and dashboard
+      setEvents(allEvents);
+      setEventsLastFetched(new Date());
+      
     } catch (err) {
-      setScheduleError(err as Error);
+      const error = err as Error;
+      setScheduleError(error);
+      setDashboardError(error);
       console.error('Error fetching events:', err);
     } finally {
+      setEventsRefreshing(false);
       setScheduleLoading(false);
+      setDashboardLoading(false);
     }
-  }, [setEvents, processEventsData, setScheduleLoading, setScheduleError]);
+  }, [
+    setEvents, 
+    setEventsRefreshing, 
+    setEventsLastFetched,
+    setScheduleLoading, 
+    setScheduleError,
+    setDashboardLoading,
+    setDashboardError
+  ]);
 
   // Initial load
   useEffect(() => {
     const loadEvents = async () => {
-      // Use events from store if available, otherwise fetch
-      if (events && events.length > 0) {
-        processEventsData(events);
-        setScheduleLoading(false);
-      } else {
+      // Only fetch if we don't have events or they're stale
+      if (events.length === 0) {
         await refetch();
       }
     };
 
     loadEvents();
-  }, [events, processEventsData, refetch, setScheduleLoading]);
+  }, [events.length, refetch]);
 
   // Auto-refresh next event detection
   useEffect(() => {
-    if (!enableAutoRefresh || Object.keys(groupedEvents).length === 0) return;
+    if (!enableAutoRefresh || Object.keys(scheduleGroupedEvents).length === 0) return;
 
     const updateNextEvent = () => {
-      const nextEventFound = findNextEvent(groupedEvents, true);
-      setScheduleNextEvent(nextEventFound);
+      const nextEventFound = findNextEvent(scheduleGroupedEvents, true);
+      // Update next event through store actions if different
+      if (nextEventFound?.id !== scheduleNextEvent?.id) {
+        // The store will handle updating both schedule and dashboard next events
+        setEvents(events); // This will trigger auto-update of derived data
+      }
     };
 
     const intervalId = setInterval(updateNextEvent, refreshIntervalMs);
     return () => clearInterval(intervalId);
-  }, [groupedEvents, enableAutoRefresh, refreshIntervalMs, setScheduleNextEvent]);
+  }, [scheduleGroupedEvents, enableAutoRefresh, refreshIntervalMs, scheduleNextEvent, events, setEvents]);
+
+  // Determine overall loading and error states
+  const isLoading = scheduleLoading || dashboardLoading;
+  const hasError = scheduleError || dashboardError;
 
   return {
-    groupedEvents,
-    nextEvent,
-    hasMoreEvents,
-    loading,
-    error,
-    refetch
+    // All events data
+    allEvents: events,
+    
+    // Schedule events (all events)
+    scheduleGroupedEvents,
+    scheduleNextEvent,
+    
+    // Dashboard events (attending + upcoming with limit)
+    dashboardGroupedEvents,
+    dashboardNextEvent,
+    dashboardHasMoreEvents: dashboardHasMore,
+    
+    // Filtered events (based on current filters in store)
+    filteredGroupedEvents,
+    filteredNextEvent,
+    filteredHasMore,
+    filteredTotalCount,
+    filteredCount,
+    
+    // Shared loading and error states
+    loading: isLoading,
+    error: hasError,
+    refreshing: eventsRefreshing,
+    lastFetched: eventsLastFetched,
+    
+    // Filter state and actions
+    currentEventFilter,
+    setCurrentEventFilter,
+    resetFilters,
+    
+    // Derived analytics
+    categoryEventCounts,
+    topCategories,
+    lastMinuteEvents,
+    hasLastMinuteEvents,
+    
+    // Actions
+    refetch,
+    addOrUpdateEvent
   };
 };
 
-/**
- * Hook specifically for dashboard events (upcoming + attending)
- * Uses the independent dashboard hook with Zustand store
- */
-export const useDashboardEvents = (limit: number = 3) => {
-  return useDashboardEventsIndependent(limit);
-};
 
-/**
- * Hook for schedule view (all events with next event tracking)
- */
-export const useScheduleEvents = () => {
-  return useEvents({
-    enableAutoRefresh: true,
-    refreshIntervalMs: 60000
-  });
-};

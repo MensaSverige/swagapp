@@ -8,17 +8,9 @@ import { EVENT_CATEGORIES } from '../utilities/EventCategories';
 import { FilterButton } from './FilterButton';
 import OfficialEventIcon from '../../../components/icons/OfficialEventIcon';
 import { DatepickerField } from '../../common/components/DatepickerField';
+import { EventFilterOptions } from '../store/EventsSlice';
 
 const { width: screenWidth } = Dimensions.get('window');
-
-export interface EventFilterOptions {
-  attending?: boolean | null;
-  bookable?: boolean | null;
-  official?: boolean | null;
-  categories?: string[];
-  dateFrom?: Date | null;
-  dateTo?: Date | null;
-}
 
 interface EventFilterProps {
   visible: boolean;

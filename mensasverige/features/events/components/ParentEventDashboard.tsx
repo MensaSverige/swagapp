@@ -11,8 +11,8 @@ import CategoryBadge from './CategoryBadge';
 import { MaterialIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { Colors } from '@/constants/Colors';
-import { useDashboardEventsIndependent } from '../hooks/useDashboardEventsIndependent';
-import { navigateToAttendingEvents, navigateToBookableEvents, navigateToScheduleWithFilter, navigateToLastMinuteEvents, filterLastMinuteEvents } from '../utilities/navigationUtils';
+import { useEvents } from '../hooks/useEvents';
+import { navigateToAttendingEvents, navigateToBookableEvents, navigateToScheduleWithFilter, navigateToLastMinuteEvents } from '../utilities/navigationUtils';
 import { EVENT_CATEGORIES } from '../utilities/EventCategories';
 
 const ParentEventDashboard = () => {
@@ -21,14 +21,17 @@ const ParentEventDashboard = () => {
     const [eventInfo, setEventInfo] = useState<ExternalRoot | null>(null);
     const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
     const [parentLoading, setParentLoading] = useState(true);
-    const [availableCategories, setAvailableCategories] = useState<string[]>([]);
-    const [categoriesLoading, setCategoriesLoading] = useState(true);
     const [showCreateForm, setShowCreateForm] = useState(false);
-    const [hasLastMinuteEvents, setHasLastMinuteEvents] = useState(false);
-    const [lastMinuteCount, setLastMinuteCount] = useState(0);
     
-    // Use independent dashboard events hook - maintains separate state from activities list
-    const { groupedEvents: groupedUpcomingEvents, hasMoreEvents = false, loading: eventsLoading, refetch } = useDashboardEventsIndependent(3);
+    const { 
+        dashboardGroupedEvents, 
+        loading: eventsLoading, 
+        refetch, 
+        addOrUpdateEvent,
+        topCategories,
+        hasLastMinuteEvents,
+        lastMinuteEvents 
+    } = useEvents();
 
     useEffect(() => {
         const loadParentEventInfo = async () => {
@@ -43,54 +46,10 @@ const ParentEventDashboard = () => {
             }
         };
 
-        const loadAvailableCategories = async () => {
-            try {
-                setCategoriesLoading(true);
-                // Fetch all events to see which categories have events
-                const allEvents = await fetchEvents();
-                
-                // Count bookable events per category
-                const categoryEventCounts: Record<string, number> = {};
-                allEvents
-                    .filter(event => event.bookable) // Only count bookable events
-                    .forEach(event => {
-                        event.tags?.forEach(tag => {
-                            if (tag.code) {
-                                categoryEventCounts[tag.code] = (categoryEventCounts[tag.code] || 0) + 1;
-                            }
-                        });
-                    });
-                
-                // Sort categories by event count and take top 4
-                const sortedCategories = Object.entries(categoryEventCounts)
-                    .sort(([, countA], [, countB]) => countB - countA)
-                    .slice(0, 5)
-                    .map(([code]) => code);
-                
-                console.log('Bookable events per category:', categoryEventCounts);
-                console.log('Top 5 categories by bookable events:', sortedCategories);
-                setAvailableCategories(sortedCategories);
-                
-                // Check for last minute events using shared utility
-                const lastMinuteEvents = filterLastMinuteEvents(allEvents);
-                setHasLastMinuteEvents(lastMinuteEvents.length > 0);
-                setLastMinuteCount(lastMinuteEvents.length);
-                console.log('Last minute events found:', lastMinuteEvents.length);
-            } catch (error) {
-                console.error('Error loading available categories:', error);
-                setAvailableCategories([]);
-                setHasLastMinuteEvents(false);
-                setLastMinuteCount(0);
-            } finally {
-                setCategoriesLoading(false);
-            }
-        };
-
         loadParentEventInfo();
-        loadAvailableCategories();
     }, []);
 
-    const loading = parentLoading || eventsLoading || categoriesLoading;
+    const loading = parentLoading || eventsLoading;
 
     const navigateToFullSchedule = () => {
         // Navigate to schedule with attending filter set to true
@@ -114,11 +73,11 @@ const ParentEventDashboard = () => {
 
     const handleEventCreated = useCallback((event: Event) => {
         setShowCreateForm(false);
-        // Refresh the events list to show the new event
-        refetch();
+        // Add the new event to the store - this will automatically update all views
+        addOrUpdateEvent(event);
         // Optionally show the created event details after a brief delay
         setTimeout(() => setSelectedEvent(event), 500);
-    }, [refetch]);
+    }, [addOrUpdateEvent]);
 
     const handleCancelCreate = useCallback(() => {
         setShowCreateForm(false);
@@ -126,7 +85,7 @@ const ParentEventDashboard = () => {
 
     // Helper function to check if a category has events available
     const hasCategoryEvents = (categoryCode: string): boolean => {
-        return availableCategories.includes(categoryCode);
+        return topCategories.includes(categoryCode);
     };
 
     // Create navigation functions for each category
@@ -161,32 +120,9 @@ const ParentEventDashboard = () => {
             onPress: createNavigateToCategory(category.code),
             showCondition: hasCategoryEvents(category.code)
         }));
-
-    // Define event type shortcuts
-    const eventTypeShortcuts = [
-        {
-            key: 'official',
-            type: 'eventType' as const,
-            eventType: 'official' as const,
-            label: 'Officiella',
-            onPress: createNavigateToEventType(true),
-            showCondition: true // Always show these
-        },
-        {
-            key: 'non-official', 
-            type: 'eventType' as const,
-            eventType: 'non-official' as const,
-            label: 'Medlemsaktiviteter',
-            onPress: createNavigateToEventType(false),
-            showCondition: true // Always show these
-        }
-    ];
-
-    // Combine all shortcuts - put event type shortcuts first, then categories
-    const allShortcuts = [...eventTypeShortcuts, ...categoryShortcuts];
     
     // Filter shortcuts to only show available ones (limit to first 6 to fit nicely)
-    const visibleShortcuts = allShortcuts.filter(shortcut => shortcut.showCondition).slice(0, 6);
+    const visibleShortcuts = categoryShortcuts.filter(shortcut => shortcut.showCondition).slice(0, 6);
 
     if (loading) {
         return (
@@ -220,9 +156,9 @@ const ParentEventDashboard = () => {
                     setShowCreateForm(false);
                 }}
                 onEventUpdated={(updatedEvent: Event) => {
-                    // The event has been updated, refresh the events
+                    // The event has been updated, add/update it in the store
                     console.log('Event updated:', updatedEvent);
-                    refetch();
+                    addOrUpdateEvent(updatedEvent);
                     setSelectedEvent(null);
                 }}
                 onEventCreated={handleEventCreated}
@@ -273,7 +209,7 @@ const ParentEventDashboard = () => {
                                 <ThemedText type="subtitle" style={styles.lastMinuteTitle}>Sista minuten</ThemedText>
                             </View>
                             <ThemedText style={styles.lastMinuteDescription}>
-                                 Hinner du med? {lastMinuteCount} {lastMinuteCount === 1 ? 'aktivitet' : 'aktiviteter'} startar snart!
+                                 Hinner du med? {lastMinuteEvents.length} {lastMinuteEvents.length === 1 ? 'aktivitet' : 'aktiviteter'} startar snart!
                             </ThemedText>
 
                             <MaterialIcons name="arrow-forward" size={16} color={colorScheme === 'dark' ? Colors.amber400 : Colors.amber700} style={styles.actionArrow} />
@@ -306,7 +242,7 @@ const ParentEventDashboard = () => {
 
 
             {/* Upcoming Events Section */}
-            {Object.keys(groupedUpcomingEvents).length > 0 && (
+            {Object.keys(dashboardGroupedEvents).length > 0 && (
                 <View style={styles.eventsSection}>
                     <View style={styles.sectionHeader}>
                         <View style={styles.sectionTitleContainer}>
@@ -323,7 +259,7 @@ const ParentEventDashboard = () => {
                     </View>
                     
                     <GroupedEventsList
-                        groupedEvents={groupedUpcomingEvents}
+                        groupedEvents={dashboardGroupedEvents}
                         onEventPress={handleEventPress}
                         showCategories={true}
                         dateHeaderStyle="default"
@@ -332,7 +268,7 @@ const ParentEventDashboard = () => {
             )}
             
             {/* No upcoming events message */}
-            {Object.keys(groupedUpcomingEvents).length === 0 && eventInfo && (
+            {Object.keys(dashboardGroupedEvents).length === 0 && eventInfo && (
                 <View style={styles.noEventsContainer}>
                     <MaterialIcons name="event-note" size={48} color={Colors.coolGray400} style={styles.noEventsIcon} />
                     <ThemedText style={styles.noEventsText}>

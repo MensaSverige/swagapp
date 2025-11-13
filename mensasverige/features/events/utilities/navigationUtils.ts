@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { EventFilterOptions } from '../components/EventFilter';
+import { EventFilterOptions } from '../store/EventsSlice';
 import { Event } from '../../../api_schema/types';
 
 /**
@@ -11,18 +11,7 @@ export const getLastMinuteDateRange = () => {
     return { now, twoHoursFromNow };
 };
 
-/**
- * Filters events to show only last minute bookable events
- */
-export const filterLastMinuteEvents = (events: Event[]): Event[] => {
-    const { now, twoHoursFromNow } = getLastMinuteDateRange();
-    
-    return events.filter(event => {
-        if (!event.bookable) return false; // Only bookable events
-        const eventStart = new Date(event.start);
-        return eventStart >= now && eventStart <= twoHoursFromNow;
-    });
-};
+
 
 /**
  * Navigates to the schedule screen with filter parameters

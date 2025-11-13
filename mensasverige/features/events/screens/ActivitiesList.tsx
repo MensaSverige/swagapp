@@ -18,8 +18,9 @@ import { ThemedView } from '@/components/ThemedView';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedButton } from '@/components/ThemedButton';
 import { MaterialIcons } from '@expo/vector-icons';
-import { useScheduleEventsWithFilter } from '../hooks/useFilteredEvents';
-import { EventFilter, EventFilterOptions } from '../components/EventFilter';
+import { useEvents } from '../hooks/useEvents';
+import { EventFilter } from '../components/EventFilter';
+import { EventFilterOptions } from '../store/EventsSlice';
 import { FilterButton } from '../components/FilterButton';
 import { Colors } from '@/constants/Colors';
 import { useLocalSearchParams, router } from 'expo-router';
@@ -82,7 +83,22 @@ export const ActivitiesList: React.FC<ActivitiesListProps> = ({ initialFilter })
 
     console.log('Current eventFilter state:', eventFilter);
 
-    const { groupedEvents, nextEvent, loading, filteredEventsCount, totalEventsCount, refetch } = useScheduleEventsWithFilter(eventFilter);
+    // Use the main events hook and get filtered events
+    const { 
+        filteredGroupedEvents, 
+        filteredNextEvent, 
+        loading, 
+        filteredCount, 
+        filteredTotalCount, 
+        refetch,
+        setCurrentEventFilter,
+        addOrUpdateEvent
+    } = useEvents({ enableAutoRefresh: true, refreshIntervalMs: 60000 });
+
+    // Apply the filter to the store when eventFilter changes
+    useEffect(() => {
+        setCurrentEventFilter(eventFilter);
+    }, [eventFilter, setCurrentEventFilter]);
 
     const scrollViewRef = useRef<ScrollView>(null);
     const nextEventMarkerRef = useRef<View>(null);
@@ -108,11 +124,11 @@ export const ActivitiesList: React.FC<ActivitiesListProps> = ({ initialFilter })
         setShowSuccessMessage(true);
         // Hide success message after 3 seconds
         setTimeout(() => setShowSuccessMessage(false), 3000);
-        // Refresh the events list to show the new event
-        refetch();
+        // Add or update the event in the store - this will automatically update all views
+        addOrUpdateEvent(event);
         // Optionally show the created event details after a brief delay
         // setTimeout(() => setSelectedEvent(event), 500);
-    }, [refetch]);
+    }, [addOrUpdateEvent]);
 
     const handleCancelCreate = useCallback(() => {
         setShowCreateForm(false);
@@ -144,11 +160,11 @@ export const ActivitiesList: React.FC<ActivitiesListProps> = ({ initialFilter })
     }, [nextEventMarkerRef, scrollViewRef]);
 
     useEffect(() => {
-        if (nextEvent && !didInitiallyScroll) {
+        if (filteredNextEvent && !didInitiallyScroll) {
             scrollToCurrentEvent();
             setDidInitiallyScroll(true);
         }
-    }, [nextEvent, didInitiallyScroll, scrollToCurrentEvent]);
+    }, [filteredNextEvent, didInitiallyScroll, scrollToCurrentEvent]);
 
     return (
         <ThemedView useSafeArea={true} style={{ flex: 1 }}>
@@ -168,9 +184,9 @@ export const ActivitiesList: React.FC<ActivitiesListProps> = ({ initialFilter })
             <View style={styles.header}>
                 <ThemedText type="title">Aktiviteter</ThemedText>
                 <View style={styles.headerActions}>
-                    {filteredEventsCount !== totalEventsCount && (
+                    {filteredCount !== filteredTotalCount && (
                         <Text style={styles.filterCount}>
-                            Visar {filteredEventsCount} av {totalEventsCount} aktiviteter
+                            Visar {filteredCount} av {filteredTotalCount} aktiviteter
                         </Text>
                     )}
                     <FilterButton
@@ -178,7 +194,7 @@ export const ActivitiesList: React.FC<ActivitiesListProps> = ({ initialFilter })
                         isActive={isFilterActive()}
                         icon="filter-list"
                     />
-                    {nextEvent && (
+                    {filteredNextEvent && (
                         <TouchableOpacity
                             onPress={scrollToCurrentEvent}
                             style={styles.scrollToButton}
@@ -212,7 +228,7 @@ export const ActivitiesList: React.FC<ActivitiesListProps> = ({ initialFilter })
                 }
             >
 
-                {!groupedEvents || Object.keys(groupedEvents).length === 0 && !loading && (
+                {!filteredGroupedEvents || Object.keys(filteredGroupedEvents).length === 0 && !loading && (
                     <View style={styles.noEventsContainer}>
                         <MaterialIcons name="event-note" size={48} color={colorScheme === 'dark' ? Colors.coolGray500 : Colors.coolGray400} style={styles.noEventsIcon} />
                         <Text style={styles.noEventsText}>Inga aktiviteter hittades</Text>
@@ -225,9 +241,9 @@ export const ActivitiesList: React.FC<ActivitiesListProps> = ({ initialFilter })
                 )}
 
                 <GroupedEventsList
-                    groupedEvents={groupedEvents}
+                    groupedEvents={filteredGroupedEvents}
                     onEventPress={handlePress}
-                    nextEvent={nextEvent}
+                    nextEvent={filteredNextEvent}
                     nextEventMarkerRef={nextEventMarkerRef}
                     showCategories={true}
                     dateHeaderStyle="aligned"
