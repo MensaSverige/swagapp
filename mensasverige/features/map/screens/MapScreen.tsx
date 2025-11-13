@@ -240,7 +240,16 @@ const MapScreen: React.FC = () => {
               style={{ flex: 1 }}
               //style={styles.map}
               //showsUserLocation={true}
-              initialRegion={region}
+              initialRegion={
+                user?.location
+                  ? {
+                    latitude: user.location.latitude,
+                    longitude: user.location.longitude,
+                    latitudeDelta: region.latitudeDelta,
+                    longitudeDelta: region.longitudeDelta,
+                  }
+                  : region
+              }
               followsUserLocation={followsUserLocation}
               showsMyLocationButton={false}
               onUserLocationChange={e => {

@@ -67,9 +67,9 @@ export const createLocationSlice: StateCreator<LocationSlice> = (set, get) => ({
   hasLocationPermission: false,
   locationUpdateInterval: 60000,
   region: {
-    latitude: 59.269230831933754,
+    latitude: 57.7870897,
     latitudeDelta: 0.00209927763049933,
-    longitude: 15.20618537440896,
+    longitude: 14.2269104,
     longitudeDelta: 0.002381466329099524,
   },
   showlocation: false,

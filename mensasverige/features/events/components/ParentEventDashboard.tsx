@@ -211,7 +211,7 @@ const ParentEventDashboard = () => {
                 )}
 
                 {/* Create Activity Invitation Section */}
-                {!loading && Object.keys(dashboardGroupedEvents).length !== 0 && eventInfo && ( 
+                { loading || Object.keys(dashboardGroupedEvents).length !== 0 && eventInfo && ( 
                 <TouchableOpacity
                     style={[
                         styles.actionCard,
