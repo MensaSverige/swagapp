@@ -23,6 +23,7 @@ import useStore from '../../common/store/store';
 import { useEvents } from '../hooks/useEvents';
 import CategoryBadge from './CategoryBadge';
 import { eventCardStyles, dateTimeStyles } from '../styles/eventCardStyles';
+import { ExtendedEvent } from '../types/eventUtilTypes';
 
 
 const handleLinkPress = (url: string) => {
@@ -33,7 +34,7 @@ const handleLinkPress = (url: string) => {
 
 
 const AttendingComponent: React.FC<{
-  event: Event;
+  event: ExtendedEvent;
   userId: number;
 }> = ({ event, userId }) => {
   const [changingAttendance, setChangingAttendance] = useState<boolean>(false);
@@ -84,7 +85,7 @@ const AttendingComponent: React.FC<{
       </View>
     );
   } else {
-    if (event.bookable) {
+    if (!event.attendingOrHost) {
       return (
         <View style={eventCardStyles.attendingButtonContainer}>
           <TouchableOpacity onPress={handlePressAttend} style={eventCardStyles.attendingButton}>
@@ -98,7 +99,7 @@ const AttendingComponent: React.FC<{
 };
 
 const UnifiedEventCard: React.FC<{
-  event: Event;
+  event: ExtendedEvent;
 }> = ({ event }) => {
   const [admins, setAdmins] = useState<User[] | null>(null);
   const user = useStore(state => state.user);
