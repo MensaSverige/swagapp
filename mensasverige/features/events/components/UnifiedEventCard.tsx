@@ -85,7 +85,7 @@ const AttendingComponent: React.FC<{
       </View>
     );
   } else {
-    if (!event.attendingOrHost) {
+    if (!event.attendingOrHost) { // TODO: show delete event if user is host
       return (
         <View style={eventCardStyles.attendingButtonContainer}>
           <TouchableOpacity onPress={handlePressAttend} style={eventCardStyles.attendingButton}>
