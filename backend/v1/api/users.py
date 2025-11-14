@@ -10,12 +10,6 @@ from v1.db.users import get_users as db_get_users, get_user, get_users_showing_l
 users_v1 = APIRouter(prefix="/v1")
 
 
-@users_v1.get("/users/{user_id}")
-async def get_user_by_id(user_id: int):
-    user = get_user(user_id)
-    return user
-
-
 @users_v1.get("/users", response_model=List[User])
 async def get_users(show_location: bool = None,
                     _: dict = Depends(validate_request)):
