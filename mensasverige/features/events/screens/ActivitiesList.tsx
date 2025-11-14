@@ -40,14 +40,9 @@ export const ActivitiesList: React.FC<ActivitiesListProps> = ({ initialFilter })
     const [showCreateForm, setShowCreateForm] = useState(false);
     const [showSuccessMessage, setShowSuccessMessage] = useState(false);
     
-    // Get URL parameters
     const params = useLocalSearchParams();
     
-    // Helper function to parse current URL parameters into filter object
     const parseURLParams = useCallback((currentParams: typeof params): EventFilterOptions => {
-        console.log('Parsing URL params:', currentParams);
-        
-        // Parse URL parameters into filter object
         const urlFilter: EventFilterOptions = {
             attendingOrHost: currentParams.attendingOrHost === 'true' ? true : currentParams.attendingOrHost === 'false' ? false : null,
             bookable: currentParams.bookable === 'true' ? true : currentParams.bookable === 'false' ? false : null,
@@ -56,15 +51,11 @@ export const ActivitiesList: React.FC<ActivitiesListProps> = ({ initialFilter })
             dateFrom: currentParams.dateFrom ? new Date(String(currentParams.dateFrom)) : null,
             dateTo: currentParams.dateTo ? new Date(String(currentParams.dateTo)) : null,
         };
-        
-        console.log('Parsed filter:', urlFilter);
-        
-        // Return URL filter if any parameters exist, otherwise default
+
         const hasParams = Object.values(currentParams).some(Boolean);
         return hasParams ? urlFilter : { attendingOrHost: null, bookable: null, official: null, categories: [], dateFrom: null, dateTo: null };
     }, []);
     
-    // Determine initial filter from props, URL params, or default
     const getInitialFilter = useCallback((): EventFilterOptions => {
         if (initialFilter) {
             return initialFilter;
@@ -75,16 +66,11 @@ export const ActivitiesList: React.FC<ActivitiesListProps> = ({ initialFilter })
     
     const [eventFilter, setEventFilter] = useState<EventFilterOptions>(getInitialFilter());
 
-    // Reset filter when URL parameters change (e.g., from shortcut navigation)
     useEffect(() => {
         const newFilter = parseURLParams(params);
-        console.log('Setting new filter from URL params:', newFilter);
         setEventFilter(newFilter);
     }, [params.attending, params.bookable, params.official, params.categories, params.dateFrom, params.dateTo, parseURLParams]);
 
-    console.log('Current eventFilter state:', eventFilter);
-
-    // Use the main events hook and get filtered events
     const { 
         filteredGroupedEvents, 
         loading, 
@@ -95,10 +81,8 @@ export const ActivitiesList: React.FC<ActivitiesListProps> = ({ initialFilter })
         addOrUpdateEvent
     } = useEvents({ enableAutoRefresh: true, refreshIntervalMs: 60000 });
 
-    // Apply the filter to the store when eventFilter changes
     useEffect(() => {
         setCurrentEventFilter(eventFilter);
-        console.log('Applied event filter to store:', eventFilter);
     }, [eventFilter, setCurrentEventFilter]);
 
     const scrollViewRef = useRef<ScrollView>(null);
@@ -123,12 +107,9 @@ export const ActivitiesList: React.FC<ActivitiesListProps> = ({ initialFilter })
     const handleEventSaved = useCallback((event: ExtendedEvent) => {
         setShowCreateForm(false);
         setShowSuccessMessage(true);
-        // Hide success message after 3 seconds
+
         setTimeout(() => setShowSuccessMessage(false), 3000);
-        // Add or update the event in the store - this will automatically update all views
         addOrUpdateEvent(event);
-        // Optionally show the created event details after a brief delay
-        // setTimeout(() => setSelectedEvent(event), 500);
     }, [addOrUpdateEvent]);
 
     const handleCancelCreate = useCallback(() => {
@@ -146,23 +127,8 @@ export const ActivitiesList: React.FC<ActivitiesListProps> = ({ initialFilter })
         );
     };
 
-    const scrollToCurrentEvent = useCallback(() => {
-        if (!scrollViewRef.current || !nextEventMarkerRef.current) {
-            console.log('Missing refs for scrolling to next event')
-            return;
-        }
-
-        nextEventMarkerRef.current?.measureLayout(
-            scrollViewRef.current.getInnerViewNode(),
-            (_, y) => {
-                scrollViewRef.current?.scrollTo({ y, animated: true });
-            }
-        );
-    }, [nextEventMarkerRef, scrollViewRef]);
-
     return (
         <ThemedView useSafeArea={true} style={{ flex: 1 }}>
-            {/* Unified Event Modal - handles both view/edit and create modes */}
             <UnifiedEventModal
                 event={selectedEvent || undefined}
                 open={!!selectedEvent || showCreateForm}
@@ -191,7 +157,6 @@ export const ActivitiesList: React.FC<ActivitiesListProps> = ({ initialFilter })
                 </View>
             </View>
             
-            {/* Success Message */}
             {showSuccessMessage && (
                 <View style={styles.successMessage}>
                     <MaterialIcons name="check-circle" size={20} color="#059669" />
@@ -231,7 +196,6 @@ export const ActivitiesList: React.FC<ActivitiesListProps> = ({ initialFilter })
                 />
             </ScrollView>
             
-            {/* Create Event Button */}
             {!showCreateForm && (
                 <View style={styles.createButtonContainer}>
                     <ThemedButton
@@ -246,7 +210,6 @@ export const ActivitiesList: React.FC<ActivitiesListProps> = ({ initialFilter })
                 <NonMemberInfo />
             )}
             
-            {/* Side Filter Menu - rendered last to appear on top */}
             <EventFilter
                 visible={showFilter}
                 onClose={() => setShowFilter(false)}

@@ -30,7 +30,7 @@ export interface LocationSlice {
   userFilter: FilterProps
   filteredUsers: UserWithLocation[];
   setUserFilter: (filter: FilterProps) => void;
-  setFilteredUsers: (name?: string, locationTimestamp?: Date) => void;
+  setFilteredUsers: (users?: UserWithLocation[]) => void;
 
   currentLocation: Location;
   hasLocationPermission: boolean;
@@ -53,10 +53,11 @@ export const createLocationSlice: StateCreator<LocationSlice> = (set, get) => ({
     set({ userFilter: filter }),
     get().setFilteredUsers();
   },
-  setFilteredUsers: () => {
+  setFilteredUsers: (users?: UserWithLocation[]) => {
     const { userFilter, usersShowingLocation } = get();
+    const usersToFilter = users ?? usersShowingLocation;
     console.log('Filtering users:', userFilter);
-    const filteredUsers = filterUsers(usersShowingLocation, userFilter);
+    const filteredUsers = filterUsers(usersToFilter, userFilter);
     console.log('Filtered users:', filteredUsers.length);
     set({ filteredUsers });
   },
@@ -76,8 +77,8 @@ export const createLocationSlice: StateCreator<LocationSlice> = (set, get) => ({
   usersShowingLocation: [],
   selectedUser: null,
   setUsersShowingLocation: usersShowingLocation => { 
-    set({usersShowingLocation}),
-    get().setFilteredUsers();
+    set({usersShowingLocation});
+    get().setFilteredUsers(usersShowingLocation);
   },
   setHasLocationPermission: hasLocationPermission =>
     set({hasLocationPermission}),

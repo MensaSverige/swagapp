@@ -65,28 +65,7 @@ const MapScreen: React.FC = () => {
   const [visibleRegion, setVisibleRegion] = useState(region);
   const [showContactCard, setShowContactCard] = useState(false);
   const [showFilter, setshowFilter] = useState(false);
-  const [isImagesLoaded, setIsImagesLoaded] = useState(false);
 
-  // Prefetch images so they are ready to be displayed
-  useEffect(() => {
-    console.log('Loading images');
-    setIsImagesLoaded(false);
-
-    const loadImages = filteredUsers.map(user => {
-      if (user.avatar_url) {
-        return Image.prefetch(getFullUrl(user.avatar_url));
-      }
-      return Promise.resolve();
-    });
-
-    Promise.all(loadImages)
-      .then(() => {
-        setIsImagesLoaded(true);
-        console.log('Images loaded');
-      })
-      .catch((error) => console.log("Failed to load images", error));
-
-  }, [filteredUsers]);
   useFocusEffect(
     React.useCallback(() => {
       const onUnfocus = () => {
@@ -277,24 +256,30 @@ const MapScreen: React.FC = () => {
               customMapStyle={colorMode === 'dark'
                 ? darkMapstyle
                 : lightMapstyle}>
-              {filteredUsers && isImagesLoaded &&
+              {filteredUsers &&
+
                 filteredUsers
                   .filter(u => u.location.latitude >= visibleRegion.latitude - visibleRegion.latitudeDelta * 5 &&
                     u.location.latitude <= visibleRegion.latitude + visibleRegion.latitudeDelta * 5 &&
                     u.location.longitude >= visibleRegion.longitude - visibleRegion.longitudeDelta * 5 &&
                     u.location.longitude <= visibleRegion.longitude + visibleRegion.longitudeDelta * 5
                   )
-                  .map(u => (
-                    <UserMarker
-                      key={`${u.userId}-${colorMode}`}
-                      user={u}
-                      zIndex={100}
-                      highlighted={selectedUser?.userId === u.userId}
-                      onPress={(e) => {
-                        e.stopPropagation();
-                        focusOnUser(u);
-                      }} />
-                  ))}
+                  .map((u) => {
+                    return (
+                      <UserMarker
+                        key={u.userId}
+                        user={u}
+                        zIndex={100}
+                        highlighted={selectedUser?.userId === u.userId}
+                        onPress={(e) => {
+                          e.stopPropagation();
+                          focusOnUser(u);
+                        }}
+                      />
+                    );
+                  })
+
+              }
             </ReactNativeMapView>
             <View style={styles.mapControlsWrapper}>
               <TouchableOpacity

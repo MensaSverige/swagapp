@@ -1,5 +1,6 @@
-import React from 'react';
-import { View, Text, Image, StyleSheet } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { Image } from 'expo-image';
+import { View, Text, StyleSheet } from 'react-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { getFullUrl } from '../../common/functions/GetFullUrl';
 import { OnlineStatus } from '../types/userWithLocation';
@@ -71,6 +72,11 @@ const UserAvatar: React.FC<UserAvatarProps> = ({ firstName, lastName, avatar_url
     const size = getSizeValue(avatarSize || 'lg');
     const onlineStatusColor = onlineStatus ? getOnlineStatusColor(onlineStatus, colorMode) : getOnlineStatusColor('offline', colorMode);
     const styles = createStyles(size, onlineStatusColor, colorMode);
+    const [initials, setInitials] = useState('');
+
+    useEffect(() => {
+        setInitials(getInitials());
+    }, [firstName, lastName]);
 
     const getInitials = () => {
         const first = firstName?.charAt(0) || '';
@@ -82,19 +88,21 @@ const UserAvatar: React.FC<UserAvatarProps> = ({ firstName, lastName, avatar_url
         <View style={styles.container}>
             {avatar_url ? (
                 <Image
-                    source={{ uri: getFullUrl(avatar_url) }}
+                    source={{ 
+                        uri: getFullUrl(avatar_url),
+                    }}
                     style={styles.image}
-                    resizeMode="cover"
+                    contentFit="cover"
                 />
             ) : (
                 <>
-                    <Text style={styles.fallbackText}>{getInitials()}</Text>
-                    {!getInitials() && (
+                    <Text style={styles.fallbackText}>{initials}</Text>
+                    {!initials && (
                         <View style={styles.iconContainer}>
-                            <MaterialIcons 
-                                name="person" 
-                                size={size * 0.6} 
-                                color={onlineStatusColor} 
+                            <MaterialIcons
+                                name="person"
+                                size={size * 0.6}
+                                color={onlineStatusColor}
                             />
                         </View>
                     )}
@@ -104,8 +112,4 @@ const UserAvatar: React.FC<UserAvatarProps> = ({ firstName, lastName, avatar_url
     );
 };
 
-export default React.memo(UserAvatar, (prevProps, nextProps) => {
-  // Only re-render if the avatar_url or onlineStatus has changed
-  return prevProps.avatar_url === nextProps.avatar_url &&
-    prevProps.onlineStatus === nextProps.onlineStatus;
-});
+export default UserAvatar;

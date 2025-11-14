@@ -27,7 +27,6 @@ const EventListItem: React.FC<EventListItemProps> = ({
     isNextEvent = false,
     isFirstEventOfDay = false
 }) => {
-    console.log(event);
     const colorScheme = useColorScheme();
     const styles = createStyles(colorScheme ?? 'light');
     // Calculate if event should be grayed out (not bookable and user not attending)
