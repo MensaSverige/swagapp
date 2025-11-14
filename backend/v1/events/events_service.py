@@ -6,7 +6,7 @@ import logging
 from v1.events.events_model import Event
 from v1.events.events_mappers import map_external_event, map_user_event, map_event_to_user_event
 from v1.db.external_events import get_stored_external_event_details, get_all_stored_external_event_details
-from v1.external.event_api import get_booked_external_events
+from v1.external.event_api import get_booked_external_events, book_external_event, unbook_external_event
 from v1.user_events.user_events_db import (
     get_safe_future_user_events,
     get_safe_user_events_since,
@@ -137,16 +137,23 @@ def delete_user_event_via_unified(unified_event_id: str, current_user: dict) -> 
 
 
 def attend_event_via_unified(unified_event_id: str, current_user: dict) -> Event:
-    """Attend a unified event (only user events can be attended via this endpoint)."""
+    """Attend a unified event - handles both user events and external events."""
     logging.info(f"Attempting to attend event: {unified_event_id} by user: {current_user.get('userId')}")
     
-    # Only user events support attendance via this unified API
-    if not unified_event_id.startswith("usr"):
-        logging.error(f"Invalid event ID format (no usr prefix): {unified_event_id}")
-        raise HTTPException(status_code=400, detail="Only user events can be attended via this endpoint")
-    
+    # Route based on event ID prefix
+    if unified_event_id.startswith("usr"):
+        return _attend_user_event(unified_event_id, current_user)
+    elif unified_event_id.startswith("ext"):
+        return _attend_external_event(unified_event_id, current_user)
+    else:
+        logging.error(f"Invalid event ID format: {unified_event_id}")
+        raise HTTPException(status_code=400, detail="Invalid event ID format")
+
+
+def _attend_user_event(unified_event_id: str, current_user: dict) -> Event:
+    """Attend a user event (internal implementation)."""
     event_id = unified_event_id[3:]  # Remove 'usr' prefix
-    logging.info(f"Extracted event_id: {event_id}, length: {len(event_id)}")
+    logging.info(f"Extracted user event_id: {event_id}, length: {len(event_id)}")
     
     # Validate the event ID format
     if len(event_id) != 24:
@@ -189,12 +196,102 @@ def attend_event_via_unified(unified_event_id: str, current_user: dict) -> Event
     return map_user_event(updated, current_user["userId"])
 
 
-def unattend_event_via_unified(unified_event_id: str, current_user: dict) -> dict:
-    """Unattend a unified event (only user events can be unattended via this endpoint)."""
-    # Only user events support attendance via this unified API
-    if not unified_event_id.startswith("usr"):
-        raise HTTPException(status_code=400, detail="Only user events can be unattended via this endpoint")
+def _attend_external_event(unified_event_id: str, current_user: dict) -> Event:
+    """Attend an external event by booking it (internal implementation)."""
+    event_id_str = unified_event_id[3:]  # Remove 'ext' prefix
     
+    try:
+        # Convert string eventId to int for the external API
+        event_id = int(event_id_str)
+    except ValueError:
+        logging.error(f"Invalid eventId format: {event_id_str}")
+        raise HTTPException(status_code=400, detail=f"Invalid event ID: {event_id_str}")
+    
+    try:
+        # For external events, "attending" means booking
+        result = book_external_event(current_user["userId"], event_id)
+        logging.info(f"Successfully booked external event {event_id} for user {current_user['userId']}")
+        
+        # Try to find the event in our stored external events to return proper data
+        try:
+            external_events_details = get_all_stored_external_event_details()
+            for event_detail in external_events_details:
+                if event_detail.eventId == event_id:  # Compare as int
+                    # Create booked_ids set that definitely includes this event
+                    booked_ids = {event_id}  # Use int eventId
+                    
+                    # Also try to get existing booked events (but don't fail if this doesn't work)
+                    try:
+                        existing_booked = get_booked_external_events(current_user["userId"])
+                        booked_ids.update(e.eventId for e in existing_booked)
+                        logging.info(f"Found {len(existing_booked)} existing booked events for user {current_user['userId']}")
+                    except Exception as e:
+                        logging.warning(f"Could not fetch existing booked events, using just current booking: {e}")
+                    
+                    logging.info(f"Mapping external event {event_id} with booked_ids: {booked_ids}")
+                    
+                    # Map the external event with updated booking status
+                    mapped_event = map_external_event(event_detail, current_user["userId"], booked_ids)
+                    if mapped_event:
+                        # Double-check: Force attending to True since we just successfully booked
+                        mapped_event.attending = True
+                        mapped_event.bookable = False  # Can't book again since already booked
+                        logging.info(f"Returning mapped event with attending: {mapped_event.attending}")
+                        return mapped_event
+                    else:
+                        logging.error(f"map_external_event returned None for event {event_id}")
+            
+            # If we can't find the specific event, create a basic response
+            logging.warning(f"Could not find external event {event_id} in stored events, total stored: {len(external_events_details)}")
+            
+        except Exception as e:
+            logging.error(f"Failed to fetch updated external event data: {e}", exc_info=True)
+        
+        # Fallback: Create a minimal Event response with attending=True
+        from v1.events.events_model import Event
+        from datetime import datetime
+        
+        return Event(
+            eventId=unified_event_id,
+            name="External Event",
+            start=datetime.now(),
+            end=datetime.now(),
+            attending=True,  # This is the key fix - ensure attending is True
+            bookable=False,  # Not bookable anymore since we just booked it
+            official=True,
+            attendeeCount=0,
+            maxAttendees=None,
+            description="Successfully booked external event",
+            location=None,
+            host=None
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Failed to attend external event {event_id}: {e}")
+        raise HTTPException(status_code=500, detail="Failed to attend event")
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Failed to attend external event {event_id}: {e}")
+        raise HTTPException(status_code=500, detail="Failed to attend event")
+
+
+def unattend_event_via_unified(unified_event_id: str, current_user: dict) -> dict:
+    """Unattend a unified event - handles both user events and external events."""
+    # Route based on event ID prefix
+    if unified_event_id.startswith("usr"):
+        return _unattend_user_event(unified_event_id, current_user)
+    elif unified_event_id.startswith("ext"):
+        return _unattend_external_event(unified_event_id, current_user)
+    else:
+        raise HTTPException(status_code=400, detail="Invalid event ID format")
+
+
+def _unattend_user_event(unified_event_id: str, current_user: dict) -> dict:
+    """Unattend a user event (internal implementation)."""
     event_id = unified_event_id[3:]  # Remove 'usr' prefix
     
     existing = db_get_safe_user_event(event_id)
@@ -208,3 +305,62 @@ def unattend_event_via_unified(unified_event_id: str, current_user: dict) -> dic
         raise HTTPException(status_code=500, detail="Failed to unattend event")
     
     return {"message": "Successfully unattended event"}
+
+
+def _unattend_external_event(unified_event_id: str, current_user: dict) -> dict:
+    """Unattend an external event by unbooking it (internal implementation)."""
+    event_id_str = unified_event_id[3:]  # Remove 'ext' prefix
+    
+    try:
+        # Convert string eventId to int for the external API
+        event_id = int(event_id_str)
+    except ValueError:
+        logging.error(f"Invalid eventId format: {event_id_str}")
+        raise HTTPException(status_code=400, detail=f"Invalid event ID: {event_id_str}")
+    
+    try:
+        # For external events, "unattending" means unbooking
+        result = unbook_external_event(current_user["userId"], event_id)
+        logging.info(f"Successfully unbooked external event {event_id} for user {current_user['userId']}")
+        return {"message": "Successfully unattended event", "result": result}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Failed to unattend external event {event_id}: {e}")
+        raise HTTPException(status_code=500, detail="Failed to unattend event")
+
+
+def book_external_event_via_unified(unified_event_id: str, current_user: dict) -> dict:
+    """Book an external event (only external events can be booked via this endpoint)."""
+    # Only external events support booking via this unified API
+    if not unified_event_id.startswith("ext"):
+        raise HTTPException(status_code=400, detail="Only external events can be booked via this endpoint")
+    
+    event_id = unified_event_id[3:]  # Remove 'ext' prefix
+    
+    try:
+        result = book_external_event(current_user["userId"], event_id)
+        return {"message": "Successfully booked event", "result": result}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Failed to book external event {event_id}: {e}")
+        raise HTTPException(status_code=500, detail="Failed to book event")
+
+
+def unbook_external_event_via_unified(unified_event_id: str, current_user: dict) -> dict:
+    """Unbook an external event (only external events can be unbooked via this endpoint)."""
+    # Only external events support unbooking via this unified API
+    if not unified_event_id.startswith("ext"):
+        raise HTTPException(status_code=400, detail="Only external events can be unbooked via this endpoint")
+    
+    event_id = unified_event_id[3:]  # Remove 'ext' prefix
+    
+    try:
+        result = unbook_external_event(current_user["userId"], event_id)
+        return {"message": "Successfully unbooked event", "result": result}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Failed to unbook external event {event_id}: {e}")
+        raise HTTPException(status_code=500, detail="Failed to unbook event")

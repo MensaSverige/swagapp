@@ -37,6 +37,112 @@ def get_booked_external_events(userId: int) -> list[ExternalEvent]:
     return [ExternalEvent.model_validate(event) for event in events_list]
 
 
+def book_external_event(userId: int, eventId: int) -> dict:
+    """
+    Book an external event for a user.
+    
+    Args:
+        userId: The user ID for token retrieval
+        eventId: The ID of the event to book
+        
+    Returns:
+        dict: Response from the booking API
+        
+    Raises:
+        HTTPException: If booking fails or credentials are invalid
+    """
+    root = get_external_root()
+    url = root.restUrl
+    
+    user_token = get_external_token(userId)
+    if not user_token:
+        logging.error(f"No valid external token found for user {userId}")
+        raise HTTPException(status_code=401, detail="No valid external access token found. Please re-authenticate.")
+        
+    logging.info(f"Booking with user token for userId {userId}: {user_token[:10]}...")
+
+    parameters = {
+        'operation': 'book',
+        'token': user_token,
+        'eventId': eventId,
+    }
+    logging.info(f"Booking parameters: operation={parameters['operation']}, eventId={parameters['eventId']} (type: {type(parameters['eventId'])}), token=***")
+    
+    headers = {'Content-Type': 'application/json'}
+    logging.info(f"Sending POST to {url} with headers: {headers}")
+    response = requests.post(url,
+                             json=parameters,
+                             headers=headers,
+                             verify=False)
+    
+    if response.status_code != 200:
+        raise HTTPException(status_code=400, detail="Invalid credentials")
+
+    response_data = response.json()
+    print("response_data:", response_data)
+    
+    # Check if the booking operation was successful
+    if response_data.get('status') != 'OK':
+        error_message = f"Booking failed: {response_data}"
+        logging.error(f"Booking failed for user {userId}, event {eventId}: {response_data}")
+        raise HTTPException(status_code=400, detail=error_message)
+    
+    # Log the successful booking attempt
+    logging.info(f"Successfully booked event for user {userId}, event {eventId}: {response_data}")
+    
+    return response_data
+
+
+def unbook_external_event(userId: int, eventId: int) -> dict:
+    """
+    Unbook an external event for a user.
+    
+    Args:
+        userId: The user ID for token retrieval
+        eventId: The ID of the event to unbook
+        
+    Returns:
+        dict: Response from the unbooking API
+        
+    Raises:
+        HTTPException: If unbooking fails or credentials are invalid
+    """
+    root = get_external_root()
+    url = root.restUrl
+    
+    user_token = get_external_token(userId)
+    logging.info(f"Unbooking with user token for userId {userId}: {user_token[:10]}..." if user_token else f"No token found for user {userId}")
+
+    parameters = {
+        'operation': 'unbook',
+        'token': user_token,
+        'eventId': eventId,
+    }
+    logging.info(f"Unbooking parameters: operation={parameters['operation']}, eventId={parameters['eventId']}, token=***")
+    
+    headers = {'Content-Type': 'application/json'}
+    response = requests.post(url,
+                             json=parameters,
+                             headers=headers,
+                             verify=False)
+    
+    if response.status_code != 200:
+        raise HTTPException(status_code=400, detail="Invalid credentials")
+
+    response_data = response.json()
+    
+    # Check if the unbooking operation was successful
+    if response_data.get('status') != 'OK':
+        error_message = f"Unbooking failed: {response_data}"
+        logging.error(f"Unbooking failed for user {userId}, event {eventId}: {response_data}")
+        raise HTTPException(status_code=400, detail=error_message)
+    
+    # Log the successful unbooking attempt
+    logging.info(f"Successfully unbooked event for user {userId}, event {eventId}: {response_data}")
+    
+    return response_data
+
+
 def get_external_root() -> ExternalRoot:
     headers = {'Content-Type': 'application/json'}
     response = requests.get(URL_EXTERNAL_ROOT, headers=headers, verify=False)
