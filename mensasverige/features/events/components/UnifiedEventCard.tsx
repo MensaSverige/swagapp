@@ -36,7 +36,8 @@ const handleLinkPress = (url: string) => {
 const AttendingComponent: React.FC<{
   event: ExtendedEvent;
   userId: number;
-}> = ({ event, userId }) => {
+  onAttendanceChange?: () => void;
+}> = ({ event, userId, onAttendanceChange }) => {
   const [changingAttendance, setChangingAttendance] = useState<boolean>(false);
   const { attendEventById, unattendEventById } = useEvents();
 
@@ -46,6 +47,7 @@ const AttendingComponent: React.FC<{
     setChangingAttendance(true);
     try {
       await attendEventById(event.id);
+      onAttendanceChange?.(); // Notify parent of attendance change
     } catch (error) {
       console.error('Could not attend event', error);
       Alert.alert('Error', 'Could not attend event. Please try again.');
@@ -60,6 +62,7 @@ const AttendingComponent: React.FC<{
     setChangingAttendance(true);
     try {
       await unattendEventById(event.id);
+      onAttendanceChange?.(); // Notify parent of attendance change
     } catch (error) {
       console.error('Could not unattend event', error);
       Alert.alert('Error', 'Could not unattend event. Please try again.');
@@ -103,96 +106,109 @@ const UnifiedEventCard: React.FC<{
 }> = ({ event }) => {
   const [admins, setAdmins] = useState<User[] | null>(null);
   const user = useStore(state => state.user);
+  const { allEvents } = useEvents();
+
+  // Get the current event state from the store to ensure we have the latest data
+  const currentEvent = useMemo(() => {
+    const storeEvent = allEvents.find(e => e.id === event.id);
+    return storeEvent || event; // Fallback to prop if not found in store
+  }, [allEvents, event]);
+
+  // Force re-render when attendance changes
+  const [refreshKey, setRefreshKey] = useState(0);
+  const handleAttendanceChange = useCallback(() => {
+    setRefreshKey(prev => prev + 1);
+  }, []);
 
   // Helper function to get current attendee count
   const getCurrentAttendeeCount = useCallback(() => {
     // Prioritize bookedCount if available, otherwise use attendees array length
-    if (typeof event.extras?.bookedCount === 'number') {
-      return event.extras.bookedCount;
-    } else if (event.attendees) {
-      return event.attendees.length;
+    if (typeof currentEvent.extras?.bookedCount === 'number') {
+      return currentEvent.extras.bookedCount;
+    } else if (currentEvent.attendees) {
+      return currentEvent.attendees.length;
     }
     return 0;
-  }, [event.attendees, event.extras]);
+  }, [currentEvent.attendees, currentEvent.extras]);
 
   // Calculate places left for bookable events
   const placesLeft = useMemo(() => {
-    if (!event.maxAttendees) return null;
+    if (!currentEvent.maxAttendees) return null;
     
     let currentAttendees = 0;
     
     // Prioritize bookedCount if available, otherwise use attendees array length
-    if (typeof event.extras?.bookedCount === 'number') {
-      currentAttendees = event.extras.bookedCount;
-    } else if (event.attendees) {
-      currentAttendees = event.attendees.length;
+    if (typeof currentEvent.extras?.bookedCount === 'number') {
+      currentAttendees = currentEvent.extras.bookedCount;
+    } else if (currentEvent.attendees) {
+      currentAttendees = currentEvent.attendees.length;
     } else {
       return null; // Can't determine attendee count
     }
     
-    return event.maxAttendees - currentAttendees;
-  }, [event.maxAttendees, event.attendees, event.extras]);
+    return currentEvent.maxAttendees - currentAttendees;
+  }, [currentEvent.maxAttendees, currentEvent.attendees, currentEvent.extras]);
 
   return (
     <View>
         <EventDateTimeDisplay
-          start={event.start ?? ""}
-          end={event.end}
+          start={currentEvent.start ?? ""}
+          end={currentEvent.end}
           isEditable={false}
         />
-          {event.imageUrl && (
+          {currentEvent.imageUrl && (
             <Image
               style={eventCardStyles.eventImage}
-              source={{ uri: event.imageUrl }}
+              source={{ uri: currentEvent.imageUrl }}
               resizeMode="contain"
             />
           )}
           <View style={eventCardStyles.headingContainer}>
             <Text style={eventCardStyles.heading}>
-              {event.name}
+              {currentEvent.name}
             </Text>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-              {event.attending && <AttendingBadge />}
+              {currentEvent.attending && <AttendingBadge />}
               
-              {!event.bookable && (!!event.maxAttendees || event.maxAttendees === 0) && (
+              {!currentEvent.bookable && (!!currentEvent.maxAttendees || currentEvent.maxAttendees === 0) && (
                 <FullyBookedBadge />
               )}
               
-              {placesLeft !== null && placesLeft > 0 && event.maxAttendees && (
-                <PlacesLeftBadge placesLeft={placesLeft} maxAttendees={event.maxAttendees} />
+              {placesLeft !== null && placesLeft > 0 && currentEvent.maxAttendees && (
+                <PlacesLeftBadge placesLeft={placesLeft} maxAttendees={currentEvent.maxAttendees} />
               )}
             </View>
           </View>
 
-          {(event.address || event.locationDescription) && (
+          {(currentEvent.address || currentEvent.locationDescription) && (
             <View style={eventCardStyles.locationSection}>
-              {event.address && (
+              {currentEvent.address && (
                 <AddressLinkAndIcon
                   displayName={
-                    event.address.includes(', Sweden')
-                    ? event.address.replace(', Sweden', '')
-                    : event.address
+                    currentEvent.address.includes(', Sweden')
+                    ? currentEvent.address.replace(', Sweden', '')
+                    : currentEvent.address
                   }
-                  address={event.address}
+                  address={currentEvent.address}
                 />
               )}
-              {event.locationDescription && (
-                <Text style={eventCardStyles.locationText}>{event.locationDescription}</Text>
+              {currentEvent.locationDescription && (
+                <Text style={eventCardStyles.locationText}>{currentEvent.locationDescription}</Text>
               )}
             </View>
           )}
 
           {/* Tags */}
-          { ((event.tags && event.tags.length > 0) || (event.official !== undefined)) && (
+          { ((currentEvent.tags && currentEvent.tags.length > 0) || (currentEvent.official !== undefined)) && (
             <View style={eventCardStyles.tagsSection}>
               <View style={eventCardStyles.tagsContainer}>
                 {/* Event type badge */}
                         <CategoryBadge
-                            eventType={event.official ? 'official' : 'non-official'}
+                            eventType={currentEvent.official ? 'official' : 'non-official'}
                             showLabel={true}
                             size="medium"
                         />
-                        {event.tags?.map((category, index) => (
+                        {currentEvent.tags?.map((category, index) => (
                             <CategoryBadge
                                 key={index}
                                 categoryCode={category.code || ''}
@@ -204,34 +220,34 @@ const UnifiedEventCard: React.FC<{
             </View>
           )}
           {/* Event Status and Type */}
-          {(event.cancelled || (event.price !== undefined && event.price > 0) || event.parentEvent) && (
+          {(currentEvent.cancelled || (currentEvent.price !== undefined && currentEvent.price > 0) || currentEvent.parentEvent) && (
             <View style={eventCardStyles.eventStatusSection}>
-              {event.cancelled && (
+              {currentEvent.cancelled && (
                 <View style={eventCardStyles.statusRow}>
                   <Text style={eventCardStyles.statusLabel}>Status:</Text>
                   <Text style={[eventCardStyles.statusText, eventCardStyles.cancelledText]}>Inställt</Text>
                 </View>
               )}
-              {event.price !== undefined && event.price > 0 && (
+              {currentEvent.price !== undefined && currentEvent.price > 0 && (
                 <View style={eventCardStyles.statusRow}>
                   <Text style={eventCardStyles.statusLabel}>Pris:</Text>
-                  <Text style={eventCardStyles.statusText}>{event.price} SEK</Text>
+                  <Text style={eventCardStyles.statusText}>{currentEvent.price} SEK</Text>
                 </View>
               )}
-              {event.parentEvent && (
+              {currentEvent.parentEvent && (
                 <View style={eventCardStyles.statusRow}>
                   <Text style={eventCardStyles.statusLabel}>Del av:</Text>
-                  <Text style={eventCardStyles.statusText}>{event.parentEvent}</Text>
+                  <Text style={eventCardStyles.statusText}>{currentEvent.parentEvent}</Text>
                 </View>
               )}
             </View>
           )}
 
           {/* Hosts */}
-          {event.hosts && event.hosts.length > 0 && (
+          {currentEvent.hosts && currentEvent.hosts.length > 0 && (
             <View style={eventCardStyles.hostsSection}>
               <Text style={eventCardStyles.subHeading}>Värdar</Text>
-              {event.hosts.map((host, index) => (
+              {currentEvent.hosts.map((host, index) => (
                 <Text key={index} style={eventCardStyles.detailText}>{host.fullName || `Värd ${index + 1}`}</Text>
               ))}
             </View>
@@ -242,28 +258,28 @@ const UnifiedEventCard: React.FC<{
             const currentCount = getCurrentAttendeeCount();
             const hasAttendees = currentCount > 0;
             
-            if (!hasAttendees || event.showAttendees === 'none') return null;
+            if (!hasAttendees || currentEvent.showAttendees === 'none') return null;
             
             return (
               <View style={eventCardStyles.attendeesSection}>
                 <Text style={eventCardStyles.subHeading}>
-                  Deltagare ({currentCount}{event.maxAttendees ? `/${event.maxAttendees}` : ''})
+                  Deltagare ({currentCount}{currentEvent.maxAttendees ? `/${currentEvent.maxAttendees}` : ''})
                 </Text>
-                {event.showAttendees === 'all' && event.attendees && (
+                {currentEvent.showAttendees === 'all' && currentEvent.attendees && (
                   <View style={eventCardStyles.attendeesList}>
-                    {event.attendees.slice(0, 10).map((attendee, index) => (
+                    {currentEvent.attendees.slice(0, 10).map((attendee, index) => (
                       <Text key={index} style={eventCardStyles.attendeeText}>
                         {`Deltagare ${attendee.userId}`}
                       </Text>
                     ))}
-                    {event.attendees.length > 10 && (
+                    {currentEvent.attendees.length > 10 && (
                       <Text style={eventCardStyles.moreAttendeesText}>
-                        ... och {event.attendees.length - 10} till
+                        ... och {currentEvent.attendees.length - 10} till
                       </Text>
                     )}
                   </View>
                 )}
-                {event.showAttendees === 'all' && !event.attendees && currentCount > 0 && (
+                {currentEvent.showAttendees === 'all' && !currentEvent.attendees && currentCount > 0 && (
                   <View style={eventCardStyles.attendeesList}>
                     <Text style={eventCardStyles.attendeeText}>
                       {currentCount} anmälda deltagare
@@ -275,19 +291,19 @@ const UnifiedEventCard: React.FC<{
           })()}
 
           {/* Queue */}
-          {/* {event.queue && event.queue.length > 0 && (
+          {/* {currentEvent.queue && currentEvent.queue.length > 0 && (
             <View style={styles.queueSection}>
-              <Text style={styles.subHeading}>Kö ({event.queue.length})</Text>
+              <Text style={styles.subHeading}>Kö ({currentEvent.queue.length})</Text>
               <Text style={styles.detailText}>Du står i kö för detta evenemang</Text>
             </View>
           )} */}
 
           <View style={eventCardStyles.divider} />
           <Text style={eventCardStyles.descriptionText}>
-            {filterHtml(event.description ?? "")}
+            {filterHtml(currentEvent.description ?? "")}
           </Text>
           <View style={eventCardStyles.linksContainer}>
-            {extractLinks(event.description ?? "")?.map((link, index) => (
+            {extractLinks(currentEvent.description ?? "")?.map((link, index) => (
               <TouchableOpacity
                 key={index}
                 style={eventCardStyles.linkButton}
@@ -299,7 +315,11 @@ const UnifiedEventCard: React.FC<{
           </View>
 
           {user && (
-            <AttendingComponent event={event} userId={user.userId} />
+            <AttendingComponent 
+              event={currentEvent} 
+              userId={user.userId} 
+              onAttendanceChange={handleAttendanceChange}
+            />
           )}
 
           {/* Admin Users */}
