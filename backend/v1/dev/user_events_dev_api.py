@@ -5,6 +5,7 @@ from pydantic import BaseModel
 from v1.db.mongo import user_collection, user_event_collection
 from v1.user_events.user_events_model import ExtendedUserEvent
 from v1.user_events.user_events_db import get_safe_user_event
+from v1.utilities import get_current_time
 
 
 class StatusResponseWithMessage(BaseModel):
@@ -38,8 +39,8 @@ async def get_dummy_user_event():
         'userId': 1337,
         'name': "Dummy Event",
         'description': "This is a dummy event",
-        'start': datetime.datetime.now() + datetime.timedelta(hours=20),
-        'end': datetime.datetime.now() + datetime.timedelta(hours=25),
+        'start': get_current_time().replace(tzinfo=None) + datetime.timedelta(hours=20),
+        'end': get_current_time().replace(tzinfo=None) + datetime.timedelta(hours=25),
         'maxAttendees': 10,
     }
     result = user_event_collection.insert_one(dummy_event)
@@ -73,8 +74,8 @@ async def create_my_dummy_event():
         'name': "My Dummy Event",
         'description':
         "This is a dummy event for the dev running the server (you)",
-        'start': datetime.datetime.now() + datetime.timedelta(hours=20),
-        'end': datetime.datetime.now() + datetime.timedelta(hours=25),
+        'start': get_current_time().replace(tzinfo=None) + datetime.timedelta(hours=20),
+        'end': get_current_time().replace(tzinfo=None) + datetime.timedelta(hours=25),
         'maxAttendees': 10,
         'attendees': [{
             'userId': 1337

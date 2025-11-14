@@ -4,6 +4,7 @@ from typing import List
 from v1.token_handler import create_token
 from v1.env_constants import APPLE_REVIEW_USER, GOOGLE_REVIEW_USER, REVIEW_PASSWORD
 from v1.db.models.user import ContactInfo, ShowLocation, User, UserSettings
+from v1.utilities import get_current_time
 
 apple_review_user_id = 1
 google_review_user_id = 2
@@ -28,7 +29,7 @@ def check_review_user_creds(username: str, password: str) -> dict:
     logging.info(
         f"Checking if user creds: {username}, matches review user creds: {APPLE_REVIEW_USER}, {REVIEW_PASSWORD} or {GOOGLE_REVIEW_USER}, {REVIEW_PASSWORD}"
     )
-    date = datetime.now()
+    date = get_current_time().replace(tzinfo=None)
     delta = timedelta(hours=12)
     date += delta
     if username == APPLE_REVIEW_USER and password == REVIEW_PASSWORD:

@@ -3,6 +3,7 @@ from typing import List
 from bson import ObjectId
 from v1.user_events.user_events_model import ExtendedUserEvent, UserEvent
 from v1.db.mongo import user_event_collection, user_collection
+from v1.utilities import get_current_time
 
 
 def create_user_event(user_event: dict) -> ObjectId:
@@ -24,9 +25,11 @@ def get_unsafe_user_event(event_id: str) -> UserEvent | None:
     :param event_id: The event ID.
     :return: The user event document or None.
     """
-
-    event = user_event_collection.find_one({"_id": ObjectId(event_id)})
-    return UserEvent(**event) if event else None
+    try:
+        event = user_event_collection.find_one({"_id": ObjectId(event_id)})
+        return UserEvent(**event) if event else None
+    except Exception:
+        return None
 
 
 def get_safe_user_event(event_id: str) -> ExtendedUserEvent | None:
@@ -55,7 +58,7 @@ def update_user_event(event_id: str, user_event: UserEvent) -> bool:
 
     # The incoming user event won't contain any of the secret fields,
     # so we need to copy them from the existing event before updating.
-    event = restore_secret_fields_on_user_event(user_event)
+    event = restore_secret_fields_on_user_event(user_event, event_id)
     if not event:
         return 0
 
@@ -82,14 +85,15 @@ def get_unsafe_future_user_events() -> list[UserEvent]:
 
     :return: The user event documents.
     """
+    current_time = get_current_time().replace(tzinfo=None)
     query = {
         "$or": [{
             "end": {
-                "$gte": datetime.now()
+                "$gte": current_time
             }
         }, {
             "start": {
-                "$gte": datetime.now() - timedelta(hours=1)
+                "$gte": current_time - timedelta(hours=1)
             },
             "end": None
         }]
@@ -205,18 +209,20 @@ def add_attendee_to_user_event(event_id: str, user_id: int) -> bool:
     :param user_id: The ID of the user to add.
     :return: The number of modified documents.
     """
-    event = get_unsafe_user_event(event_id)
-    if event and "max_attendees" in event and len(
-            event["attendees"]) >= event["max_attendees"]:
-        return 0
-    result = user_event_collection.update_one(
-        {"_id": ObjectId(event_id)},
-        {"$addToSet": {
-            "attendees": {
-                "userId": user_id
-            }
-        }})
-    return result.acknowledged and result.matched_count > 0
+    try:
+        event = get_unsafe_user_event(event_id)
+        if event and event.maxAttendees is not None and len(event.attendees) >= event.maxAttendees:
+            return False
+        result = user_event_collection.update_one(
+            {"_id": ObjectId(event_id)},
+            {"$addToSet": {
+                "attendees": {
+                    "userId": user_id
+                }
+            }})
+        return result.acknowledged and result.matched_count > 0
+    except Exception:
+        return False
 
 
 def remove_attendee_from_user_event(event_id: str, user_id: int) -> bool:
@@ -453,16 +459,21 @@ def remove_secrets_from_user_events(
     return [make_user_event_safe(event) for event in events]
 
 
-def restore_secret_fields_on_user_event(event: UserEvent) -> UserEvent | None:
+def restore_secret_fields_on_user_event(event: UserEvent, event_id: str = None) -> UserEvent | None:
     """
     Restore secret fields to their original values in a user event document.
 
     :param event: The user event document.
-    :param original_event: The original user event document.
+    :param event_id: The event ID to fetch original data from (optional, falls back to event.id)
     :return: The user event document with secrets restored.
     """
 
-    original_event = get_unsafe_user_event(event.id)
+    # Use provided event_id or fall back to event.id for backward compatibility
+    lookup_id = event_id or event.id
+    if not lookup_id:
+        return None
+        
+    original_event = get_unsafe_user_event(lookup_id)
 
     if not original_event:
         return None

@@ -203,6 +203,27 @@ SWAG is committed to fostering a welcoming community. Please review and abide by
 
 SWAG is proudly licensed under the MIT License.
 
-## 5 About this README
+## 5 Troubleshooting
 
-This README is in need of breaking up into parts. It's quite long and hard to get an overview of. It's also quickly going to be in need of a lot of updates. It's will forever be a work in progress.
+### Error during docker build
+
+
+**Q: I´m getting this error when running `docker compose build`, what is wrong?**
+```bash
+docker: error during connect: Head "http://%2F%2F.%2Fpipe%2FdockerDesktopLinuxEngine/_ping": open //./pipe/dockerDesktopLinuxEngine: The system cannot find the file specified.
+
+```
+**A: You've forgotten to start docker desktop you silly :) Start it and try again!**
+
+**Q: I´m getting this error when running `docker compose up`, what is wrong?**
+```bash
+unable to get image 'python:3.11': error during connect: Get "http://%2F%2F.%2Fpipe%2FdockerDesktopLinuxEngine/v1.51/images/python:3.11/json": open //./pipe/dockerDesktopLinuxEngine: The system cannot find the file specified.
+```
+**A: You've still forgotten to start docker desktop you silly :) Start it and try again!**
+
+**Q: Ok,I tried that. Now I'm getting this error instead:**
+```bash
+time="2025-08-30T06:08:19+02:00" level=warning msg="The \"MY_USER_ID\" variable is not set. Defaulting to a blank string."
+```
+**A: You need to add the environment variable `MY_USER_ID` to your machine.**
+

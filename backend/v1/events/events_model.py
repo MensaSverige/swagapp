@@ -2,7 +2,7 @@ from __future__ import annotations
 from datetime import datetime
 from enum import Enum
 from typing import List, Optional, Any
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 class ShowAttendees(str, Enum):
@@ -40,7 +40,7 @@ class Event(BaseModel):
 
     Fields mostly follow the sketch in notes.md. Additional convenience & source-specific fields are stored under `extras`.
     """
-    id: str = Field(..., description="Globally unique event id, prefixed with source (ext: / usr:)")
+    id: str = Field(..., description="Globally unique event id, prefixed with source (ext / usr)")
     parentEvent: Optional[str] = Field(None, description="Optional parent event id")
     admin: List[int] = Field(default_factory=list, description="User IDs with admin rights (owner for user events)")
     hosts: List[EventHost] = Field(default_factory=list)
@@ -68,10 +68,38 @@ class Event(BaseModel):
     bookable: bool = Field(False, description="Event can still be booked / joined by current user")
     extras: dict[str, Any] = Field(default_factory=dict, description="Source specific raw data")
 
+    @field_validator('start', 'end', 'cancelled', 'bookingStart', 'bookingEnd', mode='before')
+    @classmethod
+    def parse_datetime(cls, value):
+        """Parse datetime strings into datetime objects, handling ISO format and timezone conversion"""
+        if value is None:
+            return value
+        
+        if isinstance(value, str):
+            # Try to parse ISO format datetime strings
+            try:
+                # Parse ISO format and handle timezone
+                if value.endswith('Z'):
+                    dt = datetime.fromisoformat(value.replace('Z', '+00:00'))
+                else:
+                    dt = datetime.fromisoformat(value)
+                
+                # If timezone-aware, convert to naive datetime in application timezone
+                if dt.tzinfo is not None:
+                    from v1.utilities import get_current_time_zone
+                    return dt.astimezone(get_current_time_zone()).replace(tzinfo=None)
+                else:
+                    return dt
+            except ValueError:
+                # Fallback to standard ISO parsing
+                return datetime.fromisoformat(value)
+        
+        return value
+
     class Config:
         json_schema_extra = {
             "example": {
-                "id": "ext:12345",
+                "id": "ext12345",
                 "name": "Opening Ceremony",
                 "official": True,
                 "start": "2025-11-10T09:00:00Z",

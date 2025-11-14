@@ -20,10 +20,11 @@ from v1.db.external_events import clean_external_events, get_stored_external_eve
 from v1.user_events.user_events_api import user_events_v1
 from v1.db.mongo import initialize_db
 from v1.dev.exception_handlers import register_exception_handlers
+from v1.utilities import get_current_time_formatted
 
 # Initialize logging
 logging.basicConfig(level=logging.INFO)
-logging.info(f"Server started at {datetime.datetime.now()}")
+logging.info(f"Server started at {get_current_time_formatted()}")
 
 # Configure pydantic to automatically convert MongoDB ObjectId to string so we
 # don't have to manually create ID indices with autoincrementing integers
