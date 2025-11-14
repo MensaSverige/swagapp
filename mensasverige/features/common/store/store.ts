@@ -29,12 +29,3 @@ const useStore = create<
 }));
 export default useStore;
 
-// optional to use slices in components. All slices and their methods are available in useStore
-export function useUserSlice(): AccountSlice {
-  return useStore(state => ({
-    user: state.user,
-    isTryingToLogin: state.isTryingToLogin,
-    setUser: state.setUser,
-    setIsTryingToLogin: state.setIsTryingToLogin,
-  }));
-}

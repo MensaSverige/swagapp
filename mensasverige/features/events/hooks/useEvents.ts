@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useRef } from 'react';
 import { GroupedEvents, ExtendedEvent } from '../types/eventUtilTypes';
 import { createExtendedEvent } from '../utils/eventUtils';
 import { fetchEvents, attendEvent, unattendEvent } from '../services/eventService';
@@ -7,7 +7,7 @@ import { EventFilterOptions } from '../store/EventsSlice';
 
 interface UseEventsOptions {
   enableAutoRefresh?: boolean;
-  refreshIntervalMs?: number;
+  // refreshIntervalMs is no longer needed as it comes from user settings
 }
 
 interface UseEventsReturn {
@@ -49,9 +49,12 @@ interface UseEventsReturn {
 
 export const useEvents = (options: UseEventsOptions = {}): UseEventsReturn => {
   const {
-    enableAutoRefresh = true,
-    refreshIntervalMs = 60000
+    enableAutoRefresh = true
   } = options;
+
+  // React Native compatible approach: Use a simple mounted ref
+  const mountedRef = useRef(true);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const {
     // Raw events
@@ -87,13 +90,14 @@ export const useEvents = (options: UseEventsOptions = {}): UseEventsReturn => {
     categoryEventCounts,
     topCategories,
     lastMinuteEvents,
-    user
+    user,
+    getEventsRefreshInterval
   } = useStore();
 
   // Refetch function that updates both schedule and dashboard
   const refetch = useCallback(async (): Promise<void> => {
     // Don't fetch events if user is not logged in
-    if (!user) {
+    if (!user || !mountedRef.current) {
       return;
     }
 
@@ -104,17 +108,26 @@ export const useEvents = (options: UseEventsOptions = {}): UseEventsReturn => {
       // Fetch all events - the store will automatically update derived lists
       const allEvents = await fetchEvents();
 
+      // Check if still mounted before updating state
+      if (!mountedRef.current) return;
+
       // Setting events in store will automatically update both schedule and dashboard
       setEvents(allEvents.map(event => createExtendedEvent(event, user?.userId)));
       setEventsLastFetched(new Date());
 
     } catch (err) {
+      // Don't update error state if unmounted
+      if (!mountedRef.current) return;
+      
       const error = err as Error;
       setDashboardError(error);
       console.error('Error fetching events:', err);
     } finally {
-      setEventsRefreshing(false);
-      setDashboardLoading(false);
+      // Only update loading state if still mounted
+      if (mountedRef.current) {
+        setEventsRefreshing(false);
+        setDashboardLoading(false);
+      }
     }
   }, [
     setEvents,
@@ -147,23 +160,33 @@ export const useEvents = (options: UseEventsOptions = {}): UseEventsReturn => {
       return;
     }
 
-    const intervalId = setInterval(() => {
-      // Double-check user is still logged in before refetching
-      if (user) {
+    const refreshIntervalMs = getEventsRefreshInterval();
+    intervalRef.current = setInterval(() => {
+      // Double-check user is still logged in and component is mounted
+      if (user && mountedRef.current) {
         refetch();
       }
     }, refreshIntervalMs);
     
     return () => {
-      clearInterval(intervalId);
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
     };
-  }, [enableAutoRefresh, refreshIntervalMs, refetch, user]);
+  }, [enableAutoRefresh, getEventsRefreshInterval, refetch, user]);
 
   // Event attendance functions
   const attendEventById = useCallback(
     async (eventId: string): Promise<boolean> => {
+      if (!mountedRef.current) return false;
+
       try {
         const updatedEvent = await attendEvent(eventId);
+        
+        // Check if still mounted before updating state
+        if (!mountedRef.current) return false;
+        
         // Update the event in the store with the returned data
         const updatedEvents = events.map(event =>
           event.id === eventId ? createExtendedEvent(updatedEvent, user?.userId) : event
@@ -180,8 +203,14 @@ export const useEvents = (options: UseEventsOptions = {}): UseEventsReturn => {
 
   const unattendEventById = useCallback(
     async (eventId: string): Promise<boolean> => {
+      if (!mountedRef.current) return false;
+
       try {
         await unattendEvent(eventId);
+        
+        // Check if still mounted before updating state
+        if (!mountedRef.current) return false;
+        
         // Update the event in the store to set attending to false
         const updatedEvents = events.map(event =>
           event.id === eventId
@@ -197,6 +226,13 @@ export const useEvents = (options: UseEventsOptions = {}): UseEventsReturn => {
     },
     [events, setEvents, user?.userId]
   );
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
 
   // Determine overall loading and error states
   const isLoading = dashboardLoading;

@@ -27,6 +27,7 @@ import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { SearchParticipants } from '../components/SearchParticipants';
+import { ThemedView } from '@/components/ThemedView';
 
 const createStyles = (colorMode: string) =>
   StyleSheet.create({
@@ -186,7 +187,7 @@ const MapScreen: React.FC = () => {
   }, [userFilter]);
 
   return (
-    <SafeAreaView style={{ flex: 1 }} key={colorMode}>
+    <ThemedView style={{ flex: 1 }} useSafeArea={true}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={{ flex: 1 }}>
@@ -307,7 +308,7 @@ const MapScreen: React.FC = () => {
           </View>
         </TouchableWithoutFeedback>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </ThemedView>
   );
 };
 

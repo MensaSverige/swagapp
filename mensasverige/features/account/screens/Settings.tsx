@@ -22,6 +22,8 @@ import { extractNumericValue } from '../../common/functions/extractNumericValue'
 import { MaterialIcons } from '@expo/vector-icons';
 import EditableField from '../../common/components/EditableField';
 import { Colors } from '@/constants/Colors';
+import { DEFAULT_SETTINGS } from '@/constants/DefaultSettings';
+import Slider from '@react-native-community/slider';
 
 
 const UserSettings: React.FC = () => {
@@ -45,6 +47,9 @@ const UserSettings: React.FC = () => {
             show_email: user?.settings?.show_email || false,
             show_phone: user?.settings?.show_phone || false,
             show_location: user?.settings?.show_location || 'NO_ONE',
+            location_update_interval_seconds: user?.settings?.location_update_interval_seconds || DEFAULT_SETTINGS.LOCATION_UPDATE_INTERVAL_SECONDS,
+            events_refresh_interval_seconds: user?.settings?.events_refresh_interval_seconds || DEFAULT_SETTINGS.EVENTS_REFRESH_INTERVAL_SECONDS,
+            background_location_updates: user?.settings?.background_location_updates || DEFAULT_SETTINGS.BACKGROUND_LOCATION_UPDATES,
         },
     });
 
@@ -59,6 +64,14 @@ const UserSettings: React.FC = () => {
         formState?.settings?.show_location === 'NO_ONE' ? false : true,
     );
     const [editingField, setEditingField] = useState<string | null>(null);
+    
+    // Temporary slider values to prevent saving on every change
+    const [tempLocationInterval, setTempLocationInterval] = useState<number>(
+        formState?.settings?.location_update_interval_seconds || DEFAULT_SETTINGS.LOCATION_UPDATE_INTERVAL_SECONDS
+    );
+    const [tempEventsInterval, setTempEventsInterval] = useState<number>(
+        formState?.settings?.events_refresh_interval_seconds || DEFAULT_SETTINGS.EVENTS_REFRESH_INTERVAL_SECONDS
+    );
 
     const handleFocus = () => {
         setEditingField('phone');
@@ -81,13 +94,21 @@ const UserSettings: React.FC = () => {
     }
 
     useEffect(() => {
-        if (!formState || editingField !== null) {
+        if (!formState || editingField !== null || editingField === 'slider') {
             return;
         }
         autosave(formState as User)?.then(returnedUser => {
             setUser({ ...user, ...returnedUser });
         });
     }, [formState, editingField]);
+
+    // Update temporary slider values when formState changes
+    useEffect(() => {
+        if (formState?.settings) {
+            setTempLocationInterval(formState.settings.location_update_interval_seconds || DEFAULT_SETTINGS.LOCATION_UPDATE_INTERVAL_SECONDS);
+            setTempEventsInterval(formState.settings.events_refresh_interval_seconds || DEFAULT_SETTINGS.EVENTS_REFRESH_INTERVAL_SECONDS);
+        }
+    }, [formState?.settings?.location_update_interval_seconds, formState?.settings?.events_refresh_interval_seconds]);
 
     type ToastType = 'save' | 'saved' | 'error';
 
@@ -363,6 +384,125 @@ const UserSettings: React.FC = () => {
                     </View>
                 </PrivacyCard>
 
+                <SectionHeader 
+                    title="Appinställningar" 
+                    subtitle="Konfigurera uppdateringsintervall och appbeteende"
+                />
+
+                <View style={styles.card}>
+                    <View style={styles.cardContent}>
+                        <ThemedText type="defaultSemiBold" style={styles.cardTitle}>
+                            Platsuppdatering
+                        </ThemedText>
+                        <ThemedText style={styles.cardDescription}>
+                            Uppdaterar var <ThemedText style={[styles.cardDescription, { color: primaryColor, fontWeight: 'bold' }]}>
+                                {Math.round(tempLocationInterval)}
+                            </ThemedText> sekund{Math.round(tempLocationInterval) !== 1 ? 'er' : ''}
+                        </ThemedText>
+                        <View style={styles.sliderContainer}>
+                            <Slider
+                                style={{ height: 35 }}
+                                value={tempLocationInterval}
+                                minimumValue={DEFAULT_SETTINGS.MIN_LOCATION_UPDATE_SECONDS}
+                                maximumValue={DEFAULT_SETTINGS.MAX_LOCATION_UPDATE_SECONDS}
+                                step={5}
+                                thumbTintColor={primaryColor}
+                                minimumTrackTintColor={primaryColor}
+                                maximumTrackTintColor={borderColor}
+                                onValueChange={(value: number) => {
+                                    setTempLocationInterval(value);
+                                    setEditingField('slider'); // Prevent autosave while sliding
+                                }}
+                                onSlidingComplete={(value: number) => {
+                                    if (!formState || !formState.settings) return;
+                                    setFormState({
+                                        ...formState,
+                                        settings: {
+                                            ...formState.settings,
+                                            location_update_interval_seconds: value,
+                                        },
+                                    });
+                                    setEditingField(null); // Allow autosave
+                                }}
+                            />
+                        </View>
+                        <View style={styles.sliderLabels}>
+                            <ThemedText style={styles.sliderLabelText}>
+                                {DEFAULT_SETTINGS.MIN_LOCATION_UPDATE_SECONDS}s
+                            </ThemedText>
+                            <ThemedText style={styles.sliderLabelText}>
+                                {DEFAULT_SETTINGS.MAX_LOCATION_UPDATE_SECONDS / 60} min
+                            </ThemedText>
+                        </View>
+                    </View>
+                </View>
+
+                <View style={styles.card}>
+                    <View style={styles.cardContent}>
+                        <ThemedText type="defaultSemiBold" style={styles.cardTitle}>
+                            Evenemang
+                        </ThemedText>
+                        <ThemedText style={styles.cardDescription}>
+                            Uppdaterar var <ThemedText style={[styles.cardDescription, { color: primaryColor, fontWeight: 'bold' }]}>
+                                {Math.round(tempEventsInterval)}
+                            </ThemedText> sekund{Math.round(tempEventsInterval) !== 1 ? 'er' : ''}
+                        </ThemedText>
+                        <View style={styles.sliderContainer}>
+                            <Slider
+                                style={{ height: 35 }}
+                                value={tempEventsInterval}
+                                minimumValue={DEFAULT_SETTINGS.MIN_EVENTS_REFRESH_SECONDS}
+                                maximumValue={DEFAULT_SETTINGS.MAX_EVENTS_REFRESH_SECONDS}
+                                step={10}
+                                thumbTintColor={primaryColor}
+                                minimumTrackTintColor={primaryColor}
+                                maximumTrackTintColor={borderColor}
+                                onValueChange={(value: number) => {
+                                    setTempEventsInterval(value);
+                                    setEditingField('slider'); // Prevent autosave while sliding
+                                }}
+                                onSlidingComplete={(value: number) => {
+                                    if (!formState || !formState.settings) return;
+                                    setFormState({
+                                        ...formState,
+                                        settings: {
+                                            ...formState.settings,
+                                            events_refresh_interval_seconds: value,
+                                        },
+                                    });
+                                    setEditingField(null); // Allow autosave
+                                }}
+                            />
+                        </View>
+                        <View style={styles.sliderLabels}>
+                            <ThemedText style={styles.sliderLabelText}>
+                                {DEFAULT_SETTINGS.MIN_EVENTS_REFRESH_SECONDS}s
+                            </ThemedText>
+                            <ThemedText style={styles.sliderLabelText}>
+                                {DEFAULT_SETTINGS.MAX_EVENTS_REFRESH_SECONDS / 60} min
+                            </ThemedText>
+                        </View>
+                    </View>
+                </View>
+
+                <PrivacyCard
+                    title="Bakgrundsplatsuppdateringar"
+                    description={formState?.settings?.background_location_updates
+                        ? "Platsuppdateringar fortsätter när appen är i bakgrunden"
+                        : "Platsuppdateringar pausas när appen är i bakgrunden"}
+                    value={formState?.settings?.background_location_updates || DEFAULT_SETTINGS.BACKGROUND_LOCATION_UPDATES}
+                    onValueChange={(value) => {
+                        if (!formState || !formState.settings) return;
+                        setFormState({
+                            ...formState,
+                            settings: {
+                                ...formState.settings,
+                                background_location_updates: value,
+                            },
+                        });
+                    }}
+                />
+
 
                 {/* Logout Button */}
                 <View style={styles.divider} />
@@ -494,6 +634,22 @@ const createStyles = (backgroundColor: string, textColor: string, cardBackground
         },
         picker: {
             height: 50,
+        },
+
+        // Slider styles
+        sliderContainer: {
+            marginTop: 8,
+            marginBottom: 4,
+        },
+        sliderLabels: {
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            marginTop: 4,
+        },
+        sliderLabelText: {
+            fontSize: 12,
+            color: textColor,
+            opacity: 0.6,
         },
 
         // Action Section

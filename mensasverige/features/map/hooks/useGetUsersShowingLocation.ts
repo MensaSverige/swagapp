@@ -27,7 +27,7 @@ import {getUserLocations} from '../services/locationService';
 // export default useGetUsersShowingLocation;
 
 const useGetUsersShowingLocation = () => {
-  const { user, locationUpdateInterval, setUsersShowingLocation } = useStore();
+  const { user, getLocationUpdateInterval, setUsersShowingLocation } = useStore();
   const [isPolling, setIsPolling] = useState(true);
 
   const fetchUserLocations = useCallback(async () => {
@@ -39,6 +39,7 @@ const useGetUsersShowingLocation = () => {
       const users = await getUserLocations();
       setUsersShowingLocation(users);
       if (isPolling && user) { // Check user again in case they logged out during the call
+        const locationUpdateInterval = getLocationUpdateInterval();
         setTimeout(fetchUserLocations, locationUpdateInterval);
       }
     } catch (error) {
@@ -46,7 +47,7 @@ const useGetUsersShowingLocation = () => {
       // Stop polling on error to avoid continuous failed requests
       setIsPolling(false);
     }
-  }, [isPolling, locationUpdateInterval, user]);
+  }, [isPolling, getLocationUpdateInterval, user]);
 
   useEffect(() => {
     // Only start polling if user is logged in
