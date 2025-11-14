@@ -36,6 +36,29 @@ async def get_users(show_location: bool = None,
     return users_list
 
 
+@users_v1.get("/users/{user_id}", response_model=User)
+async def get_user_by_id(user_id: int,
+                         _: dict = Depends(validate_request)):
+    user = get_user(user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Enforce privacy: hide email/phone if disabled
+    settings = user.get("settings", {})
+    contact = user.get("contact_info") or {}
+    if not settings.get("show_email"):
+        contact["email"] = None
+    if not settings.get("show_phone"):
+        contact["phone"] = None
+    user["contact_info"] = contact
+    
+    # Hide location if user doesn't want to show it
+    if not settings.get("show_location") or settings.get("show_location") == ShowLocation.NO_ONE:
+        user["location"] = None
+    
+    return user
+
+
 @users_v1.put("/users/me/location", response_model=User)
 async def update_user_location(location: UserLocation,
                                current_user: dict = Depends(validate_request)):

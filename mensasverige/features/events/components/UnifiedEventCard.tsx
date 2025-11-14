@@ -5,9 +5,7 @@ import {
   Image,
   StyleSheet,
   TouchableOpacity,
-  Linking,
-  ActivityIndicator,
-  Alert
+  Linking
 } from 'react-native';
 import { Event, User } from '../../../api_schema/types';
 import UserAvatar from '../../map/components/UserAvatar';
@@ -19,92 +17,23 @@ import AttendingBadge from './AttendingBadge';
 import FullyBookedBadge from './FullyBookedBadge';
 import PlacesLeftBadge from './PlacesLeftBadge';
 import EventDateTimeDisplay from './EventDateTimeDisplay';
+import AttendingComponent from './AttendingComponent';
 import useStore from '../../common/store/store';
 import { useEvents } from '../hooks/useEvents';
 import CategoryBadge from './CategoryBadge';
 import { eventCardStyles, dateTimeStyles } from '../styles/eventCardStyles';
 import { ExtendedEvent } from '../types/eventUtilTypes';
+import { getUsersByIds } from '../../account/services/userService';
 
 
 const handleLinkPress = (url: string) => {
   Linking.openURL(url).catch((err) => console.error('Error opening link:', err));
 };
 
-
-
-
-const AttendingComponent: React.FC<{
-  event: ExtendedEvent;
-  userId: number;
-  onAttendanceChange?: () => void;
-}> = ({ event, userId, onAttendanceChange }) => {
-  const [changingAttendance, setChangingAttendance] = useState<boolean>(false);
-  const { attendEventById, unattendEventById } = useEvents();
-
-  const handlePressAttend = async () => {
-    if (!event.id) return;
-    
-    setChangingAttendance(true);
-    try {
-      await attendEventById(event.id);
-      onAttendanceChange?.(); // Notify parent of attendance change
-    } catch (error) {
-      console.error('Could not attend event', error);
-      Alert.alert('Error', 'Could not attend event. Please try again.');
-    } finally {
-      setChangingAttendance(false);
-    }
-  };
-
-  const handlePressUnattend = async () => {
-    if (!event.id) return;
-    
-    setChangingAttendance(true);
-    try {
-      await unattendEventById(event.id);
-      onAttendanceChange?.(); // Notify parent of attendance change
-    } catch (error) {
-      console.error('Could not unattend event', error);
-      Alert.alert('Error', 'Could not unattend event. Please try again.');
-    } finally {
-      setChangingAttendance(false);
-    }
-  };
-
-  if (changingAttendance) {
-    return (
-      <View style={eventCardStyles.attendingButtonContainer}>
-        <ActivityIndicator size="small" color="#0F766E" />
-      </View>
-    );
-  }
-
-  if (event.attending) {
-    return (
-      <View style={eventCardStyles.attendingButtonContainer}>
-        <TouchableOpacity onPress={handlePressUnattend} style={eventCardStyles.unattendButton}>
-          <Text style={eventCardStyles.buttonText}>Ta bort anmälan</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  } else {
-    if (!event.attendingOrHost) { // TODO: show delete event if user is host
-      return (
-        <View style={eventCardStyles.attendingButtonContainer}>
-          <TouchableOpacity onPress={handlePressAttend} style={eventCardStyles.attendingButton}>
-            <Text style={eventCardStyles.buttonText}>Anmäl mig!</Text>
-          </TouchableOpacity>
-        </View>
-      );
-    }
-    return null;
-  }
-};
-
 const UnifiedEventCard: React.FC<{
   event: ExtendedEvent;
 }> = ({ event }) => {
-  const [admins, setAdmins] = useState<User[] | null>(null);
+  const [adminUsers, setAdminUsers] = useState<User[]>([]);
   const user = useStore(state => state.user);
   const { allEvents } = useEvents();
 
@@ -113,6 +42,28 @@ const UnifiedEventCard: React.FC<{
     const storeEvent = allEvents.find(e => e.id === event.id);
     return storeEvent || event; // Fallback to prop if not found in store
   }, [allEvents, event]);
+
+  // Fetch admin users when admin IDs change
+  // useEffect(() => {
+  //   const fetchAdminUsers = async () => {
+  //     if (currentEvent.admin && currentEvent.admin.length > 0) {
+  //       try {
+  //         // Convert number IDs to strings for the getUsersByIds function
+  //         const adminIdStrings = currentEvent.admin.map(id => id.toString());
+  //         const adminUsers = await getUsersByIds(adminIdStrings);
+  //         // Handle the case where getUsersByIds returns undefined in catch block
+  //         setAdminUsers(adminUsers || []);
+  //       } catch (error) {
+  //         console.error('Error fetching admin users:', error);
+  //         setAdminUsers([]);
+  //       }
+  //     } else {
+  //       setAdminUsers([]);
+  //     }
+  //   };
+
+  //   fetchAdminUsers();
+  // }, [currentEvent.admin]);
 
   // Force re-render when attendance changes
   const [refreshKey, setRefreshKey] = useState(0);
@@ -134,9 +85,9 @@ const UnifiedEventCard: React.FC<{
   // Calculate places left for bookable events
   const placesLeft = useMemo(() => {
     if (!currentEvent.maxAttendees) return null;
-    
+
     let currentAttendees = 0;
-    
+
     // Prioritize bookedCount if available, otherwise use attendees array length
     if (typeof currentEvent.extras?.bookedCount === 'number') {
       currentAttendees = currentEvent.extras.bookedCount;
@@ -145,7 +96,7 @@ const UnifiedEventCard: React.FC<{
     } else {
       return null; // Can't determine attendee count
     }
-    
+
     return currentEvent.maxAttendees - currentAttendees;
   }, [currentEvent.maxAttendees, currentEvent.attendees, currentEvent.extras]);
 
@@ -169,11 +120,11 @@ const UnifiedEventCard: React.FC<{
             </Text>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
               {currentEvent.attending && <AttendingBadge />}
-              
+
               {!currentEvent.bookable && (!!currentEvent.maxAttendees || currentEvent.maxAttendees === 0) && (
                 <FullyBookedBadge />
               )}
-              
+
               {placesLeft !== null && placesLeft > 0 && currentEvent.maxAttendees && (
                 <PlacesLeftBadge placesLeft={placesLeft} maxAttendees={currentEvent.maxAttendees} />
               )}
@@ -253,13 +204,67 @@ const UnifiedEventCard: React.FC<{
             </View>
           )}
 
+
+          {/* Queue */}
+          {/* {currentEvent.queue && currentEvent.queue.length > 0 && (
+            <View style={styles.queueSection}>
+              <Text style={styles.subHeading}>Kö ({currentEvent.queue.length})</Text>
+              <Text style={styles.detailText}>Du står i kö för detta evenemang</Text>
+            </View>
+          )} */}
+
+          <View style={eventCardStyles.divider} />
+          <Text style={eventCardStyles.descriptionText}>
+            {filterHtml(currentEvent.description ?? "")}
+          </Text>
+          <View style={eventCardStyles.linksContainer}>
+            {extractLinks(currentEvent.description ?? "")?.map((link, index) => (
+              <TouchableOpacity
+                key={index}
+                style={eventCardStyles.linkButton}
+                onPress={() => handleLinkPress(link.url)}
+              >
+                <Text style={eventCardStyles.linkText}>{link.name}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          {/* Admin Users */}
+          {/* {currentEvent.admin && currentEvent.admin.length > 0 && (
+            <View style={eventCardStyles.hostsSection}>
+              <Text style={eventCardStyles.subHeading}>Administratörer</Text>
+              {adminUsers.length > 0 ? (
+                adminUsers.map((admin, index) => (
+                  <View key={admin.userId || index} style={eventCardStyles.adminRow}>
+                    <UserAvatar
+                      avatarSize="sm"
+                      firstName={admin.firstName}
+                      lastName={admin.lastName}
+                      avatar_url={admin.avatar_url ?? ""}
+                      onlineStatus="offline"
+                    />
+                    <View style={eventCardStyles.adminInfo}>
+                      <Text style={eventCardStyles.detailText}>
+                        {admin.firstName} {admin.lastName}
+                      </Text>
+                    </View>
+                  </View>
+                ))
+              ) : (
+                // Fallback to showing IDs if user data couldn't be fetched
+                currentEvent.admin.map((adminId, index) => (
+                  <Text key={index} style={eventCardStyles.detailText}>{adminId}</Text>
+                ))
+              )}
+            </View>
+          )}  */}
           {/* Attendees (if allowed to show) */}
           {(() => {
             const currentCount = getCurrentAttendeeCount();
             const hasAttendees = currentCount > 0;
-            
+
             if (!hasAttendees || currentEvent.showAttendees === 'none') return null;
-            
+
             return (
               <View style={eventCardStyles.attendeesSection}>
                 <Text style={eventCardStyles.subHeading}>
@@ -290,70 +295,15 @@ const UnifiedEventCard: React.FC<{
             );
           })()}
 
-          {/* Queue */}
-          {/* {currentEvent.queue && currentEvent.queue.length > 0 && (
-            <View style={styles.queueSection}>
-              <Text style={styles.subHeading}>Kö ({currentEvent.queue.length})</Text>
-              <Text style={styles.detailText}>Du står i kö för detta evenemang</Text>
-            </View>
-          )} */}
-
-          <View style={eventCardStyles.divider} />
-          <Text style={eventCardStyles.descriptionText}>
-            {filterHtml(currentEvent.description ?? "")}
-          </Text>
-          <View style={eventCardStyles.linksContainer}>
-            {extractLinks(currentEvent.description ?? "")?.map((link, index) => (
-              <TouchableOpacity
-                key={index}
-                style={eventCardStyles.linkButton}
-                onPress={() => handleLinkPress(link.url)}
-              >
-                <Text style={eventCardStyles.linkText}>{link.name}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-
           {user && (
-            <AttendingComponent 
-              event={currentEvent} 
-              userId={user.userId} 
+            <AttendingComponent
+              event={currentEvent}
               onAttendanceChange={handleAttendanceChange}
             />
           )}
 
-          {/* Admin Users */}
-          {/* {event.admin && event.admin.length > 0 && (
-            <View style={styles.adminSection}>
-              <Text style={styles.subHeading}>Administratörer</Text>
-              {event.admin.map((adminId, index) => (
-                <Text key={index} style={styles.detailText}>{adminId}</Text>
-              ))}
-            </View>
-          )} */}
-
-          {admins && admins.map((admin) => (
-            <View key={admin.userId} style={eventCardStyles.adminRow}>
-              <UserAvatar
-                avatarSize="sm"
-                firstName={admin.firstName}
-                lastName={admin.lastName}
-                avatar_url={admin.avatar_url ?? ""}
-                onlineStatus="offline"
-              />
-              <View style={eventCardStyles.adminInfo}>
-                <Text style={eventCardStyles.subHeading}>
-                  {admin.firstName} {admin.lastName}
-                </Text>
-              </View>
-            </View>
-          ))}
-
     </View>
   );
 };
-
-// Styles are now imported from ../styles/eventCardStyles
-
 
 export default UnifiedEventCard;

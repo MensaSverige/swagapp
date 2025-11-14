@@ -1,7 +1,6 @@
 import apiClient from '../../common/services/apiClient';
 import { UserUpdate } from '../../../api_schema/types';
 import { AuthResponse, User } from '../../../api_schema/types';
-import * as Keychain from 'react-native-keychain';
 import { attemptLoginWithStoredCredentials, storeAndValidateAuthResponse } from '../../common/services/authService';
 
 
@@ -27,7 +26,7 @@ export const uploadAvatar = async (uri: string): Promise<User> => {
     uri: uri,
     name: 'avatar.jpg',
     type: 'image/jpeg',
-  });
+  } as any);
   return apiClient
     .post('/users/me/avatar', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
@@ -73,25 +72,30 @@ export const getUsersByIds = async (userIds: string[]): Promise<User[]> => {
   if (!userIds || userIds.length === 0) {
     return Promise.reject('No user ids provided');
   }
-  return apiClient
-    .get('/users_by_ids', {
-      params: { userIds },
-    })
-    .then(
-      response => {
-        if (response.status === 200) {
-          return response.data;
-        } else {
-          return [];
-        }
-      },
-      error => {
-        throw new Error(error.message || error);
-      },
-    )
-    .catch(error => {
-      console.error('Failed to get users:', error.message || error);
-    });
+  
+  try {
+    // Make individual requests for each user ID using the new endpoint
+    const userPromises = userIds.map(userId => 
+      apiClient.get(`/users/${userId}`)
+        .then(response => {
+          if (response.status === 200) {
+            return response.data;
+          }
+          return null;
+        })
+        .catch(error => {
+          console.log(`Failed to get user ${userId}:`, error instanceof Error ? error.message : error);
+          return null;
+        })
+    );
+    
+    const users = await Promise.all(userPromises);
+    // Filter out null responses (failed requests)
+    return users.filter((user): user is User => user !== null);
+  } catch (error) {
+    console.error('Failed to get users:', error instanceof Error ? error.message : error);
+    return [];
+  }
 }
 
 export const getUser = async (userName: string): Promise<User> => {
