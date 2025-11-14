@@ -10,6 +10,13 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     name: "mensasverige",
     slug: "mensasverige",
     version: "1.0.0",
+    runtimeVersion: {
+      policy: "appVersion"
+    },
+    updates: {
+      fallbackToCacheTimeout: 0,
+      url: "https://u.expo.dev/ba3ea4a2-fed7-462a-b42c-70092682f176"
+    },
     orientation: "portrait",
     icon: "./assets/images/icon.png",
     scheme: "mensasverige",
@@ -79,7 +86,21 @@ export default ({ config }: ConfigContext): ExpoConfig => {
           debugMode: false,
         }
       };
-      
+      case 'preview':
+      return {
+        ...baseConfig,
+        name: "Mensa Sverige (Preview)",
+        //slug: "mensasverige-preview",
+        android: {
+          ...baseConfig.android,
+          package: "se.mensasverige.preview"
+        },
+        extra: {
+          ...baseConfig.extra,
+          enableAnalytics: false,
+          debugMode: true,
+        }
+      }; 
     case 'development':
     default:
       return {
