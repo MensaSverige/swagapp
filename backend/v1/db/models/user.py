@@ -24,6 +24,11 @@ class UserSettings(BaseModel):
                                         example=ShowLocation.EVERYONE)
     show_email: bool = Field(default=False, example=True)
     show_phone: bool = Field(default=False, example=True)
+    
+    location_update_interval_seconds: int = Field(default=60, example=60, description="Location update interval in seconds")
+    events_refresh_interval_seconds: int = Field(default=60, example=60, description="Events refresh interval in seconds")
+    
+    background_location_updates: bool = Field(default=False, example=True, description="Allow location updates when app is in background")
 
 
 class ContactInfo(BaseModel):

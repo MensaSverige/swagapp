@@ -7,15 +7,17 @@ import {
 import { UserLocation } from '../../../api_schema/types';
 
 const useUserLocation = () => {
-  const {user, locationUpdateInterval, hasLocationPermission, setUserLocation} =
+  const {user, getLocationUpdateInterval, hasLocationPermission, setUserLocation} =
     useStore();
 
-  const intervalRef = useRef<NodeJS.Timeout | number | undefined>(undefined);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const mountedRef = useRef(true);
 
   useEffect(() => {
     // Make sure there is only one interval running
     if (intervalRef.current) {
       clearInterval(intervalRef.current);
+      intervalRef.current = null;
     }
 
     // Don't start location tracking if user is not logged in
@@ -24,15 +26,18 @@ const useUserLocation = () => {
     }
 
     const fetchLocation = async () => {
-      if (!hasLocationPermission || !user) {
+      if (!hasLocationPermission || !user || !mountedRef.current) {
         return;
       }
       try {
         const position = await Location.getCurrentPositionAsync({
           accuracy: Location.Accuracy.High,
-          timeInterval: 15000,
+          timeInterval: getLocationUpdateInterval(),
           distanceInterval: 10,
         });
+        
+        // Check if still mounted before updating state
+        if (!mountedRef.current) return;
         
         const {latitude, longitude} = position.coords;
         if (
@@ -49,7 +54,10 @@ const useUserLocation = () => {
                 timestamp: null,
                 accuracy: position.coords.accuracy ?? 0,
             };
-            updateUserLocation(locationUpdateData);
+            // Only update server if still mounted
+            if (mountedRef.current) {
+              updateUserLocation(locationUpdateData);
+            }
           }
         }
       } catch (e) {
@@ -58,15 +66,33 @@ const useUserLocation = () => {
     };
 
     fetchLocation();
-    intervalRef.current = setInterval(fetchLocation, locationUpdateInterval);
+    const locationUpdateInterval = getLocationUpdateInterval();
+    intervalRef.current = setInterval(() => {
+      // Check if still mounted before running interval callback
+      if (mountedRef.current) {
+        fetchLocation();
+      }
+    }, locationUpdateInterval);
 
-    // Cleanup function to clear interval when user becomes null
+    // Cleanup function to clear interval when user becomes null or component unmounts
     return () => {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
+        intervalRef.current = null;
       }
     };
-  }, [locationUpdateInterval, hasLocationPermission, user?.settings.show_location, user]);
+  }, [getLocationUpdateInterval, hasLocationPermission, user?.settings.show_location, user]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      mountedRef.current = false;
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    };
+  }, []);
 };
 
 export default useUserLocation;

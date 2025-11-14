@@ -1,6 +1,7 @@
 import {Region} from 'react-native-maps';
 import UserWithLocation from '../types/userWithLocation';
 import {StateCreator} from 'zustand';
+import { DEFAULT_SETTINGS } from '@/constants/DefaultSettings';
 
 interface Location {
   longitude: number;
@@ -13,7 +14,7 @@ export interface FilterProps {
 
 export const defaultFilter: FilterProps = { 
   name: undefined, 
-  showHoursAgo: 8 
+  showHoursAgo: DEFAULT_SETTINGS.LOCATION_FILTER_HOURS 
 };
 
 export const filterUsers = (users: UserWithLocation[], userFilter: FilterProps) => {
@@ -34,7 +35,6 @@ export interface LocationSlice {
 
   currentLocation: Location;
   hasLocationPermission: boolean;
-  locationUpdateInterval: number;
   region: Region;
   showlocation: boolean;
   usersShowingLocation: UserWithLocation[];
@@ -66,7 +66,6 @@ export const createLocationSlice: StateCreator<LocationSlice> = (set, get) => ({
     latitude: 0,
   },
   hasLocationPermission: false,
-  locationUpdateInterval: 60000,
   region: {
     latitude: 57.7870897,
     latitudeDelta: 0.00209927763049933,

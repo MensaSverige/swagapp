@@ -187,7 +187,7 @@ const MapScreen: React.FC = () => {
   }, [userFilter]);
 
   return (
-    <ThemedView style={{ flex: 1 }} key={colorMode} useSafeArea={true}>
+    <ThemedView style={{ flex: 1 }} useSafeArea={true}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={{ flex: 1 }}>

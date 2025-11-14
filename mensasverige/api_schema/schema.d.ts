@@ -72,23 +72,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v1/users/{user_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get User By Id */
-        get: operations["get_user_by_id_v1_users__user_id__get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/v1/users": {
         parameters: {
             query?: never;
@@ -290,6 +273,40 @@ export interface paths {
         get: operations["get_events_unofficial_v1_events_unofficial_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/events/{event_id}/attend": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Attend Event */
+        post: operations["attend_event_v1_events__event_id__attend_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/events/{event_id}/unattend": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Unattend Event */
+        post: operations["unattend_event_v1_events__event_id__unattend_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -610,7 +627,7 @@ export interface components {
          *       "attending": true,
          *       "bookable": false,
          *       "end": "2025-11-10T10:00:00Z",
-         *       "id": "ext:12345",
+         *       "id": "ext12345",
          *       "name": "Opening Ceremony",
          *       "official": true,
          *       "start": "2025-11-10T09:00:00Z"
@@ -619,7 +636,7 @@ export interface components {
         Event: {
             /**
              * Id
-             * @description Globally unique event id, prefixed with source (ext: / usr:)
+             * @description Globally unique event id, prefixed with source (ext / usr)
              */
             id: string;
             /**
@@ -1179,6 +1196,27 @@ export interface components {
              * @example true
              */
             show_phone: boolean;
+            /**
+             * Location Update Interval Seconds
+             * @description Location update interval in seconds
+             * @default 60
+             * @example 60
+             */
+            location_update_interval_seconds: number;
+            /**
+             * Events Refresh Interval Seconds
+             * @description Events refresh interval in seconds
+             * @default 60
+             * @example 60
+             */
+            events_refresh_interval_seconds: number;
+            /**
+             * Background Location Updates
+             * @description Allow location updates when app is in background
+             * @default false
+             * @example true
+             */
+            background_location_updates: boolean;
         };
         /** UserUpdate */
         UserUpdate: {
@@ -1334,37 +1372,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
-                };
-            };
-        };
-    };
-    get_user_by_id_v1_users__user_id__get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                user_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -1767,6 +1774,68 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Event"][];
+                };
+            };
+        };
+    };
+    attend_event_v1_events__event_id__attend_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Event"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    unattend_event_v1_events__event_id__unattend_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
