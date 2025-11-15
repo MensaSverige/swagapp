@@ -102,11 +102,11 @@ const MapScreen: React.FC = () => {
     console.log('Focusing on user:', user.userId, 'Already selected:', isAlreadySelected);
     setSelectedUser(user);
     setShowContactCard(true);
-    
+
     if (!usersShowingLocation) {
       return;
     }
-    
+
     // If the same user is tapped again, zoom in
     if (isAlreadySelected) {
       setFollowsUserLocation(false);
@@ -174,7 +174,7 @@ const MapScreen: React.FC = () => {
     if (!users || users.length === 0) {
       return;
     }
-    
+
     resetSelectedUser();
     setShowContactCard(false);
 
@@ -201,7 +201,7 @@ const MapScreen: React.FC = () => {
   }, [resetSelectedUser]);
 
   useEffect(() => {
-    if (!filteredUsers || filteredUsers.length === 0 || hasPerformedInitialZoom ) {
+    if (!filteredUsers || filteredUsers.length === 0 || hasPerformedInitialZoom) {
       return;
     }
     setHasPerformedInitialZoom(true);
@@ -318,15 +318,6 @@ const MapScreen: React.FC = () => {
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.mapControlsButton}
-                onPress={() => zoomToFitAllUsers(filteredUsers)}>
-                <MaterialIcons
-                  name="zoom-out-map"
-                  size={30}
-                  color={Colors.coolGray400}
-                />
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.mapControlsButton}
                 onPress={handleFollowLocationPress}>
                 <MaterialIcons
                   name="my-location"
@@ -334,6 +325,15 @@ const MapScreen: React.FC = () => {
                   color={followsUserLocation
                     ? Colors.primary300
                     : Colors.coolGray400}
+                />
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.mapControlsButton}
+                onPress={() => zoomToFitAllUsers(filteredUsers)}>
+                <MaterialIcons
+                  name="zoom-out-map"
+                  size={30}
+                  color={Colors.coolGray400}
                 />
               </TouchableOpacity>
             </View>
