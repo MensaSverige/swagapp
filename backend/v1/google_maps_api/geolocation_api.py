@@ -10,10 +10,14 @@ from v1.env_constants import GOOGLE_MAPS_API_KEY
 
 geolocation_v1 = APIRouter(prefix="/v1")
 
-gmaps = googlemaps.Client(key=GOOGLE_MAPS_API_KEY)
+if GOOGLE_MAPS_API_KEY and GOOGLE_MAPS_API_KEY == "":
+    gmaps = googlemaps.Client(key=GOOGLE_MAPS_API_KEY)
 
 @geolocation_v1.get("/geolocation/{address}")
 def getLocationByAdress(address : str, current_user: dict = Depends(validate_request)) -> GeoLocation:
+    if not GOOGLE_MAPS_API_KEY or GOOGLE_MAPS_API_KEY == "":
+        raise HTTPException(status_code=500, detail="Google Maps API key is not configured")
+    
     # This function will get the location of the given address
     
     # Geocoding an address

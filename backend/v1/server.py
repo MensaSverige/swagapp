@@ -8,6 +8,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import datetime
 import logging
+
+from v1.jobs.scheduler import create_scheduler
 from v1.google_maps_api.geolocation_api import geolocation_v1
 from v1.api.auth import auth_v1
 from v1.api.health import health_v1
@@ -57,30 +59,9 @@ if os.getenv("ENABLE_DEV_ENDPOINTS") == "true":
 
 def initialize_app():
     initialize_db()
-    root = get_external_root()
-    if not root or not root.restUrl or root.restUrl == "" or not root.dates:
-        logging.error("Failed to fetch external root or missing data.")
-        return
 
-    all_external_events = []
-    for date in root.dates:
-        date_external_events = get_external_event_details(root.restUrl, date)
-        all_external_events.extend(date_external_events)
-    
-    # Remove external events that are not in the list of all_external_events
-    clean_external_events(keeping=all_external_events)
-
-    # Triple checking. Check that each of all_external_events is still in the database,
-    # using get_stored_external_event_details
-    for event in all_external_events:
-        event_id = event.eventId
-        # Check if the event is in the database
-        stored_event = get_stored_external_event_details(event_ids=[event_id])
-        if not stored_event:
-            logging.error(f"Event {event_id} not found in the database after cleaning.")
-            continue
-
-    get_event_site_news(root.restUrl)
+    scheduler = create_scheduler()
+    scheduler.start()
 
 initialize_app()  # uvicorn does not run the __main__ block below.
 

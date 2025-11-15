@@ -12,6 +12,7 @@ uvicorn # ASGI server for FastAPI
 sqlalchemy # ORM for databases
 faker # Fake data generator
 googlemaps # Google Maps API
+apscheduler # Scheduling periodic tasks
 
 # Documentation
 sphinx
