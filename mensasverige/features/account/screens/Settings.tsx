@@ -3,7 +3,6 @@ import {
     StyleSheet,
     ActivityIndicator,
     View,
-    Alert,
     TouchableOpacity,
     Switch,
     useColorScheme,
@@ -24,11 +23,13 @@ import Dropdown, { DropdownOption } from '../../common/components/Dropdown';
 import { Colors } from '@/constants/Colors';
 import { DEFAULT_SETTINGS } from '@/constants/DefaultSettings';
 import Slider from '@react-native-community/slider';
+import { useToast } from '@/hooks/useToast';
 
 
 const UserSettings: React.FC = () => {
     const { user, setUser } = useStore();
     const colorScheme = useColorScheme();
+    const { showToast, hideToast, ToastComponent } = useToast(colorScheme);
     const getFormStateFromUser = (user: User) => ({
         contact_info: {
             email: user?.contact_info?.email || '',
@@ -123,25 +124,6 @@ const UserSettings: React.FC = () => {
         }
     }, [formState?.settings?.location_update_interval_seconds, formState?.settings?.events_refresh_interval_seconds]);
 
-    type ToastType = 'save' | 'saved' | 'error';
-
-    const showToast = (type: ToastType) => {
-        let message;
-        switch (type) {
-            case 'save':
-                message = 'Sparar...';
-                break;
-            case 'saved':
-                message = 'Sparat!';
-                break;
-            case 'error':
-                message = 'Fel vid sparande';
-                break;
-        }
-
-        Alert.alert('Information', message);
-    };
-
     const autosave = (formStateToSave: UserUpdate): Promise<User> | undefined => {
         if (
             !user ||
@@ -150,19 +132,19 @@ const UserSettings: React.FC = () => {
         ) {
             return;
         }
-        showToast('save');
+        showToast('Sparar...', 'info');
 
         return updateUser(formStateToSave)
             .then(returnedUser => {
                 if (returnedUser && user) {
                     setUser({ ...user, ...returnedUser });
-                    showToast('saved');
+                    showToast('Sparat!', 'success');
                 }
                 return returnedUser;
             })
             .catch(error => {
                 console.error('Error updating user', error);
-                showToast('error');
+                showToast('Fel vid sparande', 'error');
                 throw error; // Re-throw to allow calling code to handle
             });
     };
@@ -227,6 +209,7 @@ const UserSettings: React.FC = () => {
 
     return (
         <ThemedView style={styles.container}>
+            {ToastComponent}
             <ParallaxScrollView>
 
                 {/* User Profile Section */}
@@ -234,14 +217,14 @@ const UserSettings: React.FC = () => {
                     <ProfileEditAvatar
                         colorMode="light"
                         onError={(error) => {
-                            showToast('error');
+                            showToast('Fel vid sparande', 'error');
                         }}
                         onSaved={() => {
                             console.log('saved received');
-                            showToast('saved');
+                            showToast('Sparat!', 'success');
                         }}
                         onSaving={() => {
-                            showToast('save');
+                            showToast('Sparar...', 'info');
                         }}
                     />
                     <ThemedText type="title" style={styles.profileName}>
