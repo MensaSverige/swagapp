@@ -162,16 +162,16 @@ const MapScreen: React.FC = () => {
 
   }, [followsUserLocation, selectedUser, showContactCard, showFilter]);
 
-  useEffect(() => {
-    if (!filteredUsers || filteredUsers.length === 0 || hasPerformedInitialZoom ) {
+  const zoomToFitAllUsers = useMemo(() => (users: typeof filteredUsers) => {
+    if (!users || users.length === 0) {
       return;
     }
-    setHasPerformedInitialZoom(true);
+    
     resetSelectedUser();
     setShowContactCard(false);
 
-    const latitudes = filteredUsers.map(user => user.location.latitude);
-    const longitudes = filteredUsers.map(user => user.location.longitude);
+    const latitudes = users.map(user => user.location.latitude);
+    const longitudes = users.map(user => user.location.longitude);
 
     const minLat = Math.min(...latitudes);
     const maxLat = Math.max(...latitudes);
@@ -190,7 +190,15 @@ const MapScreen: React.FC = () => {
       latitudeDelta: deltaLat,
       longitudeDelta: deltaLong,
     });
-  }, [filteredUsers]);
+  }, [resetSelectedUser]);
+
+  useEffect(() => {
+    if (!filteredUsers || filteredUsers.length === 0 || hasPerformedInitialZoom ) {
+      return;
+    }
+    setHasPerformedInitialZoom(true);
+    zoomToFitAllUsers(filteredUsers);
+  }, [filteredUsers, zoomToFitAllUsers]);
 
   return (
     <ThemedView style={{ flex: 1 }} useSafeArea={true}>
@@ -218,7 +226,9 @@ const MapScreen: React.FC = () => {
                 () => {
                   setshowFilter(false);
                 }
-              } />
+              }
+              onFilterApplied={() => zoomToFitAllUsers(filteredUsers)}
+            />
 
             <ReactNativeMapView
               ref={mapRef}
