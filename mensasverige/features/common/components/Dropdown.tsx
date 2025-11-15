@@ -5,34 +5,6 @@ import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { Colors } from '@/constants/Colors';
 
-/**
- * Reusable Dropdown Component
- * 
- * A customizable dropdown picker that automatically adapts to light and dark themes.
- * Features:
- * - Automatic light/dark theme adaptation
- * - Smooth animations and native feel
- * - Customizable styling
- * - Click outside to close
- * - Disabled state support
- * - TypeScript support
- * 
- * Usage Example:
- * ```tsx
- * const options = [
- *   { value: 'option1', label: 'Option 1' },
- *   { value: 'option2', label: 'Option 2' },
- * ];
- * 
- * <Dropdown
- *   options={options}
- *   selectedValue={selectedValue}
- *   onValueChange={(value) => setSelectedValue(value)}
- *   placeholder="Select an option"
- * />
- * ```
- */
-
 export interface DropdownOption {
     value: string;
     label: string;
