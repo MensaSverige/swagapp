@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, TextInput, TouchableOpacity, StyleSheet, useColorScheme } from 'react-native';
 import { Colors } from '@/constants/Colors';
 import { EditButton } from './EditButton';
+import { ThemedText } from '@/components/ThemedText';
 
 interface EditableFieldProps {
   label: string;
@@ -29,6 +30,8 @@ const EditableField: React.FC<EditableFieldProps> = ({
   onValueChange,
 }) => {
   const [editValue, setEditValue] = useState(value);
+  const colorScheme = useColorScheme();
+  const styles = createStyles(colorScheme);
 
   const handleSave = () => {
     onSave(editValue);
@@ -37,7 +40,7 @@ const EditableField: React.FC<EditableFieldProps> = ({
   if (isEditing) {
     return (
       <View style={styles.editModeContainer}>
-        <Text style={styles.fieldLabel}>{label}</Text>
+        <ThemedText style={styles.fieldLabel}>{label}</ThemedText>
         <View style={styles.editableField}>
           <TextInput
             style={[
@@ -56,7 +59,7 @@ const EditableField: React.FC<EditableFieldProps> = ({
               }
             }}
             placeholder={placeholder}
-            placeholderTextColor="#9CA3AF"
+            placeholderTextColor={Colors[colorScheme ?? 'light'].blueGray400}
             multiline={multiline}
             keyboardType={keyboardType}
             onBlur={handleSave}
@@ -71,18 +74,18 @@ const EditableField: React.FC<EditableFieldProps> = ({
 
   return (
     <TouchableOpacity onPress={onEdit} style={styles.editableField}>
-      <Text style={[
-        value ? { color: Colors.coolGray700 } : styles.placeholderText,
+      <ThemedText style={[
+        !value && styles.placeholderText,
         style,
       ]}>
         {value || placeholder}
-      </Text>
+      </ThemedText>
       <EditButton onPress={onEdit} />
     </TouchableOpacity>
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (colorScheme: 'light' | 'dark' | null | undefined) => StyleSheet.create({
   editableField: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -91,11 +94,13 @@ const styles = StyleSheet.create({
   editableInput: {
     flex: 1,
     fontSize: 14,
-    color: Colors.blueGray700,
+    color: Colors[colorScheme ?? 'light'].text,
     borderWidth: 1,
-    borderColor: Colors.blueGray200,
+    borderColor: Colors[colorScheme ?? 'light'].background200,
     borderRadius: 6,
     paddingHorizontal: 8,
+    paddingVertical: 8,
+    backgroundColor: Colors[colorScheme ?? 'light'].background,
     marginRight: 8,
   },
   editableInputLarge: {
@@ -103,30 +108,26 @@ const styles = StyleSheet.create({
     textAlignVertical: 'top',
   },
   placeholderText: {
-    color: Colors.blueGray400,
+    color: Colors[colorScheme ?? 'light'].blueGray400,
     fontStyle: 'italic',
   },
   editModeContainer: {
-    backgroundColor: Colors.background50,
-    borderRadius: 8,
-    padding: 12,
     marginBottom: 8,
   },
   fieldLabel: {
     fontSize: 12,
     fontWeight: '600',
-    color: Colors.blueGray500,
     marginBottom: 4,
   },
   doneButton: {
-    backgroundColor: Colors.teal600,
+    backgroundColor: Colors[colorScheme ?? 'light'].teal600,
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 6,
     marginLeft: 8,
   },
   doneButtonText: {
-    color: Colors.white,
+    color: Colors[colorScheme ?? 'light'].white,
     fontSize: 12,
     fontWeight: '600',
   },
