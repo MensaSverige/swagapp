@@ -6,21 +6,21 @@ import {
     Alert,
     TouchableOpacity,
     Switch,
+    useColorScheme,
 } from 'react-native';
 import { ThemedView } from '@/components/ThemedView';
 import { ThemedText } from '@/components/ThemedText';
 import ParallaxScrollView from '@/components/ParallaxScrollView';
-import { useColorScheme } from '@/hooks/useColorScheme';
-import { useThemeColor } from '@/hooks/useThemeColor';
+
 import useStore from '../../common/store/store';
 import { updateUser } from '../services/userService';
 import { ShowLocation, User, UserUpdate } from '../../../api_schema/types';
-import { Picker } from '@react-native-picker/picker';
 import { resetUserCredentials } from '../../common/services/authService';
 import ProfileEditAvatar from '../../common/components/ProfileEditAvatar';
 import { extractNumericValue } from '../../common/functions/extractNumericValue';
 import { MaterialIcons } from '@expo/vector-icons';
 import EditableField from '../../common/components/EditableField';
+import Dropdown, { DropdownOption } from '../../common/components/Dropdown';
 import { Colors } from '@/constants/Colors';
 import { DEFAULT_SETTINGS } from '@/constants/DefaultSettings';
 import Slider from '@react-native-community/slider';
@@ -28,16 +28,7 @@ import Slider from '@react-native-community/slider';
 
 const UserSettings: React.FC = () => {
     const { user, setUser } = useStore();
-    // user is guaranteed to be non-null due to AuthGuard wrapper
-    const authenticatedUser = user!;
     const colorScheme = useColorScheme();
-    const backgroundColor = useThemeColor({}, 'background');
-    const textColor = useThemeColor({}, 'text');
-    const primaryColor = useThemeColor({}, 'primary500');
-    const cardBackgroundColor = useThemeColor({ light: '#ffffff', dark: '#262626' }, 'background');
-    const borderColor = useThemeColor({ light: '#e5e5e5', dark: '#404040' }, 'text');
-    const mutedTextColor = useThemeColor({ light: Colors.coolGray700, dark: Colors.coolGray400 }, 'text');
-
     const getFormStateFromUser = (user: User) => ({
         contact_info: {
             email: user?.contact_info?.email || '',
@@ -53,16 +44,33 @@ const UserSettings: React.FC = () => {
         },
     });
 
-    const [formState, setFormState] = useState<UserUpdate>(
-        getFormStateFromUser(authenticatedUser),
-    );
+    const [formState, setFormState] = useState<UserUpdate>(() => {
+        if (!user) {
+            return {
+                contact_info: { email: '', phone: '' },
+                settings: {
+                    show_email: false,
+                    show_phone: false,
+                    show_location: 'NO_ONE',
+                    location_update_interval_seconds: DEFAULT_SETTINGS.LOCATION_UPDATE_INTERVAL_SECONDS,
+                    events_refresh_interval_seconds: DEFAULT_SETTINGS.EVENTS_REFRESH_INTERVAL_SECONDS,
+                    background_location_updates: DEFAULT_SETTINGS.BACKGROUND_LOCATION_UPDATES,
+                }
+            };
+        }
+        return getFormStateFromUser(user);
+    });
 
-    const styles = createStyles(backgroundColor, textColor, cardBackgroundColor, borderColor);
+    const styles = createStyles(colorScheme ?? 'light');
 
     const [isLoading, setIsLoading] = useState(false);
-    const [locationSwitch, setLocationSwitch] = useState<boolean>(
-        formState?.settings?.show_location === 'NO_ONE' ? false : true,
-    );
+    const [locationSwitch, setLocationSwitch] = useState<boolean>(() => {
+        // Initialize locationSwitch based on formState to avoid undefined access
+        if (!user?.settings?.show_location) {
+            return false;
+        }
+        return user.settings.show_location !== 'NO_ONE';
+    });
     const [editingField, setEditingField] = useState<string | null>(null);
     
     // Temporary slider values to prevent saving on every change
@@ -94,13 +102,18 @@ const UserSettings: React.FC = () => {
     }
 
     useEffect(() => {
+        console.log('Autosave effect triggered');
         if (!formState || editingField !== null || editingField === 'slider') {
             return;
         }
-        autosave(formState as User)?.then(returnedUser => {
-            setUser({ ...user, ...returnedUser });
+        autosave(formState)?.then(returnedUser => {
+            if (returnedUser && user) {
+                setUser({ ...user, ...returnedUser });
+            }
+        }).catch(error => {
+            console.error('Autosave failed:', error);
         });
-    }, [formState, editingField]);
+    }, [formState, editingField, user?.userId]); // Use user.userId instead of user object to prevent infinite loop
 
     // Update temporary slider values when formState changes
     useEffect(() => {
@@ -129,33 +142,32 @@ const UserSettings: React.FC = () => {
         Alert.alert('Information', message);
     };
 
-    const autosave = (formState: User): Promise<User> | undefined => {
+    const autosave = (formStateToSave: UserUpdate): Promise<User> | undefined => {
         if (
             !user ||
             JSON.stringify(getFormStateFromUser(user)) ===
-            JSON.stringify(formState)
+            JSON.stringify(formStateToSave)
         ) {
             return;
         }
         showToast('save');
 
-        if (!user) {
-            return;
-        }
-        updateUser(formState as UserUpdate)
+        return updateUser(formStateToSave)
             .then(returnedUser => {
-                setUser({ ...user, ...returnedUser });
-                showToast('saved');
+                if (returnedUser && user) {
+                    setUser({ ...user, ...returnedUser });
+                    showToast('saved');
+                }
                 return returnedUser;
             })
             .catch(error => {
                 console.error('Error updating user', error);
                 showToast('error');
-            })
-            .finally(() => { });
+                throw error; // Re-throw to allow calling code to handle
+            });
     };
 
-    const locationSharingOptions: { value: ShowLocation, label: string }[] = useMemo(() => authenticatedUser.isMember ? [
+    const locationSharingOptions: DropdownOption[] = useMemo(() => user?.isMember ? [
         // Members can choose between all options
         { value: "ALL_MEMBERS_WHO_SHARE_THEIR_OWN_LOCATION", label: "Andra medlemmar som visar sin position" },
         { value: "ALL_MEMBERS", label: "Alla medlemmar" },
@@ -165,7 +177,7 @@ const UserSettings: React.FC = () => {
         // Non-members can only choose between non member specific options
         { value: "EVERYONE_WHO_SHARE_THEIR_OWN_LOCATION", label: 'Andra deltagare som visar sin position' },
         { value: "EVERYONE", label: 'Alla' },
-    ], [authenticatedUser.isMember]);
+    ], [user?.isMember]);
 
     // Reusable Components
     const SectionHeader: React.FC<{ title: string; subtitle?: string }> = ({ title, subtitle }) => (
@@ -181,14 +193,14 @@ const UserSettings: React.FC = () => {
         </View>
     );
 
-    const PrivacyCard: React.FC<{
+    const PrivacyInputGroup: React.FC<{
         title: string;
         description: string;
         value: boolean;
         onValueChange: (value: boolean) => void;
         children?: React.ReactNode;
     }> = ({ title, description, value, onValueChange, children }) => (
-        <View style={[styles.card, children && styles.expandableCard]}>
+        <ThemedView style={[styles.group, children && styles.expandableGroup]}>
             <View style={styles.cardHeader}>
                 <View style={styles.cardContent}>
                     <ThemedText type="defaultSemiBold" style={styles.cardTitle}>
@@ -201,16 +213,16 @@ const UserSettings: React.FC = () => {
                 <Switch
                     value={value}
                     onValueChange={onValueChange}
-                    trackColor={{ false: '#767577', true: primaryColor }}
-                    thumbColor={value ? '#ffffff' : '#f4f3f4'}
+                    trackColor={{ false: Colors.coolGray500, true: Colors.primary500 }}
+                    thumbColor={value ? Colors.white : Colors.coolGray100}
                 />
             </View>
             {children && value && (
-                <View style={styles.cardExpandedContent}>
+                <ThemedView style={styles.cardExpandedContent}>
                     {children}
-                </View>
+                </ThemedView>
             )}
-        </View>
+        </ThemedView>
     );
 
     return (
@@ -220,7 +232,7 @@ const UserSettings: React.FC = () => {
                 {/* User Profile Section */}
                 <View style={styles.profileSection}>
                     <ProfileEditAvatar
-                        colorMode={colorScheme || 'light'}
+                        colorMode="light"
                         onError={(error) => {
                             showToast('error');
                         }}
@@ -233,7 +245,7 @@ const UserSettings: React.FC = () => {
                         }}
                     />
                     <ThemedText type="title" style={styles.profileName}>
-                        {authenticatedUser.firstName} {authenticatedUser.lastName}
+                        {user?.firstName || ''} {user?.lastName || ''}
                     </ThemedText>
                 </View>
 
@@ -241,7 +253,7 @@ const UserSettings: React.FC = () => {
                 
                 <View style={styles.contactInfoContainer}>
                     <ThemedText style={styles.emailText}>
-                        {user?.contact_info?.email}
+                        {user?.contact_info?.email || ''}
                     </ThemedText>
                     <EditableField
                         label="Telefonnummer"
@@ -281,9 +293,9 @@ const UserSettings: React.FC = () => {
                 <SectionHeader 
                     title="Vad andra kan se om dig" 
                     subtitle="Styr vilken information andra deltagare kan se i dina kontaktuppgifter"
-                />
+                /> 
 
-                <PrivacyCard
+                <PrivacyInputGroup
                     title="E-postadress"
                     description={formState?.settings?.show_email
                         ? "Andra kan se din e-post"
@@ -301,9 +313,9 @@ const UserSettings: React.FC = () => {
                             },
                         });
                     }}
-                />
+                /> 
 
-                <PrivacyCard
+                <PrivacyInputGroup
                     title="Telefonnummer"
                     description={formState?.settings?.show_phone
                         ? "Andra kan se ditt telefonnummer"
@@ -323,7 +335,7 @@ const UserSettings: React.FC = () => {
                     }}
                 />
 
-                <PrivacyCard
+                <PrivacyInputGroup
                     title="Platsuppgifter"
                     description={locationSwitch
                         ? "Andra kan se din position på kartan"
@@ -339,7 +351,7 @@ const UserSettings: React.FC = () => {
                                 ...formState,
                                 settings: {
                                     ...formState.settings,
-                                    show_location: authenticatedUser.isMember ? 'ALL_MEMBERS_WHO_SHARE_THEIR_OWN_LOCATION' : 'EVERYONE_WHO_SHARE_THEIR_OWN_LOCATION',
+                                    show_location: user?.isMember ? 'ALL_MEMBERS_WHO_SHARE_THEIR_OWN_LOCATION' : 'EVERYONE_WHO_SHARE_THEIR_OWN_LOCATION',
                                 },
                             });
                         } else {
@@ -352,50 +364,43 @@ const UserSettings: React.FC = () => {
                             });
                         }
                     }}>
-                    <View style={styles.locationDetailsContainer}>
+                    <View>
                         <ThemedText style={styles.locationSubheading}>
                             Vem kan se din position?
                         </ThemedText>
-                        <View style={styles.pickerContainer}>
-                            <Picker
-                                selectedValue={formState?.settings?.show_location}
-                                onValueChange={(itemValue: ShowLocation) => {
-                                    if (!formState || !formState.settings) {
-                                        return;
-                                    }
-                                    setFormState({
-                                        ...formState,
-                                        settings: {
-                                            ...formState.settings,
-                                            show_location: itemValue,
-                                        },
-                                    });
-                                }}
-                                style={[styles.picker, { color: textColor }]}>
-                                {locationSharingOptions.map((option, index) => (
-                                    <Picker.Item
-                                        key={`location-sharing-option-${index}`}
-                                        label={option.label}
-                                        value={option.value}
-                                    />
-                                ))}
-                            </Picker>
-                        </View>
+                        <Dropdown
+                            options={locationSharingOptions}
+                            selectedValue={formState?.settings?.show_location || 'NO_ONE'}
+                            onValueChange={(value) => {
+                                if (!formState || !formState.settings) {
+                                    return;
+                                }
+                                setFormState({
+                                    ...formState,
+                                    settings: {
+                                        ...formState.settings,
+                                        show_location: value as ShowLocation,
+                                    },
+                                });
+                            }}
+                            placeholder="Välj alternativ"
+                            style={styles.dropdown}
+                        />
                     </View>
-                </PrivacyCard>
+                </PrivacyInputGroup>
 
                 <SectionHeader 
                     title="Appinställningar" 
                     subtitle="Konfigurera uppdateringsintervall och appbeteende"
                 />
 
-                <View style={styles.card}>
+                <ThemedView style={styles.group}>
                     <View style={styles.cardContent}>
                         <ThemedText type="defaultSemiBold" style={styles.cardTitle}>
                             Platsuppdatering
                         </ThemedText>
                         <ThemedText style={styles.cardDescription}>
-                            Uppdaterar var <ThemedText style={[styles.cardDescription, { color: primaryColor, fontWeight: 'bold' }]}>
+                            Uppdaterar var <ThemedText type="defaultSemiBold" style={[styles.cardDescription, { fontWeight: 'bold' }]}>
                                 {Math.round(tempLocationInterval)}
                             </ThemedText> sekund{Math.round(tempLocationInterval) !== 1 ? 'er' : ''}
                         </ThemedText>
@@ -406,9 +411,9 @@ const UserSettings: React.FC = () => {
                                 minimumValue={DEFAULT_SETTINGS.MIN_LOCATION_UPDATE_SECONDS}
                                 maximumValue={DEFAULT_SETTINGS.MAX_LOCATION_UPDATE_SECONDS}
                                 step={5}
-                                thumbTintColor={primaryColor}
-                                minimumTrackTintColor={primaryColor}
-                                maximumTrackTintColor={borderColor}
+                                thumbTintColor={Colors.primary500}
+                                minimumTrackTintColor={Colors.primary500}
+                                maximumTrackTintColor={Colors.light.background200}
                                 onValueChange={(value: number) => {
                                     setTempLocationInterval(value);
                                     setEditingField('slider'); // Prevent autosave while sliding
@@ -435,15 +440,15 @@ const UserSettings: React.FC = () => {
                             </ThemedText>
                         </View>
                     </View>
-                </View>
+                </ThemedView>
 
-                <View style={styles.card}>
+                <ThemedView style={styles.group}>
                     <View style={styles.cardContent}>
                         <ThemedText type="defaultSemiBold" style={styles.cardTitle}>
                             Evenemang
                         </ThemedText>
                         <ThemedText style={styles.cardDescription}>
-                            Uppdaterar var <ThemedText style={[styles.cardDescription, { color: primaryColor, fontWeight: 'bold' }]}>
+                            Uppdaterar var <ThemedText type="defaultSemiBold" style={[styles.cardDescription, { fontWeight: 'bold' }]}>
                                 {Math.round(tempEventsInterval)}
                             </ThemedText> sekund{Math.round(tempEventsInterval) !== 1 ? 'er' : ''}
                         </ThemedText>
@@ -454,9 +459,9 @@ const UserSettings: React.FC = () => {
                                 minimumValue={DEFAULT_SETTINGS.MIN_EVENTS_REFRESH_SECONDS}
                                 maximumValue={DEFAULT_SETTINGS.MAX_EVENTS_REFRESH_SECONDS}
                                 step={10}
-                                thumbTintColor={primaryColor}
-                                minimumTrackTintColor={primaryColor}
-                                maximumTrackTintColor={borderColor}
+                                thumbTintColor={Colors.primary500}
+                                minimumTrackTintColor={Colors.primary500}
+                                maximumTrackTintColor={Colors.light.background200}
                                 onValueChange={(value: number) => {
                                     setTempEventsInterval(value);
                                     setEditingField('slider'); // Prevent autosave while sliding
@@ -483,9 +488,9 @@ const UserSettings: React.FC = () => {
                             </ThemedText>
                         </View>
                     </View>
-                </View>
+                </ThemedView>
 
-                <PrivacyCard
+                <PrivacyInputGroup
                     title="Bakgrundsplatsuppdateringar"
                     description={formState?.settings?.background_location_updates
                         ? "Platsuppdateringar fortsätter när appen är i bakgrunden"
@@ -505,15 +510,15 @@ const UserSettings: React.FC = () => {
 
 
                 {/* Logout Button */}
-                <View style={styles.divider} />
+                <ThemedView style={styles.divider} />
                 <View style={styles.actionSection}>
                     <TouchableOpacity
-                        style={[styles.logoutButton, { backgroundColor: primaryColor }]}
+                        style={[styles.logoutButton, { backgroundColor: Colors.primary500 }]}
                         onPress={handleLogout}
                         disabled={isLoading}
                         activeOpacity={0.8}>
                         <ThemedText
-                            style={[styles.logoutButtonText, { color: '#ffffff' }]}
+                            style={[styles.logoutButtonText, { color: Colors.white }]}
                             type="defaultSemiBold">
                             Logga ut
                         </ThemedText>
@@ -531,7 +536,7 @@ const UserSettings: React.FC = () => {
     );
 };
 
-const createStyles = (backgroundColor: string, textColor: string, cardBackgroundColor: string, borderColor: string) =>
+const createStyles = (colorScheme: string) =>
     StyleSheet.create({
         container: {
             flex: 1,
@@ -567,29 +572,24 @@ const createStyles = (backgroundColor: string, textColor: string, cardBackground
             marginBottom: 16,
         },
         emailText: {
-            color: textColor,
             opacity: 0.8,
             marginBottom: 12,
             fontSize: 16,
         },
-
-        // Unified Card Styles
-        card: {
-            backgroundColor: cardBackgroundColor,
-            borderRadius: 8,
+        group: {
             paddingVertical: 20,
             marginBottom: 12,
-            shadowColor: '#000',
-            shadowOffset: {
-                width: 0,
-                height: 1,
-            },
+            //shadowColor: '#000',
+            // shadowOffset: {
+            //     width: 0,
+            //     height: 1,
+            // },
             shadowOpacity: 0.05,
-            shadowRadius: 2,
+            //shadowRadius: 3,
             elevation: 1,
         },
-        expandableCard: {
-            // Additional styles for expandable cards if needed
+        expandableGroup: {
+            // Additional styles for expandable groups if needed
         },
         cardHeader: {
             flexDirection: 'row',
@@ -612,28 +612,22 @@ const createStyles = (backgroundColor: string, textColor: string, cardBackground
             marginTop: 16,
             paddingVertical: 16,
             borderTopWidth: 1,
-            borderTopColor: borderColor,
-        },
-
-        // Location-specific styles
-        locationDetailsContainer: {
-            // Styles handled by cardExpandedContent
+            borderTopColor: Colors.background200 || '#E5E5E5',
         },
         locationSubheading: {
             fontSize: 14,
             fontWeight: '600',
             marginBottom: 8,
-            color: textColor,
         },
         pickerContainer: {
             marginTop: 12,
             borderWidth: 1,
-            borderColor: borderColor,
+            borderColor: Colors.background200 || '#E5E5E5',
             borderRadius: 6,
-            backgroundColor: cardBackgroundColor,
+            overflow: 'hidden',
         },
-        picker: {
-            height: 50,
+        dropdown: {
+            marginTop: 12,
         },
 
         // Slider styles
@@ -648,14 +642,12 @@ const createStyles = (backgroundColor: string, textColor: string, cardBackground
         },
         sliderLabelText: {
             fontSize: 12,
-            color: textColor,
             opacity: 0.6,
         },
 
         // Action Section
         divider: {
             height: 1,
-            backgroundColor: borderColor,
             marginVertical: 20,
             opacity: 0.5,
         },
