@@ -1,0 +1,3 @@
+{
+  "extends": "./mensasverige/tsconfig.json"
+}
