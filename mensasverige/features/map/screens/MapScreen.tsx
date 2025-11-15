@@ -34,6 +34,14 @@ const createStyles = (colorMode: string) =>
     map: {
       ...StyleSheet.absoluteFillObject,
     },
+    searchWrapper: {
+      position: 'absolute',
+      top: 60,
+      left: 10,
+      right: 10,
+      zIndex: 1,
+      backgroundColor: 'transparent',
+    },
     mapControlsWrapper: {
       position: 'absolute',
       top: 150,
