@@ -129,6 +129,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
           ...baseConfig.android,
           package: "se.mensasverige.dev",
         },
+        runtimeVersion: "1.0.0",
         ios: {
           ...baseConfig.ios,
           bundleIdentifier: "se.mensasverige.dev",
