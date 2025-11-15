@@ -1,13 +1,13 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   View,
-  Text,
   Image,
   StyleSheet,
   TouchableOpacity,
   Linking
 } from 'react-native';
 import { Event, User } from '../../../api_schema/types';
+import { ThemedText } from '../../../components/ThemedText';
 import UserAvatar from '../../map/components/UserAvatar';
 import { filterHtml } from '../../common/functions/filterHtml';
 import { extractLinks } from '../../common/functions/extractLinks';
@@ -115,9 +115,9 @@ const UnifiedEventCard: React.FC<{
             />
           )}
           <View style={eventCardStyles.headingContainer}>
-            <Text style={eventCardStyles.heading}>
+            <ThemedText type="subtitle">
               {currentEvent.name}
-            </Text>
+            </ThemedText>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
               {currentEvent.attending && <AttendingBadge />}
 
@@ -144,7 +144,7 @@ const UnifiedEventCard: React.FC<{
                 />
               )}
               {currentEvent.locationDescription && (
-                <Text style={eventCardStyles.locationText}>{currentEvent.locationDescription}</Text>
+                <ThemedText lightColor="#6B7280" darkColor="#9CA3AF">{currentEvent.locationDescription}</ThemedText>
               )}
             </View>
           )}
@@ -175,20 +175,20 @@ const UnifiedEventCard: React.FC<{
             <View style={eventCardStyles.eventStatusSection}>
               {currentEvent.cancelled && (
                 <View style={eventCardStyles.statusRow}>
-                  <Text style={eventCardStyles.statusLabel}>Status:</Text>
-                  <Text style={[eventCardStyles.statusText, eventCardStyles.cancelledText]}>Inställt</Text>
+                  <ThemedText type="defaultSemiBold" style={{ minWidth: 60 }}>Status:</ThemedText>
+                  <ThemedText lightColor="#DC2626" darkColor="#F87171" type="defaultSemiBold">Inställt</ThemedText>
                 </View>
               )}
               {currentEvent.price !== undefined && currentEvent.price > 0 && (
                 <View style={eventCardStyles.statusRow}>
-                  <Text style={eventCardStyles.statusLabel}>Pris:</Text>
-                  <Text style={eventCardStyles.statusText}>{currentEvent.price} SEK</Text>
+                  <ThemedText type="defaultSemiBold" style={{ minWidth: 60 }}>Pris:</ThemedText>
+                  <ThemedText>{currentEvent.price} SEK</ThemedText>
                 </View>
               )}
               {currentEvent.parentEvent && (
                 <View style={eventCardStyles.statusRow}>
-                  <Text style={eventCardStyles.statusLabel}>Del av:</Text>
-                  <Text style={eventCardStyles.statusText}>{currentEvent.parentEvent}</Text>
+                  <ThemedText type="defaultSemiBold" style={{ minWidth: 60 }}>Del av:</ThemedText>
+                  <ThemedText>{currentEvent.parentEvent}</ThemedText>
                 </View>
               )}
             </View>
@@ -197,9 +197,9 @@ const UnifiedEventCard: React.FC<{
           {/* Hosts */}
           {currentEvent.hosts && currentEvent.hosts.length > 0 && (
             <View style={eventCardStyles.hostsSection}>
-              <Text style={eventCardStyles.subHeading}>Värdar</Text>
+              <ThemedText type="defaultSemiBold">Värdar</ThemedText>
               {currentEvent.hosts.map((host, index) => (
-                <Text key={index} style={eventCardStyles.detailText}>{host.fullName || `Värd ${index + 1}`}</Text>
+                <ThemedText key={index}>{host.fullName || `Värd ${index + 1}`}</ThemedText>
               ))}
             </View>
           )}
@@ -214,9 +214,9 @@ const UnifiedEventCard: React.FC<{
           )} */}
 
           <View style={eventCardStyles.divider} />
-          <Text style={eventCardStyles.descriptionText}>
+          <ThemedText>
             {filterHtml(currentEvent.description ?? "")}
-          </Text>
+          </ThemedText>
           <View style={eventCardStyles.linksContainer}>
             {extractLinks(currentEvent.description ?? "")?.map((link, index) => (
               <TouchableOpacity
@@ -224,7 +224,7 @@ const UnifiedEventCard: React.FC<{
                 style={eventCardStyles.linkButton}
                 onPress={() => handleLinkPress(link.url)}
               >
-                <Text style={eventCardStyles.linkText}>{link.name}</Text>
+                <ThemedText type="link">{link.name}</ThemedText>
               </TouchableOpacity>
             ))}
           </View>
@@ -267,28 +267,21 @@ const UnifiedEventCard: React.FC<{
 
             return (
               <View style={eventCardStyles.attendeesSection}>
-                <Text style={eventCardStyles.subHeading}>
-                  Deltagare ({currentCount}{currentEvent.maxAttendees ? `/${currentEvent.maxAttendees}` : ''})
-                </Text>
+                <ThemedText type="defaultSemiBold">
+                  Deltagare 
+                </ThemedText>
                 {currentEvent.showAttendees === 'all' && currentEvent.attendees && (
-                  <View style={eventCardStyles.attendeesList}>
+                  <View>
                     {currentEvent.attendees.slice(0, 10).map((attendee, index) => (
-                      <Text key={index} style={eventCardStyles.attendeeText}>
-                        {`Deltagare ${attendee.userId}`}
-                      </Text>
+                      <ThemedText key={index} style={{ marginBottom: 2 }}>
+                        {`${attendee.userId}`}
+                      </ThemedText>
                     ))}
                     {currentEvent.attendees.length > 10 && (
-                      <Text style={eventCardStyles.moreAttendeesText}>
+                      <ThemedText style={{ fontStyle: 'italic', marginTop: 4 }}>
                         ... och {currentEvent.attendees.length - 10} till
-                      </Text>
+                      </ThemedText>
                     )}
-                  </View>
-                )}
-                {currentEvent.showAttendees === 'all' && !currentEvent.attendees && currentCount > 0 && (
-                  <View style={eventCardStyles.attendeesList}>
-                    <Text style={eventCardStyles.attendeeText}>
-                      {currentCount} anmälda deltagare
-                    </Text>
                   </View>
                 )}
               </View>

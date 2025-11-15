@@ -4,15 +4,19 @@ import {
   Modal,
   TouchableOpacity,
   StyleSheet,
-  Text,
-  ScrollView
+  ScrollView,
+  useColorScheme,
 } from 'react-native';
+import { ThemedView } from '@/components/ThemedView';
+import { ThemedText } from '@/components/ThemedText';
 import EventCard from './UnifiedEventCard';
 import CreateEventCard from './CreateEventCard';
 import { canUserEditEvent } from '../utils/eventPermissions';
 import useStore from '@/features/common/store/store';
 import { MaterialIcons } from '@expo/vector-icons';
 import { ExtendedEvent } from '../types/eventUtilTypes';
+import { Colors } from '@/constants/Colors';
+import { useThemeColor } from '@/hooks/useThemeColor';
 
 interface EventDetailsProps {
   event?: ExtendedEvent,
@@ -34,12 +38,17 @@ const UnifiedEventModal: React.FC<EventDetailsProps> = ({
   initialEditMode = false
 }) => {
   const { user } = useStore();
+  const colorScheme = useColorScheme();
   const ref = React.useRef(null);
   const [isEditing, setIsEditing] = useState(mode === 'edit' || mode === 'create' || initialEditMode);
 
   const canEdit = mode === 'create' || (event && canUserEditEvent(event, user));
   const isCreateMode = mode === 'create';
   const isViewMode = mode === 'view';
+
+  const styles = createStyles(colorScheme ?? 'light');
+  const backgroundColor = useThemeColor({}, 'background');
+  const iconColor = useThemeColor({}, 'icon');
 
   const handleClose = useCallback(() => {
     setIsEditing(false);
@@ -77,12 +86,12 @@ const UnifiedEventModal: React.FC<EventDetailsProps> = ({
         />
 
         {/* Card that is capped to the screen and can shrink */}
-        <View style={styles.modalContent}>
+        <ThemedView style={styles.modalContent}>
           <TouchableOpacity
             style={styles.closeButton}
             onPress={handleClose}
           >
-            <Text style={styles.closeButtonText}>×</Text>
+            <ThemedText style={styles.closeButtonText}>×</ThemedText>
           </TouchableOpacity>
           
           {/* Show edit button only in view mode when user can edit */}
@@ -91,7 +100,7 @@ const UnifiedEventModal: React.FC<EventDetailsProps> = ({
               style={styles.editButton}
               onPress={handleStartEdit}
             >
-              <MaterialIcons name="edit" size={20} color="#666" />
+              <MaterialIcons name="edit" size={20} color={iconColor} />
             </TouchableOpacity>
           )}
           <View style={styles.bodyWrapper}>
@@ -120,7 +129,7 @@ const UnifiedEventModal: React.FC<EventDetailsProps> = ({
             ) : null}
           </ScrollView>
           </View>
-        </View>
+        </ThemedView>
       </View>
     </Modal>
   );
@@ -135,93 +144,94 @@ export default React.memo(UnifiedEventModal, (prevProps, nextProps) => {
          prevProps.onEventCreated === nextProps.onEventCreated;
 });
 
-const styles = StyleSheet.create({
-  modalOverlay: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 60,
-  },
-  backdrop: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-  },
-  modalContent: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    alignSelf: 'stretch',
-    maxHeight: '100%',
-    flexShrink: 1,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 4,
+const createStyles = (colorScheme: string) => {
+  return StyleSheet.create({
+    modalOverlay: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingHorizontal: 20,
+      paddingVertical: 60,
     },
-    shadowOpacity: 0.25,
-    shadowRadius: 12,
-    elevation: 8,
-  },
-   bodyWrapper: {
-    maxHeight: '100%',
-    minHeight: 0,
-    flexShrink: 1,
-    padding: 12,
-  },
-  scrollContent: {
-    padding: 4,
-    gap: 8,
-  },
-  closeButton: {
-    position: 'absolute',
-    top: 8,
-    right: 8,
-    zIndex: 10,
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    borderRadius: 20,
-    width: 40,
-    height: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
+    backdrop: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: 'rgba(0, 0, 0, 0.5)',
     },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  editButton: {
-    position: 'absolute',
-    top: 8,
-    right: 56,
-    zIndex: 10,
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    borderRadius: 20,
-    width: 40,
-    height: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
+    modalContent: {
+      backgroundColor: colorScheme === 'dark' ? Colors.dark.background50 : Colors.light.background0,
+      borderRadius: 12,
+      alignSelf: 'stretch',
+      maxHeight: '100%',
+      flexShrink: 1,
+      shadowColor: '#000',
+      shadowOffset: {
+        width: 0,
+        height: 4,
+      },
+      shadowOpacity: 0.25,
+      shadowRadius: 12,
+      elevation: 8,
     },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  closeButtonText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#666',
-  },
-});
+    bodyWrapper: {
+      maxHeight: '100%',
+      minHeight: 0,
+      flexShrink: 1,
+      padding: 12,
+    },
+    scrollContent: {
+      padding: 4,
+      gap: 8,
+    },
+    closeButton: {
+      position: 'absolute',
+      top: 8,
+      right: 8,
+      zIndex: 10,
+      backgroundColor: colorScheme === 'dark' ? Colors.dark.background100 : Colors.light.background0,
+      borderRadius: 20,
+      width: 40,
+      height: 40,
+      alignItems: 'center',
+      justifyContent: 'center',
+      shadowColor: '#000',
+      shadowOffset: {
+        width: 0,
+        height: 2,
+      },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+      elevation: 3,
+    },
+    editButton: {
+      position: 'absolute',
+      top: 8,
+      right: 56,
+      zIndex: 10,
+      backgroundColor: colorScheme === 'dark' ? Colors.dark.background100 : Colors.light.background0,
+      borderRadius: 20,
+      width: 40,
+      height: 40,
+      alignItems: 'center',
+      justifyContent: 'center',
+      shadowColor: '#000',
+      shadowOffset: {
+        width: 0,
+        height: 2,
+      },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+      elevation: 3,
+    },
+    closeButtonText: {
+      fontSize: 18,
+      fontWeight: 'bold',
+    },
+  });
+};
 
 
 // Export with both names for compatibility
