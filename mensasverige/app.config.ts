@@ -1,21 +1,21 @@
-import { ExpoConfig, ConfigContext } from 'expo/config';
+import { ExpoConfig, ConfigContext } from "expo/config";
 
 export default ({ config }: ConfigContext): ExpoConfig => {
-  const isProduction = process.env.NODE_ENV === 'production';
-  const isDevelopment = process.env.NODE_ENV === 'development';
-  const appEnvironment = process.env.APP_ENV || 'development';
-  
+  const isProduction = process.env.NODE_ENV === "production";
+  const isDevelopment = process.env.NODE_ENV === "development";
+  const appEnvironment = process.env.APP_ENV || "development";
+
   // Base configuration from your app.json
   const baseConfig: ExpoConfig = {
     name: "mensasverige",
     slug: "mensasverige",
     version: "1.0.0",
     runtimeVersion: {
-      policy: "appVersion"
+      policy: "appVersion",
     },
     updates: {
       fallbackToCacheTimeout: 0,
-      url: "https://u.expo.dev/ba3ea4a2-fed7-462a-b42c-70092682f176"
+      url: "https://u.expo.dev/ba3ea4a2-fed7-462a-b42c-70092682f176",
     },
     orientation: "portrait",
     icon: "./assets/images/icon.png",
@@ -24,6 +24,20 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     newArchEnabled: true,
     ios: {
       supportsTablet: true,
+      bundleIdentifier: "se.mensasverige",
+      infoPlist: {
+        ITSAppUsesNonExemptEncryption: false,
+        NSLocationAlwaysAndWhenInUseUsageDescription:
+          "Din platsinformation används för att visa din position för andra användare. Varje platsuppdatering lagras i upp till en timme.",
+        NSLocationAlwaysUsageDescription:
+          "Din platsinformation används för att visa din position för andra användare. Varje platsuppdatering lagras i upp till en timme.",
+        NSLocationUsageDescription:
+          "Din platsinformation används för att visa din position för andra användare. Varje platsuppdatering lagras i upp till en timme.",
+        NSLocationWhenInUseUsageDescription:
+          "Din platsinformation används för att visa din position för andra användare. Varje platsuppdatering lagras i upp till en timme.",
+        NSPhotoLibraryUsageDescription:
+          "Bildgalleriet används för att visa dig bilder så du kan välja profilbild för uppladdning. Bara den bild du väljer används av appen.",
+      },
     },
     android: {
       // adaptiveIcon: {
@@ -31,12 +45,12 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       //   backgroundColor: "#ffffff"
       // },
       edgeToEdgeEnabled: true,
-      package: "se.mensasverige"
+      package: "se.mensasverige",
     },
     web: {
       bundler: "metro",
       output: "static",
-      favicon: "./assets/images/favicon.png"
+      favicon: "./assets/images/favicon.png",
     },
     plugins: [
       "expo-router",
@@ -46,36 +60,36 @@ export default ({ config }: ConfigContext): ExpoConfig => {
           image: "./assets/images/icon.png",
           imageWidth: 200,
           resizeMode: "contain",
-          backgroundColor: "#ffffff"
-        }
+          backgroundColor: "#ffffff",
+        },
       ],
       [
         "react-native-maps",
         {
-          androidGoogleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY
-        }
+          androidGoogleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY,
+        },
       ],
-      "expo-secure-store"
+      "expo-secure-store",
     ],
     experiments: {
-      typedRoutes: true
+      typedRoutes: true,
     },
     extra: {
       router: {},
       eas: {
-        projectId: "ba3ea4a2-fed7-462a-b42c-70092682f176"
+        projectId: "ba3ea4a2-fed7-462a-b42c-70092682f176",
       },
       apiUrl: process.env.EXPO_PUBLIC_API_URL,
       environment: appEnvironment,
       isProduction,
       isDevelopment,
     },
-    owner: "mensasverige"
+    owner: "mensasverige",
   };
 
   // Environment-specific overrides
   switch (appEnvironment) {
-    case 'production':
+    case "production":
       return {
         ...baseConfig,
         name: "Mensa Sverige",
@@ -84,24 +98,28 @@ export default ({ config }: ConfigContext): ExpoConfig => {
           ...baseConfig.extra,
           enableAnalytics: true,
           debugMode: false,
-        }
+        },
       };
-      case 'preview':
+    case "preview":
       return {
         ...baseConfig,
         name: "Mensa Sverige (Preview)",
         //slug: "mensasverige-preview",
         android: {
           ...baseConfig.android,
-          package: "se.mensasverige.preview"
+          package: "se.mensasverige.preview",
+        },
+        ios: {
+          ...baseConfig.ios,
+          bundleIdentifier: "se.mensasverige.preview",
         },
         extra: {
           ...baseConfig.extra,
           enableAnalytics: false,
           debugMode: true,
-        }
-      }; 
-    case 'development':
+        },
+      };
+    case "development":
     default:
       return {
         ...baseConfig,
@@ -109,13 +127,34 @@ export default ({ config }: ConfigContext): ExpoConfig => {
         //slug: "mensasverige-dev",
         android: {
           ...baseConfig.android,
-          package: "se.mensasverige.dev"
+          package: "se.mensasverige.dev",
+        },
+        ios: {
+          ...baseConfig.ios,
+          bundleIdentifier: "se.mensasverige.dev",
+          infoPlist: {
+            ...baseConfig.ios?.infoPlist,
+            NSAppTransportSecurity: {
+              ...baseConfig.ios?.infoPlist?.NSAppTransportSecurity,
+              NSAllowsArbitraryLoads: false,
+              NSExceptionDomains: {
+                ...baseConfig.ios?.infoPlist?.NSAppTransportSecurity
+                  ?.NSExceptionDomains,
+                localhost: {
+                  NSExceptionAllowsInsecureHTTPLoads: true,
+                },
+                "100.85.201.138": {
+                  NSExceptionAllowsInsecureHTTPLoads: true,
+                },
+              },
+            },
+          },
         },
         extra: {
           ...baseConfig.extra,
           enableAnalytics: false,
           debugMode: true,
-        }
+        },
       };
   }
 };
