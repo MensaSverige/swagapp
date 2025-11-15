@@ -144,9 +144,10 @@ export default ({ config }: ConfigContext): ExpoConfig => {
                 localhost: {
                   NSExceptionAllowsInsecureHTTPLoads: true,
                 },
-                "100.85.201.138": {
+                "100.104.188.36": { // Micke's "local" IP
                   NSExceptionAllowsInsecureHTTPLoads: true,
                 },
+                // Feel free to add your own as needed for dev.
               },
             },
           },
