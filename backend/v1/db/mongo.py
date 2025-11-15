@@ -48,10 +48,11 @@ def initialize_db():
 
         # Check if in local test mode
         if TEST_MODE.lower() == 'true':
+            pass
             #first clear the collections
             #user_collection.delete_many({})
             #tokenstorage_collection.delete_many({})
-            logging.info("Cleared all collections.")
+            # logging.info("Cleared all collections.")
 
             # Generate and add fake users to the database
             # fake_users = generate_fake_users(10)  # Generate 10 fake users
