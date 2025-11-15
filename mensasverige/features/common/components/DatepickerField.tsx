@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import DatePicker from 'react-native-date-picker';
+import RNDateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { Dimensions, View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { formatDateAndTime } from '../functions/FormatDateAndTime';
 
@@ -8,7 +8,6 @@ interface DateFieldProps {
   date?: Date;
   minimumDate?: Date;
   optional?: boolean;
-  mode?: 'date' | 'datetime' | 'time';
   placeholder?: string;
   onDateChange: (date?: Date) => void;
 }
@@ -17,7 +16,6 @@ export const DatepickerField: React.FC<DateFieldProps> = ({
   label,
   date,
   minimumDate,
-  mode = 'datetime',
   placeholder,
   onDateChange,
 }) => {
@@ -37,27 +35,27 @@ export const DatepickerField: React.FC<DateFieldProps> = ({
             <Text>{date ? formatDateAndTime(date) : (placeholder || formatDateAndTime(''))}</Text>
           </TouchableOpacity>
         </View>
-        <DatePicker
-          modal
+        <RNDateTimePicker
           key={label?.toString()}
-          title={label?.toString()}
           minimumDate={minimumDate}
-          open={openDateModal}
-          theme="dark"
-          onConfirm={(confirmDate: Date) => {
-            onDateChange(confirmDate);
-            setOpenDateModal(false);
-          }}
-          onCancel={() => {
-            setOpenDateModal(false);
+          onChange={(event: DateTimePickerEvent, date: Date|undefined) => {
+            switch (event.type) {
+              case 'set':
+                if (date !== undefined) {
+                  onDateChange(date);
+                }
+                break;
+              case 'dismissed':
+                setOpenDateModal(false);
+                return;
+            }
           }}
           style={[styles.datepicker]}
-          date={date ?? new Date()}
-          mode={mode}
+          value={date ?? new Date()}
+          mode="datetime"
           locale="sv"
-          is24hourSource="locale"
-          confirmText="Välj"
-          cancelText="Avbryt"
+          timeZoneName='Europe/Stockholm'
+          
         />
       </View>
     </>

@@ -25,6 +25,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     ios: {
       supportsTablet: true,
       bundleIdentifier: "se.mensasverige",
+      appleTeamId: "295VA2R9VV",
       infoPlist: {
         ITSAppUsesNonExemptEncryption: false,
         NSLocationAlwaysAndWhenInUseUsageDescription:
@@ -67,6 +68,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
         "react-native-maps",
         {
           androidGoogleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY,
+          iOSGoogleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY,
         },
       ],
       "expo-secure-store",
@@ -129,6 +131,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
           ...baseConfig.android,
           package: "se.mensasverige.dev",
         },
+        runtimeVersion: "1.0.0",
         ios: {
           ...baseConfig.ios,
           bundleIdentifier: "se.mensasverige.dev",
@@ -143,9 +146,10 @@ export default ({ config }: ConfigContext): ExpoConfig => {
                 localhost: {
                   NSExceptionAllowsInsecureHTTPLoads: true,
                 },
-                "100.85.201.138": {
+                "100.104.188.36": { // Micke's "local" IP
                   NSExceptionAllowsInsecureHTTPLoads: true,
                 },
+                // Feel free to add your own as needed for dev.
               },
             },
           },

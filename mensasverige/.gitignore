@@ -18,6 +18,14 @@ expo-env.d.ts
 *.key
 *.mobileprovision
 
+# Ignore platform dirs
+# https://docs.expo.dev/workflow/continuous-native-generation/#:~:text=If%20you%20troubleshoot,.easignore%20files%3A
+/android
+/ios
+
+# Credentials
+credentials.json
+
 # Metro
 .metro-health-check*
 
