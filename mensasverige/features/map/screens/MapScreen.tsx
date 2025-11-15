@@ -158,9 +158,6 @@ const MapScreen: React.FC = () => {
     if (!filteredUsers || filteredUsers.length === 0) {
       return;
     }
-    if (userFilter.name === undefined && userFilter.showHoursAgo === undefined) {
-      return;
-    }
     resetSelectedUser();
     setShowContactCard(false);
 
@@ -184,7 +181,7 @@ const MapScreen: React.FC = () => {
       latitudeDelta: deltaLat,
       longitudeDelta: deltaLong,
     });
-  }, [userFilter]);
+  }, [filteredUsers]);
 
   return (
     <ThemedView style={{ flex: 1 }} useSafeArea={true}>
