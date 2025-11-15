@@ -12,7 +12,6 @@ const createStyles = (colorScheme: string) => StyleSheet.create({
   modalContainer: {
     flex: 1,
     justifyContent: 'flex-end',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
     paddingBottom: 60,
   },
   modalContent: {
