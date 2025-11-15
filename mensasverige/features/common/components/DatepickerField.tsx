@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import DatePicker from 'react-native-date-picker';
-import { Dimensions, View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { Dimensions, View, Text, TouchableOpacity, StyleSheet, useColorScheme } from 'react-native';
 import { formatDateAndTime } from '../functions/FormatDateAndTime';
+import { Colors } from '@/constants/Colors';
 
 interface DateFieldProps {
   label: React.ReactNode;
@@ -22,7 +23,8 @@ export const DatepickerField: React.FC<DateFieldProps> = ({
   onDateChange,
 }) => {
   const [openDateModal, setOpenDateModal] = useState(false);
-  const styles = createStyles();
+  const colorScheme = useColorScheme();
+  const styles = createStyles(colorScheme ?? 'light');
 
   return (
     <>
@@ -34,7 +36,7 @@ export const DatepickerField: React.FC<DateFieldProps> = ({
             key={label?.toString()}
             onPress={() => setOpenDateModal(true)}
             >
-            <Text>{date ? formatDateAndTime(date) : (placeholder || formatDateAndTime(''))}</Text>
+            <Text style={styles.pressableText}>{date ? formatDateAndTime(date) : (placeholder || formatDateAndTime(''))}</Text>
           </TouchableOpacity>
         </View>
         <DatePicker
@@ -43,7 +45,7 @@ export const DatepickerField: React.FC<DateFieldProps> = ({
           title={label?.toString()}
           minimumDate={minimumDate}
           open={openDateModal}
-          theme="dark"
+          theme={colorScheme === 'dark' ? 'dark' : 'light'}
           onConfirm={(confirmDate: Date) => {
             onDateChange(confirmDate);
             setOpenDateModal(false);
@@ -64,7 +66,7 @@ export const DatepickerField: React.FC<DateFieldProps> = ({
   );
 };
 
-const createStyles = () =>
+const createStyles = (colorScheme: string) =>
   StyleSheet.create({
     formControl: {
       paddingVertical: 5,
@@ -78,9 +80,14 @@ const createStyles = () =>
     heading: {
       fontSize: 16,
       fontWeight: '600',
+      color: colorScheme === 'dark' ? Colors.dark.text900 : Colors.light.text900,
     },
     pressable: {
       padding: 4,
+    },
+    pressableText: {
+      color: colorScheme === 'dark' ? Colors.dark.text700 : Colors.light.text700,
+      fontSize: 14,
     },
     datepickerField: {
       flex: 1,
