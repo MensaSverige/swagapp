@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { View, Image, Pressable, useColorScheme } from 'react-native';
+import { View, Pressable, useColorScheme } from 'react-native';
+import { Image } from 'expo-image';
 import { MaterialIcons } from '@expo/vector-icons';
 import { selectImage } from './selectImage';
 import useStore from '../store/store';
