@@ -9,6 +9,7 @@ import { FilterButton } from './FilterButton';
 import OfficialEventIcon from '../../../components/icons/OfficialEventIcon';
 import { DatepickerField } from '../../common/components/DatepickerField';
 import { EventFilterOptions } from '../store/EventsSlice';
+import { ThemedText } from '@/components/ThemedText';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -186,10 +187,10 @@ export const EventFilter: React.FC<EventFilterProps> = ({
         <ScrollView style={styles.menuContent} showsVerticalScrollIndicator={false}>
           {/* Status Filters */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Status</Text>
+            <ThemedText type='subtitle'>Status</ThemedText>
             
             <View style={styles.filterRow}>
-              <Text style={styles.filterLabel}>Deltagande</Text>
+              <ThemedText>Deltagande</ThemedText>
               <TouchableOpacity
                 style={[styles.triStateButton, { borderColor: getTriStateColor(localFilter.attendingOrHost) }]}
                 onPress={() => toggleTriStateOption('attendingOrHost', localFilter.attendingOrHost)}
@@ -201,7 +202,7 @@ export const EventFilter: React.FC<EventFilterProps> = ({
             </View>
 
             <View style={styles.filterRow}>
-              <Text style={styles.filterLabel}>Bokningsbar</Text>
+              <ThemedText >Bokningsbar</ThemedText>
               <TouchableOpacity
                 style={[styles.triStateButton, { borderColor: getTriStateColor(localFilter.bookable) }]}
                 onPress={() => toggleTriStateOption('bookable', localFilter.bookable)}
@@ -214,7 +215,7 @@ export const EventFilter: React.FC<EventFilterProps> = ({
 
             <View style={styles.filterRow}>
               <View style={styles.filterLabelContainer}>
-                <Text style={styles.filterLabel}>Officiell</Text>
+                <ThemedText>Officiell</ThemedText>
                 <View style={{ marginLeft: 4 }}>
                   <OfficialEventIcon size={14} color={getTriStateColor(localFilter.official)} />
                 </View>
@@ -232,7 +233,7 @@ export const EventFilter: React.FC<EventFilterProps> = ({
 
           {/* Date Range Filters */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Tidsintervall</Text>
+            <ThemedText type='subtitle'>Tidsintervall</ThemedText>
             
             <View style={styles.datePickerContainer}>
               <DatepickerField
@@ -255,7 +256,7 @@ export const EventFilter: React.FC<EventFilterProps> = ({
 
           {/* Category Filters */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Kategorier</Text>
+            <ThemedText type='subtitle'>Kategorier</ThemedText>
             <View style={styles.categoryGrid}>
               {EVENT_CATEGORIES.map((category) => {
                 const isSelected = localFilter.categories?.includes(category.code) ?? false;
@@ -438,7 +439,7 @@ const createStyles = (colorScheme: string) => StyleSheet.create({
     backgroundColor: 'transparent',
   },
   buttonSolid: {
-    backgroundColor: Colors.primary300,
+    backgroundColor: Colors.primary500,
   },
   buttonText: {
     fontSize: 16,
