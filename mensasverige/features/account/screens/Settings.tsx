@@ -114,9 +114,8 @@ const UserSettings: React.FC = () => {
         }).catch(error => {
             console.error('Autosave failed:', error);
         });
-    }, [formState, editingField, user?.userId]); // Use user.userId instead of user object to prevent infinite loop
+    }, [formState, editingField, user?.userId]);
 
-    // Update temporary slider values when formState changes
     useEffect(() => {
         if (formState?.settings) {
             setTempLocationInterval(formState.settings.location_update_interval_seconds || DEFAULT_SETTINGS.LOCATION_UPDATE_INTERVAL_SECONDS);
