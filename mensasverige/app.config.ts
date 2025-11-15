@@ -25,6 +25,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     ios: {
       supportsTablet: true,
       bundleIdentifier: "se.mensasverige",
+      appleTeamId: "295VA2R9VV",
       infoPlist: {
         ITSAppUsesNonExemptEncryption: false,
         NSLocationAlwaysAndWhenInUseUsageDescription:
@@ -67,6 +68,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
         "react-native-maps",
         {
           androidGoogleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY,
+          iOSGoogleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY,
         },
       ],
       "expo-secure-store",
