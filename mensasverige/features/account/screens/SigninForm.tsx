@@ -139,12 +139,16 @@ export const SigninForm = () => {
           editable={!isLoading}
           placeholder="Email"
           keyboardType="email-address"
+          autoCapitalize="none"
+          autoCorrect={false}
           value={username}
           onChangeText={setUsername}
         />
         <ThemedInput
           editable={!isLoading}
           placeholder="Lösenord"
+          autoCapitalize="none"
+          autoCorrect={false}
           value={password}
           onChangeText={setPassword}
           secureTextEntry={!passwordVisible}
