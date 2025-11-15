@@ -20,8 +20,8 @@ expo-env.d.ts
 
 # Ignore platform dirs
 # https://docs.expo.dev/workflow/continuous-native-generation/#:~:text=If%20you%20troubleshoot,.easignore%20files%3A
-mensasverige/android
-mensasverige/ios
+/android
+/ios
 
 # Metro
 .metro-health-check*
