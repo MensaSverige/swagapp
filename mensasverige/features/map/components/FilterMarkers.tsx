@@ -102,8 +102,9 @@ const createStyles = (colorScheme: string, topInset: number) => StyleSheet.creat
 type FilterMarkersProps = {
     showFilterView: boolean;
     onClose: () => void;
+    onFilterApplied?: () => void;
 };
-export const FilterMarkersComponent: React.FC<FilterMarkersProps> = ({ showFilterView, onClose }) => {
+export const FilterMarkersComponent: React.FC<FilterMarkersProps> = ({ showFilterView, onClose, onFilterApplied }) => {
     const ref = React.useRef(null);
     const colorScheme = useColorScheme();
     const insets = useSafeAreaInsets();
@@ -121,6 +122,7 @@ export const FilterMarkersComponent: React.FC<FilterMarkersProps> = ({ showFilte
     const saveFilter = () => {
         setUserFilter(filter);
         onClose();
+        onFilterApplied?.();
     };
 
     const cancelFilter = () => {
