@@ -318,6 +318,15 @@ const MapScreen: React.FC = () => {
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.mapControlsButton}
+                onPress={() => zoomToFitAllUsers(filteredUsers)}>
+                <MaterialIcons
+                  name="zoom-out-map"
+                  size={30}
+                  color={Colors.coolGray400}
+                />
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.mapControlsButton}
                 onPress={handleFollowLocationPress}>
                 <MaterialIcons
                   name="my-location"
