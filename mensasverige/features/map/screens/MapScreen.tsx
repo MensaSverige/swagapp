@@ -66,6 +66,7 @@ const MapScreen: React.FC = () => {
   const [visibleRegion, setVisibleRegion] = useState(region);
   const [showContactCard, setShowContactCard] = useState(false);
   const [showFilter, setshowFilter] = useState(false);
+  const [hasPerformedInitialZoom, setHasPerformedInitialZoom] = useState(false);
 
   useFocusEffect(
     React.useCallback(() => {
@@ -162,9 +163,10 @@ const MapScreen: React.FC = () => {
   }, [followsUserLocation, selectedUser, showContactCard, showFilter]);
 
   useEffect(() => {
-    if (!filteredUsers || filteredUsers.length === 0) {
+    if (!filteredUsers || filteredUsers.length === 0 || hasPerformedInitialZoom ) {
       return;
     }
+    setHasPerformedInitialZoom(true);
     resetSelectedUser();
     setShowContactCard(false);
 
