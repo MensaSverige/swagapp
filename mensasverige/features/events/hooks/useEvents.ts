@@ -7,7 +7,6 @@ import { EventFilterOptions } from '../store/EventsSlice';
 
 interface UseEventsOptions {
   enableAutoRefresh?: boolean;
-  // refreshIntervalMs is no longer needed as it comes from user settings
 }
 
 interface UseEventsReturn {
@@ -52,8 +51,6 @@ export const useEvents = (options: UseEventsOptions = {}): UseEventsReturn => {
     enableAutoRefresh = true
   } = options;
 
-  // React Native compatible approach: Use a simple mounted ref
-  const mountedRef = useRef(true);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const {
@@ -96,38 +93,41 @@ export const useEvents = (options: UseEventsOptions = {}): UseEventsReturn => {
 
   // Refetch function that updates both schedule and dashboard
   const refetch = useCallback(async (): Promise<void> => {
-    // Don't fetch events if user is not logged in
-    if (!user || !mountedRef.current) {
-      return;
-    }
-
     try {
       setEventsRefreshing(true);
       setDashboardLoading(true);
 
       // Fetch all events - the store will automatically update derived lists
       const allEvents = await fetchEvents();
-
-      // Check if still mounted before updating state
-      if (!mountedRef.current) return;
+      
+      // Validate events data before processing
+      if (!Array.isArray(allEvents)) {
+        throw new Error('Invalid events data received from API');
+      }
 
       // Setting events in store will automatically update both schedule and dashboard
-      setEvents(allEvents.map(event => createExtendedEvent(event, user?.userId)));
+      const processedEvents = allEvents
+        .filter(event => event && event.id) // Filter out null/invalid events
+        .map(event => {
+          try {
+            return createExtendedEvent(event, user?.userId);
+          } catch (error) {
+            console.error('Error processing event:', event, error);
+            return null;
+          }
+        })
+        .filter(Boolean) as ExtendedEvent[]; // Remove null entries
+
+      setEvents(processedEvents);
       setEventsLastFetched(new Date());
 
     } catch (err) {
-      // Don't update error state if unmounted
-      if (!mountedRef.current) return;
-      
       const error = err as Error;
       setDashboardError(error);
       console.error('Error fetching events:', err);
     } finally {
-      // Only update loading state if still mounted
-      if (mountedRef.current) {
-        setEventsRefreshing(false);
-        setDashboardLoading(false);
-      }
+      setEventsRefreshing(false);
+      setDashboardLoading(false);
     }
   }, [
     setEvents,
@@ -141,31 +141,38 @@ export const useEvents = (options: UseEventsOptions = {}): UseEventsReturn => {
   // Initial load
   useEffect(() => {
     const loadEvents = async () => {
-      // Only fetch if we have a user and don't have events or they're stale
-      if (user && events.length === 0) {
-        await refetch();
-      } else if (!user) {
-        // Clear events when logged out
-        setEvents([]);
+      try {
+        // Only fetch if we don't have events or they're stale
+        if (events.length === 0) {
+          await refetch();
+        }
+      } catch (error) {
+        console.error('Error in loadEvents:', error);
+        setDashboardError(error as Error);
       }
     };
 
     loadEvents();
-  }, [events.length, refetch, user, setEvents]);
+  }, [events.length, refetch, setDashboardError]);
 
   // Auto-refresh next event detection
   useEffect(() => {
+    // Clear any existing interval first
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+
     // Early exit if conditions aren't met
-    if (!enableAutoRefresh || !user) {
+    if (!enableAutoRefresh) {
       return;
     }
 
     const refreshIntervalMs = getEventsRefreshInterval();
     intervalRef.current = setInterval(() => {
-      // Double-check user is still logged in and component is mounted
-      if (user && mountedRef.current) {
-        refetch();
-      }
+      refetch().catch(error => {
+        console.error('Auto-refresh failed:', error);
+      });
     }, refreshIntervalMs);
     
     return () => {
@@ -174,18 +181,13 @@ export const useEvents = (options: UseEventsOptions = {}): UseEventsReturn => {
         intervalRef.current = null;
       }
     };
-  }, [enableAutoRefresh, getEventsRefreshInterval, refetch, user]);
+  }, [enableAutoRefresh, getEventsRefreshInterval, refetch]);
 
   // Event attendance functions
   const attendEventById = useCallback(
     async (eventId: string): Promise<boolean> => {
-      if (!mountedRef.current) return false;
-
       try {
         const updatedEvent = await attendEvent(eventId);
-        
-        // Check if still mounted before updating state
-        if (!mountedRef.current) return false;
         
         // Update the event in the store with the returned data
         const updatedEvents = events.map(event =>
@@ -203,13 +205,8 @@ export const useEvents = (options: UseEventsOptions = {}): UseEventsReturn => {
 
   const unattendEventById = useCallback(
     async (eventId: string): Promise<boolean> => {
-      if (!mountedRef.current) return false;
-
       try {
         await unattendEvent(eventId);
-        
-        // Check if still mounted before updating state
-        if (!mountedRef.current) return false;
         
         // Update the event in the store to set attending to false
         const updatedEvents = events.map(event =>
@@ -230,7 +227,7 @@ export const useEvents = (options: UseEventsOptions = {}): UseEventsReturn => {
   // Cleanup on unmount
   useEffect(() => {
     return () => {
-      mountedRef.current = false;
+      // Cleanup is handled by the interval cleanup
     };
   }, []);
 
