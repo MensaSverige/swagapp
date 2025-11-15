@@ -89,22 +89,29 @@ const MapScreen: React.FC = () => {
   }, [selectedUser, showContactCard]);
 
   const focusOnUser = (user: UserWithLocation) => {
+    const isAlreadySelected = selectedUser?.userId === user.userId;
+    console.log('Focusing on user:', user.userId, 'Already selected:', isAlreadySelected);
     setSelectedUser(user);
     setShowContactCard(true);
+    
     if (!usersShowingLocation) {
       return;
     }
-    setFollowsUserLocation(false)
-    if (user.location) {
-      mapRef.current?.animateToRegion(
-        {
-          latitude: user.location.latitude,
-          longitude: user.location.longitude,
-          latitudeDelta: region.latitudeDelta,
-          longitudeDelta: region.longitudeDelta,
-        },
-        350,
-      );
+    
+    // If the same user is tapped again, zoom in
+    if (isAlreadySelected) {
+      setFollowsUserLocation(false);
+      if (user.location) {
+        mapRef.current?.animateToRegion(
+          {
+            latitude: user.location.latitude,
+            longitude: user.location.longitude,
+            latitudeDelta: region.latitudeDelta,
+            longitudeDelta: region.longitudeDelta,
+          },
+          350,
+        );
+      }
     }
   }
 
