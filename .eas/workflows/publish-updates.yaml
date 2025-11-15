@@ -1,0 +1,21 @@
+name: Publish preview & production updates
+
+on:
+  push:
+    branches: ['main']
+    tags: ['v*']
+
+jobs:
+  publish_preview_update:
+    if: ${{ github.ref_type == 'branch' && github.ref_name == 'main' }}
+    type: update
+    params:
+      channel: preview
+      message: ${{ github.event.head_commit.message || github.commit_message }}
+
+  publish_production_update:
+    if: ${{ github.ref_type == 'tag' }}
+    type: update
+    params:
+      channel: production
+      message: Release ${{ github.ref_name }}
