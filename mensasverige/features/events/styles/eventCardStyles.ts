@@ -5,20 +5,6 @@ import { StyleSheet } from 'react-native';
  * These styles are used for displaying event information in both read and edit modes
  */
 export const eventCardStyles = StyleSheet.create({
-  card: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 16,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-
   // Divider
   divider: {
     height: 1,
@@ -27,22 +13,11 @@ export const eventCardStyles = StyleSheet.create({
   },
 
   // Typography styles
-  heading: {
-    fontSize: 18,
-    fontWeight: '600',
-    marginBottom: 0,
-    color: '#111827',
-  },
   subHeading: {
     fontSize: 16,
     fontWeight: '600',
     marginBottom: 4,
     color: '#111827',
-  },
-  descriptionText: {
-    fontSize: 14,
-    lineHeight: 20,
-    color: '#374151',
   },
   detailText: {
     fontSize: 14,
@@ -52,14 +27,6 @@ export const eventCardStyles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
     color: '#64748b',
-    marginBottom: 4,
-  },
-
-  // Header and content styles
-  headingContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
     marginBottom: 4,
   },
   
@@ -74,11 +41,6 @@ export const eventCardStyles = StyleSheet.create({
   locationSection: {
     marginBottom: 12,
   },
-  locationText: {
-    fontSize: 14,
-    color: '#6B7280',
-    marginBottom: 12,
-  },
 
   // Event status and info
   eventStatusSection: {
@@ -88,20 +50,6 @@ export const eventCardStyles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 4,
-  },
-  statusLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#111827',
-    minWidth: 60,
-  },
-  statusText: {
-    fontSize: 14,
-    color: '#374151',
-  },
-  cancelledText: {
-    color: '#DC2626',
-    fontWeight: '600',
   },
 
   // Tags and categories
@@ -122,20 +70,6 @@ export const eventCardStyles = StyleSheet.create({
   attendeesSection: {
     marginBottom: 12,
   },
-  attendeesList: {
-    marginTop: 4,
-  },
-  attendeeText: {
-    fontSize: 14,
-    color: '#374151',
-    marginBottom: 2,
-  },
-  moreAttendeesText: {
-    fontSize: 14,
-    color: '#6B7280',
-    fontStyle: 'italic',
-    marginTop: 4,
-  },
 
   // Links
   linksContainer: {
@@ -147,10 +81,26 @@ export const eventCardStyles = StyleSheet.create({
     marginRight: 12,
     marginBottom: 8,
   },
-  linkText: {
-    fontSize: 14,
-    color: '#2563EB',
-    textDecorationLine: 'underline',
+
+  // Additional styles for UnifiedEventCard
+  titleContainer: {
+    marginBottom: 4,
+  },
+  badgeContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 8,
+  },
+  statusLabelMinWidth: {
+    minWidth: 60,
+  },
+  attendeeItem: {
+    marginBottom: 2,
+  },
+  attendeesMoreText: {
+    fontStyle: 'italic',
+    marginTop: 4,
   },
 
   // Admin styles

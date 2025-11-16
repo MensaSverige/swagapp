@@ -2,7 +2,6 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   View,
   Image,
-  StyleSheet,
   TouchableOpacity,
   Linking
 } from 'react-native';
@@ -115,11 +114,11 @@ const UnifiedEventCard: React.FC<{
           resizeMode="contain"
         />
       )}
-      <View style={{ marginBottom: 4 }}>
+      <View style={eventCardStyles.titleContainer}>
         <ThemedText type="subtitle">
           {currentEvent.name}
         </ThemedText>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8 }}>
+        <View style={eventCardStyles.badgeContainer}>
           {currentEvent.attending && <AttendingBadge />}
 
           {!currentEvent.bookable && placesLeft !== null && placesLeft <= 0 && (
@@ -179,19 +178,19 @@ const UnifiedEventCard: React.FC<{
         <View style={eventCardStyles.eventStatusSection}>
           {currentEvent.cancelled && (
             <View style={eventCardStyles.statusRow}>
-              <ThemedText type="defaultSemiBold" style={{ minWidth: 60 }}>Status:</ThemedText>
+              <ThemedText type="defaultSemiBold" style={eventCardStyles.statusLabelMinWidth}>Status:</ThemedText>
               <ThemedText lightColor="#DC2626" darkColor="#F87171" type="defaultSemiBold">Inställt</ThemedText>
             </View>
           )}
           {currentEvent.price !== undefined && currentEvent.price > 0 && (
             <View style={eventCardStyles.statusRow}>
-              <ThemedText type="defaultSemiBold" style={{ minWidth: 60 }}>Pris:</ThemedText>
+              <ThemedText type="defaultSemiBold" style={eventCardStyles.statusLabelMinWidth}>Pris:</ThemedText>
               <ThemedText>{currentEvent.price} SEK</ThemedText>
             </View>
           )}
           {currentEvent.parentEvent && (
             <View style={eventCardStyles.statusRow}>
-              <ThemedText type="defaultSemiBold" style={{ minWidth: 60 }}>Del av:</ThemedText>
+              <ThemedText type="defaultSemiBold" style={eventCardStyles.statusLabelMinWidth}>Del av:</ThemedText>
               <ThemedText>{currentEvent.parentEvent}</ThemedText>
             </View>
           )}
@@ -276,12 +275,12 @@ const UnifiedEventCard: React.FC<{
             {currentEvent.showAttendees === 'all' && currentEvent.attendees && (
               <View>
                 {currentEvent.attendees.slice(0, 10).map((attendee, index) => (
-                  <ThemedText key={index} style={{ marginBottom: 2 }}>
+                  <ThemedText key={index} style={eventCardStyles.attendeeItem}>
                     {`${attendee.userId}`}
                   </ThemedText>
                 ))}
                 {currentEvent.attendees.length > 10 && (
-                  <ThemedText style={{ fontStyle: 'italic', marginTop: 4 }}>
+                  <ThemedText style={eventCardStyles.attendeesMoreText}>
                     ... och {currentEvent.attendees.length - 10} till
                   </ThemedText>
                 )}
