@@ -29,8 +29,8 @@ const EventListItem: React.FC<EventListItemProps> = ({
 }) => {
     const colorScheme = useColorScheme();
     const styles = createStyles(colorScheme ?? 'light');
-    // Calculate if event should be grayed out (not bookable and user not attending)
-    const shouldGrayOut = !event.bookable && (!!event.maxAttendees || event.maxAttendees === 0);
+
+    const shouldGrayOut = !event.bookable && !event.attending;
     const eventOpacity = shouldGrayOut ? 0.4 : opacity;
 
     return (
@@ -40,7 +40,6 @@ const EventListItem: React.FC<EventListItemProps> = ({
                 opacity: eventOpacity
             }}
         >
-            {/* Next event marker - only show if it's the next event but not the first event of the day */}
             {isNextEvent && !isFirstEventOfDay && nextEventMarkerRef && (
                 <View ref={nextEventMarkerRef} />
             )}
@@ -48,7 +47,6 @@ const EventListItem: React.FC<EventListItemProps> = ({
             <View style={[
                 styles.eventItem,
                 event.attending && styles.attendingEventItem,
-                //shouldGrayOut && { backgroundColor: 'rgba(228, 20, 20, 0.1)' }
             ]}>
                 <View style={styles.timeContainer}>
                     <Text style={[styles.startTime,
@@ -63,27 +61,11 @@ const EventListItem: React.FC<EventListItemProps> = ({
                         {event.end ? DisplayTime(event.end) : ''}
                     </Text>
                 </View>
-                {/* {event.attending && (
-                            <View style={styles.iconContainer}>
-                                <MaterialIcons name="check-circle" size={14} color="#10B981" />
-                            </View>
-                        )}
-                        {shouldGrayOut && (
-                            <View style={styles.iconContainer}>
-                                <MaterialIcons name="event-busy" size={14} color={Colors.red600} />
-                            </View>
-                        )}
-                        {event.bookable && (
-                            <View style={styles.iconContainer}>
-                                <MaterialIcons name="event-available" size={14} color={Colors.info400} />
-                            </View>
-                        )} */}
-                       {/* Event type badge */}
-                        <CategoryBadge
-                            eventType={event.official ? 'official' : 'non-official'}
-                            showLabel={false}
-                            size="x-small"
-                        />
+                <CategoryBadge
+                    eventType={event.official ? 'official' : 'non-official'}
+                    showLabel={false}
+                    size="x-small"
+                />
                 <View style={styles.eventContent}>
 
                     <View style={styles.titleContainer}>
@@ -105,7 +87,7 @@ const EventListItem: React.FC<EventListItemProps> = ({
                 {showCategories && (
                     <View style={styles.categoriesContainer}>
 
-                        
+
                         {/* Category badges */}
                         {event.tags?.map((category, index) => (
                             <CategoryBadge
