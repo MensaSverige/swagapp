@@ -121,7 +121,7 @@ const UnifiedEventCard: React.FC<{
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8}}>
               {currentEvent.attending && <AttendingBadge />}
 
-              {!currentEvent.bookable && (!!currentEvent.maxAttendees || currentEvent.maxAttendees === 0) && (
+              {!currentEvent.bookable && placesLeft !== null && placesLeft <= 0 && (
                 <FullyBookedBadge />
               )}
 
