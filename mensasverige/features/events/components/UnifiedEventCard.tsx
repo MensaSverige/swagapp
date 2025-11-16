@@ -126,7 +126,7 @@ const UnifiedEventCard: React.FC<{
             <FullyBookedBadge />
           )}
 
-          {placesLeft !== null && placesLeft > 0 && currentEvent.maxAttendees && (
+          {currentEvent.bookable && placesLeft !== null && placesLeft > 0 && currentEvent.maxAttendees && (
             <PlacesLeftBadge placesLeft={placesLeft} maxAttendees={currentEvent.maxAttendees} />
           )}
 
