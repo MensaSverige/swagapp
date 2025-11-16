@@ -1,4 +1,5 @@
 import { StyleSheet } from 'react-native';
+import { Colors } from '../../../constants/Colors';
 
 /**
  * Shared styles for event card components (UnifiedEventCard and CreateEventCard)
@@ -8,7 +9,7 @@ export const eventCardStyles = StyleSheet.create({
   // Divider
   divider: {
     height: 1,
-    backgroundColor: '#E5E7EB',
+    backgroundColor: Colors.light.coolGray200,
     marginBottom: 16,
   },
 
@@ -17,16 +18,16 @@ export const eventCardStyles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     marginBottom: 4,
-    color: '#111827',
+    color: Colors.light.coolGray900,
   },
   detailText: {
     fontSize: 14,
-    color: '#374151',
+    color: Colors.light.coolGray700,
   },
   fieldLabel: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#64748b',
+    color: Colors.light.blueGray500,
     marginBottom: 4,
   },
   
@@ -129,7 +130,7 @@ export const eventCardStyles = StyleSheet.create({
     alignItems: 'center',
   },
   buttonText: {
-    color: '#FFFFFF',
+    color: Colors.white,
     fontSize: 16,
     fontWeight: '600',
   },
@@ -139,14 +140,14 @@ export const eventCardStyles = StyleSheet.create({
     marginTop: 16,
   },
   attendingButton: {
-    backgroundColor: '#0F766E',
+    backgroundColor: Colors.light.teal700,
     paddingVertical: 12,
     paddingHorizontal: 16,
     borderRadius: 8,
     alignItems: 'center',
   },
   unattendButton: {
-    backgroundColor: '#DC2626',
+    backgroundColor: Colors.light.red600,
     paddingVertical: 12,
     paddingHorizontal: 16,
     borderRadius: 8,
@@ -155,7 +156,7 @@ export const eventCardStyles = StyleSheet.create({
 
   // Edit mode styles
   editModeContainer: {
-    backgroundColor: '#F5F5F5',
+    backgroundColor: Colors.light.trueGray100,
     borderRadius: 8,
     padding: 12,
     marginBottom: 8,
@@ -163,10 +164,10 @@ export const eventCardStyles = StyleSheet.create({
 
   // Component-specific button colors
   createButton: {
-    backgroundColor: '#0d9488',
+    backgroundColor: Colors.light.teal600,
   },
   cancelButton: {
-    backgroundColor: '#64748b',
+    backgroundColor: Colors.light.blueGray500,
   },
 });
 
@@ -192,11 +193,11 @@ export const dateTimeStyles = StyleSheet.create({
     fontWeight: 'normal',
     lineHeight: 18,
     marginBottom: 0,
-    color: '#374151',
+    color: Colors.light.coolGray700,
   },
   timeText: {
     fontSize: 14,
-    color: '#0F766E',
+    color: Colors.light.teal700,
     marginBottom: 12,
     paddingTop: 2,
   },
