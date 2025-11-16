@@ -10,7 +10,7 @@ from v1.env_constants import GOOGLE_MAPS_API_KEY
 
 geolocation_v1 = APIRouter(prefix="/v1")
 
-if GOOGLE_MAPS_API_KEY and GOOGLE_MAPS_API_KEY == "":
+if GOOGLE_MAPS_API_KEY and GOOGLE_MAPS_API_KEY != "":
     gmaps = googlemaps.Client(key=GOOGLE_MAPS_API_KEY)
 
 @geolocation_v1.get("/geolocation/{address}")
