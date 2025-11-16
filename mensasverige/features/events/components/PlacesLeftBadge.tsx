@@ -10,7 +10,7 @@ const PlacesLeftBadge: React.FC<PlacesLeftBadgeProps> = ({ placesLeft, maxAttend
   return (
     <View style={styles.badge}>
       <Text style={styles.text}>
-        {placesLeft} av {maxAttendees} {placesLeft === 1 ? 'plats' : 'platser'} kvar
+        {placesLeft} av {maxAttendees} {maxAttendees === 1 ? 'plats' : 'platser'} kvar
       </Text>
     </View>
   );
