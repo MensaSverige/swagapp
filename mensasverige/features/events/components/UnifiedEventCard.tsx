@@ -16,6 +16,7 @@ import { AddressLinkAndIcon } from '../../map/components/AddressLinkAndIcon';
 import AttendingBadge from './AttendingBadge';
 import FullyBookedBadge from './FullyBookedBadge';
 import PlacesLeftBadge from './PlacesLeftBadge';
+import AttendeeCountBadge from './AttendeeCountBadge';
 import EventDateTimeDisplay from './EventDateTimeDisplay';
 import AttendingComponent from './AttendingComponent';
 import useStore from '../../common/store/store';
@@ -102,135 +103,137 @@ const UnifiedEventCard: React.FC<{
 
   return (
     <View>
-        <EventDateTimeDisplay
-          start={currentEvent.start ?? ""}
-          end={currentEvent.end}
-          isEditable={false}
+      <EventDateTimeDisplay
+        start={currentEvent.start ?? ""}
+        end={currentEvent.end}
+        isEditable={false}
+      />
+      {currentEvent.imageUrl && (
+        <Image
+          style={eventCardStyles.eventImage}
+          source={{ uri: currentEvent.imageUrl }}
+          resizeMode="contain"
         />
-          {currentEvent.imageUrl && (
-            <Image
-              style={eventCardStyles.eventImage}
-              source={{ uri: currentEvent.imageUrl }}
-              resizeMode="contain"
+      )}
+      <View style={{ marginBottom: 4 }}>
+        <ThemedText type="subtitle">
+          {currentEvent.name}
+        </ThemedText>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8 }}>
+          {currentEvent.attending && <AttendingBadge />}
+
+          {!currentEvent.bookable && placesLeft !== null && placesLeft <= 0 && (
+            <FullyBookedBadge />
+          )}
+
+          {placesLeft !== null && placesLeft > 0 && currentEvent.maxAttendees && (
+            <PlacesLeftBadge placesLeft={placesLeft} maxAttendees={currentEvent.maxAttendees} />
+          )}
+
+          {!currentEvent.bookable && getCurrentAttendeeCount() > 0 && (
+            <AttendeeCountBadge attendeeCount={getCurrentAttendeeCount()} />
+          )}
+        </View>
+      </View>
+
+      {(currentEvent.address || currentEvent.locationDescription) && (
+        <View style={eventCardStyles.locationSection}>
+          {currentEvent.address && (
+            <AddressLinkAndIcon
+              displayName={
+                currentEvent.address.includes(', Sweden')
+                  ? currentEvent.address.replace(', Sweden', '')
+                  : currentEvent.address
+              }
+              address={currentEvent.address}
             />
           )}
-          <View style={{ marginBottom: 4 }}>
-            <ThemedText type="subtitle">
-              {currentEvent.name}
-            </ThemedText>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8}}>
-              {currentEvent.attending && <AttendingBadge />}
+          {currentEvent.locationDescription && (
+            <ThemedText lightColor="#6B7280" darkColor="#9CA3AF">{currentEvent.locationDescription}</ThemedText>
+          )}
+        </View>
+      )}
 
-              {!currentEvent.bookable && placesLeft !== null && placesLeft <= 0 && (
-                <FullyBookedBadge />
-              )}
-
-              {placesLeft !== null && placesLeft > 0 && currentEvent.maxAttendees && (
-                <PlacesLeftBadge placesLeft={placesLeft} maxAttendees={currentEvent.maxAttendees} />
-              )}
-            </View>
+      {((currentEvent.tags && currentEvent.tags.length > 0) || (currentEvent.official !== undefined)) && (
+        <View style={eventCardStyles.tagsSection}>
+          <View style={eventCardStyles.tagsContainer}>
+            {/* Event type badge */}
+            <CategoryBadge
+              eventType={currentEvent.official ? 'official' : 'non-official'}
+              showLabel={true}
+              size="medium"
+            />
+            {currentEvent.tags?.map((category, index) => (
+              <CategoryBadge
+                key={index}
+                categoryCode={category.code || ''}
+                showLabel={true}
+                size="medium"
+              />
+            ))}
           </View>
-
-          {(currentEvent.address || currentEvent.locationDescription) && (
-            <View style={eventCardStyles.locationSection}>
-              {currentEvent.address && (
-                <AddressLinkAndIcon
-                  displayName={
-                    currentEvent.address.includes(', Sweden')
-                    ? currentEvent.address.replace(', Sweden', '')
-                    : currentEvent.address
-                  }
-                  address={currentEvent.address}
-                />
-              )}
-              {currentEvent.locationDescription && (
-                <ThemedText lightColor="#6B7280" darkColor="#9CA3AF">{currentEvent.locationDescription}</ThemedText>
-              )}
+        </View>
+      )}
+      {/* Event Status and Type */}
+      {(currentEvent.cancelled || (currentEvent.price !== undefined && currentEvent.price > 0) || currentEvent.parentEvent) && (
+        <View style={eventCardStyles.eventStatusSection}>
+          {currentEvent.cancelled && (
+            <View style={eventCardStyles.statusRow}>
+              <ThemedText type="defaultSemiBold" style={{ minWidth: 60 }}>Status:</ThemedText>
+              <ThemedText lightColor="#DC2626" darkColor="#F87171" type="defaultSemiBold">Inställt</ThemedText>
             </View>
           )}
-
-          {/* Tags */}
-          { ((currentEvent.tags && currentEvent.tags.length > 0) || (currentEvent.official !== undefined)) && (
-            <View style={eventCardStyles.tagsSection}>
-              <View style={eventCardStyles.tagsContainer}>
-                {/* Event type badge */}
-                        <CategoryBadge
-                            eventType={currentEvent.official ? 'official' : 'non-official'}
-                            showLabel={true}
-                            size="medium"
-                        />
-                        {currentEvent.tags?.map((category, index) => (
-                            <CategoryBadge
-                                key={index}
-                                categoryCode={category.code || ''}
-                                showLabel={true}
-                                size="medium"
-                            />
-                        ))}
-              </View>
+          {currentEvent.price !== undefined && currentEvent.price > 0 && (
+            <View style={eventCardStyles.statusRow}>
+              <ThemedText type="defaultSemiBold" style={{ minWidth: 60 }}>Pris:</ThemedText>
+              <ThemedText>{currentEvent.price} SEK</ThemedText>
             </View>
           )}
-          {/* Event Status and Type */}
-          {(currentEvent.cancelled || (currentEvent.price !== undefined && currentEvent.price > 0) || currentEvent.parentEvent) && (
-            <View style={eventCardStyles.eventStatusSection}>
-              {currentEvent.cancelled && (
-                <View style={eventCardStyles.statusRow}>
-                  <ThemedText type="defaultSemiBold" style={{ minWidth: 60 }}>Status:</ThemedText>
-                  <ThemedText lightColor="#DC2626" darkColor="#F87171" type="defaultSemiBold">Inställt</ThemedText>
-                </View>
-              )}
-              {currentEvent.price !== undefined && currentEvent.price > 0 && (
-                <View style={eventCardStyles.statusRow}>
-                  <ThemedText type="defaultSemiBold" style={{ minWidth: 60 }}>Pris:</ThemedText>
-                  <ThemedText>{currentEvent.price} SEK</ThemedText>
-                </View>
-              )}
-              {currentEvent.parentEvent && (
-                <View style={eventCardStyles.statusRow}>
-                  <ThemedText type="defaultSemiBold" style={{ minWidth: 60 }}>Del av:</ThemedText>
-                  <ThemedText>{currentEvent.parentEvent}</ThemedText>
-                </View>
-              )}
+          {currentEvent.parentEvent && (
+            <View style={eventCardStyles.statusRow}>
+              <ThemedText type="defaultSemiBold" style={{ minWidth: 60 }}>Del av:</ThemedText>
+              <ThemedText>{currentEvent.parentEvent}</ThemedText>
             </View>
           )}
+        </View>
+      )}
 
-          {/* Hosts */}
-          {currentEvent.hosts && currentEvent.hosts.length > 0 && (
-            <View style={eventCardStyles.hostsSection}>
-              <ThemedText type="defaultSemiBold">Värdar</ThemedText>
-              {currentEvent.hosts.map((host, index) => (
-                <ThemedText key={index}>{host.fullName || `Värd ${index + 1}`}</ThemedText>
-              ))}
-            </View>
-          )}
+      {currentEvent.hosts && currentEvent.hosts.length > 0 && (
+        <View style={eventCardStyles.hostsSection}>
+          <ThemedText type="defaultSemiBold">Värdar</ThemedText>
+          {currentEvent.hosts.map((host, index) => (
+            <ThemedText key={index}>{host.fullName || `Värd ${index + 1}`}</ThemedText>
+          ))}
+        </View>
+      )}
 
 
-          {/* Queue */}
-          {/* {currentEvent.queue && currentEvent.queue.length > 0 && (
+      {/* Queue */}
+      {/* {currentEvent.queue && currentEvent.queue.length > 0 && (
             <View style={styles.queueSection}>
               <Text style={styles.subHeading}>Kö ({currentEvent.queue.length})</Text>
               <Text style={styles.detailText}>Du står i kö för detta evenemang</Text>
             </View>
           )} */}
 
-          <View style={eventCardStyles.divider} />
-          <ThemedText>
-            {filterHtml(currentEvent.description ?? "")}
-          </ThemedText>
-          <View style={eventCardStyles.linksContainer}>
-            {extractLinks(currentEvent.description ?? "")?.map((link, index) => (
-              <TouchableOpacity
-                key={index}
-                style={eventCardStyles.linkButton}
-                onPress={() => handleLinkPress(link.url)}
-              >
-                <ThemedText type="link">{link.name}</ThemedText>
-              </TouchableOpacity>
-            ))}
-          </View>
+      <View style={eventCardStyles.divider} />
+      <ThemedText>
+        {filterHtml(currentEvent.description ?? "")}
+      </ThemedText>
+      <View style={eventCardStyles.linksContainer}>
+        {extractLinks(currentEvent.description ?? "")?.map((link, index) => (
+          <TouchableOpacity
+            key={index}
+            style={eventCardStyles.linkButton}
+            onPress={() => handleLinkPress(link.url)}
+          >
+            <ThemedText type="link">{link.name}</ThemedText>
+          </TouchableOpacity>
+        ))}
+      </View>
 
-          {/* Admin Users */}
-          {/* {currentEvent.admin && currentEvent.admin.length > 0 && (
+      {/* Admin Users */}
+      {/* {currentEvent.admin && currentEvent.admin.length > 0 && (
             <View style={eventCardStyles.hostsSection}>
               <Text style={eventCardStyles.subHeading}>Administratörer</Text>
               {adminUsers.length > 0 ? (
@@ -258,42 +261,42 @@ const UnifiedEventCard: React.FC<{
               )}
             </View>
           )}  */}
-          {/* Attendees (if allowed to show) */}
-          {(() => {
-            const currentCount = getCurrentAttendeeCount();
-            const hasAttendees = currentCount > 0;
+      {/* Attendees (if allowed to show) */}
+      {(() => {
+        const currentCount = getCurrentAttendeeCount();
+        const hasAttendees = currentCount > 0;
 
-            if (!hasAttendees || currentEvent.showAttendees === 'none') return null;
+        if (!hasAttendees || currentEvent.showAttendees === 'none') return null;
 
-            return (
-              <View style={eventCardStyles.attendeesSection}>
-                <ThemedText type="defaultSemiBold">
-                  Deltagare 
-                </ThemedText>
-                {currentEvent.showAttendees === 'all' && currentEvent.attendees && (
-                  <View>
-                    {currentEvent.attendees.slice(0, 10).map((attendee, index) => (
-                      <ThemedText key={index} style={{ marginBottom: 2 }}>
-                        {`${attendee.userId}`}
-                      </ThemedText>
-                    ))}
-                    {currentEvent.attendees.length > 10 && (
-                      <ThemedText style={{ fontStyle: 'italic', marginTop: 4 }}>
-                        ... och {currentEvent.attendees.length - 10} till
-                      </ThemedText>
-                    )}
-                  </View>
+        return (
+          <View style={eventCardStyles.attendeesSection}>
+            <ThemedText type="defaultSemiBold">
+              Deltagare
+            </ThemedText>
+            {currentEvent.showAttendees === 'all' && currentEvent.attendees && (
+              <View>
+                {currentEvent.attendees.slice(0, 10).map((attendee, index) => (
+                  <ThemedText key={index} style={{ marginBottom: 2 }}>
+                    {`${attendee.userId}`}
+                  </ThemedText>
+                ))}
+                {currentEvent.attendees.length > 10 && (
+                  <ThemedText style={{ fontStyle: 'italic', marginTop: 4 }}>
+                    ... och {currentEvent.attendees.length - 10} till
+                  </ThemedText>
                 )}
               </View>
-            );
-          })()}
+            )}
+          </View>
+        );
+      })()}
 
-          {user && (
-            <AttendingComponent
-              event={currentEvent}
-              onAttendanceChange={handleAttendanceChange}
-            />
-          )}
+      {user && (
+        <AttendingComponent
+          event={currentEvent}
+          onAttendanceChange={handleAttendanceChange}
+        />
+      )}
 
     </View>
   );
