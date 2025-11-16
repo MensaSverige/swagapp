@@ -15,16 +15,16 @@ interface AttendingComponentProps {
   onAttendanceChange?: () => void;
 }
 
-const AttendingComponent: React.FC<AttendingComponentProps> = ({ 
-  event, 
-  onAttendanceChange 
+const AttendingComponent: React.FC<AttendingComponentProps> = ({
+  event,
+  onAttendanceChange
 }) => {
   const [changingAttendance, setChangingAttendance] = useState<boolean>(false);
   const { attendEventById, unattendEventById } = useEvents();
 
   const handlePressAttend = async () => {
     if (!event.id) return;
-    
+
     setChangingAttendance(true);
     try {
       await attendEventById(event.id);
@@ -39,7 +39,7 @@ const AttendingComponent: React.FC<AttendingComponentProps> = ({
 
   const handlePressUnattend = async () => {
     if (!event.id) return;
-    
+
     setChangingAttendance(true);
     try {
       await unattendEventById(event.id);
@@ -60,6 +60,10 @@ const AttendingComponent: React.FC<AttendingComponentProps> = ({
     );
   }
 
+  if (!event.isFutureEvent) {
+    return null;
+  }
+
   if (event.attending) {
     return (
       <View style={eventCardStyles.attendingButtonContainer}>
@@ -69,7 +73,7 @@ const AttendingComponent: React.FC<AttendingComponentProps> = ({
       </View>
     );
   } else {
-    if (!event.attendingOrHost) { // TODO: show delete event if user is host
+    if (event.bookable && !event.attendingOrHost) {
       return (
         <View style={eventCardStyles.attendingButtonContainer}>
           <TouchableOpacity onPress={handlePressAttend} style={eventCardStyles.attendingButton}>
