@@ -114,11 +114,11 @@ const UnifiedEventCard: React.FC<{
               resizeMode="contain"
             />
           )}
-          <View style={eventCardStyles.headingContainer}>
+          <View style={{ marginBottom: 4 }}>
             <ThemedText type="subtitle">
               {currentEvent.name}
             </ThemedText>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8}}>
               {currentEvent.attending && <AttendingBadge />}
 
               {!currentEvent.bookable && (!!currentEvent.maxAttendees || currentEvent.maxAttendees === 0) && (
