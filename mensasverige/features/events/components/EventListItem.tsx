@@ -30,7 +30,7 @@ const EventListItem: React.FC<EventListItemProps> = ({
     const colorScheme = useColorScheme();
     const styles = createStyles(colorScheme ?? 'light');
 
-    const shouldGrayOut = !event.bookable && !event.attending;
+    const shouldGrayOut = (!event.bookable && !event.attending) || !event.isFutureEvent;
     const eventOpacity = shouldGrayOut ? 0.4 : opacity;
 
     return (
