@@ -63,20 +63,60 @@ const setEnvironmentVariablesAndTypes = async (): Promise<void> => {
     console.log(`Using Backend URL: ${backendURL}`);
     console.log(`Test mode is set to: ${testMode}`);
 
-    // Run npx openapi-typescript command
-    exec(`npx openapi-typescript ${backendURL}/openapi.json -o ./api_schema/schema.d.ts`, (error: { message: any; }, stdout: any, stderr: any) => {
-      if (error) {
-        console.error(`Error running npx openapi-typescript: ${error.message}`);
-        return;
-      }
-      if (stderr) {
-        console.error(`Error running npx openapi-typescript: ${stderr}`);
-        return;
-      }
-      console.log(`npx openapi-typescript output: ${stdout}`);
-    });
+    // Check if backend server is responding
+    console.log('\x1b[36mChecking backend server availability...\x1b[0m');
+    const checkBackend = () => {
+      return new Promise<void>((resolve, reject) => {
+        const http = require('http');
+        const https = require('https');
+        const url = require('url');
+        
+        const parsedUrl = url.parse(`${backendURL}/openapi.json`);
+        const client = parsedUrl.protocol === 'https:' ? https : http;
+        
+        const req = client.get(parsedUrl, (res: any) => {
+          if (res.statusCode === 200) {
+            console.log('\x1b[32mBackend server is responding\x1b[0m');
+            resolve();
+          } else {
+            reject(new Error(`Backend server returned status code: ${res.statusCode}`));
+          }
+        });
+        
+        req.on('error', (err: Error) => {
+          reject(new Error(`Failed to connect to backend server: ${err.message}`));
+        });
+        
+        req.setTimeout(5000, () => {
+          req.destroy();
+          reject(new Error('Backend server connection timeout'));
+        });
+      });
+    };
+
+    try {
+      await checkBackend();
+      
+      // Run npx openapi-typescript command
+      exec(`npx openapi-typescript ${backendURL}/openapi.json -o ./api_schema/schema.d.ts`, (error: { message: any; }, stdout: any, stderr: any) => {
+        if (error) {
+          console.error(`Error running npx openapi-typescript: ${error.message}`);
+          process.exit(1);
+        }
+        if (stderr) {
+          console.error(`Error running npx openapi-typescript: ${stderr}`);
+          process.exit(1);
+        }
+        console.log(`npx openapi-typescript output: ${stdout}`);
+      });
+    } catch (error: any) {
+      console.error(`\x1b[31mBackend server check failed: ${error.message}\x1b[0m`);
+      console.error('\x1b[31mCannot start the application without a working backend server.\x1b[0m');
+      process.exit(1);
+    }
   } catch (error: any) {
     console.error(`Failed to set backend URL: ${error.message}`);
+    process.exit(1);
   }
 };
 
