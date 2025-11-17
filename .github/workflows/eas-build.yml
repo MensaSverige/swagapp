@@ -74,13 +74,22 @@ jobs:
           PLATFORM="${{ inputs.platform || 'all' }}"
           CLEAR_CACHE="${{ inputs.clear_cache || 'false' }}"
           
+          # Auto-submit only for production profile
+          if [[ "$PROFILE" == "production" ]]; then
+            AUTO_SUBMIT="true"
+          else
+            AUTO_SUBMIT="false"
+          fi
+          
           echo "profile=$PROFILE" >> $GITHUB_OUTPUT
           echo "platform=$PLATFORM" >> $GITHUB_OUTPUT
           echo "clear_cache=$CLEAR_CACHE" >> $GITHUB_OUTPUT
+          echo "auto_submit=$AUTO_SUBMIT" >> $GITHUB_OUTPUT
           
           echo "Building profile: $PROFILE"
           echo "Platform: $PLATFORM"
           echo "Clear cache: $CLEAR_CACHE"
+          echo "Auto submit: $AUTO_SUBMIT"
 
       - name: Build with EAS
         env:
@@ -96,8 +105,12 @@ jobs:
             BUILD_ARGS="$BUILD_ARGS --clear-cache"
           fi
           
-          echo "Running: npx eas build $BUILD_ARGS --non-interactive --auto-submit"
-          npx eas build $BUILD_ARGS --non-interactive --auto-submit
+          if [[ "${{ steps.build-params.outputs.auto_submit }}" == "true" ]]; then
+            BUILD_ARGS="$BUILD_ARGS --auto-submit"
+          fi
+          
+          echo "Running: npx eas build $BUILD_ARGS --non-interactive"
+          npx eas build $BUILD_ARGS --non-interactive
 
       - name: Build Summary
         if: always()
@@ -106,5 +119,6 @@ jobs:
           echo "- **Profile**: ${{ steps.build-params.outputs.profile }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Platform**: ${{ steps.build-params.outputs.platform }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Clear Cache**: ${{ steps.build-params.outputs.clear_cache }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Auto Submit**: ${{ steps.build-params.outputs.auto_submit }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Branch**: ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
