@@ -31,8 +31,10 @@ export const DatepickerField: React.FC<DateFieldProps> = ({
   placeholder,
   onDateChange,
 }) => {
-  const colorScheme = useColorScheme();
-  const styles = createStyles(colorScheme ?? "light");
+  // const colorScheme = useColorScheme();
+  // Force light mode until eventCardStyles supports mode toggling
+  // It's used in the parent CreateEventCard
+  const styles = createStyles("light"); 
 
   const showAndroidPicker = (mode: "date" | "time") => {
     if (Platform.OS === "android") {
@@ -67,6 +69,7 @@ export const DatepickerField: React.FC<DateFieldProps> = ({
               testID="dateTimePicker"
               value={date || new Date()}
               mode="datetime"
+              themeVariant="light"
               is24Hour={false}
               onChange={(event: DateTimePickerEvent, selectedDate?: Date) => {
                 switch (event.type) {
@@ -107,6 +110,10 @@ export const DatepickerField: React.FC<DateFieldProps> = ({
 const createStyles = (colorScheme: string) =>
   StyleSheet.create({
     formControl: {
+      backgroundColor:
+        colorScheme === "dark"
+          ? Colors.dark.background
+          : Colors.light.background,
       paddingVertical: 5,
     },
     formControlLabel: {
