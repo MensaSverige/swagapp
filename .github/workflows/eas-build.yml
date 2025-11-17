@@ -1,0 +1,110 @@
+name: EAS Build
+
+on:
+  workflow_call:
+    inputs:
+      profile:
+        description: "EAS build profile"
+        type: string
+        required: false
+        default: "preview"
+      platform:
+        description: "Platform to build for"
+        type: string
+        required: false
+        default: "all"
+      clear_cache:
+        description: "Clear build cache"
+        type: boolean
+        required: false
+        default: false
+  workflow_dispatch:
+    inputs:
+      profile:
+        description: "EAS build profile"
+        type: choice
+        options:
+          - development
+          - preview
+          - production
+        default: "preview"
+      platform:
+        description: "Platform to build for"
+        type: choice
+        options:
+          - all
+          - android
+          - ios
+        default: "all"
+      clear_cache:
+        description: "Clear build cache"
+        type: boolean
+        required: false
+        default: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./mensasverige
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: |
+          yarn 
+          
+      - name: Setup EAS
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Set build parameters
+        id: build-params
+        run: |
+          PROFILE="${{ inputs.profile || 'preview' }}"
+          PLATFORM="${{ inputs.platform || 'all' }}"
+          CLEAR_CACHE="${{ inputs.clear_cache || 'false' }}"
+          
+          echo "profile=$PROFILE" >> $GITHUB_OUTPUT
+          echo "platform=$PLATFORM" >> $GITHUB_OUTPUT
+          echo "clear_cache=$CLEAR_CACHE" >> $GITHUB_OUTPUT
+          
+          echo "Building profile: $PROFILE"
+          echo "Platform: $PLATFORM"
+          echo "Clear cache: $CLEAR_CACHE"
+
+      - name: Build with EAS
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: |
+          BUILD_ARGS="--profile ${{ steps.build-params.outputs.profile }}"
+          
+          if [[ "${{ steps.build-params.outputs.platform }}" != "all" ]]; then
+            BUILD_ARGS="$BUILD_ARGS --platform ${{ steps.build-params.outputs.platform }}"
+          fi
+          
+          if [[ "${{ steps.build-params.outputs.clear_cache }}" == "true" ]]; then
+            BUILD_ARGS="$BUILD_ARGS --clear-cache"
+          fi
+          
+          echo "Running: npx eas build $BUILD_ARGS --non-interactive"
+          npx eas build $BUILD_ARGS --non-interactive
+
+      - name: Build Summary
+        if: always()
+        run: |
+          echo "## Build Summary" >> $GITHUB_STEP_SUMMARY
+          echo "- **Profile**: ${{ steps.build-params.outputs.profile }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Platform**: ${{ steps.build-params.outputs.platform }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Clear Cache**: ${{ steps.build-params.outputs.clear_cache }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Branch**: ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
