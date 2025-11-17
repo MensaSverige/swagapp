@@ -33,7 +33,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: mensasverige
+        working-directory: ./mensasverige
     env:
       DEFAULT_CHANNEL: preview
     steps:
