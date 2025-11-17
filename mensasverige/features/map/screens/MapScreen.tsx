@@ -28,6 +28,7 @@ import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { SearchParticipants } from '../components/SearchParticipants';
 import { ThemedView } from '@/components/ThemedView';
+import { useBottomTabOverflow } from '@/components/ui/TabBarBackground';
 
 const createStyles = (colorMode: string) =>
   StyleSheet.create({
@@ -70,6 +71,7 @@ const MapScreen: React.FC = () => {
   const colorScheme = useColorScheme();
   const colorMode = colorScheme ?? 'light';
   const mapRef = useRef<ReactNativeMapView | null>(null);
+  const bottom = useBottomTabOverflow();
   const { region, usersShowingLocation, filteredUsers, selectedUser, userFilter, setSelectedUser, setFilteredUsers, setUserFilter, user } = useStore();
   const [visibleRegion, setVisibleRegion] = useState(region);
   const [showContactCard, setShowContactCard] = useState(false);
@@ -212,7 +214,7 @@ const MapScreen: React.FC = () => {
     <ThemedView style={{ flex: 1 }}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={{ flex: 1 }}>
+        style={{ flex: 1, marginBottom: bottom }}>
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
           <View style={{ flex: 1 }}>
             {selectedUser && showContactCard &&
@@ -240,7 +242,6 @@ const MapScreen: React.FC = () => {
 
             <ReactNativeMapView
               ref={mapRef}
-              provider={PROVIDER_GOOGLE}
               style={{ flex: 1 }}
               //style={styles.map}
               //showsUserLocation={true}
