@@ -42,8 +42,11 @@ jobs:
         with:
           node-version: '18'
           
-      - name: Setup EAS CLI
-        run: npm install -g @expo/eas-cli
+      - name: 🏗 Setup EAS
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
         
       - name: Set update message
         id: update-message
@@ -66,4 +69,4 @@ jobs:
         run: |
           cd mensasverige
           echo "Publishing update for all platforms..."
-          eas update --channel ${{ steps.update-message.outputs.channel }} --message "${{ steps.update-message.outputs.message }}"
+          npx eas update --channel ${{ steps.update-message.outputs.channel }} --message "${{ steps.update-message.outputs.message }}"
