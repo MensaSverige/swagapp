@@ -31,6 +31,9 @@ on:
 jobs:
   publish-eas-update:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mensasverige
     env:
       DEFAULT_CHANNEL: preview
     steps:
@@ -47,7 +50,7 @@ jobs:
         with:
           eas-version: latest
           token: ${{ secrets.EXPO_TOKEN }}
-        
+  
       - name: Set update message
         id: update-message
         run: |
@@ -67,6 +70,5 @@ jobs:
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
         run: |
-          cd mensasverige
           echo "Publishing update for all platforms..."
           npx eas update --channel ${{ steps.update-message.outputs.channel }} --message "${{ steps.update-message.outputs.message }}"
