@@ -44,6 +44,10 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+
+      - name: Install dependencies
+        run: |
+          yarn 
           
       - name: 🏗 Setup EAS
         uses: expo/expo-github-action@v8
@@ -70,6 +74,5 @@ jobs:
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
         run: |
-          ls -la
           echo "Publishing update for all platforms..."
           npx eas update --channel ${{ steps.update-message.outputs.channel }} --message "${{ steps.update-message.outputs.message }}"
