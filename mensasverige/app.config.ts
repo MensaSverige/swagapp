@@ -39,6 +39,9 @@ export default ({ config }: ConfigContext): ExpoConfig => {
         NSPhotoLibraryUsageDescription:
           "Bildgalleriet används för att visa dig bilder så du kan välja profilbild för uppladdning. Bara den bild du väljer används av appen.",
       },
+      config: {
+        googleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY,
+      },
     },
     android: {
       // adaptiveIcon: {
