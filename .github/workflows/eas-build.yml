@@ -96,8 +96,8 @@ jobs:
             BUILD_ARGS="$BUILD_ARGS --clear-cache"
           fi
           
-          echo "Running: npx eas build $BUILD_ARGS --non-interactive"
-          npx eas build $BUILD_ARGS --non-interactive
+          echo "Running: npx eas build $BUILD_ARGS --non-interactive --auto-submit"
+          npx eas build $BUILD_ARGS --non-interactive --auto-submit
 
       - name: Build Summary
         if: always()
