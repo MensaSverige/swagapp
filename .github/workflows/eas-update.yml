@@ -6,21 +6,33 @@ on:
       release_tag:
         description: "Release tag for the update message"
         type: string
-        required: true
+        required: false
       channel:
         description: "EAS update channel"
         type: string
         required: false
         default: "preview"
-      platform:
-        description: "Platform to update"
+  push:
+    branches: ['main']
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: "Release tag for the update message"
         type: string
         required: false
-        default: "android"
+      channel:
+        description: "EAS update channel"
+        type: choice
+        options:
+          - preview
+          - production
+        default: "preview"
 
 jobs:
   publish-eas-update:
     runs-on: ubuntu-latest
+    env:
+      DEFAULT_CHANNEL: preview
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -33,9 +45,25 @@ jobs:
       - name: Setup EAS CLI
         run: npm install -g @expo/eas-cli
         
+      - name: Set update message
+        id: update-message
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_call" ]] || [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            if [[ -n "${{ inputs.release_tag }}" ]]; then
+              echo "message=Release ${{ inputs.release_tag }}" >> $GITHUB_OUTPUT
+            else
+              echo "message=Update - $(git log -1 --pretty=%s)" >> $GITHUB_OUTPUT
+            fi
+            echo "channel=${{ inputs.channel }}" >> $GITHUB_OUTPUT
+          else
+            echo "message=Update from main branch - $(git log -1 --pretty=%s)" >> $GITHUB_OUTPUT
+            echo "channel=${{ env.DEFAULT_CHANNEL }}" >> $GITHUB_OUTPUT
+          fi
+        
       - name: EAS Update
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
         run: |
           cd mensasverige
-          eas update --platform ${{ inputs.platform }} --channel ${{ inputs.channel }} --message "Release ${{ inputs.release_tag }}"
+          echo "Publishing update for all platforms..."
+          eas update --channel ${{ steps.update-message.outputs.channel }} --message "${{ steps.update-message.outputs.message }}"
