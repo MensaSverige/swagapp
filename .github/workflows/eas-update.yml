@@ -1,0 +1,41 @@
+name: EAS Update
+
+on:
+  workflow_call:
+    inputs:
+      release_tag:
+        description: "Release tag for the update message"
+        type: string
+        required: true
+      channel:
+        description: "EAS update channel"
+        type: string
+        required: false
+        default: "preview"
+      platform:
+        description: "Platform to update"
+        type: string
+        required: false
+        default: "android"
+
+jobs:
+  publish-eas-update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          
+      - name: Setup EAS CLI
+        run: npm install -g @expo/eas-cli
+        
+      - name: EAS Update
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: |
+          cd mensasverige
+          eas update --platform ${{ inputs.platform }} --channel ${{ inputs.channel }} --message "Release ${{ inputs.release_tag }}"
