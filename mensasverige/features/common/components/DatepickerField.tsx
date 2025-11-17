@@ -1,8 +1,19 @@
-import React from 'react';
-import { Dimensions, View, Text, TouchableOpacity, StyleSheet, useColorScheme } from 'react-native';
-import RNDateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
-import { formatDateAndTime } from '../functions/FormatDateAndTime';
-import { Colors } from '@/constants/Colors';
+import React from "react";
+import {
+  Dimensions,
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  useColorScheme,
+  Platform,
+} from "react-native";
+import { formatDate, formatTime } from "../functions/FormatDateAndTime";
+import { Colors } from "@/constants/Colors";
+import DateTimePicker, {
+  DateTimePickerAndroid,
+  DateTimePickerEvent,
+} from "@react-native-community/datetimepicker";
 
 interface DateFieldProps {
   label: React.ReactNode;
@@ -21,39 +32,73 @@ export const DatepickerField: React.FC<DateFieldProps> = ({
   onDateChange,
 }) => {
   const colorScheme = useColorScheme();
-  const styles = createStyles(colorScheme ?? 'light');
+  const styles = createStyles(colorScheme ?? "light");
+
+  const showAndroidPicker = (mode: "date" | "time") => {
+    if (Platform.OS === "android") {
+      console.log(`Opening Android ${mode} picker`);
+      DateTimePickerAndroid.open({
+        value: date ?? new Date(),
+        onChange: (event: DateTimePickerEvent, date: Date | undefined) => {
+          switch (event.type) {
+            case "set":
+              if (date !== undefined) {
+                onDateChange(date);
+              }
+              break;
+          }
+        },
+        mode: mode,
+        is24Hour: true,
+        minimumDate: minimumDate,
+        timeZoneName: "Europe/Stockholm",
+        display: mode === "date" ? "calendar" : "spinner",
+      });
+    }
+  };
 
   return (
     <>
       <View style={styles.formControl}>
         <View style={styles.formControlLabel}>
           <Text style={styles.heading}>{label}</Text>
-          <TouchableOpacity
-            style={styles.pressable}
-            key={label?.toString()}
-            >
-            <Text style={styles.pressableText}>{date ? formatDateAndTime(date) : (placeholder || formatDateAndTime(''))}</Text>
-          </TouchableOpacity>
-        </View>
-        <RNDateTimePicker
-          key={label?.toString()}
-          minimumDate={minimumDate}
-          onChange={(event: DateTimePickerEvent, date: Date|undefined) => {
-            switch (event.type) {
-              case 'set':
-                if (date !== undefined) {
-                  onDateChange(date);
+          {Platform.OS === "ios" ? (
+            <DateTimePicker
+              testID="dateTimePicker"
+              value={date || new Date()}
+              mode="datetime"
+              is24Hour={false}
+              onChange={(event: DateTimePickerEvent, selectedDate?: Date) => {
+                switch (event.type) {
+                  case "set":
+                    if (selectedDate !== undefined) {
+                      onDateChange(selectedDate);
+                    }
+                    break;
                 }
-                break;
-            }
-          }}
-          style={[styles.datepicker]}
-          value={date ?? new Date()}
-          mode="datetime"
-          locale="sv"
-          timeZoneName='Europe/Stockholm'
-          
-        />
+              }}
+              minimumDate={minimumDate}
+            />
+          ) : (
+            <View style={styles.datepickerField}>
+              <TouchableOpacity
+                key={"datepicker-" + label?.toString()}
+                style={styles.pressable}
+                onPress={() => showAndroidPicker("date")}
+              >
+                <Text>{date ? formatDate(date) : placeholder}</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.pressable}
+                key={"timepicker-" + label?.toString()}
+                onPress={() => showAndroidPicker("time")}
+              >
+                <Text>{date ? formatTime(date) : placeholder}</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+        </View>
       </View>
     </>
   );
@@ -66,29 +111,31 @@ const createStyles = (colorScheme: string) =>
     },
     formControlLabel: {
       flex: 1,
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
     },
     heading: {
       fontSize: 16,
-      fontWeight: '600',
-      color: colorScheme === 'dark' ? Colors.dark.text900 : Colors.light.text900,
+      fontWeight: "600",
+      color:
+        colorScheme === "dark" ? Colors.dark.text900 : Colors.light.text900,
     },
     pressable: {
       padding: 4,
     },
     pressableText: {
-      color: colorScheme === 'dark' ? Colors.dark.text700 : Colors.light.text700,
+      color:
+        colorScheme === "dark" ? Colors.dark.text700 : Colors.light.text700,
       fontSize: 14,
     },
     datepickerField: {
       flex: 1,
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
+      flexDirection: "row",
+      justifyContent: "flex-end",
+      alignItems: "center",
     },
     datepicker: {
-      width: Dimensions.get('window').width,
+      width: Dimensions.get("window").width,
     },
   });
