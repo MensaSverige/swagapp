@@ -49,7 +49,7 @@ jobs:
         run: |
           yarn 
           
-      - name: 🏗 Setup EAS
+      - name: Setup EAS
         uses: expo/expo-github-action@v8
         with:
           eas-version: latest
