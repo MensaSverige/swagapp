@@ -21,6 +21,13 @@ expo-env.d.ts
 # Metro
 .metro-health-check*
 
+# Platform dirs
+/ios
+/android
+
+# Credentials
+credentials.json
+
 # debug
 npm-debug.*
 yarn-debug.*
