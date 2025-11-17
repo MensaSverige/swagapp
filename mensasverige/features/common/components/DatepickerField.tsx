@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Dimensions, View, Text, TouchableOpacity, StyleSheet, useColorScheme } from 'react-native';
 import RNDateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { formatDateAndTime } from '../functions/FormatDateAndTime';
@@ -20,7 +20,6 @@ export const DatepickerField: React.FC<DateFieldProps> = ({
   placeholder,
   onDateChange,
 }) => {
-  const [openDateModal, setOpenDateModal] = useState(false);
   const colorScheme = useColorScheme();
   const styles = createStyles(colorScheme ?? 'light');
 
@@ -32,7 +31,6 @@ export const DatepickerField: React.FC<DateFieldProps> = ({
           <TouchableOpacity
             style={styles.pressable}
             key={label?.toString()}
-            onPress={() => setOpenDateModal(true)}
             >
             <Text style={styles.pressableText}>{date ? formatDateAndTime(date) : (placeholder || formatDateAndTime(''))}</Text>
           </TouchableOpacity>
@@ -47,9 +45,6 @@ export const DatepickerField: React.FC<DateFieldProps> = ({
                   onDateChange(date);
                 }
                 break;
-              case 'dismissed':
-                setOpenDateModal(false);
-                return;
             }
           }}
           style={[styles.datepicker]}
