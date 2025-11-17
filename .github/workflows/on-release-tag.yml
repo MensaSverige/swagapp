@@ -44,6 +44,15 @@ jobs:
           echo "DOCKER_TAG=$TAG_NAME.$SHORT_SHA" >> $GITHUB_OUTPUT
           echo "GIT_HASH=$SHORT_SHA" >> $GITHUB_OUTPUT
 
+  # commented out until ios builds are stable
+  # publish-eas-build:
+  #   needs: prepare-data
+  #   uses: ./.github/workflows/eas-build.yml
+  #   with:
+  #     profile: production
+  #     platform: all
+  #     clear_cache: true
+
   publish-eas-update:
     needs: prepare-data
     uses: ./.github/workflows/eas-update.yml
