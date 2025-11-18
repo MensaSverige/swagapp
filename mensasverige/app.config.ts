@@ -25,6 +25,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     ios: {
       supportsTablet: true,
       bundleIdentifier: "se.mensasverige",
+      appleTeamId: "295VA2R9VV",
       infoPlist: {
         ITSAppUsesNonExemptEncryption: false,
         NSLocationAlwaysAndWhenInUseUsageDescription:
@@ -38,6 +39,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
         NSPhotoLibraryUsageDescription:
           "Bildgalleriet används för att visa dig bilder så du kan välja profilbild för uppladdning. Bara den bild du väljer används av appen.",
       },
+      icon: "./assets/images/icon_fill.png",
     },
     android: {
       // adaptiveIcon: {
@@ -67,6 +69,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
         "react-native-maps",
         {
           androidGoogleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY,
+          iOSGoogleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY,
         },
       ],
       "expo-secure-store",
@@ -142,10 +145,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
                   ?.NSExceptionDomains,
                 localhost: {
                   NSExceptionAllowsInsecureHTTPLoads: true,
-                },
-                "100.85.201.138": {
-                  NSExceptionAllowsInsecureHTTPLoads: true,
-                },
+                }
               },
             },
           },

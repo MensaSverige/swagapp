@@ -139,6 +139,8 @@ export const SigninForm = () => {
           editable={!isLoading}
           placeholder="Email"
           keyboardType="email-address"
+          autoCapitalize="none"
+          autoCorrect={false}
           value={username}
           autoCapitalize="none"
           autoCorrect={false}
@@ -147,6 +149,8 @@ export const SigninForm = () => {
         <ThemedInput
           editable={!isLoading}
           placeholder="Lösenord"
+          autoCapitalize="none"
+          autoCorrect={false}
           value={password}
           autoCapitalize="none"
           autoCorrect={false}
