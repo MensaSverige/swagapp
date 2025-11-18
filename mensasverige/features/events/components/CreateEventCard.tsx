@@ -184,13 +184,13 @@ const CreateEventCard: React.FC<CreateEventCardProps> = ({
           <View style={eventCardStyles.editModeContainer}>
             <Text style={eventCardStyles.fieldLabel}>Välj datum och tid</Text>
             <DatepickerField
-              label="Starttid"
+              label="Start"
               date={startDate}
               minimumDate={new Date()}
               onDateChange={handleDateChange('start')}
             />
             <DatepickerField
-              label="Sluttid"
+              label="Slut"
               date={endDate || undefined}
               minimumDate={startDate}
               onDateChange={handleDateChange('end')}
