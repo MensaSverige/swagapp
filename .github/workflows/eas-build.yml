@@ -94,6 +94,10 @@ jobs:
       - name: Build with EAS
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+          ORG_GRADLE_JVMARGS: "-Xmx2g -XX:MaxMetaspaceSize=1024m -Dfile.encoding=UTF-8"
+          GRADLE_OPTS: "-Xmx2g -XX:MaxMetaspaceSize=1024m"
+          JAVA_TOOL_OPTIONS: "-Xmx2g -XX:MaxMetaspaceSize=1024m"
+          ORG_GRADLE_PROJECT_org.gradle.workers.max: "2"
         run: |
           BUILD_ARGS="--profile ${{ steps.build-params.outputs.profile }}"
           
@@ -107,6 +111,20 @@ jobs:
            
           echo "Running: npx eas build $BUILD_ARGS --local"
           npx eas build $BUILD_ARGS --local
+
+      - name: Submit to App Stores
+        if: success() && steps.build-params.outputs.auto_submit == 'true'
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: |
+          SUBMIT_ARGS="--profile ${{ steps.build-params.outputs.profile }}"
+          
+          if [[ "${{ steps.build-params.outputs.platform }}" != "all" ]]; then
+            SUBMIT_ARGS="$SUBMIT_ARGS --platform ${{ steps.build-params.outputs.platform }}"
+          fi
+          
+          echo "Running: npx eas submit $SUBMIT_ARGS --latest"
+          npx eas submit $SUBMIT_ARGS --latest
 
       - name: Build Summary
         if: always()
