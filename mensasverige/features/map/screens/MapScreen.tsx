@@ -241,6 +241,7 @@ const MapScreen: React.FC = () => {
             />
 
             <ReactNativeMapView
+              provider={PROVIDER_GOOGLE}
               ref={mapRef}
               style={{ flex: 1 }}
               //style={styles.map}

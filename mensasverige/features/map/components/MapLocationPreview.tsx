@@ -1,6 +1,6 @@
 
 import React, { useEffect, useRef } from 'react';
-import ReactNativeMapView, { Marker } from 'react-native-maps';
+import ReactNativeMapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import MapView from 'react-native-maps';
 import lightMapstyle from '../../map/styles/light';
 import darkMapstyle from '../../map/styles/dark';
@@ -22,6 +22,7 @@ const MapLocationPreview = ({ latitude, longitude, colorMode }: { latitude: numb
     }, [latitude, longitude]);
     return (
     <MapView
+        provider={PROVIDER_GOOGLE}
         style={{ height: 120 }}
         initialRegion={{
             latitude: latitude,
