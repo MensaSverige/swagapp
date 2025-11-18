@@ -178,7 +178,7 @@ const CreateEventCard: React.FC<CreateEventCardProps> = ({
   const endDate = eventData.end ? new Date(eventData.end) : null;
 
   return (
-    <View>
+    <View style={eventCardStyles.editEventContainer}>
         {/* Date and Time - Editable */}
         {editingField === 'dateTime' ? (
           <View style={eventCardStyles.editModeContainer}>
