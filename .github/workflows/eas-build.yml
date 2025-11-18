@@ -1,10 +1,10 @@
-name: EAS Build
+name: Local Build
 
 on:
   workflow_call:
     inputs:
       profile:
-        description: "EAS build profile"
+        description: "Build profile"
         type: string
         required: false
         default: "preview"
@@ -21,7 +21,7 @@ on:
   workflow_dispatch:
     inputs:
       profile:
-        description: "EAS build profile"
+        description: "Build profile"
         type: choice
         options:
           - development
@@ -57,15 +57,28 @@ jobs:
         with:
           node-version: '20'
 
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
       - name: Install dependencies
         run: |
           yarn 
           
-      - name: Setup EAS
-        uses: expo/expo-github-action@v8
-        with:
-          eas-version: latest
-          token: ${{ secrets.EXPO_TOKEN }}
+      - name: Setup Expo CLI
+        run: |
+          npm install -g @expo/cli
+
+      - name: Clear cache if requested
+        if: ${{ inputs.clear_cache == true }}
+        run: |
+          yarn cache clean
+          npx expo install --fix
 
       - name: Set build parameters
         id: build-params
@@ -74,43 +87,42 @@ jobs:
           PLATFORM="${{ inputs.platform || 'all' }}"
           CLEAR_CACHE="${{ inputs.clear_cache || 'false' }}"
           
-          # Auto-submit only for production profile
-          if [[ "$PROFILE" == "production" ]]; then
-            AUTO_SUBMIT="true"
-          else
-            AUTO_SUBMIT="false"
-          fi
-          
           echo "profile=$PROFILE" >> $GITHUB_OUTPUT
           echo "platform=$PLATFORM" >> $GITHUB_OUTPUT
           echo "clear_cache=$CLEAR_CACHE" >> $GITHUB_OUTPUT
-          echo "auto_submit=$AUTO_SUBMIT" >> $GITHUB_OUTPUT
           
           echo "Building profile: $PROFILE"
           echo "Platform: $PLATFORM"
           echo "Clear cache: $CLEAR_CACHE"
-          echo "Auto submit: $AUTO_SUBMIT"
 
-      - name: Build with EAS
-        env:
-          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+      - name: Pre-build Android
+        if: ${{ steps.build-params.outputs.platform == 'android' || steps.build-params.outputs.platform == 'all' }}
         run: |
-          BUILD_ARGS="--profile ${{ steps.build-params.outputs.profile }}"
-          
-          if [[ "${{ steps.build-params.outputs.platform }}" != "all" ]]; then
-            BUILD_ARGS="$BUILD_ARGS --platform ${{ steps.build-params.outputs.platform }}"
-          fi
-          
-          if [[ "${{ steps.build-params.outputs.clear_cache }}" == "true" ]]; then
-            BUILD_ARGS="$BUILD_ARGS --clear-cache"
-          fi
-          
-          if [[ "${{ steps.build-params.outputs.auto_submit }}" == "true" ]]; then
-            BUILD_ARGS="$BUILD_ARGS --auto-submit"
-          fi
-          
-          echo "Running: npx eas build $BUILD_ARGS --non-interactive"
-          npx eas build $BUILD_ARGS --non-interactive
+          npx expo prebuild --platform android --clear
+
+      - name: Build Android APK
+        if: ${{ steps.build-params.outputs.platform == 'android' || steps.build-params.outputs.platform == 'all' }}
+        run: |
+          cd android
+          ./gradlew assembleRelease
+
+      - name: Pre-build iOS
+        if: ${{ steps.build-params.outputs.platform == 'ios' || steps.build-params.outputs.platform == 'all' }}
+        run: |
+          npx expo prebuild --platform ios --clear
+
+      - name: Build iOS
+        if: ${{ steps.build-params.outputs.platform == 'ios' || steps.build-params.outputs.platform == 'all' }}
+        run: |
+          echo "iOS builds require macOS runner - skipping for now"
+          echo "To build iOS locally, use: npx expo run:ios --configuration Release"
+
+      - name: Upload Android APK
+        if: ${{ steps.build-params.outputs.platform == 'android' || steps.build-params.outputs.platform == 'all' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-apk-${{ steps.build-params.outputs.profile }}
+          path: mensasverige/android/app/build/outputs/apk/release/*.apk
 
       - name: Build Summary
         if: always()
@@ -119,6 +131,5 @@ jobs:
           echo "- **Profile**: ${{ steps.build-params.outputs.profile }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Platform**: ${{ steps.build-params.outputs.platform }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Clear Cache**: ${{ steps.build-params.outputs.clear_cache }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Auto Submit**: ${{ steps.build-params.outputs.auto_submit }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Branch**: ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
