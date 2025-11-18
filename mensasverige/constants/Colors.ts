@@ -464,6 +464,8 @@ export const Colors = {
     icon: '#687076',
     tabIconDefault: '#687076',
     tabIconSelected: tintColorLight,
+    backgroundDefault: backgroundColors.background0,
+    backgroundAlt: backgroundColors.background50,
 
     // Brand colors
     ...primaryColors,
@@ -494,6 +496,8 @@ export const Colors = {
     icon: '#9BA1A6',
     tabIconDefault: '#9BA1A6',
     tabIconSelected: tintColorDark,
+    backgroundDefault: backgroundColors.background950,
+    backgroundAlt: backgroundColors.background900,
 
     // Primary colors (dark theme variants)
     primary0: '#CCFBFF',
