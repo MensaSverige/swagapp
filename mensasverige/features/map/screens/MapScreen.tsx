@@ -11,6 +11,7 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import ReactNativeMapView, { PROVIDER_GOOGLE } from 'react-native-maps';
+import MapView from 'react-native-maps';
 import UserMarker from '../components/markers/UserMarker';
 import useStore from '../../common/store/store';
 import useRequestLocationPermission from '../hooks/useRequestLocationPermission';
@@ -240,7 +241,7 @@ const MapScreen: React.FC = () => {
               onFilterApplied={() => zoomToFitAllUsers(filteredUsers)}
             />
 
-            <ReactNativeMapView
+            <MapView
               provider={PROVIDER_GOOGLE}
               ref={mapRef}
               style={{ flex: 1 }}
@@ -307,7 +308,7 @@ const MapScreen: React.FC = () => {
                   })
 
               }
-            </ReactNativeMapView>
+            </MapView>
             <View style={styles.mapControlsWrapper}>
               <TouchableOpacity
                 style={styles.mapControlsButton}
