@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, useColorScheme } from 'react-native';
 import { Event } from '../../../api_schema/types';
 import { DisplayTime } from '../utilities/DisplayTime';
-import CategoryBadge from './CategoryBadge';
+import CategoryBadge from './badges/CategoryBadge';
 import { Colors } from '@/constants/Colors';
 import { MaterialIcons } from '@expo/vector-icons';
 import OfficialEventIcon from '../../../components/icons/OfficialEventIcon';

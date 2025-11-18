@@ -8,7 +8,7 @@ import {
   useColorScheme,
   Platform,
 } from "react-native";
-import { formatDate, formatTime } from "../functions/FormatDateAndTime";
+import { formatDate, formatTime } from "../../functions/FormatDateAndTime";
 import { Colors } from "@/constants/Colors";
 import DateTimePicker, {
   DateTimePickerAndroid,

@@ -1,10 +1,10 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, useColorScheme } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { EditButton } from '../../common/components/EditButton';
-import { getGeoLocation } from '../../map/services/locationService';
-import MapLocationPreview from '../../map/components/MapLocationPreview';
-import { createEditableFieldStyles } from '../../common/styles/editableFieldStyles';
+import { EditButton } from '../EditButton';
+import { getGeoLocation } from '@/features/map/services/locationService';
+import MapLocationPreview from '@/features/map/components/MapLocationPreview';
+import { createEditableFieldStyles } from '../../styles/editableFieldStyles';
 
 
 const placeholderText = "Elmiavägen 8, 554 54, Jönkoping";

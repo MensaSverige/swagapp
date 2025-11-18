@@ -7,21 +7,21 @@ import {
   useColorScheme
 } from 'react-native';
 import { Event, User } from '../../../api_schema/types';
-import { ThemedText } from '../../../components/ThemedText';
-import UserAvatar from '../../map/components/UserAvatar';
-import { filterHtml } from '../../common/functions/filterHtml';
-import { extractLinks } from '../../common/functions/extractLinks';
-import { AddressLinkAndIcon } from '../../map/components/AddressLinkAndIcon';
+import { ThemedText } from '@/components/ThemedText';
+import UserAvatar from '@/features/map/components/UserAvatar';
+import { filterHtml } from '@/features/common/functions/filterHtml';
+import { extractLinks } from '@/features/common/functions/extractLinks';
+import { AddressLinkAndIcon } from '@/features/map/components/AddressLinkAndIcon';
 
-import AttendingBadge from './AttendingBadge';
-import FullyBookedBadge from './FullyBookedBadge';
+import AttendingBadge from './badges/AttendingBadge';
+import FullyBookedBadge from './badges/FullyBookedBadge';
 import PlacesLeftBadge from './PlacesLeftBadge';
-import AttendeeCountBadge from './AttendeeCountBadge';
+import AttendeeCountBadge from './badges/AttendeeCountBadge';
 import EventDateTimeDisplay from './EventDateTimeDisplay';
 import AttendingComponent from './AttendingComponent';
-import useStore from '../../common/store/store';
+import useStore from '@/features/common/store/store';
 import { useEvents } from '../hooks/useEvents';
-import CategoryBadge from './CategoryBadge';
+import CategoryBadge from './badges/CategoryBadge';
 import { createEventCardStyles } from '../styles/eventCardStyles';
 import { ExtendedEvent } from '../types/eventUtilTypes';
 import { getUsersByIds } from '../../account/services/userService';

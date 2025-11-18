@@ -6,7 +6,7 @@ import { ThemedView } from '@/components/ThemedView';
 import ParentEventDetails from './ParentEventDetails';
 import GroupedEventsList from './GroupedEventsList';
 import UnifiedEventModal from './UnifiedEventModal';
-import CategoryBadge from './CategoryBadge';
+import CategoryBadge from './badges/CategoryBadge';
 import { MaterialIcons } from '@expo/vector-icons';
 import { Colors } from '@/constants/Colors';
 import { useEvents } from '../hooks/useEvents';

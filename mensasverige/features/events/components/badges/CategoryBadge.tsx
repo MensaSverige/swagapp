@@ -8,7 +8,7 @@ import {
 import { MaterialIcons } from '@expo/vector-icons';
 import { ThemedText } from '@/components/ThemedText';
 import { Colors } from '@/constants/Colors';
-import OfficialEventIcon from '../../../components/icons/OfficialEventIcon';
+import OfficialEventIcon from '../../../../components/icons/OfficialEventIcon';
 
 export interface CategoryBadgeProps {
   categoryCode?: string;

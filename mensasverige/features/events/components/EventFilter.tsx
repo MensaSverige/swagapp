@@ -7,7 +7,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { EVENT_CATEGORIES } from '../utilities/EventCategories';
 import { FilterButton } from './FilterButton';
 import OfficialEventIcon from '../../../components/icons/OfficialEventIcon';
-import { DatepickerField } from '../../common/components/DatepickerField';
+import { DatepickerField } from '@/features/common/components/inputs/DatepickerField';
 import { EventFilterOptions } from '../store/EventsSlice';
 import { ThemedText } from '@/components/ThemedText';
 
