@@ -181,13 +181,13 @@ export const EventFilter: React.FC<EventFilterProps> = ({
         />
         
         <View style={styles.menuHeader}>
-          <Text style={styles.menuTitle}>Filtrera aktiviteter</Text>
+          <ThemedText type='subtitle'>Filtrera aktiviteter</ThemedText>
         </View>
 
         <ScrollView style={styles.menuContent} showsVerticalScrollIndicator={false}>
           {/* Status Filters */}
           <View style={styles.section}>
-            <ThemedText type='subtitle'>Status</ThemedText>
+            <ThemedText type='sectionHeader'>Status</ThemedText>
             
             <View style={styles.filterRow}>
               <ThemedText>Deltagande</ThemedText>
@@ -233,30 +233,26 @@ export const EventFilter: React.FC<EventFilterProps> = ({
 
           {/* Date Range Filters */}
           <View style={styles.section}>
-            <ThemedText type='subtitle'>Tidsintervall</ThemedText>
-            
-            <View style={styles.datePickerContainer}>
+            <ThemedText type='sectionHeader'>Tidsintervall</ThemedText>
+
               <DatepickerField
                 label="Från"
                 date={localFilter.dateFrom || undefined}
                 placeholder="Nu"
                 onDateChange={handleDateFromChange}
               />
-            </View>
-            
-            <View style={styles.datePickerContainer}>
+
               <DatepickerField
                 label="Till"
                 date={localFilter.dateTo || undefined}
                 minimumDate={localFilter.dateFrom || undefined}
                 onDateChange={handleDateToChange}
               />
-            </View>
           </View>
 
           {/* Category Filters */}
           <View style={styles.section}>
-            <ThemedText type='subtitle'>Kategorier</ThemedText>
+            <ThemedText type='sectionHeader'>Kategorier</ThemedText>
             <View style={styles.categoryGrid}>
               {EVENT_CATEGORIES.map((category) => {
                 const isSelected = localFilter.categories?.includes(category.code) ?? false;
@@ -349,7 +345,6 @@ const createStyles = (colorScheme: string) => StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 16,
     paddingTop: 30, 
-    //borderBottomWidth: 1,
     borderBottomColor: colorScheme === 'dark' ? '#374151' : '#e5e7eb',
   },
   menuTitle: {
@@ -362,8 +357,7 @@ const createStyles = (colorScheme: string) => StyleSheet.create({
     paddingHorizontal: 20,
   },
   section: {
-    marginTop: 24,
-    marginBottom: 24,
+    marginBottom: 18,
   },
   sectionTitle: {
     fontSize: 16,
@@ -378,7 +372,7 @@ const createStyles = (colorScheme: string) => StyleSheet.create({
     marginBottom: 12,
   },
   filterLabel: {
-    fontSize: 14,
+    fontSize: 12,
     color: colorScheme === 'dark' ? '#d1d5db' : '#374151',
   },
   filterLabelContainer: {
@@ -400,14 +394,14 @@ const createStyles = (colorScheme: string) => StyleSheet.create({
   categoryGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
+    gap: 6,
   },
   categoryButton: {
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 16,
     borderWidth: 1,
-    marginBottom: 8,
+    marginTop: 4,
   },
   categoryButtonContent: {
     flexDirection: 'row',
@@ -450,8 +444,5 @@ const createStyles = (colorScheme: string) => StyleSheet.create({
   },
   buttonTextSolid: {
     color: '#ffffff',
-  },
-  datePickerContainer: {
-    marginBottom: 12,
   },
 });
