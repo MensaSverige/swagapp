@@ -10,8 +10,6 @@ from v1.events.events_service import (
     delete_user_event_via_unified,
     attend_event_via_unified,
     unattend_event_via_unified,
-    book_external_event_via_unified,
-    unbook_external_event_via_unified,
 )
 from v1.events.events_model import Event as UnifiedEvent
 from fastapi import HTTPException
@@ -83,30 +81,3 @@ async def attend_event(event_id: str, current_user: dict = Depends(require_membe
 async def unattend_event(event_id: str, current_user: dict = Depends(require_member)):
     """Unattend an event. Works for both user events (usr prefix) and external events (ext prefix)."""
     return unattend_event_via_unified(event_id, current_user)
-
-
-@unified_events_v1.post("/events/{event_id}/book")
-async def book_event(event_id: str, current_user: dict = Depends(require_member)):
-    """Book an external event. Only works for external events (event_id must start with 'ext')."""
-    try:
-        return book_external_event_via_unified(event_id, current_user)
-    except HTTPException:
-        raise
-    except Exception as e:
-        import logging
-        logging.error(f"Unexpected error in book_event: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
-
-
-@unified_events_v1.post("/events/{event_id}/unbook")
-async def unbook_event(event_id: str, current_user: dict = Depends(require_member)):
-    """Unbook an external event. Only works for external events (event_id must start with 'ext')."""
-    try:
-        return unbook_external_event_via_unified(event_id, current_user)
-    except HTTPException:
-        raise
-    except Exception as e:
-        import logging
-        logging.error(f"Unexpected error in unbook_event: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
-
