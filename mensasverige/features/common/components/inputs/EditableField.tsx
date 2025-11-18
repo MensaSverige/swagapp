@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { View, TextInput, TouchableOpacity, useColorScheme } from 'react-native';
-import { EditButton } from './EditButton';
+import { EditButton } from './../EditButton';
 import { ThemedText } from '@/components/ThemedText';
-import { createEditableFieldStyles } from '../styles/editableFieldStyles';
+import { createEditableFieldStyles } from '../../styles/editableFieldStyles';
 
 interface EditableFieldProps {
   label: string;

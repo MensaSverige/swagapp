@@ -10,15 +10,15 @@ import {
   useColorScheme,
 } from 'react-native';
 import { Event } from '../../../api_schema/types';
-import { DatepickerField } from '../../common/components/DatepickerField';
-import EditableField from '../../common/components/EditableField';
+import { DatepickerField } from '@/features/common/components/inputs//DatepickerField';
+import EditableField from '@/features/common/components/inputs/EditableField';
 import { createEvent, updateEvent } from '../services/eventService';
 import EventDateTimeDisplay from './EventDateTimeDisplay';
 import { Colors } from '@/constants/Colors';
 import useStore from '@/features/common/store/store';
-import EventMapField from './EventMapField';
+import EventMapField from '@/features/common/components/inputs/EventMapField';
 import { createEventCardStyles } from '../styles/eventCardStyles';
-import { createEditableFieldStyles } from '../../common/styles/editableFieldStyles';
+import { createEditableFieldStyles } from '@/features/common/styles/editableFieldStyles';
 import { ExtendedEvent } from '../types/eventUtilTypes';
 import { createExtendedEvent } from '../utils/eventUtils';
 
