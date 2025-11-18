@@ -23,7 +23,9 @@
       "channel": "production",
       "autoIncrement": true,
       "env": {
-        "APP_ENV": "production"
+        "APP_ENV": "production",
+        "ORG_GRADLE_JVMARGS": "-Xmx2g -XX:MaxMetaspaceSize=2048m -Dfile.encoding=UTF-8",
+        "ORG_GRADLE_PROJECT_org.gradle.workers.max": "2"
       }
     }
   },

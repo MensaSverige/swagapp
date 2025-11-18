@@ -94,10 +94,6 @@ jobs:
       - name: Build with EAS
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-          ORG_GRADLE_JVMARGS: "-Xmx2g -XX:MaxMetaspaceSize=1024m -Dfile.encoding=UTF-8"
-          GRADLE_OPTS: "-Xmx2g -XX:MaxMetaspaceSize=1024m"
-          JAVA_TOOL_OPTIONS: "-Xmx2g -XX:MaxMetaspaceSize=1024m"
-          ORG_GRADLE_PROJECT_org.gradle.workers.max: "2"
         run: |
           BUILD_ARGS="--profile ${{ steps.build-params.outputs.profile }}"
           
