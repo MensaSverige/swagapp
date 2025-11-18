@@ -99,23 +99,13 @@ jobs:
           echo "Platform: android"
           echo "Clear cache: $CLEAR_CACHE"
 
-      - name: Pre-build Android
+      - name: Build Android
         env:
           GOOGLE_MAPS_API_KEY: ${{ secrets.GOOGLE_MAPS_API_KEY }}
           APP_ENV: ${{ inputs.profile || 'preview' }}
         run: |
-          npx expo prebuild --platform android
+          eas build --platform android --profile ${{ inputs.profile || 'preview' }} --local
 
-      - name: Build Android APK
-        run: |
-          cd android
-          ./gradlew assembleRelease
-
-      - name: Upload Android APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: android-apk-${{ inputs.profile || 'preview' }}
-          path: mensasverige/android/app/build/outputs/apk/release/*.apk
 
       - name: Build Summary
         if: always()
