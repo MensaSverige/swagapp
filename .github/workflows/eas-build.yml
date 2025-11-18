@@ -46,6 +46,10 @@ jobs:
   android-build:
     if: ${{ inputs.platform == 'android' || inputs.platform == 'all' }}
     runs-on: ubuntu-latest
+    env:
+      EXPO_PUBLIC_API_URL: ${{ vars.EXPO_PUBLIC_API_URL }}
+      EXPO_PUBLIC_API_VERSION: ${{ vars.EXPO_PUBLIC_API_VERSION }}
+      GOOGLE_MAPS_API_KEY: ${{ secrets.GOOGLE_MAPS_API_KEY }}
     defaults:
       run:
         working-directory: ./mensasverige
@@ -123,6 +127,10 @@ jobs:
   ios-build:
     if: ${{ inputs.platform == 'ios' || inputs.platform == 'all' }}
     runs-on: macos-latest
+    env:
+      EXPO_PUBLIC_API_URL: ${{ vars.EXPO_PUBLIC_API_URL }}
+      EXPO_PUBLIC_API_VERSION: ${{ vars.EXPO_PUBLIC_API_VERSION }}
+      GOOGLE_MAPS_API_KEY: ${{ secrets.GOOGLE_MAPS_API_KEY }}
     defaults:
       run:
         working-directory: ./mensasverige
