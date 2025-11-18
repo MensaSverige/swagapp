@@ -10,7 +10,7 @@ import {
   KeyboardAvoidingView,
   TouchableOpacity,
 } from 'react-native';
-import ReactNativeMapView, { PROVIDER_GOOGLE } from 'react-native-maps';
+import { PROVIDER_GOOGLE } from 'react-native-maps';
 import MapView from 'react-native-maps';
 import UserMarker from '../components/markers/UserMarker';
 import useStore from '../../common/store/store';
@@ -71,7 +71,7 @@ const createStyles = (colorMode: string) =>
 const MapScreen: React.FC = () => {
   const colorScheme = useColorScheme();
   const colorMode = colorScheme ?? 'light';
-  const mapRef = useRef<ReactNativeMapView | null>(null);
+  const mapRef = useRef<MapView | null>(null);
   const bottom = useBottomTabOverflow();
   const { region, usersShowingLocation, filteredUsers, selectedUser, userFilter, setSelectedUser, setFilteredUsers, setUserFilter, user } = useStore();
   const [visibleRegion, setVisibleRegion] = useState(region);

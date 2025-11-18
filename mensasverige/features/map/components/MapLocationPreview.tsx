@@ -1,13 +1,13 @@
 
 import React, { useEffect, useRef } from 'react';
-import ReactNativeMapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
+import { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import MapView from 'react-native-maps';
 import lightMapstyle from '../../map/styles/light';
 import darkMapstyle from '../../map/styles/dark';
 import useStore from '../../common/store/store';
 
 const MapLocationPreview = ({ latitude, longitude, colorMode }: { latitude: number, longitude: number, colorMode: string }) => {    
-    const mapRef = useRef<ReactNativeMapView | null>(null);
+    const mapRef = useRef<MapView | null>(null);
     const { region } = useStore();
     
     useEffect(() => {
