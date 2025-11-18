@@ -158,6 +158,9 @@ export const createEventCardStyles = (colorScheme: string) => {
   },
 
   // Edit mode styles
+  editEventContainer: {
+    marginTop: 40,
+  },
   editModeContainer: {
     backgroundColor: colors.backgroundAlt,
     borderRadius: 8,
