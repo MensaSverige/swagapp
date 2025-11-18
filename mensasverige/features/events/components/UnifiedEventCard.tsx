@@ -3,7 +3,8 @@ import {
   View,
   Image,
   TouchableOpacity,
-  Linking
+  Linking,
+  useColorScheme
 } from 'react-native';
 import { Event, User } from '../../../api_schema/types';
 import { ThemedText } from '../../../components/ThemedText';
@@ -21,7 +22,7 @@ import AttendingComponent from './AttendingComponent';
 import useStore from '../../common/store/store';
 import { useEvents } from '../hooks/useEvents';
 import CategoryBadge from './CategoryBadge';
-import { eventCardStyles, dateTimeStyles } from '../styles/eventCardStyles';
+import { createEventCardStyles } from '../styles/eventCardStyles';
 import { ExtendedEvent } from '../types/eventUtilTypes';
 import { getUsersByIds } from '../../account/services/userService';
 
@@ -34,6 +35,8 @@ const UnifiedEventCard: React.FC<{
   event: ExtendedEvent;
 }> = ({ event }) => {
   const [adminUsers, setAdminUsers] = useState<User[]>([]);
+  const colorScheme = useColorScheme();
+  const eventCardStyles = createEventCardStyles(colorScheme ?? 'light');
   const user = useStore(state => state.user);
   const { allEvents } = useEvents();
 

@@ -4,10 +4,11 @@ import {
   Text,
   TouchableOpacity,
   ActivityIndicator,
-  Alert
+  Alert,
+  useColorScheme
 } from 'react-native';
 import { useEvents } from '../hooks/useEvents';
-import { eventCardStyles } from '../styles/eventCardStyles';
+import { createEventCardStyles } from '../styles/eventCardStyles';
 import { ExtendedEvent } from '../types/eventUtilTypes';
 
 interface AttendingComponentProps {
@@ -21,6 +22,8 @@ const AttendingComponent: React.FC<AttendingComponentProps> = ({
 }) => {
   const [changingAttendance, setChangingAttendance] = useState<boolean>(false);
   const { attendEventById, unattendEventById } = useEvents();
+  const colorScheme = useColorScheme();
+  const eventCardStyles = createEventCardStyles(colorScheme ?? 'light');
 
   const handlePressAttend = async () => {
     if (!event.id) return;

@@ -14,6 +14,7 @@ import DateTimePicker, {
   DateTimePickerAndroid,
   DateTimePickerEvent,
 } from "@react-native-community/datetimepicker";
+import { ThemedText } from "@/components/ThemedText";
 
 interface DateFieldProps {
   label: React.ReactNode;
@@ -31,10 +32,8 @@ export const DatepickerField: React.FC<DateFieldProps> = ({
   placeholder,
   onDateChange,
 }) => {
-  // const colorScheme = useColorScheme();
-  // Force light mode until eventCardStyles supports mode toggling
-  // It's used in the parent CreateEventCard
-  const styles = createStyles("light"); 
+  const colorTheme = useColorScheme();
+  const styles = createStyles(colorTheme ?? "light"); 
 
   const showAndroidPicker = (mode: "date" | "time") => {
     if (Platform.OS === "android") {
@@ -69,7 +68,7 @@ export const DatepickerField: React.FC<DateFieldProps> = ({
               testID="dateTimePicker"
               value={date || new Date()}
               mode="datetime"
-              themeVariant="light"
+              themeVariant={ colorTheme === 'dark' ? 'dark' : 'light' }
               is24Hour={false}
               onChange={(event: DateTimePickerEvent, selectedDate?: Date) => {
                 switch (event.type) {
@@ -89,7 +88,7 @@ export const DatepickerField: React.FC<DateFieldProps> = ({
                 style={styles.pressable}
                 onPress={() => showAndroidPicker("date")}
               >
-                <Text>{date ? formatDate(date) : placeholder}</Text>
+                <ThemedText>{date ? formatDate(date) : placeholder}</ThemedText>
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -97,7 +96,7 @@ export const DatepickerField: React.FC<DateFieldProps> = ({
                 key={"timepicker-" + label?.toString()}
                 onPress={() => showAndroidPicker("time")}
               >
-                <Text>{date ? formatTime(date) : placeholder}</Text>
+                <ThemedText>{date ? formatTime(date) : placeholder}</ThemedText>
               </TouchableOpacity>
             </View>
           )}
@@ -107,13 +106,11 @@ export const DatepickerField: React.FC<DateFieldProps> = ({
   );
 };
 
-const createStyles = (colorScheme: string) =>
-  StyleSheet.create({
+const createStyles = (colorScheme: string = 'light') => {
+  const colors = colorScheme === 'dark' ? Colors.dark : Colors.light;
+  return StyleSheet.create({
     formControl: {
-      backgroundColor:
-        colorScheme === 'dark'
-          ? Colors.dark.background
-          : Colors.light.background,
+      backgroundColor: colors.backgroundAlt,
       paddingVertical: 5,
     },
     formControlLabel: {
@@ -125,13 +122,13 @@ const createStyles = (colorScheme: string) =>
     heading: {
       fontSize: 16,
       fontWeight: '600',
-      color: colorScheme === 'dark' ? Colors.dark.text900 : Colors.light.text900,
+      color: colors.text,
     },
     pressable: {
       padding: 4,
     },
     pressableText: {
-      color: colorScheme === 'dark' ? Colors.dark.text700 : Colors.light.text700,
+      color: colors.text,
       fontSize: 14,
     },
     datepickerField: {
@@ -144,3 +141,4 @@ const createStyles = (colorScheme: string) =>
       width: Dimensions.get('window').width,
     },
   });
+};

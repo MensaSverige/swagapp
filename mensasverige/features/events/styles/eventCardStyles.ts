@@ -5,11 +5,14 @@ import { Colors } from '../../../constants/Colors';
  * Shared styles for event card components (UnifiedEventCard and CreateEventCard)
  * These styles are used for displaying event information in both read and edit modes
  */
-export const eventCardStyles = StyleSheet.create({
+export const createEventCardStyles = (colorScheme: string) => {
+  const colors = colorScheme === 'dark' ? Colors.dark : Colors.light;
+  
+  return StyleSheet.create({
   // Divider
   divider: {
     height: 1,
-    backgroundColor: Colors.light.coolGray200,
+    backgroundColor: colors.coolGray200,
     marginBottom: 16,
   },
 
@@ -18,16 +21,16 @@ export const eventCardStyles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     marginBottom: 4,
-    color: Colors.light.coolGray900,
+    color: colors.coolGray900,
   },
   detailText: {
     fontSize: 14,
-    color: Colors.light.coolGray700,
+    color: colors.coolGray700,
   },
   fieldLabel: {
     fontSize: 12,
     fontWeight: '600',
-    color: Colors.light.blueGray500,
+    color: colors.blueGray500,
     marginBottom: 4,
   },
   
@@ -130,7 +133,7 @@ export const eventCardStyles = StyleSheet.create({
     alignItems: 'center',
   },
   buttonText: {
-    color: Colors.white,
+    color: colors.white,
     fontSize: 16,
     fontWeight: '600',
   },
@@ -140,14 +143,14 @@ export const eventCardStyles = StyleSheet.create({
     marginTop: 16,
   },
   attendingButton: {
-    backgroundColor: Colors.light.teal700,
+    backgroundColor: colors.teal700,
     paddingVertical: 12,
     paddingHorizontal: 16,
     borderRadius: 8,
     alignItems: 'center',
   },
   unattendButton: {
-    backgroundColor: Colors.light.red600,
+    backgroundColor: colors.red600,
     paddingVertical: 12,
     paddingHorizontal: 16,
     borderRadius: 8,
@@ -156,7 +159,7 @@ export const eventCardStyles = StyleSheet.create({
 
   // Edit mode styles
   editModeContainer: {
-    backgroundColor: Colors.light.trueGray100,
+    backgroundColor: colors.backgroundAlt,
     borderRadius: 8,
     padding: 12,
     marginBottom: 8,
@@ -164,44 +167,16 @@ export const eventCardStyles = StyleSheet.create({
 
   // Component-specific button colors
   createButton: {
-    backgroundColor: Colors.light.teal600,
+    backgroundColor: colors.teal600,
   },
   cancelButton: {
-    backgroundColor: Colors.light.blueGray500,
+    backgroundColor: colors.blueGray500,
   },
-});
+  });
+};
 
-/**
- * Editable field styles that extend the base styles
- */
-export const editableFieldStyles = StyleSheet.create({
-  editableInputHeading: {
-    fontSize: 18,
-    fontWeight: '600',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-});
-
-/**
- * Date and time display styles
- */
-export const dateTimeStyles = StyleSheet.create({
-  dateText: {
-    fontSize: 14,
-    fontWeight: 'normal',
-    lineHeight: 18,
-    marginBottom: 0,
-    color: Colors.light.coolGray700,
-  },
-  timeText: {
-    fontSize: 14,
-    color: Colors.light.teal700,
-    marginBottom: 12,
-    paddingTop: 2,
-  },
-});
+// Backward compatibility - keep the old export names as functions that default to light theme
+export const eventCardStyles = createEventCardStyles('light');
 
 // Export individual style objects for granular imports
 export { eventCardStyles as default };
