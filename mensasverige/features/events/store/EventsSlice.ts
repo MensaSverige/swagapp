@@ -1,6 +1,7 @@
 import {StateCreator} from 'zustand';
 import { GroupedEvents, ExtendedEvent } from '../types/eventUtilTypes';
 import { groupEventsByDate } from '../utils/eventUtils';
+import { ExternalRoot } from '../../../api_schema/types';
 
 // Import EventFilterOptions type
 export interface EventFilterOptions {
@@ -17,6 +18,10 @@ export interface EventsSlice {
   events: ExtendedEvent[];
   eventsRefreshing: boolean;
   eventsLastFetched: Date | null;
+
+  // Parent event info
+  eventInfo: ExternalRoot | null;
+  eventInfoLoading: boolean;
 
   // Dashboard events (attending + upcoming with limit)
   dashboardGroupedEvents: GroupedEvents;
@@ -40,6 +45,10 @@ export interface EventsSlice {
   setEvents: (events: ExtendedEvent[]) => void;
   setEventsRefreshing: (eventsRefreshing: boolean) => void;
   setEventsLastFetched: (eventsLastFetched: Date | null) => void;
+
+  // Event info actions
+  setEventInfo: (eventInfo: ExternalRoot | null) => void;
+  setEventInfoLoading: (loading: boolean) => void;
 
   // Dashboard events actions
   setDashboardGroupedEvents: (groupedEvents: GroupedEvents) => void;
@@ -168,6 +177,11 @@ export const createEventsSlice: StateCreator<EventsSlice> = (set, get) => ({
   eventsRefreshing: false,
   eventsLastFetched: null,
 
+  // Parent event info
+  eventInfo: null,
+  eventInfoLoading: false,
+  eventInfoError: null,
+
   // Dashboard events
   dashboardGroupedEvents: {},
   dashboardHasMore: false,
@@ -239,6 +253,10 @@ export const createEventsSlice: StateCreator<EventsSlice> = (set, get) => ({
   setEventsRefreshing: (eventsRefreshing: boolean) => set({eventsRefreshing}),
   setEventsLastFetched: (eventsLastFetched: Date | null) =>
     set({eventsLastFetched}),
+
+  // Event info actions
+  setEventInfo: (eventInfo: ExternalRoot | null) => set({eventInfo}),
+  setEventInfoLoading: (eventInfoLoading: boolean) => set({eventInfoLoading}),
 
   // Dashboard events actions
   setDashboardGroupedEvents: (groupedEvents: GroupedEvents) => set({dashboardGroupedEvents: groupedEvents}),
