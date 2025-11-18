@@ -1,7 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { View, StyleSheet, TouchableOpacity, useColorScheme } from 'react-native';
 import { fetchExternalRoot } from '../services/eventService';
-import { ExternalRoot } from '../../../api_schema/types';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import ParentEventDetails from './ParentEventDetails';
@@ -14,13 +13,13 @@ import { useEvents } from '../hooks/useEvents';
 import { navigateToAttendingEvents, navigateToBookableEvents, navigateToScheduleWithFilter, navigateToLastMinuteEvents } from '../utilities/navigationUtils';
 import { EVENT_CATEGORIES } from '../utilities/EventCategories';
 import { ExtendedEvent } from '../types/eventUtilTypes';
+import useStore from '@/features/common/store/store';
 
 const ParentEventDashboard = () => {
     const colorScheme = useColorScheme();
     const styles = createStyles(colorScheme ?? 'light');
-    const [eventInfo, setEventInfo] = useState<ExternalRoot | null>(null);
+    const {eventInfo, eventInfoLoading, setEventInfo, setEventInfoLoading} = useStore();
     const [selectedEvent, setSelectedEvent] = useState<ExtendedEvent | null>(null);
-    const [parentLoading, setParentLoading] = useState(true);
     const [showCreateForm, setShowCreateForm] = useState(false);
     
     const {
@@ -35,20 +34,21 @@ const ParentEventDashboard = () => {
     useEffect(() => {
         const loadParentEventInfo = async () => {
             try {
+                setEventInfoLoading(true);
                 const parentEventInfo = await fetchExternalRoot();
                 setEventInfo(parentEventInfo);
             } catch (error) {
                 console.error('Error loading parent event info:', error);
                 setEventInfo(null);
             } finally {
-                setParentLoading(false);
+                setEventInfoLoading(false);
             }
         };
 
         loadParentEventInfo();
     }, []);
 
-    const loading = parentLoading || eventsLoading;
+    const loading = eventInfoLoading || eventsLoading;
 
     const navigateToFullSchedule = () => {
         // Navigate to schedule with attending filter set to true
