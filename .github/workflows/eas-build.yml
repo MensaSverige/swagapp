@@ -108,27 +108,41 @@ jobs:
           echo "Running: npx eas build $BUILD_ARGS --local"
           npx eas build $BUILD_ARGS --local
 
-      - name: Submit to App Stores
-        if: success() && steps.build-params.outputs.auto_submit == 'true'
+      - name: Upload to EAS
+        if: success()
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
         run: |
-          SUBMIT_ARGS="--profile ${{ steps.build-params.outputs.profile }}"
+          UPLOAD_ARGS="--profile ${{ steps.build-params.outputs.profile }}"
           
           if [[ "${{ steps.build-params.outputs.platform }}" != "all" ]]; then
-            SUBMIT_ARGS="$SUBMIT_ARGS --platform ${{ steps.build-params.outputs.platform }}"
+            UPLOAD_ARGS="$UPLOAD_ARGS --platform ${{ steps.build-params.outputs.platform }}"
           fi
           
-          echo "Running: npx eas submit $SUBMIT_ARGS --latest"
-          npx eas submit $SUBMIT_ARGS --latest
+          echo "Running: npx eas upload $UPLOAD_ARGS --latest"
+          npx eas upload $UPLOAD_ARGS --latest                
 
-      - name: Build Summary
-        if: always()
-        run: |
-          echo "## Build Summary" >> $GITHUB_STEP_SUMMARY
-          echo "- **Profile**: ${{ steps.build-params.outputs.profile }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Platform**: ${{ steps.build-params.outputs.platform }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Clear Cache**: ${{ steps.build-params.outputs.clear_cache }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Auto Submit**: ${{ steps.build-params.outputs.auto_submit }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Branch**: ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+      # - name: Submit to App Stores
+      #   if: success() && steps.build-params.outputs.auto_submit == 'true'
+      #   env:
+      #     EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+      #   run: |
+      #     SUBMIT_ARGS="--profile ${{ steps.build-params.outputs.profile }}"
+          
+      #     if [[ "${{ steps.build-params.outputs.platform }}" != "all" ]]; then
+      #       SUBMIT_ARGS="$SUBMIT_ARGS --platform ${{ steps.build-params.outputs.platform }}"
+      #     fi
+          
+      #     echo "Running: npx eas submit $SUBMIT_ARGS --latest"
+      #     npx eas submit $SUBMIT_ARGS --latest
+
+      # - name: Build Summary
+      #   if: always()
+      #   run: |
+      #     echo "## Build Summary" >> $GITHUB_STEP_SUMMARY
+      #     echo "- **Profile**: ${{ steps.build-params.outputs.profile }}" >> $GITHUB_STEP_SUMMARY
+      #     echo "- **Platform**: ${{ steps.build-params.outputs.platform }}" >> $GITHUB_STEP_SUMMARY
+      #     echo "- **Clear Cache**: ${{ steps.build-params.outputs.clear_cache }}" >> $GITHUB_STEP_SUMMARY
+      #     echo "- **Auto Submit**: ${{ steps.build-params.outputs.auto_submit }}" >> $GITHUB_STEP_SUMMARY
+      #     echo "- **Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+      #     echo "- **Branch**: ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
