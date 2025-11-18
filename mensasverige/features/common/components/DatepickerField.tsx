@@ -111,38 +111,36 @@ const createStyles = (colorScheme: string) =>
   StyleSheet.create({
     formControl: {
       backgroundColor:
-        colorScheme === "dark"
+        colorScheme === 'dark'
           ? Colors.dark.background
           : Colors.light.background,
       paddingVertical: 5,
     },
-    formControlLabel: {
+     formControlLabel: {
       flex: 1,
-      flexDirection: "row",
-      justifyContent: "space-between",
-      alignItems: "center",
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
     },
     heading: {
       fontSize: 16,
-      fontWeight: "600",
-      color:
-        colorScheme === "dark" ? Colors.dark.text900 : Colors.light.text900,
+      fontWeight: '600',
+      color: colorScheme === 'dark' ? Colors.dark.text900 : Colors.light.text900,
     },
     pressable: {
       padding: 4,
     },
     pressableText: {
-      color:
-        colorScheme === "dark" ? Colors.dark.text700 : Colors.light.text700,
+      color: colorScheme === 'dark' ? Colors.dark.text700 : Colors.light.text700,
       fontSize: 14,
     },
     datepickerField: {
       flex: 1,
-      flexDirection: "row",
-      justifyContent: "flex-end",
-      alignItems: "center",
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
     },
     datepicker: {
-      width: Dimensions.get("window").width,
+      width: Dimensions.get('window').width,
     },
   });
