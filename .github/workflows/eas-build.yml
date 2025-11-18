@@ -79,11 +79,11 @@ jobs:
         run: |
           npm install -g @expo/cli
 
-      - name: Clear cache if requested
-        if: ${{ inputs.clear_cache == true }}
-        run: |
-          yarn cache clean
-          npx expo install --fix
+      # - name: Clear cache if requested
+      #   if: ${{ inputs.clear_cache == true }}
+      #   run: |
+      #     yarn cache clean
+      #     npx expo install --fix
 
       - name: Set build parameters
         id: build-params
@@ -104,8 +104,18 @@ jobs:
           GOOGLE_MAPS_API_KEY: ${{ secrets.GOOGLE_MAPS_API_KEY }}
           APP_ENV: ${{ inputs.profile || 'preview' }}
         run: |
-          eas build --platform android --profile ${{ inputs.profile || 'preview' }} --local
+          npx expo prebuild --platform android
 
+      - name: Build Android APK
+        run: |
+          cd android
+          ./gradlew assembleRelease
+
+      - name: Upload Android APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-apk-${{ inputs.profile || 'preview' }}
+          path: mensasverige/android/app/build/outputs/apk/release/*.apk
 
       - name: Build Summary
         if: always()
