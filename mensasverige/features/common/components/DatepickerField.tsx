@@ -116,7 +116,7 @@ const createStyles = (colorScheme: string) =>
           : Colors.light.background,
       paddingVertical: 5,
     },
-     formControlLabel: {
+    formControlLabel: {
       flex: 1,
       flexDirection: 'row',
       justifyContent: 'space-between',
