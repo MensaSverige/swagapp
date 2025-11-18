@@ -104,11 +104,7 @@ jobs:
           if [[ "${{ steps.build-params.outputs.clear_cache }}" == "true" ]]; then
             BUILD_ARGS="$BUILD_ARGS --clear-cache"
           fi
-          
-          if [[ "${{ steps.build-params.outputs.auto_submit }}" == "true" ]]; then
-            BUILD_ARGS="$BUILD_ARGS --auto-submit"
-          fi
-          
+           
           echo "Running: npx eas build $BUILD_ARGS --local"
           npx eas build $BUILD_ARGS --local
 
