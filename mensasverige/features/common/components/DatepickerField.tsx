@@ -33,18 +33,38 @@ export const DatepickerField: React.FC<DateFieldProps> = ({
   onDateChange,
 }) => {
   const colorTheme = useColorScheme();
-  const styles = createStyles(colorTheme ?? "light"); 
+  const styles = createStyles(colorTheme ?? "light");
 
   const showAndroidPicker = (mode: "date" | "time") => {
     if (Platform.OS === "android") {
       console.log(`Opening Android ${mode} picker`);
+      const currentDate = date ?? new Date();
+
       DateTimePickerAndroid.open({
-        value: date ?? new Date(),
-        onChange: (event: DateTimePickerEvent, date: Date | undefined) => {
+        value: currentDate,
+        onChange: (event: DateTimePickerEvent, selectedDate: Date | undefined) => {
           switch (event.type) {
             case "set":
-              if (date !== undefined) {
-                onDateChange(date);
+              if (selectedDate !== undefined) {
+                if (mode === "date") {
+                  // When changing date, preserve the existing time
+                  const newDate = new Date(selectedDate);
+                  if (date) {
+                    newDate.setHours(currentDate.getHours());
+                    newDate.setMinutes(currentDate.getMinutes());
+                    newDate.setSeconds(currentDate.getSeconds());
+                    newDate.setMilliseconds(currentDate.getMilliseconds());
+                  }
+                  onDateChange(newDate);
+                } else if (mode === "time") {
+                  // When changing time, preserve the existing date
+                  const newDate = new Date(currentDate);
+                  newDate.setHours(selectedDate.getHours());
+                  newDate.setMinutes(selectedDate.getMinutes());
+                  newDate.setSeconds(selectedDate.getSeconds());
+                  newDate.setMilliseconds(selectedDate.getMilliseconds());
+                  onDateChange(newDate);
+                }
               }
               break;
           }
@@ -60,47 +80,76 @@ export const DatepickerField: React.FC<DateFieldProps> = ({
 
   return (
     <>
-      <View style={styles.formControl}>
-        <View style={styles.formControlLabel}>
-          <Text style={styles.heading}>{label}</Text>
-          {Platform.OS === "ios" ? (
-            <DateTimePicker
-              testID="dateTimePicker"
-              value={date || new Date()}
-              mode="datetime"
-              themeVariant={ colorTheme === 'dark' ? 'dark' : 'light' }
-              is24Hour={false}
-              onChange={(event: DateTimePickerEvent, selectedDate?: Date) => {
-                switch (event.type) {
-                  case "set":
-                    if (selectedDate !== undefined) {
-                      onDateChange(selectedDate);
-                    }
-                    break;
-                }
-              }}
-              minimumDate={minimumDate}
-            />
-          ) : (
-            <View style={styles.datepickerField}>
-              <TouchableOpacity
-                key={"datepicker-" + label?.toString()}
-                style={styles.pressable}
-                onPress={() => showAndroidPicker("date")}
-              >
-                <ThemedText>{date ? formatDate(date) : placeholder}</ThemedText>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={styles.pressable}
-                key={"timepicker-" + label?.toString()}
-                onPress={() => showAndroidPicker("time")}
-              >
-                <ThemedText>{date ? formatTime(date) : placeholder}</ThemedText>
-              </TouchableOpacity>
+      <View>
+        {Platform.OS === "ios" ? (
+          date ? (
+            <View style={styles.formControlLabel}>
+              <Text style={styles.heading}>{label}</Text>
+              <DateTimePicker
+                testID="dateTimePicker"
+                value={date}
+                mode="datetime"
+                themeVariant={colorTheme === 'dark' ? 'dark' : 'light'}
+                is24Hour={false}
+                onChange={(event: DateTimePickerEvent, selectedDate?: Date) => {
+                  switch (event.type) {
+                    case "set":
+                      if (selectedDate !== undefined) {
+                        onDateChange(selectedDate);
+                      }
+                      break;
+                  }
+                }}
+                minimumDate={minimumDate}
+              />
             </View>
-          )}
-        </View>
+          ) : (
+            <TouchableOpacity
+              style={styles.formControlLabel}
+              onPress={() => onDateChange(new Date())}
+            >
+              <Text style={styles.heading}>{label}</Text>
+              <ThemedText style={[styles.pressableText, styles.placeholderText]}>
+                {placeholder || "Välj datum och tid"}
+              </ThemedText>
+            </TouchableOpacity>
+          )
+        ) : (
+          date ? (
+            <View style={styles.formControlLabel}>
+              <Text style={styles.heading}>{label}</Text>
+              <View style={styles.datepickerField}>
+                <TouchableOpacity
+                  key={"datepicker-" + label?.toString()}
+                  onPress={() => showAndroidPicker("date")}
+                >
+                  <ThemedText style={styles.pressableText}>
+                    {formatDate(date)}
+                  </ThemedText>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  key={"timepicker-" + label?.toString()}
+                  onPress={() => showAndroidPicker("time")}
+                >
+                  <ThemedText style={styles.pressableText}>
+                    {formatTime(date)}
+                  </ThemedText>
+                </TouchableOpacity>
+              </View>
+            </View>
+          ) : (
+            <TouchableOpacity
+              style={styles.formControlLabel}
+              onPress={() => showAndroidPicker("date")}
+            >
+              <Text style={styles.heading}>{label}</Text>
+              <ThemedText style={[styles.pressableText, styles.placeholderText]}>
+                {placeholder || "Välj datum"}
+              </ThemedText>
+            </TouchableOpacity>
+          )
+        )}
       </View>
     </>
   );
@@ -109,10 +158,6 @@ export const DatepickerField: React.FC<DateFieldProps> = ({
 const createStyles = (colorScheme: string = 'light') => {
   const colors = colorScheme === 'dark' ? Colors.dark : Colors.light;
   return StyleSheet.create({
-    formControl: {
-      backgroundColor: colors.backgroundAlt,
-      paddingVertical: 5,
-    },
     formControlLabel: {
       flex: 1,
       flexDirection: 'row',
@@ -124,18 +169,20 @@ const createStyles = (colorScheme: string = 'light') => {
       fontWeight: '600',
       color: colors.text,
     },
-    pressable: {
-      padding: 4,
-    },
     pressableText: {
       color: colors.text,
       fontSize: 14,
+      padding: 12,
+    },
+    placeholderText: {
+      color: colorScheme === 'dark' ? '#6b7280' : '#9ca3af',
+      fontStyle: 'italic',
     },
     datepickerField: {
-      flex: 1,
       flexDirection: 'row',
-      justifyContent: 'space-between',
+      justifyContent: 'flex-end',
       alignItems: 'center',
+      gap: 8,
     },
     datepicker: {
       width: Dimensions.get('window').width,
