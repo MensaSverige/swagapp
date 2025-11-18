@@ -26,10 +26,6 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       supportsTablet: true,
       bundleIdentifier: "se.mensasverige",
       appleTeamId: "295VA2R9VV",
-      config: {
-        // Provide Google Maps API key for iOS (react-native-maps)
-        googleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY,
-      },
       infoPlist: {
         ITSAppUsesNonExemptEncryption: false,
         NSLocationAlwaysAndWhenInUseUsageDescription:
@@ -52,12 +48,6 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       // },
       edgeToEdgeEnabled: true,
       package: "se.mensasverige",
-      config: {
-        // Provide Google Maps API key for Android (react-native-maps)
-        googleMaps: {
-          apiKey: process.env.GOOGLE_MAPS_API_KEY,
-        },
-      },
     },
     web: {
       bundler: "metro",
@@ -73,6 +63,13 @@ export default ({ config }: ConfigContext): ExpoConfig => {
           imageWidth: 200,
           resizeMode: "contain",
           backgroundColor: "#ffffff",
+        },
+      ],
+      [
+        "react-native-maps",
+        {
+          androidGoogleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY,
+          iOSGoogleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY,
         },
       ],
       "expo-secure-store",
