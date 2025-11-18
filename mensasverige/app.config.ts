@@ -73,6 +73,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
         },
       ],
       "expo-secure-store",
+      ["./expo-plugins/withGradleProperties"],
     ],
     experiments: {
       typedRoutes: true,
