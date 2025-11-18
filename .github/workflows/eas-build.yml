@@ -1,10 +1,10 @@
-name: Local Build
+name: EAS Build
 
 on:
   workflow_call:
     inputs:
       profile:
-        description: "Build profile"
+        description: "EAS build profile"
         type: string
         required: false
         default: "preview"
@@ -21,7 +21,7 @@ on:
   workflow_dispatch:
     inputs:
       profile:
-        description: "Build profile"
+        description: "EAS build profile"
         type: choice
         options:
           - development
@@ -43,97 +43,8 @@ on:
         default: false
 
 jobs:
-  android-build:
-    if: ${{ inputs.platform == 'android' || inputs.platform == 'all' }}
+  build:
     runs-on: ubuntu-latest
-    env:
-      EXPO_PUBLIC_API_URL: ${{ vars.EXPO_PUBLIC_API_URL }}
-      EXPO_PUBLIC_API_VERSION: ${{ vars.EXPO_PUBLIC_API_VERSION }}
-      GOOGLE_MAPS_API_KEY: ${{ secrets.GOOGLE_MAPS_API_KEY }}
-    defaults:
-      run:
-        working-directory: ./mensasverige
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
-      - name: Setup Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '17'
-
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-
-      - name: Install dependencies
-        run: |
-          yarn 
-          
-      - name: Setup Expo CLI
-        run: |
-          npm install -g @expo/cli
-
-      # - name: Clear cache if requested
-      #   if: ${{ inputs.clear_cache == true }}
-      #   run: |
-      #     yarn cache clean
-      #     npx expo install --fix
-
-      - name: Set build parameters
-        id: build-params
-        run: |
-          PROFILE="${{ inputs.profile || 'preview' }}"
-          CLEAR_CACHE="${{ inputs.clear_cache || 'false' }}"
-          
-          echo "profile=$PROFILE" >> $GITHUB_OUTPUT
-          echo "platform=android" >> $GITHUB_OUTPUT
-          echo "clear_cache=$CLEAR_CACHE" >> $GITHUB_OUTPUT
-          
-          echo "Building profile: $PROFILE"
-          echo "Platform: android"
-          echo "Clear cache: $CLEAR_CACHE"
-
-      - name: Build Android
-        env:
-          GOOGLE_MAPS_API_KEY: ${{ secrets.GOOGLE_MAPS_API_KEY }}
-          APP_ENV: ${{ inputs.profile || 'preview' }}
-        run: |
-          npx expo prebuild --platform android
-
-      - name: Build Android APK
-        run: |
-          cd android
-          ./gradlew assembleRelease
-
-      - name: Upload Android APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: android-apk-${{ inputs.profile || 'preview' }}
-          path: mensasverige/android/app/build/outputs/apk/release/*.apk
-
-      - name: Build Summary
-        if: always()
-        run: |
-          echo "## Android Build Summary" >> $GITHUB_STEP_SUMMARY
-          echo "- **Profile**: ${{ inputs.profile || 'preview' }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Platform**: android" >> $GITHUB_STEP_SUMMARY
-          echo "- **Clear Cache**: ${{ inputs.clear_cache || 'false' }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Branch**: ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
-
-  ios-build:
-    if: ${{ inputs.platform == 'ios' || inputs.platform == 'all' }}
-    runs-on: macos-latest
-    env:
-      EXPO_PUBLIC_API_URL: ${{ vars.EXPO_PUBLIC_API_URL }}
-      EXPO_PUBLIC_API_VERSION: ${{ vars.EXPO_PUBLIC_API_VERSION }}
-      GOOGLE_MAPS_API_KEY: ${{ secrets.GOOGLE_MAPS_API_KEY }}
     defaults:
       run:
         working-directory: ./mensasverige
@@ -150,93 +61,65 @@ jobs:
         run: |
           yarn 
           
-      - name: Setup Expo CLI
-        run: |
-          npm install -g @expo/cli
-
-      - name: Clear cache if requested
-        if: ${{ inputs.clear_cache == true }}
-        run: |
-          yarn cache clean
-          npx expo install --fix
+      - name: Setup EAS
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
 
       - name: Set build parameters
         id: build-params
         run: |
           PROFILE="${{ inputs.profile || 'preview' }}"
+          PLATFORM="${{ inputs.platform || 'all' }}"
           CLEAR_CACHE="${{ inputs.clear_cache || 'false' }}"
           
+          # Auto-submit only for production profile
+          if [[ "$PROFILE" == "production" ]]; then
+            AUTO_SUBMIT="true"
+          else
+            AUTO_SUBMIT="false"
+          fi
+          
           echo "profile=$PROFILE" >> $GITHUB_OUTPUT
-          echo "platform=ios" >> $GITHUB_OUTPUT
+          echo "platform=$PLATFORM" >> $GITHUB_OUTPUT
           echo "clear_cache=$CLEAR_CACHE" >> $GITHUB_OUTPUT
+          echo "auto_submit=$AUTO_SUBMIT" >> $GITHUB_OUTPUT
           
           echo "Building profile: $PROFILE"
-          echo "Platform: ios"
+          echo "Platform: $PLATFORM"
           echo "Clear cache: $CLEAR_CACHE"
+          echo "Auto submit: $AUTO_SUBMIT"
 
-      - name: Pre-build iOS
+      - name: Build with EAS
         env:
-          GOOGLE_MAPS_API_KEY: ${{ secrets.GOOGLE_MAPS_API_KEY }}
-          APP_ENV: ${{ inputs.profile || 'preview' }}
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
         run: |
-          npx expo prebuild --platform ios --clear
-
-      - name: Create export options plist
-        run: |
-          cat > ios/exportOptions.plist << EOF
-          <?xml version="1.0" encoding="UTF-8"?>
-          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-          <plist version="1.0">
-          <dict>
-            <key>method</key>
-            <string>development</string>
-            <key>teamID</key>
-            <string>\${{ secrets.APPLE_TEAM_ID }}</string>
-            <key>uploadBitcode</key>
-            <false/>
-            <key>compileBitcode</key>
-            <false/>
-          </dict>
-          </plist>
-          EOF
-
-      - name: Build iOS
-        run: |
-          cd ios
-          xcodebuild -workspace *.xcworkspace -scheme * -configuration Release -destination generic/platform=iOS -archivePath build/App.xcarchive archive
-          xcodebuild -exportArchive -archivePath build/App.xcarchive -exportPath build/ -exportOptionsPlist exportOptions.plist
-
-      - name: Create export options plist
-        run: |
-          cat > ios/exportOptions.plist << EOF
-          <?xml version="1.0" encoding="UTF-8"?>
-          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-          <plist version="1.0">
-          <dict>
-            <key>method</key>
-            <string>development</string>
-            <key>teamID</key>
-            <string>\${{ secrets.APPLE_TEAM_ID }}</string>
-            <key>uploadBitcode</key>
-            <false/>
-            <key>compileBitcode</key>
-            <false/>
-          </dict>
-          </plist>
-          EOF
-
-      - name: Upload iOS App
-        uses: actions/upload-artifact@v4
-        with:
-          name: ios-app-${{ inputs.profile || 'preview' }}
-          path: mensasverige/ios/build/*.ipa
+          BUILD_ARGS="--profile ${{ steps.build-params.outputs.profile }}"
+          
+          if [[ "${{ steps.build-params.outputs.platform }}" != "all" ]]; then
+            BUILD_ARGS="$BUILD_ARGS --platform ${{ steps.build-params.outputs.platform }}"
+          fi
+          
+          if [[ "${{ steps.build-params.outputs.clear_cache }}" == "true" ]]; then
+            BUILD_ARGS="$BUILD_ARGS --clear-cache"
+          fi
+          
+          if [[ "${{ steps.build-params.outputs.auto_submit }}" == "true" ]]; then
+            BUILD_ARGS="$BUILD_ARGS --auto-submit"
+          fi
+          
+          echo "Running: npx eas build $BUILD_ARGS --local"
+          npx eas build $BUILD_ARGS --local
 
       - name: Build Summary
         if: always()
         run: |
-          echo "## iOS Build Summary" >> $GITHUB_STEP_SUMMARY
-          echo "- **Profile**: ${{ inputs.profile || 'preview' }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Platform**: ios" >> $GITHUB_STEP_SUMMARY
-          echo "- **Clear Cache**: ${{ inputs.clear_cache || 'false' }}" >> $GITHUB_STEP_SUMMARY
+          echo "## Build Summary" >> $GITHUB_STEP_SUMMARY
+          echo "- **Profile**: ${{ steps.build-params.outputs.profile }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Platform**: ${{ steps.build-params.outputs.platform }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Clear Cache**: ${{ steps.build-params.outputs.clear_cache }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Auto Submit**: ${{ steps.build-params.outputs.auto_submit }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Branch**: ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+
