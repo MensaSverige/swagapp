@@ -7,9 +7,13 @@ import {
   Alert,
   useColorScheme
 } from 'react-native';
+import * as Linking from 'expo-linking';
 import { useEvents } from '../hooks/useEvents';
 import { createEventCardStyles } from '../styles/eventCardStyles';
 import { ExtendedEvent } from '../types/eventUtilTypes';
+import { ThemedText } from '@/components/ThemedText';
+import useStore from '@/features/common/store/store';
+
 
 interface AttendingComponentProps {
   event: ExtendedEvent;
@@ -21,6 +25,7 @@ const AttendingComponent: React.FC<AttendingComponentProps> = ({
   onAttendanceChange
 }) => {
   const [changingAttendance, setChangingAttendance] = useState<boolean>(false);
+  const { eventInfo } = useStore();
   const { attendEventById, unattendEventById } = useEvents();
   const colorScheme = useColorScheme();
   const eventCardStyles = createEventCardStyles(colorScheme ?? 'light');
@@ -65,6 +70,25 @@ const AttendingComponent: React.FC<AttendingComponentProps> = ({
 
   if (!event.isFutureEvent) {
     return null;
+  }
+
+  if (event.price && event.price > 0) {
+    const siteUrl = eventInfo?.siteUrl;
+    return (
+      <ThemedText type="defaultSemiBold">
+        Detta är ett betalt evenemang. Anmälan och betalning sker via{' '}
+        {siteUrl ? (
+          <ThemedText
+            type='link'
+            onPress={() => Linking.openURL(siteUrl)}
+          >
+            bokningssidan
+          </ThemedText>
+        ) : (
+          'bokningssidan'
+        )}.
+      </ThemedText>
+    )
   }
 
   if (event.attending) {
