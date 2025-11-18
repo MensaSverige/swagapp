@@ -336,46 +336,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v1/events/{event_id}/book": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Book Event
-         * @description Book an external event. Only works for external events (event_id must start with 'ext').
-         */
-        post: operations["book_event_v1_events__event_id__book_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/events/{event_id}/unbook": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Unbook Event
-         * @description Unbook an external event. Only works for external events (event_id must start with 'ext').
-         */
-        post: operations["unbook_event_v1_events__event_id__unbook_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/v1/user_events/mine": {
         parameters: {
             query?: never;
@@ -558,6 +518,57 @@ export interface paths {
         };
         /** Getlocationbyadress */
         get: operations["getLocationByAdress_v1_geolocation__address__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/dev/clear_user_events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Clear User Events */
+        get: operations["clear_user_events_v1_dev_clear_user_events_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/dev/create_dummy_user_event": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Dummy User Event */
+        get: operations["get_dummy_user_event_v1_dev_create_dummy_user_event_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/dev/create_my_dummy_event": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Create My Dummy Event */
+        get: operations["create_my_dummy_event_v1_dev_create_my_dummy_event_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1024,11 +1035,6 @@ export interface components {
          * @enum {string}
          */
         ShowLocation: "NO_ONE" | "ALL_MEMBERS_WHO_SHARE_THEIR_OWN_LOCATION" | "ALL_MEMBERS" | "EVERYONE_WHO_SHARE_THEIR_OWN_LOCATION" | "EVERYONE";
-        /** StatusResponseWithMessage */
-        StatusResponseWithMessage: {
-            /** Message */
-            message: string;
-        };
         /** Tag */
         Tag: {
             /** Code */
@@ -1259,6 +1265,11 @@ export interface components {
             msg: string;
             /** Error Type */
             type: string;
+        };
+        /** StatusResponseWithMessage */
+        v1__dev__user_events_dev_api__StatusResponseWithMessage: {
+            /** Message */
+            message: string;
         };
     };
     responses: never;
@@ -1883,68 +1894,6 @@ export interface operations {
             };
         };
     };
-    book_event_v1_events__event_id__book_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                event_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    unbook_event_v1_events__event_id__unbook_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                event_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     get_events_i_own_v1_user_events_mine_get: {
         parameters: {
             query?: never;
@@ -2141,7 +2090,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["StatusResponseWithMessage"];
+                    "application/json": components["schemas"]["v1__dev__user_events_dev_api__StatusResponseWithMessage"];
                 };
             };
             /** @description Validation Error */
@@ -2203,7 +2152,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["StatusResponseWithMessage"];
+                    "application/json": components["schemas"]["v1__dev__user_events_dev_api__StatusResponseWithMessage"];
                 };
             };
             /** @description Validation Error */
@@ -2235,7 +2184,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["StatusResponseWithMessage"];
+                    "application/json": components["schemas"]["v1__dev__user_events_dev_api__StatusResponseWithMessage"];
                 };
             };
             /** @description Validation Error */
@@ -2266,7 +2215,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["StatusResponseWithMessage"];
+                    "application/json": components["schemas"]["v1__dev__user_events_dev_api__StatusResponseWithMessage"];
                 };
             };
             /** @description Validation Error */
@@ -2297,7 +2246,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["StatusResponseWithMessage"];
+                    "application/json": components["schemas"]["v1__dev__user_events_dev_api__StatusResponseWithMessage"];
                 };
             };
             /** @description Validation Error */
@@ -2338,6 +2287,66 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    clear_user_events_v1_dev_clear_user_events_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["v1__dev__user_events_dev_api__StatusResponseWithMessage"];
+                };
+            };
+        };
+    };
+    get_dummy_user_event_v1_dev_create_dummy_user_event_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExtendedUserEvent"];
+                };
+            };
+        };
+    };
+    create_my_dummy_event_v1_dev_create_my_dummy_event_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExtendedUserEvent"];
                 };
             };
         };
