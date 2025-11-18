@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { View, TextInput, TouchableOpacity, StyleSheet, useColorScheme } from 'react-native';
-import { Colors } from '@/constants/Colors';
+import { View, TextInput, TouchableOpacity, useColorScheme } from 'react-native';
 import { EditButton } from './EditButton';
 import { ThemedText } from '@/components/ThemedText';
+import { createEditableFieldStyles } from '../styles/editableFieldStyles';
 
 interface EditableFieldProps {
   label: string;
@@ -31,7 +31,7 @@ const EditableField: React.FC<EditableFieldProps> = ({
 }) => {
   const [editValue, setEditValue] = useState(value);
   const colorScheme = useColorScheme();
-  const styles = createStyles(colorScheme);
+  const styles = createEditableFieldStyles(colorScheme);
 
   const handleSave = () => {
     onSave(editValue);
@@ -51,7 +51,6 @@ const EditableField: React.FC<EditableFieldProps> = ({
             value={editValue}
             onChangeText={(text) => {
               setEditValue(text);
-              // Use onValueChange if provided (doesn't close edit mode), otherwise use onSave
               if (onValueChange) {
                 onValueChange(text);
               } else {
@@ -59,7 +58,6 @@ const EditableField: React.FC<EditableFieldProps> = ({
               }
             }}
             placeholder={placeholder}
-            placeholderTextColor={Colors[colorScheme ?? 'light'].blueGray400}
             multiline={multiline}
             keyboardType={keyboardType}
             onBlur={handleSave}
@@ -84,53 +82,5 @@ const EditableField: React.FC<EditableFieldProps> = ({
     </TouchableOpacity>
   );
 };
-
-const createStyles = (colorScheme: 'light' | 'dark' | null | undefined) => StyleSheet.create({
-  editableField: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  editableInput: {
-    flex: 1,
-    fontSize: 14,
-    color: Colors[colorScheme ?? 'light'].text,
-    borderWidth: 1,
-    borderColor: Colors[colorScheme ?? 'light'].background200,
-    borderRadius: 6,
-    paddingHorizontal: 8,
-    paddingVertical: 8,
-    backgroundColor: Colors[colorScheme ?? 'light'].background,
-    marginRight: 8,
-  },
-  editableInputLarge: {
-    minHeight: 80,
-    textAlignVertical: 'top',
-  },
-  placeholderText: {
-    color: Colors[colorScheme ?? 'light'].blueGray400,
-    fontStyle: 'italic',
-  },
-  editModeContainer: {
-    marginBottom: 8,
-  },
-  fieldLabel: {
-    fontSize: 12,
-    fontWeight: '600',
-    marginBottom: 4,
-  },
-  doneButton: {
-    backgroundColor: Colors[colorScheme ?? 'light'].teal600,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 6,
-    marginLeft: 8,
-  },
-  doneButtonText: {
-    color: Colors[colorScheme ?? 'light'].white,
-    fontSize: 12,
-    fontWeight: '600',
-  },
-});
 
 export default EditableField;

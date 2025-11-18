@@ -73,7 +73,6 @@ const UserSettings: React.FC = () => {
         return user.settings.show_location !== 'NO_ONE';
     });
     const [editingField, setEditingField] = useState<string | null>(null);
-    
     // Temporary slider values to prevent saving on every change
     const [tempLocationInterval, setTempLocationInterval] = useState<number>(
         formState?.settings?.location_update_interval_seconds || DEFAULT_SETTINGS.LOCATION_UPDATE_INTERVAL_SECONDS
@@ -232,7 +231,7 @@ const UserSettings: React.FC = () => {
                 </View>
 
                 <SectionHeader title="Kontaktuppgifter" />
-                
+
                 <View style={styles.contactInfoContainer}>
                     <ThemedText style={styles.emailText}>
                         {user?.contact_info?.email || ''}
@@ -272,10 +271,10 @@ const UserSettings: React.FC = () => {
                     />
                 </View>
 
-                <SectionHeader 
-                    title="Vad andra kan se om dig" 
+                <SectionHeader
+                    title="Vad andra kan se om dig"
                     subtitle="Styr vilken information andra deltagare kan se i dina kontaktuppgifter"
-                /> 
+                />
 
                 <PrivacyInputGroup
                     title="E-postadress"
@@ -295,7 +294,7 @@ const UserSettings: React.FC = () => {
                             },
                         });
                     }}
-                /> 
+                />
 
                 <PrivacyInputGroup
                     title="Telefonnummer"
@@ -371,8 +370,8 @@ const UserSettings: React.FC = () => {
                     </View>
                 </PrivacyInputGroup>
 
-                <SectionHeader 
-                    title="Appinställningar" 
+                <SectionHeader
+                    title="Appinställningar"
                     subtitle="Konfigurera uppdateringsintervall och appbeteende"
                 />
 
@@ -518,8 +517,9 @@ const UserSettings: React.FC = () => {
     );
 };
 
-const createStyles = (colorScheme: string) =>
-    StyleSheet.create({
+const createStyles = (colorScheme: string) => {
+    const colors = colorScheme === 'dark' ? Colors.dark : Colors.light;
+    return StyleSheet.create({
         container: {
             flex: 1,
             padding: 20
@@ -535,7 +535,6 @@ const createStyles = (colorScheme: string) =>
             textAlign: 'center',
             marginTop: 4,
         },
-        
         // Section Headers
         sectionHeader: {
             marginTop: 24,
@@ -561,13 +560,7 @@ const createStyles = (colorScheme: string) =>
         group: {
             paddingVertical: 20,
             marginBottom: 12,
-            //shadowColor: '#000',
-            // shadowOffset: {
-            //     width: 0,
-            //     height: 1,
-            // },
             shadowOpacity: 0.05,
-            //shadowRadius: 3,
             elevation: 1,
         },
         expandableGroup: {
@@ -708,5 +701,6 @@ const createStyles = (colorScheme: string) =>
             justifyContent: 'space-between',
         },
     });
+};
 
 export default UserSettings;

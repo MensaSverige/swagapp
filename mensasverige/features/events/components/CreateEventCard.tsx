@@ -7,6 +7,7 @@ import {
   Alert,
   ActivityIndicator,
   KeyboardAvoidingView,
+  useColorScheme,
 } from 'react-native';
 import { Event } from '../../../api_schema/types';
 import { DatepickerField } from '../../common/components/DatepickerField';
@@ -16,7 +17,8 @@ import EventDateTimeDisplay from './EventDateTimeDisplay';
 import { Colors } from '@/constants/Colors';
 import useStore from '@/features/common/store/store';
 import EventMapField from './EventMapField';
-import { eventCardStyles, editableFieldStyles } from '../styles/eventCardStyles';
+import { createEventCardStyles } from '../styles/eventCardStyles';
+import { createEditableFieldStyles } from '../../common/styles/editableFieldStyles';
 import { ExtendedEvent } from '../types/eventUtilTypes';
 import { createExtendedEvent } from '../utils/eventUtils';
 
@@ -36,6 +38,9 @@ const CreateEventCard: React.FC<CreateEventCardProps> = ({
   existingEvent,
 }) => {
   const { user } = useStore();
+  const colorScheme = useColorScheme();
+  const eventCardStyles = createEventCardStyles(colorScheme ?? 'light');
+  const editableFieldStyles = createEditableFieldStyles(colorScheme ?? 'light');
   const [editingField, setEditingField] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
 
@@ -212,7 +217,7 @@ const CreateEventCard: React.FC<CreateEventCardProps> = ({
         {/* Event Name */}
 
         <EditableField
-          label="Event Name"
+          label="Aktivitetens namn *"
           value={eventData.name || ''}
           placeholder="Aktivitetens namn *"
           isEditing={editingField === 'name'}
@@ -222,7 +227,6 @@ const CreateEventCard: React.FC<CreateEventCardProps> = ({
             setEditingField(null);
           }}
           onValueChange={(value) => setEventData(prev => ({ ...prev, name: value }))}
-          style={editableFieldStyles.editableInputHeading}
         />
 
         {/* Location */}
@@ -258,7 +262,7 @@ const CreateEventCard: React.FC<CreateEventCardProps> = ({
         />
 
         <EditableField
-          label="Max Attendees"
+          label="Max antal personer"
           value={eventData.maxAttendees?.toString() || ''}
           placeholder="Max antal personer"
           isEditing={editingField === 'maxAttendees'}
@@ -274,7 +278,7 @@ const CreateEventCard: React.FC<CreateEventCardProps> = ({
         <View style={eventCardStyles.divider} />
 
         <EditableField
-          label="Description"
+          label="Beskrivning av aktiviteten"
           value={eventData.description || ''}
           placeholder="Beskrivning av aktiviteten"
           isEditing={editingField === 'description'}
