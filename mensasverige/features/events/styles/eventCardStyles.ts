@@ -107,6 +107,23 @@ export const createEventCardStyles = (colorScheme: string) => {
     marginTop: 4,
   },
 
+  // UserList styles
+  userListContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  userListItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
+    paddingHorizontal: 5,
+    minWidth: 0,
+  },
+  userListAvatar: {
+    marginLeft: 6,
+  },
+
   // Admin styles
   adminRow: {
     flexDirection: 'row',
