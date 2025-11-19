@@ -69,7 +69,7 @@ export const ActivitiesList: React.FC<ActivitiesListProps> = ({ initialFilter })
     useEffect(() => {
         const newFilter = parseURLParams(params);
         setEventFilter(newFilter);
-    }, [params.attending, params.bookable, params.official, params.categories, params.dateFrom, params.dateTo, parseURLParams]);
+    }, [params.attendingOrHost, params.bookable, params.official, params.categories, params.dateFrom, params.dateTo, parseURLParams]);
 
     const { 
         filteredGroupedEvents, 
@@ -79,7 +79,7 @@ export const ActivitiesList: React.FC<ActivitiesListProps> = ({ initialFilter })
         refetch,
         setCurrentEventFilter,
         addOrUpdateEvent
-    } = useEvents({ enableAutoRefresh: true, refreshIntervalMs: 60000 });
+    } = useEvents({ enableAutoRefresh: true});
 
     useEffect(() => {
         setCurrentEventFilter(eventFilter);
@@ -94,6 +94,8 @@ export const ActivitiesList: React.FC<ActivitiesListProps> = ({ initialFilter })
 
     const handleApplyFilter = useCallback((filter: EventFilterOptions) => {
         setEventFilter(filter);
+        // Clear URL params when filter is edited from the filter UI
+        router.replace('/(tabs)/(events)');
     }, []);
 
     const handleRefresh = useCallback(async () => {
