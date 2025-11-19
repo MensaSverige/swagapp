@@ -26,6 +26,7 @@ import CategoryBadge from './badges/CategoryBadge';
 import { createEventCardStyles } from '../styles/eventCardStyles';
 import { ExtendedEvent } from '../types/eventUtilTypes';
 import { getUsersByIds } from '../../account/services/userService';
+import UserList from './UserList';
 
 
 const handleLinkPress = (url: string) => {
@@ -226,55 +227,12 @@ const UnifiedEventCard: React.FC<{
 
       {/* Admin Users */}
       {currentEvent.admin && currentEvent.admin.length > 0 && (
-        <View style={eventCardStyles.hostsSection}>
-          <Text style={eventCardStyles.subHeading}>
-            {currentEvent.admin.length === 1 ? 'Värd' : 'Värdar'}
-          </Text>
-          {adminUsers.length > 0 ? (
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-              {adminUsers.map((admin, index) => (
-                <View key={admin.userId || index} style={{ 
-                  flexDirection: 'row', 
-                  alignItems: 'center', 
-                  marginBottom: 4,
-                  marginRight: 20,
-                  minWidth: 0,
-                }}>
-                  <UserAvatar
-                    avatarSize="sm"
-                    firstName={admin.firstName}
-                    lastName={admin.lastName}
-                    avatar_url={admin.avatar_url ?? ""}
-                    onlineStatus="offline"
-                  />
-                  <View style={{ marginLeft: 6 }}>
-                    <Text style={eventCardStyles.detailText}>
-                      {admin.firstName} {admin.lastName}
-                    </Text>
-                  </View>
-                </View>
-              ))}
-            </View>
-          ) : (
-            currentEvent.hosts && currentEvent.hosts.length > 0 && (
-              <View style={eventCardStyles.hostsSection}>
-                {currentEvent.hosts.map((host, index) => (
-                  <ThemedText key={index}>{host.fullName || `Värd ${index + 1}`}</ThemedText>
-                ))}
-              </View>
-            )
-          )}
-        </View>
+        <UserList
+          users={adminUsers}
+          title={currentEvent.admin.length === 1 ? 'Värd' : 'Värdar'}
+          fallbackData={currentEvent.hosts}
+        />
       )}
-
-
-      {/* Queue */}
-      {/* {currentEvent.queue && currentEvent.queue.length > 0 && (
-            <View style={styles.queueSection}>
-              <Text style={styles.subHeading}>Kö ({currentEvent.queue.length})</Text>
-              <Text style={styles.detailText}>Du står i kö för detta evenemang</Text>
-            </View>
-          )} */}
 
       <View style={eventCardStyles.divider} />
       <ThemedText>
@@ -300,48 +258,20 @@ const UnifiedEventCard: React.FC<{
 
         if (!hasAttendees || currentEvent.showAttendees === 'none') return null;
 
-        return (
-          <View style={eventCardStyles.attendeesSection}>
-            <ThemedText type="defaultSemiBold">
-              Deltagare
-            </ThemedText>
-            {currentEvent.showAttendees === 'all' && currentEvent.attendees && (
-              <View>
-                {attendeeUsers.length > 0 ? (
-                  // Show first 10 attendees with user avatars
-                  attendeeUsers.slice(0, 10).map((attendee, index) => (
-                    <View key={attendee.userId || index} style={eventCardStyles.adminRow}>
-                      <UserAvatar
-                        avatarSize="sm"
-                        firstName={attendee.firstName}
-                        lastName={attendee.lastName}
-                        avatar_url={attendee.avatar_url ?? ""}
-                        onlineStatus="offline"
-                      />
-                      <View style={eventCardStyles.adminInfo}>
-                        <Text style={eventCardStyles.detailText}>
-                          {attendee.firstName} {attendee.lastName}
-                        </Text>
-                      </View>
-                    </View>
-                  ))
-                ) : (
-                  // Fallback to showing IDs if user data couldn't be fetched
-                  currentEvent.attendees.slice(0, 10).map((attendee, index) => (
-                    <ThemedText key={index} style={eventCardStyles.attendeeItem}>
-                      {`${attendee.userId}`}
-                    </ThemedText>
-                  ))
-                )}
-                {currentEvent.attendees.length > 10 && (
-                  <ThemedText style={eventCardStyles.attendeesMoreText}>
-                    ... och {currentEvent.attendees.length - 10} till
-                  </ThemedText>
-                )}
-              </View>
-            )}
-          </View>
-        );
+        if (currentEvent.showAttendees === 'all' && currentEvent.attendees) {
+          return (
+            <UserList
+              users={attendeeUsers}
+              title="Deltagare"
+              fallbackData={currentEvent.attendees.map(attendee => ({
+                userId: attendee.userId,
+                fullName: `${attendee.userId}`
+              }))}
+            />
+          );
+        }
+
+        return null;
       })()}
 
       {user && (
