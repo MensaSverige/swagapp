@@ -108,6 +108,18 @@ jobs:
           echo "Running: npx eas build $BUILD_ARGS --local"
           npx eas build $BUILD_ARGS --local
 
+      - name: Upload build artifact
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-artifact-${{ steps.build-params.outputs.profile }}-${{ steps.build-params.outputs.platform }}-${{ github.run_number }}
+          path: |
+            ./build-*.aab
+            ./build-*.apk
+            ./build-*.ipa
+          retention-days: 30
+          if-no-files-found: warn
+
       - name: Submit to EAS
         if: success()
         env:
@@ -131,7 +143,6 @@ jobs:
           
           echo "Running: npx eas build:submit $SUBMIT_ARGS --non-interactive"
           npx eas build:submit $SUBMIT_ARGS --non-interactive    
-
 
       # - name: Upload to EAS
       #   if: success()
