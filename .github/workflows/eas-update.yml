@@ -71,4 +71,4 @@ jobs:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
         run: |
           echo "Publishing update for all platforms..."
-          npx eas update --environment production --channel ${{ inputs.environment }} --branch ${{ inputs.environment }} --message "${{ steps.update-message.outputs.message }}"
+          npx eas update --environment ${{ inputs.environment }} --channel ${{ inputs.environment }} --message "${{ steps.update-message.outputs.message }}"
