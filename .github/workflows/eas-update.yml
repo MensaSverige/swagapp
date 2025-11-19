@@ -69,7 +69,9 @@ jobs:
       - name: EAS Update
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-          APP_ENV: ${{ inputs.environment }}
+          APP_ENV: ${{ inputs.environment || 'preview' }}
         run: |
           echo "Publishing update for all platforms..."
-          npx eas update --environment ${{ inputs.environment }} --channel ${{ inputs.environment }} --message "${{ steps.update-message.outputs.message }}"
+          echo "Environment: ${{ inputs.environment || 'preview' }}"
+          echo "APP_ENV: ${APP_ENV}"
+          npx eas update --channel ${{ inputs.environment || 'preview' }} --message "${{ steps.update-message.outputs.message }}"

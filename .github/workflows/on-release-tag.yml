@@ -58,7 +58,7 @@ jobs:
     uses: ./.github/workflows/eas-update.yml
     with:
       release_tag: ${{ needs.prepare-data.outputs.GIT_TAG }}
-      channel: production
+      environment: production
       platform: android
     secrets: inherit
 
