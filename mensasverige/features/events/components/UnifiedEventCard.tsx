@@ -4,7 +4,8 @@ import {
   Image,
   TouchableOpacity,
   Linking,
-  useColorScheme
+  useColorScheme,
+  Text,
 } from 'react-native';
 import { Event, User } from '../../../api_schema/types';
 import { ThemedText } from '@/components/ThemedText';
@@ -35,6 +36,7 @@ const UnifiedEventCard: React.FC<{
   event: ExtendedEvent;
 }> = ({ event }) => {
   const [adminUsers, setAdminUsers] = useState<User[]>([]);
+  const [attendeeUsers, setAttendeeUsers] = useState<User[]>([]);
   const colorScheme = useColorScheme();
   const eventCardStyles = createEventCardStyles(colorScheme ?? 'light');
   const user = useStore(state => state.user);
@@ -47,26 +49,48 @@ const UnifiedEventCard: React.FC<{
   }, [allEvents, event]);
 
   // Fetch admin users when admin IDs change
-  // useEffect(() => {
-  //   const fetchAdminUsers = async () => {
-  //     if (currentEvent.admin && currentEvent.admin.length > 0) {
-  //       try {
-  //         // Convert number IDs to strings for the getUsersByIds function
-  //         const adminIdStrings = currentEvent.admin.map(id => id.toString());
-  //         const adminUsers = await getUsersByIds(adminIdStrings);
-  //         // Handle the case where getUsersByIds returns undefined in catch block
-  //         setAdminUsers(adminUsers || []);
-  //       } catch (error) {
-  //         console.error('Error fetching admin users:', error);
-  //         setAdminUsers([]);
-  //       }
-  //     } else {
-  //       setAdminUsers([]);
-  //     }
-  //   };
+  useEffect(() => {
+    const fetchAdminUsers = async () => {
+      if (currentEvent.admin && currentEvent.admin.length > 0) {
+        try {
+          // Convert number IDs to strings for the getUsersByIds function
+          const adminIdStrings = currentEvent.admin.map(id => id.toString());
+          const adminUsers = await getUsersByIds(adminIdStrings);
+          // Handle the case where getUsersByIds returns undefined in catch block
+          setAdminUsers(adminUsers || []);
+        } catch (error) {
+          console.error('Error fetching admin users:', error);
+          setAdminUsers([]);
+        }
+      } else {
+        setAdminUsers([]);
+      }
+    };
 
-  //   fetchAdminUsers();
-  // }, [currentEvent.admin]);
+    fetchAdminUsers();
+  }, [currentEvent.admin]);
+
+  // Fetch attendee users when attendees change
+  useEffect(() => {
+    const fetchAttendeeUsers = async () => {
+      if (currentEvent.attendees && currentEvent.attendees.length > 0) {
+        try {
+          // Convert attendee IDs to strings for the getUsersByIds function
+          const attendeeIdStrings = currentEvent.attendees.map(attendee => attendee.userId.toString());
+          const attendeeUsers = await getUsersByIds(attendeeIdStrings);
+          // Handle the case where getUsersByIds returns undefined in catch block
+          setAttendeeUsers(attendeeUsers || []);
+        } catch (error) {
+          console.error('Error fetching attendee users:', error);
+          setAttendeeUsers([]);
+        }
+      } else {
+        setAttendeeUsers([]);
+      }
+    };
+
+    fetchAttendeeUsers();
+  }, [currentEvent.attendees]);
 
   // Force re-render when attendance changes
   const [refreshKey, setRefreshKey] = useState(0);
@@ -200,12 +224,46 @@ const UnifiedEventCard: React.FC<{
         </View>
       )}
 
-      {currentEvent.hosts && currentEvent.hosts.length > 0 && (
+      {/* Admin Users */}
+      {currentEvent.admin && currentEvent.admin.length > 0 && (
         <View style={eventCardStyles.hostsSection}>
-          <ThemedText type="defaultSemiBold">Värdar</ThemedText>
-          {currentEvent.hosts.map((host, index) => (
-            <ThemedText key={index}>{host.fullName || `Värd ${index + 1}`}</ThemedText>
-          ))}
+          <Text style={eventCardStyles.subHeading}>
+            {currentEvent.admin.length === 1 ? 'Värd' : 'Värdar'}
+          </Text>
+          {adminUsers.length > 0 ? (
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+              {adminUsers.map((admin, index) => (
+                <View key={admin.userId || index} style={{ 
+                  flexDirection: 'row', 
+                  alignItems: 'center', 
+                  marginBottom: 4,
+                  marginRight: 20,
+                  minWidth: 0,
+                }}>
+                  <UserAvatar
+                    avatarSize="sm"
+                    firstName={admin.firstName}
+                    lastName={admin.lastName}
+                    avatar_url={admin.avatar_url ?? ""}
+                    onlineStatus="offline"
+                  />
+                  <View style={{ marginLeft: 6 }}>
+                    <Text style={eventCardStyles.detailText}>
+                      {admin.firstName} {admin.lastName}
+                    </Text>
+                  </View>
+                </View>
+              ))}
+            </View>
+          ) : (
+            currentEvent.hosts && currentEvent.hosts.length > 0 && (
+              <View style={eventCardStyles.hostsSection}>
+                {currentEvent.hosts.map((host, index) => (
+                  <ThemedText key={index}>{host.fullName || `Värd ${index + 1}`}</ThemedText>
+                ))}
+              </View>
+            )
+          )}
         </View>
       )}
 
@@ -234,35 +292,7 @@ const UnifiedEventCard: React.FC<{
         ))}
       </View>
 
-      {/* Admin Users */}
-      {/* {currentEvent.admin && currentEvent.admin.length > 0 && (
-            <View style={eventCardStyles.hostsSection}>
-              <Text style={eventCardStyles.subHeading}>Administratörer</Text>
-              {adminUsers.length > 0 ? (
-                adminUsers.map((admin, index) => (
-                  <View key={admin.userId || index} style={eventCardStyles.adminRow}>
-                    <UserAvatar
-                      avatarSize="sm"
-                      firstName={admin.firstName}
-                      lastName={admin.lastName}
-                      avatar_url={admin.avatar_url ?? ""}
-                      onlineStatus="offline"
-                    />
-                    <View style={eventCardStyles.adminInfo}>
-                      <Text style={eventCardStyles.detailText}>
-                        {admin.firstName} {admin.lastName}
-                      </Text>
-                    </View>
-                  </View>
-                ))
-              ) : (
-                // Fallback to showing IDs if user data couldn't be fetched
-                currentEvent.admin.map((adminId, index) => (
-                  <Text key={index} style={eventCardStyles.detailText}>{adminId}</Text>
-                ))
-              )}
-            </View>
-          )}  */}
+
       {/* Attendees (if allowed to show) */}
       {(() => {
         const currentCount = getCurrentAttendeeCount();
@@ -277,11 +307,32 @@ const UnifiedEventCard: React.FC<{
             </ThemedText>
             {currentEvent.showAttendees === 'all' && currentEvent.attendees && (
               <View>
-                {currentEvent.attendees.slice(0, 10).map((attendee, index) => (
-                  <ThemedText key={index} style={eventCardStyles.attendeeItem}>
-                    {`${attendee.userId}`}
-                  </ThemedText>
-                ))}
+                {attendeeUsers.length > 0 ? (
+                  // Show first 10 attendees with user avatars
+                  attendeeUsers.slice(0, 10).map((attendee, index) => (
+                    <View key={attendee.userId || index} style={eventCardStyles.adminRow}>
+                      <UserAvatar
+                        avatarSize="sm"
+                        firstName={attendee.firstName}
+                        lastName={attendee.lastName}
+                        avatar_url={attendee.avatar_url ?? ""}
+                        onlineStatus="offline"
+                      />
+                      <View style={eventCardStyles.adminInfo}>
+                        <Text style={eventCardStyles.detailText}>
+                          {attendee.firstName} {attendee.lastName}
+                        </Text>
+                      </View>
+                    </View>
+                  ))
+                ) : (
+                  // Fallback to showing IDs if user data couldn't be fetched
+                  currentEvent.attendees.slice(0, 10).map((attendee, index) => (
+                    <ThemedText key={index} style={eventCardStyles.attendeeItem}>
+                      {`${attendee.userId}`}
+                    </ThemedText>
+                  ))
+                )}
                 {currentEvent.attendees.length > 10 && (
                   <ThemedText style={eventCardStyles.attendeesMoreText}>
                     ... och {currentEvent.attendees.length - 10} till
