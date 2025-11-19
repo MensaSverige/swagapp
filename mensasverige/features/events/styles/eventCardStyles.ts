@@ -117,7 +117,7 @@ export const createEventCardStyles = (colorScheme: string) => {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 4,
-    paddingHorizontal: 5,
+    marginRight: 10,
     minWidth: 0,
   },
   userListAvatar: {
