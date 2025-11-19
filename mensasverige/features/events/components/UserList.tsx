@@ -33,15 +33,9 @@ const UserList: React.FC<UserListProps> = ({
         {title}
       </Text>
       {users.length > 0 ? (
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
+        <View style={eventCardStyles.userListContainer}>
           {users.slice(0, maxDisplayCount).map((user, index) => (
-            <View key={user.userId || index} style={{ 
-              flexDirection: 'row', 
-              alignItems: 'center', 
-              marginBottom: 4,
-              paddingHorizontal: 5,
-              minWidth: 0,
-            }}>
+            <View key={user.userId || index} style={eventCardStyles.userListItem}>
               <UserAvatar
                 avatarSize="sm"
                 firstName={user.firstName}
@@ -49,7 +43,7 @@ const UserList: React.FC<UserListProps> = ({
                 avatar_url={user.avatar_url ?? ""}
                 onlineStatus="offline"
               />
-              <View style={{ marginLeft: 6 }}>
+              <View style={eventCardStyles.userListAvatar}>
                 <Text style={eventCardStyles.detailText}>
                   {user.firstName} {user.lastName}
                 </Text>
