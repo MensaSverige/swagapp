@@ -1,4 +1,4 @@
-name: EAS Build
+name: EAS Local Build and Submit
 
 on:
   workflow_call:
@@ -108,43 +108,26 @@ jobs:
           echo "Running: npx eas build $BUILD_ARGS --local"
           npx eas build $BUILD_ARGS --local
 
+      - name: Find build artifacts
+        if: success()
+        run: |
+          echo "Searching for build artifacts..."
+          find . -name "*.aab" -o -name "*.apk" -o -name "*.ipa" | head -10
+          ls -la
+
       - name: Upload build artifact
         if: success()
         uses: actions/upload-artifact@v4
         with:
           name: build-artifact-${{ steps.build-params.outputs.profile }}-${{ steps.build-params.outputs.platform }}-${{ github.run_number }}
           path: |
-            ./build-*.aab
-            ./build-*.apk
-            ./build-*.ipa
+            build-*.aab
+            build-*.apk
+            build-*.ipa
           retention-days: 30
           if-no-files-found: warn
 
-      - name: Submit to EAS
-        if: success()
-        env:
-          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-        run: |
-          # Find the build artifact
-          BUILD_ARTIFACT=$(find . -name "build-*.aab" -o -name "build-*.apk" | head -1)
-          
-          if [[ -z "$BUILD_ARTIFACT" ]]; then
-            echo "No build artifact found"
-            exit 1
-          fi
-          
-          echo "Found build artifact: $BUILD_ARTIFACT"
-          
-          SUBMIT_ARGS="--path $BUILD_ARTIFACT --profile ${{ steps.build-params.outputs.profile }}"
-          
-          if [[ "${{ steps.build-params.outputs.platform }}" != "all" ]]; then
-            SUBMIT_ARGS="$SUBMIT_ARGS --platform ${{ steps.build-params.outputs.platform }}"
-          fi
-          
-          echo "Running: npx eas build:submit $SUBMIT_ARGS --non-interactive"
-          npx eas build:submit $SUBMIT_ARGS --non-interactive    
-
-      # - name: Upload to EAS
+      # - name: Submit to EAS
       #   if: success()
       #   env:
       #     EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
@@ -159,14 +142,38 @@ jobs:
           
       #     echo "Found build artifact: $BUILD_ARTIFACT"
           
-      #     UPLOAD_ARGS="--build-path $BUILD_ARTIFACT --profile ${{ steps.build-params.outputs.profile }}"
+      #     SUBMIT_ARGS="--path $BUILD_ARTIFACT --profile ${{ steps.build-params.outputs.profile }}"
           
       #     if [[ "${{ steps.build-params.outputs.platform }}" != "all" ]]; then
-      #       UPLOAD_ARGS="$UPLOAD_ARGS --platform ${{ steps.build-params.outputs.platform }}"
+      #       SUBMIT_ARGS="$SUBMIT_ARGS --platform ${{ steps.build-params.outputs.platform }}"
       #     fi
           
-      #     echo "Running: npx eas upload $UPLOAD_ARGS"
-      #     npx eas upload $UPLOAD_ARGS       
+      #     echo "Running: npx eas build:submit $SUBMIT_ARGS --non-interactive"
+      #     npx eas build:submit $SUBMIT_ARGS --non-interactive    
+
+      - name: Upload to EAS
+        if: success()
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: |
+          # Find the build artifact
+          BUILD_ARTIFACT=$(find . -name "build-*.aab" -o -name "build-*.apk" | head -1)
+          
+          if [[ -z "$BUILD_ARTIFACT" ]]; then
+            echo "No build artifact found"
+            exit 1
+          fi
+          
+          echo "Found build artifact: $BUILD_ARTIFACT"
+          
+          UPLOAD_ARGS="--build-path $BUILD_ARTIFACT --profile ${{ steps.build-params.outputs.profile }}"
+          
+          if [[ "${{ steps.build-params.outputs.platform }}" != "all" ]]; then
+            UPLOAD_ARGS="$UPLOAD_ARGS --platform ${{ steps.build-params.outputs.platform }}"
+          fi
+          
+          echo "Running: npx eas upload $UPLOAD_ARGS"
+          npx eas upload $UPLOAD_ARGS       
 
       # - name: Submit to App Stores
       #   if: success() && steps.build-params.outputs.auto_submit == 'true'
