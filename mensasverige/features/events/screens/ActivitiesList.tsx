@@ -94,8 +94,6 @@ export const ActivitiesList: React.FC<ActivitiesListProps> = ({ initialFilter })
 
     const handleApplyFilter = useCallback((filter: EventFilterOptions) => {
         setEventFilter(filter);
-        // Clear URL params when filter is edited from the filter UI
-        router.replace('/(tabs)/(events)');
     }, []);
 
     const handleRefresh = useCallback(async () => {
