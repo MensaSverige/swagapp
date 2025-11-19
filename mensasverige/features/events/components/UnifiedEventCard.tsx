@@ -252,7 +252,7 @@ const UnifiedEventCard: React.FC<{
 
 
       {/* Attendees (if allowed to show) */}
-      {(() => {
+      {/* {(() => {
         const currentCount = getCurrentAttendeeCount();
         const hasAttendees = currentCount > 0;
 
@@ -272,7 +272,7 @@ const UnifiedEventCard: React.FC<{
         }
 
         return null;
-      })()}
+      })()} */}
 
       {user && (
         <AttendingComponent
