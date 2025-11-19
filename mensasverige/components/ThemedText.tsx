@@ -6,7 +6,7 @@ import { Colors } from '@/constants/Colors';
 export type ThemedTextProps = TextProps & {
   lightColor?: string;
   darkColor?: string;
-  type?: 'default' | 'title' | 'defaultSemiBold' | 'subtitle' | 'link' | 'sectionHeader';
+  type?: 'default' | 'title' | 'defaultSemiBold' | 'subtitle' | 'link' | 'sectionHeader' | 'instruction';
 };
 
 export function ThemedText({
@@ -28,6 +28,7 @@ export function ThemedText({
         type === 'subtitle' ? styles.subtitle : undefined,
         type === 'link' ? styles.link : undefined,
         type === 'sectionHeader' ? styles.sectionHeader : undefined,
+        type === 'instruction' ? styles.instruction : undefined,
         style,
       ]}
       {...rest}
@@ -62,6 +63,11 @@ const styles = StyleSheet.create({
   link: {
     lineHeight: 30,
     fontSize: 16,
-    color: '#0a7ea4',
+    color: Colors.primary300,
+  },
+  instruction: {
+    fontSize: 14,
+    lineHeight: 20,
+    color: Colors.text600,
   },
 });
