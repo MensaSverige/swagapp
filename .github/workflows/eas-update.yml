@@ -7,8 +7,8 @@ on:
         description: "Release tag for the update message"
         type: string
         required: false
-      channel:
-        description: "EAS update channel"
+      environment:
+        description: "EAS update environment"
         type: string
         required: false
         default: "preview"
@@ -20,8 +20,8 @@ on:
         description: "Release tag for the update message"
         type: string
         required: false
-      channel:
-        description: "EAS update channel"
+      environment:
+        description: "EAS update environment"
         type: choice
         options:
           - preview
@@ -64,10 +64,8 @@ jobs:
             else
               echo "message=Update - $(git log -1 --pretty=%s)" >> $GITHUB_OUTPUT
             fi
-            echo "channel=${{ inputs.channel }}" >> $GITHUB_OUTPUT
           else
             echo "message=Update from main branch - $(git log -1 --pretty=%s)" >> $GITHUB_OUTPUT
-            echo "channel=${{ env.DEFAULT_CHANNEL }}" >> $GITHUB_OUTPUT
           fi
         
       - name: EAS Update
@@ -75,4 +73,4 @@ jobs:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
         run: |
           echo "Publishing update for all platforms..."
-          npx eas update --channel ${{ steps.update-message.outputs.channel }} --message "${{ steps.update-message.outputs.message }}"
+          npx eas update --environment ${{ inputs.environment }} --channel ${{ inputs.environment }} --branch ${{ inputs.environment }} --message "${{ steps.update-message.outputs.message }}"
