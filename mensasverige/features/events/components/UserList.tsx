@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, useColorScheme } from 'react-native';
+import { View, useColorScheme } from 'react-native';
 import { User } from '../../../api_schema/types';
 import { ThemedText } from '@/components/ThemedText';
 import UserAvatar from '@/features/map/components/UserAvatar';
@@ -29,9 +29,9 @@ const UserList: React.FC<UserListProps> = ({
 
   return (
     <View style={eventCardStyles.hostsSection}>
-      <Text style={eventCardStyles.subHeading}>
+      <ThemedText type='subtitle'>
         {title}
-      </Text>
+      </ThemedText>
       {users.length > 0 ? (
         <View style={eventCardStyles.userListContainer}>
           {users.slice(0, maxDisplayCount).map((user, index) => (
@@ -44,9 +44,9 @@ const UserList: React.FC<UserListProps> = ({
                 onlineStatus="offline"
               />
               <View style={eventCardStyles.userListAvatar}>
-                <Text style={eventCardStyles.detailText}>
+                <ThemedText>
                   {user.firstName} {user.lastName}
-                </Text>
+                </ThemedText>
               </View>
             </View>
           ))}
