@@ -123,7 +123,7 @@ jobs:
           
           echo "Found build artifact: $BUILD_ARTIFACT"
           
-          UPLOAD_ARGS="--path $BUILD_ARTIFACT"
+          UPLOAD_ARGS="--build-path $BUILD_ARTIFACT"
           
           if [[ "${{ steps.build-params.outputs.platform }}" != "all" ]]; then
             UPLOAD_ARGS="$UPLOAD_ARGS --platform ${{ steps.build-params.outputs.platform }}"
