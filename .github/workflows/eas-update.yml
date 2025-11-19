@@ -34,8 +34,6 @@ jobs:
     defaults:
       run:
         working-directory: ./mensasverige
-    env:
-      DEFAULT_CHANNEL: preview
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -73,4 +71,4 @@ jobs:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
         run: |
           echo "Publishing update for all platforms..."
-          npx eas update --environment ${{ inputs.environment }} --channel ${{ inputs.environment }} --branch ${{ inputs.environment }} --message "${{ steps.update-message.outputs.message }}"
+          npx eas update --environment production --channel ${{ inputs.environment }} --branch ${{ inputs.environment }} --message "${{ steps.update-message.outputs.message }}"
