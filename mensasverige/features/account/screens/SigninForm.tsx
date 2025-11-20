@@ -142,8 +142,6 @@ export const SigninForm = () => {
           autoCapitalize="none"
           autoCorrect={false}
           value={username}
-          autoCapitalize="none"
-          autoCorrect={false}
           onChangeText={setUsername}
         />
         <ThemedInput
@@ -152,8 +150,6 @@ export const SigninForm = () => {
           autoCapitalize="none"
           autoCorrect={false}
           value={password}
-          autoCapitalize="none"
-          autoCorrect={false}
           onChangeText={setPassword}
           secureTextEntry={!passwordVisible}
           showPasswordToggle={true}
