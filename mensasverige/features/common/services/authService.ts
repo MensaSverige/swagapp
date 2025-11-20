@@ -29,6 +29,26 @@
 import { AuthRequest, AuthResponse, HTTPValidationError, ValidationError } from '../../../api_schema/types';
 import axios, { AxiosResponse } from 'axios';
 import * as SecureStore from "expo-secure-store";
+import { Platform } from 'react-native';
+
+// Minimal in-memory cache so web does not depend on SecureStore (which is not truly supported there).
+// This keeps tokens only for the lifetime of the page (refresh clears them), improving Web compatibility
+// while leaving native behaviour unchanged.
+let inMemoryAccessToken: string | null = null;
+let inMemoryRefreshToken: string | null = null;
+let inMemoryAccessTokenExpiry: Date | null = null;
+
+const setMemoryTokens = (accessToken: string, refreshToken: string, accessTokenExpiry: Date) => {
+    inMemoryAccessToken = accessToken;
+    inMemoryRefreshToken = refreshToken;
+    inMemoryAccessTokenExpiry = accessTokenExpiry;
+};
+
+const getMemoryTokens = () => ({
+    accessToken: inMemoryAccessToken,
+    refreshToken: inMemoryRefreshToken,
+    accessTokenExpiry: inMemoryAccessTokenExpiry,
+});
 
 const authClient = axios.create({
     baseURL: `${process.env.EXPO_PUBLIC_API_URL}/${process.env.EXPO_PUBLIC_API_VERSION}`,
@@ -80,30 +100,48 @@ export const authenticate = async (username: string, password: string, testMode:
 }
 
 export const getOrRefreshAccessToken = async (): Promise<string> => {
-        const accessToken = await SecureStore.getItemAsync('accessToken');
-        const accessTokenExpiry = await SecureStore.getItemAsync('accessTokenExpiry');
-        const refreshToken = await SecureStore.getItemAsync('refreshToken');
+    // Prefer in-memory (always for web, fallback for native after first successful login)
+    const memory = getMemoryTokens();
+    let accessToken = memory.accessToken;
+    let accessTokenExpiry = memory.accessTokenExpiry;
+    let refreshToken = memory.refreshToken;
+
+    // On native, still attempt to hydrate from SecureStore if memory is empty.
+    if (!accessToken && Platform.OS !== 'web') {
+        accessToken = await SecureStore.getItemAsync('accessToken');
+        const expiryStr = await SecureStore.getItemAsync('accessTokenExpiry');
+        refreshToken = await SecureStore.getItemAsync('refreshToken');
+        accessTokenExpiry = expiryStr ? new Date(expiryStr) : null;
+        if (accessToken && refreshToken && accessTokenExpiry) {
+            setMemoryTokens(accessToken, refreshToken, accessTokenExpiry);
+        }
+    }
 
     if (accessToken && accessTokenExpiry && refreshToken) {
-        const tokenExpiryDate = new Date(accessTokenExpiry);
-        if (new Date() > new Date(tokenExpiryDate.getTime() - 60 * 1000)) { // refresh 60 seconds before expiry
+        // Refresh 60s before expiry
+        const refreshThreshold = new Date(accessTokenExpiry.getTime() - 60 * 1000);
+        if (new Date() > refreshThreshold) {
             try {
                 const newAccessToken = await refreshAccessToken(refreshToken);
                 console.log('Refreshed access token');
                 return newAccessToken;
             } catch (error) {
                 console.log('Error refreshing access token', error);
-                const authResponse = await attemptLoginWithStoredCredentials();
-                if (authResponse) {
-                    return authResponse.accessToken;
+                // Native only: attempt stored credential login if available.
+                if (Platform.OS !== 'web') {
+                    try {
+                        const authResponse = await attemptLoginWithStoredCredentials();
+                        if (authResponse) {
+                            return authResponse.accessToken;
+                        }
+                    } catch {}
                 }
             }
-        } else {
-            return accessToken;
         }
+        return accessToken;
     }
     return Promise.reject('No access token');
-}
+};
 
 export const refreshAccessToken = async (refreshToken: string): Promise<string> => {
     return authClient
@@ -111,15 +149,13 @@ export const refreshAccessToken = async (refreshToken: string): Promise<string> 
         .then((response: AxiosResponse) => {
             if (response.status === 200) {
                 const data: AuthResponse = response.data;
-                console.log('Auth response', data);
-                storeAndValidateAuthResponse(data);
+                console.log('Auth response (refresh)', data);
+                storeAndValidateAuthResponse(data); // updates memory + secure storage
                 return data.accessToken;
             }
-            else {
-                return Promise.reject('Failed to refresh access token');
-            }
-        })
-}
+            return Promise.reject('Failed to refresh access token');
+        });
+};
 
 export const attemptLoginWithStoredCredentials = async (): Promise<AuthResponse> => {
     // First try to login with stored credentials for member users
@@ -166,17 +202,26 @@ export const resetUserCredentials = async (): Promise<boolean> => {
 
 export const storeAndValidateAuthResponse = async (authresponse: AuthResponse): Promise<AuthResponse> => {
     if (authresponse.accessToken && authresponse.refreshToken && authresponse.accessTokenExpiry && authresponse.user) {
-        await SecureStore.setItemAsync('accessToken', authresponse.accessToken);
-        await SecureStore.setItemAsync('accessTokenExpiry', authresponse.accessTokenExpiry.toString());
-        await SecureStore.setItemAsync('refreshToken', authresponse.refreshToken);
+        // Update memory first for immediate availability (critical on web)
+        const expiryDate = new Date(authresponse.accessTokenExpiry);
+        setMemoryTokens(authresponse.accessToken, authresponse.refreshToken, expiryDate);
+
+        // Native persistence (avoid relying on SecureStore for web)
+        if (Platform.OS !== 'web') {
+            try {
+                await SecureStore.setItemAsync('accessToken', authresponse.accessToken);
+                await SecureStore.setItemAsync('accessTokenExpiry', expiryDate.toISOString());
+                await SecureStore.setItemAsync('refreshToken', authresponse.refreshToken);
+            } catch (e) {
+                console.log('SecureStore write failed', e);
+            }
+        }
 
         if (authresponse.user !== null && authresponse.user !== undefined) {
             return authresponse;
-        } else {
-            throw new Error('User data is undefined');
         }
-    } else {
-        console.error('Received null accessToken or refreshToken');
-        throw new Error('Något gick fel. Försök igen senare.');
+        throw new Error('User data is undefined');
     }
-}
+    console.error('Received null accessToken or refreshToken');
+    throw new Error('Något gick fel. Försök igen senare.');
+};
