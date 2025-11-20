@@ -148,30 +148,30 @@ export const SigninForm = () => {
         </ThemedText>
       </View>
 
-      <ThemedInput
-        editable={!isLoading}
-        placeholder="Email"
-        keyboardType="email-address"
-        autoCapitalize="none"
-        autoCorrect={false}
-        value={username}
-        onChangeText={setUsername}
-      />
-      <ThemedInput
-        editable={!isLoading}
-        placeholder="Lösenord"
-        autoCapitalize="none"
-        autoCorrect={false}
-        value={password}
-        onChangeText={setPassword}
-        secureTextEntry={!passwordVisible}
-        showPasswordToggle={true}
-        onPasswordToggle={() => setPasswordVisible(!passwordVisible)}
-      />
-      <SaveCredentialsCheckBox
-        value={saveCredentials}
-        onValueChange={setSaveCredentials}
-      />
+        <ThemedInput
+          editable={!isLoading}
+          placeholder="Email"
+          keyboardType="email-address"
+          autoCapitalize="none"
+          autoCorrect={false}
+          value={username}
+          onChangeText={setUsername}
+        />
+        <ThemedInput
+          editable={!isLoading}
+          placeholder="Lösenord"
+          autoCapitalize="none"
+          autoCorrect={false}
+          value={password}
+          onChangeText={setPassword}
+          secureTextEntry={!passwordVisible}
+          showPasswordToggle={true}
+          onPasswordToggle={() => setPasswordVisible(!passwordVisible)}
+        />
+        <SaveCredentialsCheckBox
+          value={saveCredentials}
+          onValueChange={setSaveCredentials}
+        />
 
       <ThemedButton
         text={loginAsNonMember ? "Logga in som medföljande" : "Logga in"}
