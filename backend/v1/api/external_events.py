@@ -12,11 +12,6 @@ from v1.env_constants import LOGINM_SEED, URL_MEMBER_API
 
 events_v1 = APIRouter(prefix="/v1")
 
-# @events_v1.get("/events")
-# async def get_all_events():
-#     #todo fetch all events
-
-
 @events_v1.get("/external_root")
 async def get_external_root_data() -> ExternalRoot:
     root = get_stored_external_root()
@@ -26,25 +21,36 @@ async def get_external_root_data() -> ExternalRoot:
 @events_v1.get("/external_events/booked")
 async def get_events_for_user(current_user: User = Depends(
     validate_request)) -> List[ExternalEventDetails]:
-    bookedEvents: ExternalEvent = get_booked_external_events(
-        current_user['userId'])
-    logging.info(
-        f"Booked events for user {current_user['userId']}: {bookedEvents}")
-
-    event_ids = [event.eventId for event in bookedEvents]
-    events = get_stored_external_event_details(event_ids, current_user['userId'])
-
-    return events
-
+    from datetime import datetime
+    
+    dummy_event = ExternalEventDetails(
+        eventId=999999,
+        eventDate=datetime.strptime("2025-11-23 10:00", "%Y-%m-%d %H:%M"),
+        startTime="10:00",
+        endTime="11:00",
+        titel="Uppdatera appen",
+        description="Den här versionen av appen är utdaterad. Vänligen uppdatera till den senaste versionen för att fortsätta använda alla funktioner.\n\n<a href=\"https://play.google.com/store/apps/details?id=se.mensasverige\">Android - Google Play</a>\n\n<a href=\"https://apps.apple.com/se/app/mensa-sverige/id6755419896\">iOS - App Store</a>",
+        speaker="System",
+        location="App Store",
+        isFree=True,
+        price=0,
+        isLimited=False,
+        stock=0,
+        showBooked=False,
+        booked=0,
+        eventUrl=""
+    )
+    
+    return [dummy_event]
 
 @events_v1.get("/external_events/news")
 async def get_news_from_event_site(current_user: User = Depends(
     validate_request)) -> List[EventSiteNews]:
-    news: EventSiteNews = get_event_site_news(False)
+    static_news = EventSiteNews(
+        description="Den här versionen av appen är utdaterad. Vänligen uppdatera till den senaste versionen för att fortsätta använda alla funktioner.\n\n<a href=\"https://play.google.com/store/apps/details?id=se.mensasverige\">Android - Google Play</a>\n\n<a href=\"https://apps.apple.com/se/app/mensa-sverige/id6755419896\">iOS - App Store</a>",
+        date="2025-11-21",
+        title="Uppdatera appen"
+    )
 
-    return news
+    return [static_news]
 
-
-# @events_v1.get("/events/detail/{event_id}")
-# async def get_event_detail(event_id: int):
-#     # todo: fetch event details from event API
