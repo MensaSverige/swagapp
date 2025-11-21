@@ -3,7 +3,7 @@ import { uploadAvatar } from '../../account/services/userService';
 import { User } from '../../../api_schema/types';
 
 const options: ImagePicker.ImagePickerOptions = {
-  mediaTypes: ImagePicker.MediaTypeOptions.Images,
+  mediaTypes: ['images'],
   quality: 1,
   aspect: [1, 1],
   allowsEditing: true,
