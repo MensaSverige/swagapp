@@ -19,6 +19,7 @@
     "@react-navigation/elements": "^2.3.8",
     "@react-navigation/native": "^7.1.6",
     "@types/node": "^24.10.1",
+    "@vis.gl/react-google-maps": "^1.7.1",
     "axios": "^1.11.0",
     "expo": "54.0.23",
     "expo-blur": "~15.0.7",
