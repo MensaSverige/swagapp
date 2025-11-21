@@ -9,12 +9,12 @@ export default ({ config }: ConfigContext): ExpoConfig => {
   const baseConfig: ExpoConfig = {
     name: "mensasverige",
     slug: "mensasverige",
-    version: "2.0.0",
+    version: "2.0.1",
     runtimeVersion: {
       policy: "appVersion",
     },
     updates: {
-      fallbackToCacheTimeout: 0,
+      fallbackToCacheTimeout: 2000,
       url: "https://u.expo.dev/ba3ea4a2-fed7-462a-b42c-70092682f176",
     },
     orientation: "portrait",
@@ -73,6 +73,12 @@ export default ({ config }: ConfigContext): ExpoConfig => {
         },
       ],
       "expo-secure-store",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "The app accesses your photos to let you share them with your friends."
+        }
+      ]
     ],
     experiments: {
       typedRoutes: true,
