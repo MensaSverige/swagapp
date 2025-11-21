@@ -53,14 +53,14 @@ jobs:
   #     platform: all
   #     clear_cache: true
 
-  publish-eas-update:
-    needs: prepare-data
-    uses: ./.github/workflows/eas-update.yml
-    with:
-      release_tag: ${{ needs.prepare-data.outputs.GIT_TAG }}
-      environment: production
-      platform: android
-    secrets: inherit
+  # publish-eas-update:
+  #   needs: prepare-data
+  #   uses: ./.github/workflows/eas-update.yml
+  #   with:
+  #     release_tag: ${{ needs.prepare-data.outputs.GIT_TAG }}
+  #     environment: production
+  #     platform: android
+  #   secrets: inherit
 
   publish-website:
     needs: prepare-data
