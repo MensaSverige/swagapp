@@ -47,9 +47,11 @@ async def get_events_for_user(current_user: User = Depends(
 async def get_news_from_event_site(current_user: User = Depends(
     validate_request)) -> List[EventSiteNews]:
     static_news = EventSiteNews(
-        description="Den här versionen av appen är utdaterad. Vänligen uppdatera till den senaste versionen för att fortsätta använda alla funktioner.\n\n<a href=\"https://play.google.com/store/apps/details?id=se.mensasverige\">Android - Google Play</a>\n\n<a href=\"https://apps.apple.com/se/app/mensa-sverige/id6755419896\">iOS - App Store</a>",
         date="2025-11-21",
-        title="Uppdatera appen"
+        time="12:00",
+        title="Uppdatera appen",
+        description="Den här versionen av appen är utdaterad. Vänligen uppdatera till den senaste versionen för att fortsätta använda alla funktioner.\n\n<a href=\"https://play.google.com/store/apps/details?id=se.mensasverige\">Android - Google Play</a>\n\n<a href=\"https://apps.apple.com/se/app/mensa-sverige/id6755419896\">iOS - App Store</a>",
+        by="System"
     )
 
     return [static_news]
