@@ -10,6 +10,8 @@ import OfficialEventIcon from '../../../components/icons/OfficialEventIcon';
 import { DatepickerField } from '@/features/common/components/inputs/DatepickerField';
 import { EventFilterOptions } from '../store/EventsSlice';
 import { ThemedText } from '@/components/ThemedText';
+import { useBottomTabOverflow } from '@/components/ui/TabBarBackground';
+
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -33,6 +35,9 @@ export const EventFilter: React.FC<EventFilterProps> = ({
   // Animation values
   const slideAnim = useRef(new Animated.Value(screenWidth * 0.75)).current;
   const overlayOpacity = useRef(new Animated.Value(0)).current;
+
+  // Bottom margin for iOS
+  const bottom = useBottomTabOverflow();
 
   useEffect(() => {
     setLocalFilter(currentFilter);
@@ -147,7 +152,10 @@ export const EventFilter: React.FC<EventFilterProps> = ({
   }
 
   return (
-    <View style={styles.container}>
+    <View style={{
+      ...styles.container,
+      paddingBottom: bottom,
+    }}>
       {/* Overlay - respects safe area */}
       <Animated.View style={[styles.overlay, { 
         opacity: overlayOpacity,
@@ -164,7 +172,7 @@ export const EventFilter: React.FC<EventFilterProps> = ({
           { 
             transform: [{ translateX: slideAnim }],
             top: insets.top, // Start below the safe area
-            bottom: 0 // End above the safe area
+            bottom: bottom,
           }
         ]}
       >
