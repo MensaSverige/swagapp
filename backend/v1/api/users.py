@@ -1,5 +1,6 @@
 import logging
 import shutil
+import os
 from typing import List
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from v1.utilities import convert_to_tz_aware, get_current_time
@@ -90,11 +91,28 @@ async def update_user_avatar(file: UploadFile = File(...),
                              current_user: User = Depends(validate_request)):
     logging.info(f"file: {file.filename}")
     logging.info(f"current_user: {current_user}")
-    file_path = f"/static/img/{current_user['userId']}_avatar.jpg"
+    current_timestamp = int(get_current_time().timestamp())
+    file_path = f"/static/img/{current_user['userId']}_avatar_{current_timestamp}.jpg"
     logging.info(f"file_path: {file_path}")
     with open(file_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
 
     current_user['avatar_url'] = file_path
+
+    # Keep the three most recent avatar files, delete older ones
+    keep = [file_path]
+    user_id_prefix = f"/static/img/{current_user['userId']}_avatar_"
+    for fname in os.listdir("/static/img/"):
+        if fname.startswith(f"{current_user['userId']}_avatar_"):
+            full_path = os.path.join("/static/img/", fname)
+            if full_path != file_path:
+                keep.append(full_path)
+    keep = sorted(keep, reverse=True)[:3]  # Keep only the three most recent
+    for fname in os.listdir("/static/img/"):
+        if fname.startswith(f"{current_user['userId']}_avatar_"):
+            full_path = os.path.join("/static/img/", fname)
+            if full_path not in keep:
+                os.remove(full_path)
+                logging.info(f"Deleted old avatar file: {full_path}")
 
     return update_user(current_user['userId'], current_user)
