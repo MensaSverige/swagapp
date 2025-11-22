@@ -1,0 +1,61 @@
+{
+  "configVersion": 0,
+  "apple": {
+    "version": "2.0.1",
+    "copyright": "Mensa Sverige © 2024",
+    "release": {
+      "automaticRelease": true
+    },
+    "info": {
+      "sv": {
+        "description": "Håll koll på evenemangen och se var folk håller hus under Mensas årsträffar, halvårsträffar och allt däremellan.",
+        "keywords": [
+          "swag",
+          "årsträff",
+          "halvårsträff",
+          "mensa"
+        ],
+        "releaseNotes": "${RELEASE_NOTES}",
+        "marketingUrl": "https://app.events.mensa.se",
+        "supportUrl": "https://app.events.mensa.se",
+        "title": "Mensa Sverige",
+        "subtitle": "Eventapp för medlemmar",
+        "privacyPolicyUrl": "https://app.events.mensa.se/privacy.html"
+      }
+    },
+    "categories": [
+      "UTILITIES",
+      "SOCIAL_NETWORKING"
+    ],
+    "advisory": {
+      "ageRatingOverride": "NONE",
+      "alcoholTobaccoOrDrugUseOrReferences": "NONE",
+      "contests": "NONE",
+      "gambling": false,
+      "gamblingSimulated": "NONE",
+      "horrorOrFearThemes": "NONE",
+      "kidsAgeBand": null,
+      "koreaAgeRatingOverride": "NONE",
+      "lootBox": false,
+      "matureOrSuggestiveThemes": "NONE",
+      "medicalOrTreatmentInformation": "NONE",
+      "profanityOrCrudeHumor": "NONE",
+      "sexualContentGraphicAndNudity": "NONE",
+      "sexualContentOrNudity": "NONE",
+      "unrestrictedWebAccess": false,
+      "violenceCartoonOrFantasy": "NONE",
+      "violenceRealistic": "NONE",
+      "violenceRealisticProlongedGraphicOrSadistic": "NONE"
+    },
+    "review": {
+      "firstName": "Mikael",
+      "lastName": "Grön",
+      "email": "app-ansvarig@mensa.se",
+      "phone": "+46735399395",
+      "demoUsername": "apple@apple.com",
+      "demoPassword": "${REVIEW_PASSWORD}",
+      "demoRequired": true,
+      "notes": "The apple@apple.com user is a full member. Use the main login form."
+    }
+  }
+}

@@ -9,6 +9,9 @@ dist/
 web-build/
 expo-env.d.ts
 
+# Files generated from templates
+store.config.json
+
 # Native
 .kotlin/
 *.orig.*
