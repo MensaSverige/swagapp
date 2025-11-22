@@ -80,9 +80,9 @@ export const authenticate = async (username: string, password: string, testMode:
 }
 
 export const getOrRefreshAccessToken = async (): Promise<string> => {
-        const accessToken = await SecureStore.getItemAsync('accessToken');
-        const accessTokenExpiry = await SecureStore.getItemAsync('accessTokenExpiry');
-        const refreshToken = await SecureStore.getItemAsync('refreshToken');
+    const accessToken = await SecureStore.getItemAsync('accessToken');
+    const accessTokenExpiry = await SecureStore.getItemAsync('accessTokenExpiry');
+    const refreshToken = await SecureStore.getItemAsync('refreshToken');
 
     if (accessToken && accessTokenExpiry && refreshToken) {
         const tokenExpiryDate = new Date(accessTokenExpiry);
