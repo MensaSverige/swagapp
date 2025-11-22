@@ -215,14 +215,16 @@ const UserSettings: React.FC = () => {
                     <ProfileEditAvatar
                         colorMode="light"
                         onError={(error) => {
-                            showToast('Fel vid sparande', 'error');
+                            console.error('Profile avatar error:', error);
+                            // Show the specific error message from the upload process
+                            showToast(error || 'Ett fel inträffade vid bilduppladdning', 'error');
                         }}
                         onSaved={() => {
-                            console.log('saved received');
-                            showToast('Sparat!', 'success');
+                            console.log('Avatar saved successfully');
+                            showToast('Profilbild sparad!', 'success');
                         }}
                         onSaving={() => {
-                            showToast('Sparar...', 'info');
+                            showToast('Sparar profilbild...', 'info');
                         }}
                     />
                     <ThemedText type="title" style={styles.profileName}>

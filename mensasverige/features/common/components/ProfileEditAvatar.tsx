@@ -28,20 +28,22 @@ const ProfileEditAvatar: React.FC<ProfileEditAvatarProps> = ({colorMode, onError
         onSaving();
         selectImage().then((response) => {
             if (!response) {
+                // User cancelled - this is not an error
                 return;
             }
             if (response?.avatar_url) {
                 setUser({ ...user, avatar_url: response.avatar_url });
                 setImageKey(Date.now()); // Update the image key
-                console.log('saved');
+                console.log('Avatar saved successfully');
                 onSaved();
             }
             else {
-                onError('Could not save image');
+                onError('Kunde inte spara bilden. Försök igen.');
             }    
         })
         .catch((error) => {
-            onError(error.message || error);
+            console.error('Image selection/upload error:', error);
+            onError(error?.message || error || 'Ett fel inträffade vid bilduppladdning.');
         })
     };
 
