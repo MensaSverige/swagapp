@@ -25,6 +25,7 @@ import { FilterButton } from '../components/FilterButton';
 import { Colors } from '@/constants/Colors';
 import { useLocalSearchParams, router } from 'expo-router';
 import { ExtendedEvent } from '../types/eventUtilTypes';
+import { useBottomTabOverflow } from '@/components/ui/TabBarBackground';
 
 interface ActivitiesListProps {
     initialFilter?: EventFilterOptions;
@@ -34,6 +35,7 @@ export const ActivitiesList: React.FC<ActivitiesListProps> = ({ initialFilter })
     const { user } = useStore();
     const colorScheme = useColorScheme();
     const styles = createStyles(colorScheme ?? 'light');
+    const bottom = useBottomTabOverflow();
     const [selectedEvent, setSelectedEvent] = useState<ExtendedEvent | null>(null);
     const [didInitiallyScroll, setDidInitiallyScroll] = useState(false);
     const [showFilter, setShowFilter] = useState(false);
@@ -156,7 +158,7 @@ export const ActivitiesList: React.FC<ActivitiesListProps> = ({ initialFilter })
                     />
                 </View>
             </View>
-            
+            coordinate
             {showSuccessMessage && (
                 <View style={styles.successMessage}>
                     <MaterialIcons name="check-circle" size={20} color="#059669" />
@@ -166,6 +168,7 @@ export const ActivitiesList: React.FC<ActivitiesListProps> = ({ initialFilter })
             <ScrollView 
                 ref={scrollViewRef} 
                 style={styles.scrollContainer}
+                
                 refreshControl={
                     <RefreshControl
                         refreshing={loading}
@@ -197,7 +200,7 @@ export const ActivitiesList: React.FC<ActivitiesListProps> = ({ initialFilter })
             </ScrollView>
             
             {!showCreateForm && (
-                <View style={styles.createButtonContainer}>
+                <View style={{...styles.createButtonContainer, paddingBottom: styles.createButtonContainer.paddingBottom + bottom}}>
                     <ThemedButton
                         text="✨ Skapa din aktivitet"
                         variant="primary"
