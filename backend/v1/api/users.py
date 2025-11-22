@@ -91,8 +91,11 @@ async def update_user_avatar(file: UploadFile = File(...),
                              current_user: User = Depends(validate_request)):
     logging.info(f"file: {file.filename}")
     logging.info(f"current_user: {current_user}")
+    file_extension = os.path.splitext(file.filename)[1].lower()
+    if file_extension not in [".jpg", ".jpeg", ".png"]:
+        raise HTTPException(status_code=400, detail="Invalid file type. Only JPG and PNG are allowed.")
     current_timestamp = int(get_current_time().timestamp())
-    file_path = f"/static/img/{current_user['userId']}_avatar_{current_timestamp}.jpg"
+    file_path = f"/static/img/{current_user['userId']}_avatar_{current_timestamp}{file_extension}"
     logging.info(f"file_path: {file_path}")
     with open(file_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
