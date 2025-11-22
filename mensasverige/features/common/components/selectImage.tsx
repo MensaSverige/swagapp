@@ -1,6 +1,7 @@
 import * as ImagePicker from 'expo-image-picker';
 import { uploadAvatar } from '../../account/services/userService';
 import { User } from '../../../api_schema/types';
+import { requestMediaLibraryPermissionWithFeedback } from './permissionUtils';
 
 const options: ImagePicker.ImagePickerOptions = {
   mediaTypes: ['images'],
@@ -10,12 +11,11 @@ const options: ImagePicker.ImagePickerOptions = {
 };
 export const selectImage = async (): Promise<User | null> => {
   try {
-    // Request media library permissions
-    const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    // Request media library permissions with better feedback
+    const permissionResult = await requestMediaLibraryPermissionWithFeedback();
     
     if (!permissionResult.granted) {
-      console.log('Media library permission denied');
-      return Promise.reject('Media library permission denied');
+      throw new Error(permissionResult.message || 'Tillgång till fotobiblioteket krävs för att välja en profilbild.');
     }
 
     const result = await ImagePicker.launchImageLibraryAsync(options);
@@ -32,10 +32,14 @@ export const selectImage = async (): Promise<User | null> => {
       return user;
     } else {
       console.log('no assets in response');
-      return Promise.reject('no assets in response');
+      throw new Error('Ingen bild valdes eller kunde läsas.');
     }
   } catch (error) {
     console.error('Failed to select image:', error);
-    return Promise.reject('Failed to select image');
+    // Re-throw the error to preserve the original message
+    if (error instanceof Error) {
+      throw error;
+    }
+    throw new Error('Kunde inte välja bild. Försök igen.');
   }
 }

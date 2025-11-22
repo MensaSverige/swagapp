@@ -21,28 +21,55 @@ export const updateUser = async (
 };
 
 export const uploadAvatar = async (uri: string): Promise<User> => {
-  const formData = new FormData();
-  formData.append('file', {
-    uri: uri,
-    name: 'avatar.jpg',
-    type: 'image/jpeg',
-  } as any);
-  return apiClient
-    .post('/users/me/avatar', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    })
-    .then(response => {
-      if (response.status === 200) {
-        return response.data;
-      }
-      else {
-        return Promise.reject('Failed to upload avatar');
-      }
-    })
-    .catch(error => {
-      console.error('Failed to upload avatar:', error.message || error);
-      return Promise.reject('Failed to upload avatar');
+  try {
+    const formData = new FormData();
+    
+    // Extract file extension to determine proper MIME type
+    const fileExtension = uri.split('.').pop()?.toLowerCase();
+    let mimeType = 'image/jpeg'; // default
+    let fileName = 'avatar.jpg'; // default
+    
+    if (fileExtension === 'png') {
+      mimeType = 'image/png';
+      fileName = 'avatar.png';
+    } else if (fileExtension === 'jpeg' || fileExtension === 'jpg') {
+      mimeType = 'image/jpeg';
+      fileName = 'avatar.jpg';
+    } 
+    
+    formData.append('file', {
+      uri: uri,
+      name: fileName,
+      type: mimeType,
+    } as any);
+    
+    const response = await apiClient.post('/users/me/avatar', formData, {
+      headers: { 
+        'Content-Type': 'multipart/form-data',
+      },
+      timeout: 3000,
     });
+    
+    if (response.status === 200 && response.data) {
+      return response.data;
+    } else {
+      throw new Error('Servern returnerade ett oväntat svar.');
+    }
+  } catch (error: any) {
+    console.error('Failed to upload avatar:', error);
+    
+    if (error?.response?.status === 413) {
+      throw new Error('Bilden är för stor. Välj en mindre bild.');
+    } else if (error?.response?.status === 400) {
+      throw new Error('Ogiltigt bildformat. Använd JPG, PNG eller WebP.');
+    } else if (error?.code === 'ECONNABORTED' || error?.message?.includes('timeout')) {
+      throw new Error('Uppladdningen tog för lång tid. Kontrollera din internetanslutning.');
+    } else if (error?.response?.data?.message) {
+      throw new Error(error.response.data.message);
+    } else {
+      throw new Error('Kunde inte ladda upp bilden. Försök igen.');
+    }
+  }
 }
 
 export const tryGetCurrentUser = async (): Promise<AuthResponse | undefined> => {
