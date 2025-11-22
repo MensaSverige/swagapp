@@ -88,14 +88,15 @@ class RefreshTokenRequest(BaseModel):
     refresh_token: str
 
 @auth_v1.post("/refresh_token")
-def refresh_token(refresh_token: RefreshTokenRequest) -> AuthResponse:
+def refresh_token(req: RefreshTokenRequest) -> AuthResponse:
     try:
-        valid, payload = verify_refresh_token(refresh_token.refresh_token)
+        valid, payload = verify_refresh_token(req.refresh_token)
         if not valid:
             raise HTTPException(status_code=401, detail="Unauthorized")
-        user = get_user(payload.get("sub"))
+        user = get_user(int(payload.get("sub")))
+        if not user:
+            raise HTTPException(status_code=401, detail="Unauthorized")
         accesstoken = create_access_token(user["userId"])
-
         authresponse = AuthResponse(
             accessToken=accesstoken,
             refreshToken=create_refresh_token(user["userId"]),
