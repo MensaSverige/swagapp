@@ -1,8 +1,8 @@
 from __future__ import annotations
 import logging
 from typing import Dict, List, Set
-from pymongo import UpdateOne
-from v1.db.mongo import external_event_bookings_collection
+from v1.db.database import SessionLocal
+from v1.db.tables import ExternalEventBookingTable
 
 
 def upsert_user_bookings(userId: int, event_ids: List[int]) -> None:
@@ -10,19 +10,23 @@ def upsert_user_bookings(userId: int, event_ids: List[int]) -> None:
     if not event_ids:
         delete_user_bookings(userId)
         return
-    ops = [
-        UpdateOne(
-            {"userId": userId, "eventId": eid},
-            {"$setOnInsert": {"userId": userId, "eventId": eid}},
-            upsert=True,
-        )
-        for eid in event_ids
-    ]
     try:
-        external_event_bookings_collection.bulk_write(ops, ordered=False)
-        external_event_bookings_collection.delete_many(
-            {"userId": userId, "eventId": {"$nin": event_ids}}
-        )
+        with SessionLocal() as session:
+            existing = {
+                row.eventId for row in
+                session.query(ExternalEventBookingTable.eventId)
+                .filter_by(userId=userId).all()
+            }
+            to_add = set(event_ids) - existing
+            to_remove = existing - set(event_ids)
+            for eid in to_add:
+                session.add(ExternalEventBookingTable(userId=userId, eventId=eid))
+            if to_remove:
+                session.query(ExternalEventBookingTable).filter(
+                    ExternalEventBookingTable.userId == userId,
+                    ExternalEventBookingTable.eventId.in_(to_remove),
+                ).delete(synchronize_session=False)
+            session.commit()
     except Exception as e:
         logging.error(f"[external_bookings] upsert_user_bookings failed for userId={userId}: {e}")
 
@@ -30,7 +34,9 @@ def upsert_user_bookings(userId: int, event_ids: List[int]) -> None:
 def delete_user_bookings(userId: int) -> None:
     """Remove all booking records for a user."""
     try:
-        external_event_bookings_collection.delete_many({"userId": userId})
+        with SessionLocal() as session:
+            session.query(ExternalEventBookingTable).filter_by(userId=userId).delete()
+            session.commit()
     except Exception as e:
         logging.error(f"[external_bookings] delete_user_bookings failed for userId={userId}: {e}")
 
@@ -38,7 +44,11 @@ def delete_user_bookings(userId: int) -> None:
 def delete_booking(userId: int, eventId: int) -> None:
     """Remove a single booking record."""
     try:
-        external_event_bookings_collection.delete_one({"userId": userId, "eventId": eventId})
+        with SessionLocal() as session:
+            session.query(ExternalEventBookingTable).filter_by(
+                userId=userId, eventId=eventId
+            ).delete()
+            session.commit()
     except Exception as e:
         logging.error(f"[external_bookings] delete_booking failed userId={userId} eventId={eventId}: {e}")
 
@@ -46,11 +56,13 @@ def delete_booking(userId: int, eventId: int) -> None:
 def add_booking(userId: int, eventId: int) -> None:
     """Insert a single booking record (idempotent)."""
     try:
-        external_event_bookings_collection.update_one(
-            {"userId": userId, "eventId": eventId},
-            {"$setOnInsert": {"userId": userId, "eventId": eventId}},
-            upsert=True,
-        )
+        with SessionLocal() as session:
+            exists = session.query(ExternalEventBookingTable).filter_by(
+                userId=userId, eventId=eventId
+            ).first()
+            if not exists:
+                session.add(ExternalEventBookingTable(userId=userId, eventId=eventId))
+                session.commit()
     except Exception as e:
         logging.error(f"[external_bookings] add_booking failed userId={userId} eventId={eventId}: {e}")
 
@@ -60,10 +72,14 @@ def get_bookings_by_event_ids(event_ids: List[int]) -> Dict[int, Set[int]]:
     if not event_ids:
         return {}
     try:
-        result: Dict[int, Set[int]] = {}
-        for doc in external_event_bookings_collection.find({"eventId": {"$in": event_ids}}):
-            result.setdefault(doc["eventId"], set()).add(doc["userId"])
-        return result
+        with SessionLocal() as session:
+            rows = session.query(ExternalEventBookingTable).filter(
+                ExternalEventBookingTable.eventId.in_(event_ids)
+            ).all()
+            result: Dict[int, Set[int]] = {}
+            for row in rows:
+                result.setdefault(row.eventId, set()).add(row.userId)
+            return result
     except Exception as e:
         logging.error(f"[external_bookings] get_bookings_by_event_ids failed: {e}")
         return {}

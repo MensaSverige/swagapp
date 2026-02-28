@@ -10,9 +10,10 @@ services:
     ports:
       - "${BACKEND_PORT:-5000}:5000"
     depends_on:
-      - mongo
+      - postgres
     restart: unless-stopped
     environment:
+      DATABASE_URL: postgresql://swag:swag@postgres:5432/swag
       GIT_COMMIT_INFO: 'Commit messages are not available locally'
       GIT_COMMIT_HASH: ''
       LOGINM_SEED: ${LOGINM_SEED}
@@ -34,23 +35,16 @@ services:
       GITHUB_APP_PRIVATE_KEY: ${GITHUB_APP_PRIVATE_KEY:-}
       PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-http://100.104.188.36:8043}
 
-  mongo:
-    image: mongo:latest
+  postgres:
+    image: postgres:16
     volumes:
-      - mongodata:/data/db
-
-  mongo-express:
-    image: mongo-express:latest
-    ports:
-      - "8082:8081"
-    depends_on:
-      - mongo
-    restart: unless-stopped
+      - pgdata:/var/lib/postgresql/data
     environment:
-      ME_CONFIG_MONGODB_SERVER: mongo
-      ME_CONFIG_MONGODB_PORT: 27017
-      ME_CONFIG_BASICAUTH_USERNAME: admin
-      ME_CONFIG_BASICAUTH_PASSWORD: admin
+      POSTGRES_USER: swag
+      POSTGRES_PASSWORD: swag
+      POSTGRES_DB: swag
+    ports:
+      - "5432:5432"
 
 volumes:
-  mongodata:
+  pgdata:

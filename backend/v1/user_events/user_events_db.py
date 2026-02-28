@@ -1,388 +1,359 @@
 from datetime import datetime, timedelta
 from typing import List
-from bson import ObjectId
+from sqlalchemy import or_, and_
 from v1.user_events.user_events_model import ExtendedUserEvent, UserEvent
-from v1.db.mongo import user_event_collection, user_collection
+from v1.db.database import SessionLocal
+from v1.db.tables import (
+    UserEventTable, EventHostTable, EventSuggestedHostTable,
+    EventAttendeeTable, EventReportTable, UserTable,
+)
 from v1.utilities import get_current_time
 
 
-def create_user_event(user_event: dict) -> ObjectId:
+def create_user_event(user_event) -> int:
     """
     Create a new user event.
 
-    :param user_event: User event data.
-    :return: The created user event ID as ObjectId.
+    :param user_event: User event Pydantic model.
+    :return: The created user event ID.
     """
-    result = user_event_collection.insert_one(user_event.model_dump())
-    return result.inserted_id
+    data = user_event.model_dump()
+    with SessionLocal() as session:
+        row = UserEventTable(
+            userId=data["userId"],
+            name=data["name"],
+            start=data["start"],
+            end=data.get("end"),
+            description=data.get("description"),
+            maxAttendees=data.get("maxAttendees"),
+        )
+        # Location
+        loc = data.get("location")
+        if loc:
+            row.location_description = loc.get("description")
+            row.location_address = loc.get("address")
+            row.location_marker = loc.get("marker")
+            row.location_latitude = loc.get("latitude")
+            row.location_longitude = loc.get("longitude")
+
+        session.add(row)
+        session.flush()  # get the id
+
+        # Hosts
+        for h in data.get("hosts") or []:
+            session.add(EventHostTable(event_id=row.id, userId=h["userId"]))
+        for h in data.get("suggested_hosts") or []:
+            session.add(EventSuggestedHostTable(event_id=row.id, userId=h["userId"]))
+        for a in data.get("attendees") or []:
+            session.add(EventAttendeeTable(event_id=row.id, userId=a["userId"]))
+        for r in data.get("reports") or []:
+            session.add(EventReportTable(event_id=row.id, userId=r["userId"], text=r["text"]))
+
+        session.commit()
+        return row.id
+
+
+def _load_event(session, event_id: int) -> UserEventTable | None:
+    """Load a user event with all relationships."""
+    return session.query(UserEventTable).filter_by(id=int(event_id)).first()
 
 
 def get_unsafe_user_event(event_id: str) -> UserEvent | None:
     """
-    Retrieves a user event document from the MongoDB database.
+    Retrieves a user event from the database.
     This function should only be used for internal operations, as it returns secret fields.
-
-    :param event_id: The event ID.
-    :return: The user event document or None.
     """
     try:
-        event = user_event_collection.find_one({"_id": ObjectId(event_id)})
-        return UserEvent(**event) if event else None
+        with SessionLocal() as session:
+            row = _load_event(session, event_id)
+            return UserEvent(**row.to_dict()) if row else None
     except Exception:
         return None
 
 
 def get_safe_user_event(event_id: str) -> ExtendedUserEvent | None:
     """
-    Retrieves a user event document from the MongoDB database, without secret fields.
-
-    :param event_id: The event ID.
-    :return: The user event document or None.
+    Retrieves a user event from the database, without secret fields.
     """
-
     event = get_unsafe_user_event(event_id)
     if not event:
         return None
-
     return extend_user_event(make_user_event_safe(event))
 
 
 def update_user_event(event_id: str, user_event: UserEvent) -> bool:
     """
-    Updates a user event document in the MongoDB database.
-
-    :param event_id: The event ID.
-    :param user_event: The updated user event data.
-    :return: The number of modified documents.
+    Updates a user event in the database.
     """
-
-    # The incoming user event won't contain any of the secret fields,
-    # so we need to copy them from the existing event before updating.
+    # Restore secret fields from DB before updating
     event = restore_secret_fields_on_user_event(user_event, event_id)
     if not event:
-        return 0
+        return False
 
-    result = user_event_collection.update_one({"_id": ObjectId(event_id)},
-                                              {"$set": event.model_dump()})
-    return result.acknowledged and result.matched_count > 0
+    data = event.model_dump()
+    with SessionLocal() as session:
+        row = _load_event(session, event_id)
+        if not row:
+            return False
+
+        row.userId = data["userId"]
+        row.name = data["name"]
+        row.start = data["start"]
+        row.end = data.get("end")
+        row.description = data.get("description")
+        row.maxAttendees = data.get("maxAttendees")
+
+        loc = data.get("location")
+        if loc:
+            row.location_description = loc.get("description")
+            row.location_address = loc.get("address")
+            row.location_marker = loc.get("marker")
+            row.location_latitude = loc.get("latitude")
+            row.location_longitude = loc.get("longitude")
+        else:
+            row.location_description = None
+            row.location_address = None
+            row.location_marker = None
+            row.location_latitude = None
+            row.location_longitude = None
+
+        # Replace child rows
+        row.hosts.clear()
+        for h in data.get("hosts") or []:
+            row.hosts.append(EventHostTable(event_id=row.id, userId=h["userId"]))
+
+        row.suggested_hosts.clear()
+        for h in data.get("suggested_hosts") or []:
+            row.suggested_hosts.append(EventSuggestedHostTable(event_id=row.id, userId=h["userId"]))
+
+        row.attendees.clear()
+        for a in data.get("attendees") or []:
+            row.attendees.append(EventAttendeeTable(event_id=row.id, userId=a["userId"]))
+
+        row.reports.clear()
+        for r in data.get("reports") or []:
+            row.reports.append(EventReportTable(event_id=row.id, userId=r["userId"], text=r["text"]))
+
+        session.commit()
+        return True
 
 
 def delete_user_event(event_id: str) -> bool:
-    """
-    Deletes a user event document from the MongoDB database.
-
-    :param event_id: The event ID.
-    :return: The number of deleted documents.
-    """
-    result = user_event_collection.delete_one({"_id": ObjectId(event_id)})
-    return result.acknowledged
+    """Deletes a user event from the database."""
+    with SessionLocal() as session:
+        row = _load_event(session, event_id)
+        if not row:
+            return False
+        session.delete(row)
+        session.commit()
+        return True
 
 
 def get_unsafe_future_user_events() -> list[UserEvent]:
-    """
-    Retrieves all future user events from the MongoDB database.
-    This function should only be used for internal operations, as it returns secret fields.
-
-    :return: The user event documents.
-    """
+    """Retrieves all future user events."""
     current_time = get_current_time().replace(tzinfo=None)
-    query = {
-        "$or": [{
-            "end": {
-                "$gte": current_time
-            }
-        }, {
-            "start": {
-                "$gte": current_time - timedelta(hours=1)
-            },
-            "end": None
-        }]
-    }
-
-    return [
-        UserEvent(**event) for event in list(user_event_collection.find(query))
-    ]
+    with SessionLocal() as session:
+        rows = session.query(UserEventTable).filter(
+            or_(
+                UserEventTable.end >= current_time,
+                and_(
+                    UserEventTable.start >= current_time - timedelta(hours=1),
+                    UserEventTable.end.is_(None),
+                ),
+            )
+        ).all()
+        return [UserEvent(**row.to_dict()) for row in rows]
 
 
 def get_safe_future_user_events() -> list[ExtendedUserEvent]:
-    """
-    Retrieves all future user events from the MongoDB database.
-    :return: The user event documents.
-    """
-
+    """Retrieves all future user events, without secret fields."""
     return extend_user_events(
         remove_secrets_from_user_events(get_unsafe_future_user_events()))
 
 
 def get_safe_user_events_since(since: datetime) -> list[ExtendedUserEvent]:
-    """
-    Retrieves all user events with start >= `since`.
-    :param since: Lower bound datetime for event start.
-    :return: The user event documents.
-    """
-    query = {"start": {"$gte": since}}
-    events = [UserEvent(**e) for e in user_event_collection.find(query)]
+    """Retrieves all user events with start >= `since`."""
+    with SessionLocal() as session:
+        rows = session.query(UserEventTable).filter(
+            UserEventTable.start >= since
+        ).all()
+        events = [UserEvent(**row.to_dict()) for row in rows]
     return extend_user_events(remove_secrets_from_user_events(events))
 
 
 def get_unsafe_user_events_user_owns(userId: int) -> list[UserEvent]:
-    """
-    Retrieves all user events that a user is hosting.
-    This function should only be used for internal operations, as it returns secret fields.
-
-    :param userId: The ID of the user.
-    :return: The user event documents.
-    """
-    query = {"userId": userId}
-    return [UserEvent(**event) for event in user_event_collection.find(query)]
+    """Retrieves all user events that a user owns."""
+    with SessionLocal() as session:
+        rows = session.query(UserEventTable).filter_by(userId=userId).all()
+        return [UserEvent(**row.to_dict()) for row in rows]
 
 
 def get_safe_user_events_user_owns(userId: int) -> list[ExtendedUserEvent]:
-    """
-    Retrieves all user events that a user is hosting.
-
-    :param userId: The ID of the user.
-    :return: The user event documents.
-    """
-
+    """Retrieves all user events that a user owns."""
     return extend_user_events(
         remove_secrets_from_user_events(
             get_unsafe_user_events_user_owns(userId)))
 
 
 def get_unsafe_user_events_user_is_hosting(userId: int) -> list[UserEvent]:
-    """
-    Retrieves all user events that a user is hosting.
-    This function should only be used for internal operations, as it returns secret fields.
-
-    :param userId: The ID of the user.
-    :return: The user event documents.
-    """
-    query = {"hosts": {"$elemMatch": {"userId": userId}}}
-    return [UserEvent(**event) for event in user_event_collection.find(query)]
+    """Retrieves all user events that a user is hosting."""
+    with SessionLocal() as session:
+        rows = session.query(UserEventTable).join(EventHostTable).filter(
+            EventHostTable.userId == userId
+        ).all()
+        return [UserEvent(**row.to_dict()) for row in rows]
 
 
-def get_safe_user_events_user_is_hosting(
-        userId: int) -> list[ExtendedUserEvent]:
-    """
-    Retrieves all user events that a user is hosting.
-
-    :param userId: The ID of the user.
-    :return: The user event documents.
-    """
-
+def get_safe_user_events_user_is_hosting(userId: int) -> list[ExtendedUserEvent]:
+    """Retrieves all user events that a user is hosting."""
     return extend_user_events(
         remove_secrets_from_user_events(
             get_unsafe_user_events_user_is_hosting(userId)))
 
 
 def get_unsafe_user_events_user_is_attending(userId: int) -> list[UserEvent]:
-    """
-    Retrieves all user events that a user is attending.
-    This function should only be used for internal operations, as it returns secret fields.
-
-    :param userId: The ID of the user.
-    :return: The user event documents.
-    """
-    query = {"attendees": {"$elemMatch": {"userId": userId}}}
-    return [UserEvent(**event) for event in user_event_collection.find(query)]
+    """Retrieves all user events that a user is attending."""
+    with SessionLocal() as session:
+        rows = session.query(UserEventTable).join(EventAttendeeTable).filter(
+            EventAttendeeTable.userId == userId
+        ).all()
+        return [UserEvent(**row.to_dict()) for row in rows]
 
 
-def get_safe_user_events_user_is_attending(
-        userId: int) -> list[ExtendedUserEvent]:
-    """
-    Retrieves all user events that a user is attending.
-
-    :param userId: The ID of the user.
-    :return: The user event documents.
-    """
+def get_safe_user_events_user_is_attending(userId: int) -> list[ExtendedUserEvent]:
+    """Retrieves all user events that a user is attending."""
     return extend_user_events(
         remove_secrets_from_user_events(
             get_unsafe_user_events_user_is_attending(userId)))
 
 
 def add_attendee_to_user_event(event_id: str, user_id: int) -> bool:
-    """
-    Adds a user to the attendees list of an event, ensuring no duplicates.
-
-    :param event_id: The ID of the event.
-    :param user_id: The ID of the user to add.
-    :return: The number of modified documents.
-    """
+    """Adds a user to the attendees list of an event, ensuring no duplicates."""
     try:
-        event = get_unsafe_user_event(event_id)
-        if event and event.maxAttendees is not None and len(event.attendees) >= event.maxAttendees:
-            return False
-        result = user_event_collection.update_one(
-            {"_id": ObjectId(event_id)},
-            {"$addToSet": {
-                "attendees": {
-                    "userId": user_id
-                }
-            }})
-        return result.acknowledged and result.matched_count > 0
+        with SessionLocal() as session:
+            row = _load_event(session, event_id)
+            if not row:
+                return False
+            if row.maxAttendees is not None and len(row.attendees) >= row.maxAttendees:
+                return False
+            # Check for duplicate
+            if any(a.userId == user_id for a in row.attendees):
+                return True
+            session.add(EventAttendeeTable(event_id=row.id, userId=user_id))
+            session.commit()
+            return True
     except Exception:
         return False
 
 
 def remove_attendee_from_user_event(event_id: str, user_id: int) -> bool:
-    """
-    Removes a user from the attendees list of an event.
-
-    :param event_id: The ID of the event.
-    :param user_id: The ID of the user to remove.
-    :return: The number of modified documents.
-    """
-    result = user_event_collection.update_one(
-        {"_id": ObjectId(event_id)},
-        {"$pull": {
-            "attendees": {
-                "userId": user_id
-            }
-        }})
-    return result.acknowledged and result.matched_count > 0
+    """Removes a user from the attendees list of an event."""
+    with SessionLocal() as session:
+        row = _load_event(session, event_id)
+        if not row:
+            return False
+        attendee = next((a for a in row.attendees if a.userId == user_id), None)
+        if attendee:
+            session.delete(attendee)
+            session.commit()
+            return True
+        return False
 
 
 ### Hosts and host invites ###
 
 
-def get_unsafe_user_events_user_is_invited_to_host(
-        userId: int) -> list[UserEvent]:
-    """
-    Retrieves all user events that a user is suggested to co-host.
-    This function should only be used for internal operations, as it returns secret fields.
-
-    :param userId: The ID of the user.
-    :return: The user event documents.
-    """
-    query = {"suggested_hosts": {"$elemMatch": {"userId": userId}}}
-    return [UserEvent(**event) for event in user_event_collection.find(query)]
+def get_unsafe_user_events_user_is_invited_to_host(userId: int) -> list[UserEvent]:
+    """Retrieves all user events that a user is suggested to co-host."""
+    with SessionLocal() as session:
+        rows = session.query(UserEventTable).join(EventSuggestedHostTable).filter(
+            EventSuggestedHostTable.userId == userId
+        ).all()
+        return [UserEvent(**row.to_dict()) for row in rows]
 
 
-def get_safe_user_events_user_is_invited_to_host(
-        userId: int) -> list[ExtendedUserEvent]:
-    """
-    Retrieves all user events that a user is suggested to co-host.
-
-    :param userId: The ID of the user.
-    :return: The user event documents.
-    """
+def get_safe_user_events_user_is_invited_to_host(userId: int) -> list[ExtendedUserEvent]:
+    """Retrieves all user events that a user is suggested to co-host."""
     return extend_user_events(
         remove_secrets_from_user_events(
             get_unsafe_user_events_user_is_invited_to_host(userId)))
 
 
 def add_user_as_host_to_user_event(event_id: str, user_id: int) -> bool:
-    """
-    Adds a user to the hosts list of an event, ensuring no duplicates.
-
-    :param event_id: The ID of the event.
-    :param user_id: The ID of the user to add.
-    :return: The number of modified documents.
-    """
-    result = user_event_collection.update_one({"_id": ObjectId(event_id)}, {
-        "$addToSet": {
-            "hosts": {
-                "userId": user_id
-            }
-        },
-        "$pull": {
-            "suggested_hosts": {
-                "userId": user_id
-            }
-        }
-    })
-    return result.acknowledged and result.matched_count > 0
+    """Adds a user to the hosts list and removes from suggested_hosts."""
+    with SessionLocal() as session:
+        row = _load_event(session, event_id)
+        if not row:
+            return False
+        # Add to hosts if not already there
+        if not any(h.userId == user_id for h in row.hosts):
+            session.add(EventHostTable(event_id=row.id, userId=user_id))
+        # Remove from suggested_hosts
+        suggested = next((s for s in row.suggested_hosts if s.userId == user_id), None)
+        if suggested:
+            session.delete(suggested)
+        session.commit()
+        return True
 
 
 def remove_user_from_hosts_of_user_event(event_id: str, user_id: int) -> bool:
-    """
-    Removes a user from the hosts list of an event.
-
-    :param event_id: The ID of the event.
-    :param user_id: The ID of the user to remove.
-    :return: The number of modified documents.
-    """
-    result = user_event_collection.update_one(
-        {"_id": ObjectId(event_id)}, {"$pull": {
-            "hosts": {
-                "userId": user_id
-            }
-        }})
-    return result.acknowledged and result.matched_count > 0
+    """Removes a user from the hosts list of an event."""
+    with SessionLocal() as session:
+        row = _load_event(session, event_id)
+        if not row:
+            return False
+        host = next((h for h in row.hosts if h.userId == user_id), None)
+        if host:
+            session.delete(host)
+            session.commit()
+            return True
+        return False
 
 
-def remove_user_host_invitation_from_user_event(event_id: str,
-                                                user_id: int) -> bool:
-    """
-    Removes a user from the suggested hosts list of an event.
-
-    :param event_id: The ID of the event.
-    :param user_id: The ID of the user to remove.
-    :return: The number of modified documents.
-    """
-    result = user_event_collection.update_one(
-        {"_id": ObjectId(event_id)},
-        {"$pull": {
-            "suggested_hosts": {
-                "userId": user_id
-            }
-        }})
-    return result.acknowledged and result.matched_count > 0
+def remove_user_host_invitation_from_user_event(event_id: str, user_id: int) -> bool:
+    """Removes a user from the suggested hosts list of an event."""
+    with SessionLocal() as session:
+        row = _load_event(session, event_id)
+        if not row:
+            return False
+        suggested = next((s for s in row.suggested_hosts if s.userId == user_id), None)
+        if suggested:
+            session.delete(suggested)
+            session.commit()
+            return True
+        return False
 
 
 ### Reports ###
 
 
-def add_or_update_report_on_user_event(event_id: str, user_id: int,
-                                       report: str) -> bool:
-    """
-    Adds a report to an event, or updates an existing report.
-
-    :param event_id: The ID of the event.
-    :param user_id: The ID of the user making the report.
-    :param report: The report text.
-    :return: The number of modified documents.
-    """
-
-    result = user_event_collection.update_one(
-        {"_id": ObjectId(event_id)},
-        {"$set": {
-            "reports.$[elem].text": report
-        }},
-        array_filters=[{
-            "elem.userId": user_id
-        }])
-
-    if result.modified_count == 0:
-        result = user_event_collection.update_one(
-            {"_id": ObjectId(event_id)},
-            {"$addToSet": {
-                "reports": {
-                    "userId": user_id,
-                    "text": report
-                }
-            }})
-
-    return result.acknowledged and result.matched_count > 0
+def add_or_update_report_on_user_event(event_id: str, user_id: int, report: str) -> bool:
+    """Adds a report to an event, or updates an existing report."""
+    with SessionLocal() as session:
+        row = _load_event(session, event_id)
+        if not row:
+            return False
+        existing = next((r for r in row.reports if r.userId == user_id), None)
+        if existing:
+            existing.text = report
+        else:
+            session.add(EventReportTable(event_id=row.id, userId=user_id, text=report))
+        session.commit()
+        return True
 
 
 def remove_report_from_user_event(event_id: str, user_id: int) -> bool:
-    """
-    Removes a report from an event.
-
-    :param event_id: The ID of the event.
-    :param user_id: The ID of the user making the report.
-    :return: The number of modified documents.
-    """
-    result = user_event_collection.update_one(
-        {"_id": ObjectId(event_id)},
-        {"$pull": {
-            "reports": {
-                "userId": user_id
-            }
-        }})
-    return result.acknowledged and result.matched_count > 0
+    """Removes a report from an event."""
+    with SessionLocal() as session:
+        row = _load_event(session, event_id)
+        if not row:
+            return False
+        existing = next((r for r in row.reports if r.userId == user_id), None)
+        if existing:
+            session.delete(existing)
+            session.commit()
+            return True
+        return False
 
 
 ### Utilities ###
@@ -393,7 +364,6 @@ def extend_user_event(event: UserEvent) -> ExtendedUserEvent:
 
 
 def extend_user_events(events: List[UserEvent]) -> List[ExtendedUserEvent]:
-
     # Fetch user IDs
     user_ids = set()
     for event in events:
@@ -405,79 +375,45 @@ def extend_user_events(events: List[UserEvent]) -> List[ExtendedUserEvent]:
 
     # Fetch user names
     user_names = {}
-    users = user_collection.find({"userId": {"$in": user_ids}})
+    with SessionLocal() as session:
+        users = session.query(UserTable).filter(UserTable.userId.in_(user_ids)).all()
+        for user in users:
+            user_names[user.userId] = f"{user.firstName} {user.lastName}"
 
-    for user in users:
-        user_id = user["userId"]
-        user_names[user_id] = f"{user['firstName']} {user['lastName']}"
-
-    def extend_user_event(event: dict,
-                          user_names: dict[int, str]) -> ExtendedUserEvent:
-        """
-        Extends a user event document with user names.
-
-        :param event: The user event document.
-        :param user_names: A dictionary of user IDs and names.
-        :return: The extended user event document.
-        """
-        event["ownerName"] = user_names[event["userId"]]
-        event["hostNames"] = [
-            user_names[host["userId"]] for host in event["hosts"]
+    def _extend(event_dict: dict, user_names: dict[int, str]) -> ExtendedUserEvent:
+        event_dict["ownerName"] = user_names.get(event_dict["userId"], "Unknown")
+        event_dict["hostNames"] = [
+            user_names.get(host["userId"], "Unknown") for host in event_dict["hosts"]
         ]
-        event["attendeeNames"] = [
-            user_names[attendee["userId"]] for attendee in event["attendees"]
+        event_dict["attendeeNames"] = [
+            user_names.get(attendee["userId"], "Unknown") for attendee in event_dict["attendees"]
         ]
-
-        return ExtendedUserEvent(**event)
+        return ExtendedUserEvent(**event_dict)
 
     event_dicts = [event.model_dump() for event in events]
-    return [
-        extend_user_event(event_dict, user_names) for event_dict in event_dicts
-    ]
+    return [_extend(event_dict, user_names) for event_dict in event_dicts]
 
 
 def make_user_event_safe(event: UserEvent) -> UserEvent:
-    """
-    Set secret fields to their model default values in a user event document, to make it safe to return to the client.
-
-    :param event: The user event document.
-    :return: The user event document with secrets removed.
-    """
+    """Set secret fields to their model default values."""
     event.reports = []
-
     return event
 
 
-def remove_secrets_from_user_events(
-        events: list[UserEvent]) -> list[UserEvent]:
-    """
-    Set secret fields to their model default values in a list of user event documents.
-
-    :param events: The user event documents.
-    :return: The user event documents with secrets removed.
-    """
+def remove_secrets_from_user_events(events: list[UserEvent]) -> list[UserEvent]:
+    """Set secret fields to their model default values in a list of user events."""
     return [make_user_event_safe(event) for event in events]
 
 
 def restore_secret_fields_on_user_event(event: UserEvent, event_id: str = None) -> UserEvent | None:
-    """
-    Restore secret fields to their original values in a user event document.
-
-    :param event: The user event document.
-    :param event_id: The event ID to fetch original data from (optional, falls back to event.id)
-    :return: The user event document with secrets restored.
-    """
-
-    # Use provided event_id or fall back to event.id for backward compatibility
+    """Restore secret fields to their original values."""
     lookup_id = event_id or event.id
     if not lookup_id:
         return None
-        
-    original_event = get_unsafe_user_event(lookup_id)
 
+    original_event = get_unsafe_user_event(lookup_id)
     if not original_event:
         return None
 
     event.reports = original_event.reports
-
     return event

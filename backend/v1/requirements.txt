@@ -1,4 +1,4 @@
-pymongo # MongoDB driver
+psycopg2-binary # PostgreSQL driver
 requests # HTTP requests
 PyJWT # JWT tokens
 pytest # Testing
