@@ -15,9 +15,14 @@ class Base(DeclarativeBase):
     pass
 
 
+def get_session():
+    """Return a new database session. Always call this instead of SessionLocal() directly."""
+    return SessionLocal()
+
+
 def get_db():
     """Yield a database session, closing it when done."""
-    db = SessionLocal()
+    db = get_session()
     try:
         yield db
     finally:
@@ -48,7 +53,7 @@ def _seed_review_users():
         return
 
     logging.info("Ensuring review users exist.")
-    with SessionLocal() as session:
+    with get_session() as session:
         for review_user in review_users:
             existing = session.query(UserTable).filter_by(userId=review_user.userId).first()
             user_data = review_user.model_dump()

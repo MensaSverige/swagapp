@@ -2,7 +2,7 @@ import datetime
 import os
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
-from v1.db.database import SessionLocal
+from v1.db.database import get_session
 from v1.db.tables import UserTable, UserEventTable
 from v1.user_events.user_events_model import ExtendedUserEvent, UserEvent
 from v1.user_events.user_events_db import get_safe_user_event, create_user_event
@@ -43,7 +43,7 @@ def _ensure_dummy_user(session):
 @dev_user_events.get("/dev/clear_user_events",
                      response_model=StatusResponseWithMessage)
 async def clear_user_events():
-    with SessionLocal() as session:
+    with get_session() as session:
         session.query(UserEventTable).delete()
         session.commit()
     return {"message": "User events cleared"}
@@ -52,7 +52,7 @@ async def clear_user_events():
 @dev_user_events.get("/dev/create_dummy_user_event",
                      response_model=ExtendedUserEvent)
 async def get_dummy_user_event():
-    with SessionLocal() as session:
+    with get_session() as session:
         _ensure_dummy_user(session)
 
     dummy_event = UserEvent(
@@ -80,7 +80,7 @@ async def get_dummy_user_event():
 @dev_user_events.get("/dev/create_my_dummy_event",
                      response_model=ExtendedUserEvent)
 async def create_my_dummy_event():
-    with SessionLocal() as session:
+    with get_session() as session:
         _ensure_dummy_user(session)
 
     userId = int(os.getenv('MY_USER_ID'))

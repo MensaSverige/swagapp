@@ -2,7 +2,7 @@ import json
 from typing import Optional
 from pydantic import ValidationError
 from v1.db.models.user import ContactInfo, ShowLocation, User, UserSettings
-from v1.db.database import SessionLocal
+from v1.db.database import get_session
 from v1.db.tables import UserTable
 
 
@@ -13,7 +13,7 @@ def get_user(user_id: int) -> dict | None:
     :param user_id: The user ID.
     :return: The user dict or None.
     """
-    with SessionLocal() as session:
+    with get_session() as session:
         row = session.query(UserTable).filter_by(userId=user_id).first()
         return row.to_dict() if row else None
 
@@ -26,7 +26,7 @@ def update_user(user_id: int, user: dict) -> dict:
     :param user: The user data as a dict.
     :return: The user data.
     """
-    with SessionLocal() as session:
+    with get_session() as session:
         row = session.query(UserTable).filter_by(userId=user_id).first()
         if not row:
             return user
@@ -87,7 +87,7 @@ def create_user(response_json: dict) -> dict | None:
         return None
 
     user_model = User(**newuser) if isinstance(newuser, dict) else newuser
-    with SessionLocal() as session:
+    with get_session() as session:
         row = UserTable.from_pydantic(user_model)
         session.add(row)
         session.commit()
@@ -101,7 +101,7 @@ def get_users(show_location: Optional[bool] = None) -> list[dict]:
     :param show_location: If True, filter to users who share their location.
     :return: List of user dicts.
     """
-    with SessionLocal() as session:
+    with get_session() as session:
         query = session.query(UserTable)
         if show_location is not None:
             query = query.filter(UserTable.show_location != ShowLocation.NO_ONE.value)
@@ -123,7 +123,7 @@ def get_users_showing_location() -> list[dict]:
 
     :return: List of user dicts.
     """
-    with SessionLocal() as session:
+    with get_session() as session:
         rows = session.query(UserTable).filter(
             UserTable.show_location != ShowLocation.NO_ONE.value
         ).all()

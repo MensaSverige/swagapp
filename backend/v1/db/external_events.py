@@ -2,7 +2,7 @@ import logging
 from typing import List
 from sqlalchemy import or_
 from v1.db.models.external_events import ExternalEventDetails, ExternalRoot
-from v1.db.database import SessionLocal
+from v1.db.database import get_session
 from v1.db.tables import (
     ExternalEventDetailsTable, ExternalEventAdminTable, ExternalEventCategoryTable,
     ExternalRootTable, ExternalRootDateTable,
@@ -13,7 +13,7 @@ def store_external_root(root: ExternalRoot):
     """Stores or replaces the external root details."""
     try:
         root_dict = root.model_dump()
-        with SessionLocal() as session:
+        with get_session() as session:
             existing = session.query(ExternalRootTable).first()
             if existing:
                 for key in ("version", "loginUrl", "restUrl", "siteUrl", "header1", "header2", "city", "streetAddress", "mapUrl"):
@@ -46,7 +46,7 @@ def store_external_root(root: ExternalRoot):
 def get_stored_external_root() -> ExternalRoot | None:
     """Retrieves the stored external root details."""
     try:
-        with SessionLocal() as session:
+        with get_session() as session:
             row = session.query(ExternalRootTable).first()
             if row:
                 return ExternalRoot(**row.to_dict())
@@ -61,7 +61,7 @@ def get_stored_external_root() -> ExternalRoot | None:
 def store_external_event_details(events: List[ExternalEventDetails]):
     """Stores external event details (upsert)."""
     try:
-        with SessionLocal() as session:
+        with get_session() as session:
             for event in events:
                 event_dict = event.model_dump()
                 logging.info(f"Storing event: {event_dict['titel']}")
@@ -131,7 +131,7 @@ def get_stored_external_event_details(
     ) -> List[ExternalEventDetails]:
     """Retrieves external event details by event IDs or admin host ID."""
     try:
-        with SessionLocal() as session:
+        with get_session() as session:
             conditions = [ExternalEventDetailsTable.eventId.in_(event_ids)]
             if host_id is not None:
                 # Find events where host_id is an admin
@@ -156,7 +156,7 @@ def get_stored_external_event_details(
 def get_all_stored_external_event_details() -> List[ExternalEventDetails]:
     """Return all stored external events."""
     try:
-        with SessionLocal() as session:
+        with get_session() as session:
             rows = session.query(ExternalEventDetailsTable).all()
             return [ExternalEventDetails(**row.to_dict()) for row in rows]
     except Exception as e:
@@ -168,7 +168,7 @@ def clean_external_events(keeping: List[ExternalEventDetails]):
     """Deletes external events not in the keeping list."""
     try:
         keeping_ids = [event.eventId for event in keeping]
-        with SessionLocal() as session:
+        with get_session() as session:
             session.query(ExternalEventDetailsTable).filter(
                 ~ExternalEventDetailsTable.eventId.in_(keeping_ids)
             ).delete(synchronize_session="fetch")

@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 from typing import List
 from sqlalchemy import or_, and_
 from v1.user_events.user_events_model import ExtendedUserEvent, UserEvent
-from v1.db.database import SessionLocal
+from v1.db.database import get_session
 from v1.db.tables import (
     UserEventTable, EventHostTable, EventSuggestedHostTable,
     EventAttendeeTable, EventReportTable, UserTable,
@@ -18,7 +18,7 @@ def create_user_event(user_event) -> int:
     :return: The created user event ID.
     """
     data = user_event.model_dump()
-    with SessionLocal() as session:
+    with get_session() as session:
         row = UserEventTable(
             userId=data["userId"],
             name=data["name"],
@@ -64,7 +64,7 @@ def get_unsafe_user_event(event_id: str) -> UserEvent | None:
     This function should only be used for internal operations, as it returns secret fields.
     """
     try:
-        with SessionLocal() as session:
+        with get_session() as session:
             row = _load_event(session, event_id)
             return UserEvent(**row.to_dict()) if row else None
     except Exception:
@@ -91,7 +91,7 @@ def update_user_event(event_id: str, user_event: UserEvent) -> bool:
         return False
 
     data = event.model_dump()
-    with SessionLocal() as session:
+    with get_session() as session:
         row = _load_event(session, event_id)
         if not row:
             return False
@@ -140,7 +140,7 @@ def update_user_event(event_id: str, user_event: UserEvent) -> bool:
 
 def delete_user_event(event_id: str) -> bool:
     """Deletes a user event from the database."""
-    with SessionLocal() as session:
+    with get_session() as session:
         row = _load_event(session, event_id)
         if not row:
             return False
@@ -152,7 +152,7 @@ def delete_user_event(event_id: str) -> bool:
 def get_unsafe_future_user_events() -> list[UserEvent]:
     """Retrieves all future user events."""
     current_time = get_current_time().replace(tzinfo=None)
-    with SessionLocal() as session:
+    with get_session() as session:
         rows = session.query(UserEventTable).filter(
             or_(
                 UserEventTable.end >= current_time,
@@ -173,7 +173,7 @@ def get_safe_future_user_events() -> list[ExtendedUserEvent]:
 
 def get_safe_user_events_since(since: datetime) -> list[ExtendedUserEvent]:
     """Retrieves all user events with start >= `since`."""
-    with SessionLocal() as session:
+    with get_session() as session:
         rows = session.query(UserEventTable).filter(
             UserEventTable.start >= since
         ).all()
@@ -183,7 +183,7 @@ def get_safe_user_events_since(since: datetime) -> list[ExtendedUserEvent]:
 
 def get_unsafe_user_events_user_owns(userId: int) -> list[UserEvent]:
     """Retrieves all user events that a user owns."""
-    with SessionLocal() as session:
+    with get_session() as session:
         rows = session.query(UserEventTable).filter_by(userId=userId).all()
         return [UserEvent(**row.to_dict()) for row in rows]
 
@@ -197,7 +197,7 @@ def get_safe_user_events_user_owns(userId: int) -> list[ExtendedUserEvent]:
 
 def get_unsafe_user_events_user_is_hosting(userId: int) -> list[UserEvent]:
     """Retrieves all user events that a user is hosting."""
-    with SessionLocal() as session:
+    with get_session() as session:
         rows = session.query(UserEventTable).join(EventHostTable).filter(
             EventHostTable.userId == userId
         ).all()
@@ -213,7 +213,7 @@ def get_safe_user_events_user_is_hosting(userId: int) -> list[ExtendedUserEvent]
 
 def get_unsafe_user_events_user_is_attending(userId: int) -> list[UserEvent]:
     """Retrieves all user events that a user is attending."""
-    with SessionLocal() as session:
+    with get_session() as session:
         rows = session.query(UserEventTable).join(EventAttendeeTable).filter(
             EventAttendeeTable.userId == userId
         ).all()
@@ -230,7 +230,7 @@ def get_safe_user_events_user_is_attending(userId: int) -> list[ExtendedUserEven
 def add_attendee_to_user_event(event_id: str, user_id: int) -> bool:
     """Adds a user to the attendees list of an event, ensuring no duplicates."""
     try:
-        with SessionLocal() as session:
+        with get_session() as session:
             row = _load_event(session, event_id)
             if not row:
                 return False
@@ -248,7 +248,7 @@ def add_attendee_to_user_event(event_id: str, user_id: int) -> bool:
 
 def remove_attendee_from_user_event(event_id: str, user_id: int) -> bool:
     """Removes a user from the attendees list of an event."""
-    with SessionLocal() as session:
+    with get_session() as session:
         row = _load_event(session, event_id)
         if not row:
             return False
@@ -265,7 +265,7 @@ def remove_attendee_from_user_event(event_id: str, user_id: int) -> bool:
 
 def get_unsafe_user_events_user_is_invited_to_host(userId: int) -> list[UserEvent]:
     """Retrieves all user events that a user is suggested to co-host."""
-    with SessionLocal() as session:
+    with get_session() as session:
         rows = session.query(UserEventTable).join(EventSuggestedHostTable).filter(
             EventSuggestedHostTable.userId == userId
         ).all()
@@ -281,7 +281,7 @@ def get_safe_user_events_user_is_invited_to_host(userId: int) -> list[ExtendedUs
 
 def add_user_as_host_to_user_event(event_id: str, user_id: int) -> bool:
     """Adds a user to the hosts list and removes from suggested_hosts."""
-    with SessionLocal() as session:
+    with get_session() as session:
         row = _load_event(session, event_id)
         if not row:
             return False
@@ -298,7 +298,7 @@ def add_user_as_host_to_user_event(event_id: str, user_id: int) -> bool:
 
 def remove_user_from_hosts_of_user_event(event_id: str, user_id: int) -> bool:
     """Removes a user from the hosts list of an event."""
-    with SessionLocal() as session:
+    with get_session() as session:
         row = _load_event(session, event_id)
         if not row:
             return False
@@ -312,7 +312,7 @@ def remove_user_from_hosts_of_user_event(event_id: str, user_id: int) -> bool:
 
 def remove_user_host_invitation_from_user_event(event_id: str, user_id: int) -> bool:
     """Removes a user from the suggested hosts list of an event."""
-    with SessionLocal() as session:
+    with get_session() as session:
         row = _load_event(session, event_id)
         if not row:
             return False
@@ -329,7 +329,7 @@ def remove_user_host_invitation_from_user_event(event_id: str, user_id: int) -> 
 
 def add_or_update_report_on_user_event(event_id: str, user_id: int, report: str) -> bool:
     """Adds a report to an event, or updates an existing report."""
-    with SessionLocal() as session:
+    with get_session() as session:
         row = _load_event(session, event_id)
         if not row:
             return False
@@ -344,7 +344,7 @@ def add_or_update_report_on_user_event(event_id: str, user_id: int, report: str)
 
 def remove_report_from_user_event(event_id: str, user_id: int) -> bool:
     """Removes a report from an event."""
-    with SessionLocal() as session:
+    with get_session() as session:
         row = _load_event(session, event_id)
         if not row:
             return False
@@ -375,7 +375,7 @@ def extend_user_events(events: List[UserEvent]) -> List[ExtendedUserEvent]:
 
     # Fetch user names
     user_names = {}
-    with SessionLocal() as session:
+    with get_session() as session:
         users = session.query(UserTable).filter(UserTable.userId.in_(user_ids)).all()
         for user in users:
             user_names[user.userId] = f"{user.firstName} {user.lastName}"
