@@ -7,7 +7,7 @@ import {
 import { UserLocation } from '../../../api_schema/types';
 
 const useUserLocation = () => {
-  const {user, getLocationUpdateInterval, hasLocationPermission, setUserLocation} =
+  const {user, getLocationUpdateInterval, hasLocationPermission, setUserLocation, requiredUpdateInfo} =
     useStore();
 
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -20,8 +20,8 @@ const useUserLocation = () => {
       intervalRef.current = null;
     }
 
-    // Don't start location tracking if user is not logged in
-    if (!user) {
+    // Don't start location tracking if user is not logged in or update is required
+    if (!user || requiredUpdateInfo) {
       return;
     }
 
@@ -81,7 +81,7 @@ const useUserLocation = () => {
         intervalRef.current = null;
       }
     };
-  }, [getLocationUpdateInterval, hasLocationPermission, user?.settings.show_location, user]);
+  }, [getLocationUpdateInterval, hasLocationPermission, user?.settings.show_location, user, requiredUpdateInfo]);
 
   // Cleanup on unmount
   useEffect(() => {

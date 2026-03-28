@@ -1,0 +1,38 @@
+{
+  "MobileUpdatePolicy": {
+    "Apps": {
+      "se.mensasverige.dev": {
+        "Ios": {},
+        "Android": {}
+      },
+      "se.mensasverige.preview": {
+        "Ios": {
+          "StoreUrl": "itms-beta://beta.itunes.apple.com/v1/app/6755419896",
+          "LatestVersion": "2.1.0",
+          "MinSupportedVersion": "2.0.1",
+          "LatestBuildNumber": 1
+        },
+        "Android": {
+          "StoreUrl": "https://play.google.com/store/apps/details?id=se.mensasverige.preview",
+          "LatestVersion": "2.1.0",
+          "MinSupportedVersion": "2.0.1",
+          "LatestBuildNumber": 1
+        }
+      },
+      "se.mensasverige": {
+        "Android": {
+          "StoreUrl": "https://play.google.com/store/apps/details?id=se.mensasverige",
+          "LatestVersion": "2.1.0",
+          "MinSupportedVersion": "2.0.1",
+          "LatestBuildNumber": 22
+        },
+        "Ios": {
+          "StoreUrl": "https://apps.apple.com/se/app/mensasverige/id6755419896",
+          "LatestVersion": "2.1.0",
+          "MinSupportedVersion": "2.0.1",
+          "LatestBuildNumber": 5
+        }
+      }
+    }
+  }
+}

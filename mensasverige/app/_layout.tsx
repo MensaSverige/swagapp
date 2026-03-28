@@ -10,6 +10,7 @@ import { useEffect, useState } from 'react';
 import useStore from '@/features/common/store/store';
 import apiClient from '@/features/common/services/apiClient';
 import useUserLocation from '@/features/map/hooks/useUserLocation';
+import { UpdateRequiredModal } from '@/features/updateCheck/components/UpdateRequiredModal';
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
@@ -69,6 +70,7 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+        <UpdateRequiredModal />
         <Stack>
           <Stack.Protected guard={isLoggedIn}>
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />

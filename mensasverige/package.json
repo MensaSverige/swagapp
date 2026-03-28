@@ -21,6 +21,7 @@
     "@types/node": "^24.10.1",
     "axios": "^1.11.0",
     "expo": "^55.0.0",
+    "expo-application": "~55.0.10",
     "expo-blur": "~55.0.10",
     "expo-checkbox": "~55.0.3",
     "expo-constants": "~55.0.9",
@@ -57,6 +58,7 @@
   "devDependencies": {
     "@babel/core": "^7.25.2",
     "@types/react": "~19.2.10",
+    "dotenv": "^17.3.1",
     "eslint": "^9.25.0",
     "eslint-config-expo": "~55.0.0",
     "openapi-typescript": "7.13.0",
