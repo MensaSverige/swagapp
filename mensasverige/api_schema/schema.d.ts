@@ -336,57 +336,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v1/user_events/mine": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Events I Own */
-        get: operations["get_events_i_own_v1_user_events_mine_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/user_events/cohosting": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Events I Host */
-        get: operations["get_events_i_host_v1_user_events_cohosting_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/user_events/attending": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Events I Attend */
-        get: operations["get_events_i_attend_v1_user_events_attending_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/v1/user_events": {
         parameters: {
             query?: never;
@@ -397,112 +346,7 @@ export interface paths {
         /** Get Events */
         get: operations["get_events_v1_user_events_get"];
         put?: never;
-        /** Create Event */
-        post: operations["create_event_v1_user_events_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/user_events/{event_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Event */
-        get: operations["get_event_v1_user_events__event_id__get"];
-        /** Update Event */
-        put: operations["update_event_v1_user_events__event_id__put"];
         post?: never;
-        /** Delete Event */
-        delete: operations["delete_event_v1_user_events__event_id__delete"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/user_events/{event_id}/attend": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Attend Event */
-        post: operations["attend_event_v1_user_events__event_id__attend_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/user_events/{event_id}/unattend": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Unattend Event */
-        post: operations["unattend_event_v1_user_events__event_id__unattend_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/user_events/{event_id}/attendees/{attendee_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        /** Remove Attendee */
-        delete: operations["remove_attendee_v1_user_events__event_id__attendees__attendee_id__delete"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/user_events/{event_id}/accept_cohosting": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Accept Being Cohost */
-        post: operations["accept_being_cohost_v1_user_events__event_id__accept_cohosting_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/user_events/{event_id}/deny_cohosting": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Deny Being Cohost */
-        post: operations["deny_being_cohost_v1_user_events__event_id__deny_cohosting_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -611,10 +455,7 @@ export interface components {
         };
         /** Body_update_user_avatar_v1_users_me_avatar_post */
         Body_update_user_avatar_v1_users_me_avatar_post: {
-            /**
-             * File
-             * Format: binary
-             */
+            /** File */
             file: string;
         };
         /** Category */
@@ -1035,6 +876,11 @@ export interface components {
          * @enum {string}
          */
         ShowLocation: "NO_ONE" | "ALL_MEMBERS_WHO_SHARE_THEIR_OWN_LOCATION" | "ALL_MEMBERS" | "EVERYONE_WHO_SHARE_THEIR_OWN_LOCATION" | "EVERYONE";
+        /** StatusResponseWithMessage */
+        StatusResponseWithMessage: {
+            /** Message */
+            message: string;
+        };
         /** Tag */
         Tag: {
             /** Code */
@@ -1101,93 +947,6 @@ export interface components {
              * @example John Doe
              */
             lastName?: string | null;
-        };
-        /** UserEvent */
-        UserEvent: {
-            /**
-             * Id
-             * @example 507f191e810c19729de860ea
-             */
-            _id?: string | null;
-            /**
-             * Userid
-             * @example 123
-             */
-            userId: number;
-            /**
-             * Hosts
-             * @default []
-             * @example [
-             *       {
-             *         "userId": 123
-             *       }
-             *     ]
-             */
-            hosts: components["schemas"]["Host"][] | null;
-            /**
-             * Suggested Hosts
-             * @default []
-             * @example [
-             *       {
-             *         "userId": 123
-             *       }
-             *     ]
-             */
-            suggested_hosts: components["schemas"]["Host"][];
-            /**
-             * Name
-             * @example Event Name
-             */
-            name: string;
-            /**
-             * @example {
-             *       "latitude": 37.7749,
-             *       "longitude": -122.4194
-             *     }
-             */
-            location?: components["schemas"]["Location"] | null;
-            /**
-             * Start
-             * Format: date-time
-             * @example 2021-01-01T00:00:00
-             */
-            start: string;
-            /**
-             * End
-             * @example 2021-01-01T00:00:00
-             */
-            end?: string | null;
-            /**
-             * Description
-             * @example Event Description
-             */
-            description?: string | null;
-            /**
-             * Reports
-             * @default []
-             * @example [
-             *       {
-             *         "text": "Report Text",
-             *         "user": "John Doe"
-             *       }
-             *     ]
-             */
-            reports: components["schemas"]["Report"][];
-            /**
-             * Attendees
-             * @default []
-             * @example [
-             *       {
-             *         "userId": 123
-             *       }
-             *     ]
-             */
-            attendees: components["schemas"]["Attendee"][];
-            /**
-             * Maxattendees
-             * @example 10
-             */
-            maxAttendees?: number | null;
         };
         /** UserLocation */
         UserLocation: {
@@ -1265,11 +1024,10 @@ export interface components {
             msg: string;
             /** Error Type */
             type: string;
-        };
-        /** StatusResponseWithMessage */
-        v1__dev__user_events_dev_api__StatusResponseWithMessage: {
-            /** Message */
-            message: string;
+            /** Input */
+            input?: unknown;
+            /** Context */
+            ctx?: Record<string, never>;
         };
     };
     responses: never;
@@ -1894,66 +1652,6 @@ export interface operations {
             };
         };
     };
-    get_events_i_own_v1_user_events_mine_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ExtendedUserEvent"][];
-                };
-            };
-        };
-    };
-    get_events_i_host_v1_user_events_cohosting_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ExtendedUserEvent"][];
-                };
-            };
-        };
-    };
-    get_events_i_attend_v1_user_events_attending_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ExtendedUserEvent"][];
-                };
-            };
-        };
-    };
     get_events_v1_user_events_get: {
         parameters: {
             query?: never;
@@ -1970,292 +1668,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ExtendedUserEvent"][];
-                };
-            };
-        };
-    };
-    create_event_v1_user_events_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UserEvent"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ExtendedUserEvent"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_event_v1_user_events__event_id__get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                event_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ExtendedUserEvent"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    update_event_v1_user_events__event_id__put: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                event_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UserEvent"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ExtendedUserEvent"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    delete_event_v1_user_events__event_id__delete: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                event_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["v1__dev__user_events_dev_api__StatusResponseWithMessage"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    attend_event_v1_user_events__event_id__attend_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                event_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ExtendedUserEvent"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    unattend_event_v1_user_events__event_id__unattend_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                event_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["v1__dev__user_events_dev_api__StatusResponseWithMessage"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    remove_attendee_v1_user_events__event_id__attendees__attendee_id__delete: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                event_id: string;
-                attendee_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["v1__dev__user_events_dev_api__StatusResponseWithMessage"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    accept_being_cohost_v1_user_events__event_id__accept_cohosting_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                event_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["v1__dev__user_events_dev_api__StatusResponseWithMessage"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    deny_being_cohost_v1_user_events__event_id__deny_cohosting_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                event_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["v1__dev__user_events_dev_api__StatusResponseWithMessage"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -2306,7 +1718,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["v1__dev__user_events_dev_api__StatusResponseWithMessage"];
+                    "application/json": components["schemas"]["StatusResponseWithMessage"];
                 };
             };
         };
