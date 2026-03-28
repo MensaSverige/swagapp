@@ -28,7 +28,14 @@ services:
       GOOGLE_REVIEW_USER: google@google.com
       REVIEW_PASSWORD: some-nice-password # Different in production
       GOOGLE_MAPS_API_KEY: ${GOOGLE_MAPS_API_KEY}
-
+      IPS_SSH_HOST: ${IPS_SSH_HOST}
+      IPS_SSH_PORT: ${IPS_SSH_PORT:-22}
+      IPS_SSH_USER: ${IPS_SSH_USER}
+      IPS_SSH_PASSWORD: ${IPS_SSH_PASSWORD}
+      IPS_DB_HOST: ${IPS_DB_HOST:-localhost}
+      IPS_DB_NAME: ${IPS_DB_NAME}
+      IPS_DB_USER: ${IPS_DB_USER}
+      IPS_DB_PASS: ${IPS_DB_PASS}
   mongo:
     image: mongo:latest
     volumes:

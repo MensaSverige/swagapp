@@ -8,6 +8,7 @@ from apscheduler.triggers.cron import CronTrigger
 from apscheduler.triggers.interval import IntervalTrigger
 from v1.jobs.refresh_events import refresh_external_events
 from v1.jobs.refresh_news import refresh_external_news
+from v1.jobs.refresh_ical_events import refresh_ical_events
 
 log = logging.getLogger(__name__)
 
@@ -66,6 +67,13 @@ JOB_REGISTRY = [
         func=refresh_external_news,
         default_schedule={"type": "cron", "minute": "*/30"},
         env_prefix="REFRESH_EXTERNAL_NEWS",
+        init=True,
+    ),
+    JobConfig(
+        name="sync_ical_events",
+        func=refresh_ical_events,
+        default_schedule={"type": "cron", "minute": "*/30"},  # Sync every 30 minutes
+        env_prefix="SYNC_ICAL_EVENTS",
         init=True,
     ),
 ]

@@ -5,7 +5,8 @@ import logging
 
 from v1.db.models.external_events import ExternalEventDetails
 from v1.user_events.user_events_model import ExtendedUserEvent, UserEvent, Location, Host, Attendee
-from v1.events.events_model import Event, EventAttendee, EventHost, ShowAttendees, Tag
+from v1.events.events_model import Event, EventAttendee, EventHost, ShowAttendees, Tag, EventSource
+from v1.ical_events.ical_model import ICalEvent
 from v1.utilities import get_current_time, convert_to_tz_aware, get_current_time_zone
 
 
@@ -116,6 +117,8 @@ def map_external_event(details: ExternalEventDetails, current_user_id: int, book
 
         event = Event(
             id=f"ext{details.eventId}",
+            sourceId=str(details.eventId),
+            source=EventSource.external,
             parentEvent=None,
             admin=admin_ids,
             hosts=hosts,
@@ -168,6 +171,8 @@ def map_user_event(ue: ExtendedUserEvent, current_user_id: int) -> Event:
 
     return Event(
         id=f"usr{ue.id}",
+        sourceId=str(ue.id),
+        source=EventSource.user,
         parentEvent=None,
         admin=[ue.userId],
         hosts=[EventHost(userId=h.userId, fullName="") for h in (ue.hosts or [])],
@@ -235,4 +240,78 @@ def map_event_to_user_event(event: Event, owner_id: int, existing: UserEvent | N
         attendees=[Attendee(userId=a.userId) for a in (existing.attendees if existing else [])],
         maxAttendees=event.maxAttendees,
     )
+    return ue
+
+
+def map_ical_event(ical_event: ICalEvent, current_user_id: int) -> Event:
+    """Map an iCalendar event to the unified Event model.
+    
+    Args:
+        ical_event: The parsed iCalendar event
+        current_user_id: The current user's ID for determining attending/bookable status
+        
+    Returns:
+        Unified Event object
+    """
+    now = _utc_now()
+    
+    # iCal events are read-only, so user can't attend them (for now)
+    # In the future, you might want to add a way to mark interest or attendance
+    attending = False
+    bookable = False
+    
+    # Determine if event is cancelled from status
+    cancelled = None
+    if ical_event.status and ical_event.status.upper() == "CANCELLED":
+        cancelled = ical_event.last_modified or now
+    
+    # Extract organizer info for hosts
+    hosts = []
+    if ical_event.organizer:
+        hosts.append(EventHost(userId=0, fullName=ical_event.organizer))
+    
+    # Create a hash-based short ID for the unified event ID
+    # Use first 8 characters of UID hash for readability
+    import hashlib
+    short_id = hashlib.md5(ical_event.uid.encode()).hexdigest()[:8]
+    
+    return Event(
+        id=f"ical{short_id}",
+        sourceId=ical_event.uid,
+        source=EventSource.ical,
+        parentEvent=None,
+        admin=[],  # iCal events have no admin users in our system
+        hosts=hosts,
+        name=ical_event.summary,
+        tags=[],  # Could extract tags from categories if needed
+        locationDescription=ical_event.location,
+        address=ical_event.location,
+        locationMarker=None,
+        latitude=None,
+        longitude=None,
+        start=ical_event.start,
+        end=ical_event.end,
+        cancelled=cancelled,
+        imageUrl=None,
+        description=ical_event.description,
+        bookingStart=None,
+        bookingEnd=None,
+        showAttendees=ShowAttendees.none,
+        attendees=[],
+        queue=[],
+        maxAttendees=None,
+        price=0.0,
+        official=True,  # iCal events are considered official
+        attending=attending,
+        bookable=bookable,
+        extras={
+            "uid": ical_event.uid,
+            "organizer": ical_event.organizer,
+            "url": ical_event.url,
+            "status": ical_event.status,
+            "created": ical_event.created.isoformat() if ical_event.created else None,
+            "lastModified": ical_event.last_modified.isoformat() if ical_event.last_modified else None,
+        }
+    )
+
     return ue

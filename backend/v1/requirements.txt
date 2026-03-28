@@ -13,6 +13,8 @@ sqlalchemy # ORM for databases
 faker # Fake data generator
 googlemaps # Google Maps API
 apscheduler # Scheduling periodic tasks
+pymysql # MySQL driver for IPS calendar sync
+sshtunnel # SSH tunnel for remote DB access
 
 # Documentation
 sphinx

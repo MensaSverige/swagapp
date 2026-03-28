@@ -8,6 +8,7 @@ from v1.db.models.tokenstorage import TokenStorage
 from v1.db.models.user import User
 from v1.user_events.user_events_model import UserEvent
 from v1.db.models.external_events import ExternalEventDetails, ExternalRoot
+from v1.events.events_model import Event
 from v1.db.review_users import review_users
 
 logging.basicConfig(level=logging.INFO)
@@ -24,6 +25,7 @@ tokenstorage_collection = db[get_collection_name(TokenStorage)]
 user_event_collection = db[get_collection_name(UserEvent)]
 external_event_collection = db[get_collection_name(ExternalEventDetails)]
 external_root_collection = db[get_collection_name(ExternalRoot)]
+unified_events_collection = db['unifiedevents']  # Unified events from all sources
 
 def initialize_db():
 
@@ -45,6 +47,15 @@ def initialize_db():
         initialize_collection(ExternalRoot, db)
 
         initialize_collection(UserEvent, db)
+
+        # Initialize unified events collection
+        if 'unifiedevents' not in db.list_collection_names():
+            logging.info("Creating collection: unifiedevents")
+            db.create_collection('unifiedevents')
+        else:
+            logging.info("Collection unifiedevents already exists.")
+        # Create compound index on source + sourceId for uniqueness
+        unified_events_collection.create_index([("source", 1), ("sourceId", 1)], unique=True)
 
         # Check if in local test mode
         if TEST_MODE.lower() == 'true':
