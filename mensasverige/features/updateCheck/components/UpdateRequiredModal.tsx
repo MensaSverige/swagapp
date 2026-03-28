@@ -20,7 +20,7 @@ export const UpdateRequiredModal: React.FC = () => {
       <View style={styles.overlay}>
         <View style={styles.content}>
           <Text style={styles.title}>Uppdatering krävs</Text>
-          <Text style={styles.message}>{`En ny version (${requiredUpdateInfo.latestVersion || ''}) är tillgänglig.`}</Text>
+          <Text style={styles.message}>Din version av appen stöds inte längre. Vänligen uppdatera för att fortsätta använda appen.</Text>
           <TouchableOpacity
             style={styles.button}
             onPress={() => openStoreUrl(requiredUpdateInfo.storeUrl ?? undefined)}
