@@ -37,6 +37,14 @@ services:
       PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-http://localhost:8043}
       ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:8081}
       COOKIE_SECURE: "false"
+      IPS_SSH_HOST: ${IPS_SSH_HOST}
+      IPS_SSH_PORT: ${IPS_SSH_PORT:-22}
+      IPS_SSH_USER: ${IPS_SSH_USER}
+      IPS_SSH_PASSWORD: ${IPS_SSH_PASSWORD}
+      IPS_DB_HOST: ${IPS_DB_HOST:-localhost}
+      IPS_DB_NAME: ${IPS_DB_NAME}
+      IPS_DB_USER: ${IPS_DB_USER}
+      IPS_DB_PASS: ${IPS_DB_PASS}
 
   # One-time Mongo → Postgres data migration.
   # Run with: docker compose --profile migrate up migrate

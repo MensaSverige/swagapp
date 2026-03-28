@@ -5,6 +5,13 @@ from typing import List, Optional, Any
 from pydantic import BaseModel, Field, field_validator
 
 
+class EventSource(str, Enum):
+    """Source type for events"""
+    external = "external"  # Official external events
+    user = "user"  # User-created events
+    ical = "ical"  # iCalendar events from subscription
+
+
 class ShowAttendees(str, Enum):
     none = "none"
     all = "all"
@@ -40,7 +47,9 @@ class Event(BaseModel):
 
     Fields mostly follow the sketch in notes.md. Additional convenience & source-specific fields are stored under `extras`.
     """
-    id: str = Field(..., description="Globally unique event id, prefixed with source (ext / usr)")
+    id: str = Field(..., description="Globally unique event id, prefixed with source (ext / usr / ical)")
+    sourceId: Optional[str] = Field(None, description="Original ID from the source system")
+    source: EventSource = Field(..., description="Source type of the event")
     parentEvent: Optional[str] = Field(None, description="Optional parent event id")
     admin: List[int] = Field(default_factory=list, description="User IDs with admin rights (owner for user events)")
     hosts: List[EventHost] = Field(default_factory=list)
