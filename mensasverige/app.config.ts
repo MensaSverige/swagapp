@@ -9,7 +9,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
   const baseConfig: ExpoConfig = {
     name: "mensasverige",
     slug: "mensasverige",
-    version: "2.0.1",
+    version: "2.1.0",
     runtimeVersion: {
       policy: "appVersion",
     },
@@ -21,7 +21,6 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     icon: "./assets/images/icon.png",
     scheme: "mensasverige",
     userInterfaceStyle: "automatic",
-    newArchEnabled: true,
     ios: {
       supportsTablet: true,
       bundleIdentifier: "se.mensasverige",
@@ -46,7 +45,6 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       //   foregroundImage: "./assets/images/adaptive-icon.png",
       //   backgroundColor: "#ffffff"
       // },
-      edgeToEdgeEnabled: true,
       package: "se.mensasverige",
     },
     web: {
