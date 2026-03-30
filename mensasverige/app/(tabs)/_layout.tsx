@@ -9,6 +9,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import TabBarBackground from '@/components/ui/TabBarBackground';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
+import { UpdateBanner } from '@/features/updateCheck/components/UpdateBanner';
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
@@ -29,6 +30,8 @@ export default function TabLayout() {
     ),
   };
   return (
+    <>
+    <UpdateBanner />
     <Tabs
       screenOptions={{
         tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
@@ -77,5 +80,6 @@ export default function TabLayout() {
         }}
       />
     </Tabs>
+    </>
   );
 }

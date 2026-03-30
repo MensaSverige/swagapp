@@ -22,6 +22,7 @@ from v1.db.external_events import clean_external_events, get_stored_external_eve
 from v1.user_events.user_events_api import user_events_v1
 from v1.db.mongo import initialize_db
 from v1.dev.exception_handlers import register_exception_handlers
+from v1.update_check_middleware import UpdateCheckMiddleware
 from v1.utilities import get_current_time_formatted
 
 # Initialize logging
@@ -39,9 +40,17 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=[
+        "x-update-available",
+        "x-latest-version",
+        "x-latest-build",
+        "x-store-url",
+    ],
 )
 
 register_exception_handlers(app)
+
+app.add_middleware(UpdateCheckMiddleware)
 
 app.include_router(auth_v1)
 app.include_router(health_v1)

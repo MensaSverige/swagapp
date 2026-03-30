@@ -20,6 +20,9 @@
 import axios, {AxiosResponse} from 'axios';
 import useStore from '../store/store';
 import {getOrRefreshAccessToken} from './authService';
+import { UpdateCheckResponseInterceptor, UpdateCheckErrorInterceptor } from '@/features/updateCheck/services/UpdateCheckResponseInterceptor';
+import * as Application from 'expo-application';
+import { Platform } from 'react-native';
 
 const apiClient = axios.create({
   baseURL: `${process.env.EXPO_PUBLIC_API_URL}/${process.env.EXPO_PUBLIC_API_VERSION}`,
@@ -36,6 +39,17 @@ apiClient.interceptors.request.use(
         console.log('Error getting access token', error);
         return Promise.reject(error);
       });
+  },
+  (error: Error) => Promise.reject(error),
+);
+
+apiClient.interceptors.request.use(
+  config => {
+    config.headers['x-phone-os'] = Platform.OS;
+    config.headers['x-app-version'] = Application.nativeApplicationVersion ?? '';
+    config.headers['x-build-number'] = Application.nativeBuildVersion ?? '';
+    config.headers['x-application-id'] = Application.applicationId ?? '';
+    return config;
   },
   (error: Error) => Promise.reject(error),
 );
@@ -64,6 +78,11 @@ apiClient.interceptors.response.use(
     }
     return Promise.reject(error);
   },
+);
+
+apiClient.interceptors.response.use(
+  async (response: AxiosResponse) => UpdateCheckResponseInterceptor(response),
+  (error) => UpdateCheckErrorInterceptor(error),
 );
 
 export default apiClient;
