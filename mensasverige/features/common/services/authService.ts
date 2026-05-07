@@ -109,9 +109,7 @@ export const refreshAccessToken = async (refreshToken: string): Promise<string> 
     const response = await authClient.post('/refresh_token', { refresh_token: refreshToken });
     if (response.status === 200) {
         const data: AuthResponse = response.data;
-        await SecureStore.setItemAsync('accessToken', data.accessToken);
-        await SecureStore.setItemAsync('accessTokenExpiry', data.accessTokenExpiry.toString());
-        await SecureStore.setItemAsync('refreshToken', data.refreshToken);
+        await storeAndValidateAuthResponse(data);
         return data.accessToken;
     }
     throw new Error('Failed to refresh access token');
