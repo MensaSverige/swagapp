@@ -3,7 +3,7 @@ from faker import Faker
 import random
 from typing import List
 from v1.utilities import convert_to_tz_aware, get_current_time
-from v1.db.models.user import User, UserSettings, ShowLocation, UserLocation, ContactInfo
+from v1.db.models.user import User, UserSettings, PrivacySetting, UserLocation, ContactInfo
 
 fake = Faker()
 
@@ -18,9 +18,9 @@ def generate_fake_users(n: int) -> List[User]:
             isMember=True,
             settings=UserSettings(
                 show_location=fake.random_element(elements=(
-                    ShowLocation.ALL_MEMBERS,
-                    ShowLocation.ALL_MEMBERS_WHO_SHARE_THEIR_OWN_LOCATION,
-                    ShowLocation.NO_ONE)),
+                    PrivacySetting.MEMBERS_ONLY,
+                    PrivacySetting.MEMBERS_MUTUAL,
+                    PrivacySetting.NO_ONE)),
                 show_email=fake.boolean(),
                 show_phone=fake.boolean(),
             ),

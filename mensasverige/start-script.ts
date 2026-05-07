@@ -98,15 +98,13 @@ const setEnvironmentVariablesAndTypes = async (): Promise<void> => {
       await checkBackend();
       
       // Run npx openapi-typescript command
-      exec(`npx openapi-typescript ${backendURL}/openapi.json -o ./api_schema/schema.d.ts`, (error: { message: any; }, stdout: any, stderr: any) => {
+      exec(`npx openapi-typescript ${backendURL}/openapi.json -o ./api_schema/schema.d.ts`, { env: { ...process.env, npm_config_loglevel: 'error' } }, (error: { message: any; }, stdout: any, stderr: any) => {
         if (error) {
           console.error(`Error running npx openapi-typescript: ${error.message}`);
+          if (stderr) console.error(stderr);
           process.exit(1);
         }
-        if (stderr) {
-          console.error(`Error running npx openapi-typescript: ${stderr}`);
-          process.exit(1);
-        }
+        if (stderr) console.warn(`npx openapi-typescript warnings: ${stderr}`);
         console.log(`npx openapi-typescript output: ${stdout}`);
       });
     } catch (error: any) {

@@ -21,6 +21,7 @@ from v1.external.event_api import get_external_root, get_external_event_details
 from v1.db.external_events import clean_external_events, get_stored_external_event_details
 from v1.user_events.user_events_api import user_events_v1
 from v1.db.mongo import initialize_db
+from migrations.rename_privacy_settings import run as run_migrations
 from v1.dev.exception_handlers import register_exception_handlers
 from v1.update_check_middleware import UpdateCheckMiddleware
 from v1.utilities import get_current_time_formatted
@@ -68,6 +69,7 @@ if os.getenv("ENABLE_DEV_ENDPOINTS") == "true":
 
 def initialize_app():
     initialize_db()
+    run_migrations()
 
     scheduler = create_scheduler()
     scheduler.start()
