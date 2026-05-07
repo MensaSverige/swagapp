@@ -9,7 +9,7 @@ from v1.external.auth_api import loginm, loginb
 from v1.db.external_token_storage import save_external_token
 from v1.token_handler import create_access_token, create_refresh_token, get_token_expiry, verify_refresh_token
 from v1.db.models.user import User
-from v1.db.users import create_user, get_user
+from v1.db.users import create_user, get_user, update_user_from_authresponse
 
 auth_v1 = APIRouter(prefix="/v1")
 
@@ -42,6 +42,9 @@ def authm(request: AuthRequest) -> AuthResponse:
         user = get_user(memberId)
         if not user:
             user = create_user(response)
+        else:
+            update_user_from_authresponse(memberId, response)
+            user = get_user(memberId)
     except KeyError as e:
         print("memberId not found in response")
         raise HTTPException(status_code=400, detail="Invalid credentials")
@@ -68,6 +71,9 @@ def authb(request: AuthRequest) -> AuthResponse:
         user = get_user(memberId)
         if not user:
             user = create_user(response)
+        else:
+            update_user_from_authresponse(memberId, response)
+            user = get_user(memberId)
     except KeyError as e:
         print("memberId not found in response")
         raise HTTPException(status_code=400, detail="Invalid credentials")
