@@ -67,16 +67,6 @@ const UserSettings: React.FC = () => {
     const styles = createStyles(colorScheme ?? 'light');
 
     const [isLoading, setIsLoading] = useState(false);
-    const [locationSwitch, setLocationSwitch] = useState<boolean>(() => {
-        // Initialize locationSwitch based on formState to avoid undefined access
-        if (!user?.settings?.show_location) {
-            return false;
-        }
-        return user.settings.show_location !== 'NO_ONE';
-    });
-    const [profileSwitch, setProfileSwitch] = useState<boolean>(() => {
-        return (user?.settings?.show_profile ?? DEFAULT_SETTINGS.SHOW_PROFILE) !== 'NO_ONE';
-    });
     const [editingField, setEditingField] = useState<string | null>(null);
     // Temporary slider values to prevent saving on every change
     const [tempLocationInterval, setTempLocationInterval] = useState<number>(
@@ -153,29 +143,35 @@ const UserSettings: React.FC = () => {
     };
 
     const contactSharingOptions: DropdownOption[] = useMemo(() => user?.isMember ? [
+        { value: "NO_ONE",          label: "Ingen" },
         { value: "MEMBERS_ONLY",    label: "Alla medlemmar" },
         { value: "MEMBERS_MUTUAL",  label: "Medlemmar som visar sin profil" },
         { value: "EVERYONE_MUTUAL", label: "Alla inloggade deltagare som visar sin profil" },
         { value: "EVERYONE",        label: "Alla deltagare (även gäster)" },
     ] : [
+        { value: "NO_ONE",          label: "Ingen" },
         { value: "EVERYONE_MUTUAL", label: "Alla inloggade deltagare som visar sin profil" },
         { value: "EVERYONE",        label: "Alla deltagare (även gäster)" },
     ], [user?.isMember]);
 
     const profileSharingOptions: DropdownOption[] = useMemo(() => user?.isMember ? [
+        { value: "NO_ONE",          label: "Ingen" },
         { value: "MEMBERS_ONLY",    label: "Alla medlemmar" },
         { value: "MEMBERS_MUTUAL",  label: "Medlemmar som visar sin profil" },
         { value: "EVERYONE_MUTUAL", label: "Alla inloggade deltagare som visar sin profil" },
         { value: "EVERYONE",        label: "Alla deltagare (även gäster)" },
     ] : [
+        { value: "NO_ONE",          label: "Ingen" },
         { value: "EVERYONE_MUTUAL", label: "Alla inloggade deltagare som visar sin profil" },
         { value: "EVERYONE",        label: "Alla deltagare (även gäster)" },
     ], [user?.isMember]);
 
     const locationSharingOptions: DropdownOption[] = useMemo(() => user?.isMember ? [
+        { value: "NO_ONE",         label: "Ingen" },
         { value: "MEMBERS_MUTUAL", label: "Andra medlemmar som visar sin position" },
         { value: "MEMBERS_ONLY",   label: "Alla medlemmar" },
     ] : [
+        { value: "NO_ONE",          label: "Ingen" },
         { value: "EVERYONE_MUTUAL", label: 'Andra deltagare som visar sin position' },
         { value: "EVERYONE",        label: 'Alla' },
     ], [user?.isMember]);
@@ -223,6 +219,26 @@ const UserSettings: React.FC = () => {
                     {children}
                 </ThemedView>
             )}
+        </ThemedView>
+    );
+
+    const PrivacyDropdownGroup: React.FC<{
+        title: string;
+        description: string;
+        children: React.ReactNode;
+    }> = ({ title, description, children }) => (
+        <ThemedView style={styles.group}>
+            <View style={styles.cardContent}>
+                <ThemedText type="defaultSemiBold" style={styles.cardTitle}>
+                    {title}
+                </ThemedText>
+                <ThemedText style={styles.cardDescription}>
+                    {description}
+                </ThemedText>
+            </View>
+            <ThemedView style={styles.cardExpandedContent}>
+                {children}
+            </ThemedView>
         </ThemedView>
     );
 
@@ -299,181 +315,77 @@ const UserSettings: React.FC = () => {
                     subtitle="Styr vilken information andra deltagare kan se i dina kontaktuppgifter"
                 />
 
-                <PrivacyInputGroup
+                <PrivacyDropdownGroup
                     title="E-postadress"
-                    description={formState?.settings?.show_email !== 'NO_ONE'
-                        ? "Andra kan se din e-post"
-                        : "Din e-post är dold för andra"}
-                    value={formState?.settings?.show_email !== 'NO_ONE'}
-                    onValueChange={(value) => {
-                        if (!formState || !formState.settings) return;
-                        setFormState({
-                            ...formState,
-                            settings: {
-                                ...formState.settings,
-                                show_email: value ? (user?.isMember ? 'MEMBERS_ONLY' : 'EVERYONE_MUTUAL') : 'NO_ONE',
-                            },
-                        });
-                    }}>
-                    <View>
-                        <ThemedText style={styles.locationSubheading}>
-                            Vem kan se din e-post?
-                        </ThemedText>
-                        <Dropdown
-                            options={contactSharingOptions}
-                            selectedValue={formState?.settings?.show_email || 'NO_ONE'}
-                            onValueChange={(value) => {
-                                if (!formState || !formState.settings) return;
-                                setFormState({
-                                    ...formState,
-                                    settings: { ...formState.settings, show_email: value as PrivacySetting },
-                                });
-                            }}
-                            placeholder="Välj alternativ"
-                            style={styles.dropdown}
-                        />
-                    </View>
-                </PrivacyInputGroup>
+                    description="Vem kan se din e-post?">
+                    <Dropdown
+                        options={contactSharingOptions}
+                        selectedValue={formState?.settings?.show_email || 'NO_ONE'}
+                        onValueChange={(value) => {
+                            if (!formState || !formState.settings) return;
+                            setFormState({
+                                ...formState,
+                                settings: { ...formState.settings, show_email: value as PrivacySetting },
+                            });
+                        }}
+                        placeholder="Välj alternativ"
+                        style={styles.dropdown}
+                    />
+                </PrivacyDropdownGroup>
 
-                <PrivacyInputGroup
+                <PrivacyDropdownGroup
                     title="Telefonnummer"
-                    description={formState?.settings?.show_phone !== 'NO_ONE'
-                        ? "Andra kan se ditt telefonnummer"
-                        : "Ditt telefonnummer är dolt för andra"}
-                    value={formState?.settings?.show_phone !== 'NO_ONE'}
-                    onValueChange={(value) => {
-                        if (!formState || !formState.settings) return;
-                        setFormState({
-                            ...formState,
-                            settings: {
-                                ...formState.settings,
-                                show_phone: value ? (user?.isMember ? 'MEMBERS_ONLY' : 'EVERYONE_MUTUAL') : 'NO_ONE',
-                            },
-                        });
-                    }}>
-                    <View>
-                        <ThemedText style={styles.locationSubheading}>
-                            Vem kan se ditt telefonnummer?
-                        </ThemedText>
-                        <Dropdown
-                            options={contactSharingOptions}
-                            selectedValue={formState?.settings?.show_phone || 'NO_ONE'}
-                            onValueChange={(value) => {
-                                if (!formState || !formState.settings) return;
-                                setFormState({
-                                    ...formState,
-                                    settings: { ...formState.settings, show_phone: value as PrivacySetting },
-                                });
-                            }}
-                            placeholder="Välj alternativ"
-                            style={styles.dropdown}
-                        />
-                    </View>
-                </PrivacyInputGroup>
+                    description="Vem kan se ditt telefonnummer?">
+                    <Dropdown
+                        options={contactSharingOptions}
+                        selectedValue={formState?.settings?.show_phone || 'NO_ONE'}
+                        onValueChange={(value) => {
+                            if (!formState || !formState.settings) return;
+                            setFormState({
+                                ...formState,
+                                settings: { ...formState.settings, show_phone: value as PrivacySetting },
+                            });
+                        }}
+                        placeholder="Välj alternativ"
+                        style={styles.dropdown}
+                    />
+                </PrivacyDropdownGroup>
 
-                <PrivacyInputGroup
+                <PrivacyDropdownGroup
                     title="Profiluppgifter"
-                    description={profileSwitch
-                        ? "Andra kan se ditt namn och din profilbild"
-                        : "Ditt namn och din profilbild är dolda för andra"}
-                    value={profileSwitch}
-                    onValueChange={(value) => {
-                        if (!formState || !formState.settings) return;
-                        setProfileSwitch(value);
-                        if (value) {
+                    description="Vem kan se ditt namn och din profilbild?">
+                    <Dropdown
+                        options={profileSharingOptions}
+                        selectedValue={formState?.settings?.show_profile || DEFAULT_SETTINGS.SHOW_PROFILE}
+                        onValueChange={(value) => {
+                            if (!formState || !formState.settings) return;
                             setFormState({
                                 ...formState,
-                                settings: {
-                                    ...formState.settings,
-                                    show_profile: user?.isMember ? 'MEMBERS_ONLY' : 'EVERYONE_MUTUAL',
-                                },
+                                settings: { ...formState.settings, show_profile: value as PrivacySetting },
                             });
-                        } else {
-                            setFormState({
-                                ...formState,
-                                settings: {
-                                    ...formState.settings,
-                                    show_profile: 'NO_ONE',
-                                },
-                            });
-                        }
-                    }}>
-                    <View>
-                        <ThemedText style={styles.locationSubheading}>
-                            Vem kan se ditt namn och din profilbild?
-                        </ThemedText>
-                        <Dropdown
-                            options={profileSharingOptions}
-                            selectedValue={formState?.settings?.show_profile || DEFAULT_SETTINGS.SHOW_PROFILE}
-                            onValueChange={(value) => {
-                                if (!formState || !formState.settings) return;
-                                setFormState({
-                                    ...formState,
-                                    settings: {
-                                        ...formState.settings,
-                                        show_profile: value as PrivacySetting,
-                                    },
-                                });
-                            }}
-                            placeholder="Välj alternativ"
-                            style={styles.dropdown}
-                        />
-                    </View>
-                </PrivacyInputGroup>
+                        }}
+                        placeholder="Välj alternativ"
+                        style={styles.dropdown}
+                    />
+                </PrivacyDropdownGroup>
 
-                <PrivacyInputGroup
+                <PrivacyDropdownGroup
                     title="Platsuppgifter"
-                    description={locationSwitch
-                        ? "Andra kan se din position på kartan"
-                        : "Din position är dold för andra"}
-                    value={locationSwitch}
-                    onValueChange={(value) => {
-                        if (!formState || !formState.settings) {
-                            return;
-                        }
-                        setLocationSwitch(value);
-                        if (value) {
+                    description="Vem kan se din position?">
+                    <Dropdown
+                        options={locationSharingOptions}
+                        selectedValue={formState?.settings?.show_location || 'NO_ONE'}
+                        onValueChange={(value) => {
+                            if (!formState || !formState.settings) return;
                             setFormState({
                                 ...formState,
-                                settings: {
-                                    ...formState.settings,
-                                    show_location: user?.isMember ? 'MEMBERS_MUTUAL' : 'EVERYONE_MUTUAL',
-                                },
+                                settings: { ...formState.settings, show_location: value as PrivacySetting },
                             });
-                        } else {
-                            setFormState({
-                                ...formState,
-                                settings: {
-                                    ...formState.settings,
-                                    show_location: 'NO_ONE',
-                                },
-                            });
-                        }
-                    }}>
-                    <View>
-                        <ThemedText style={styles.locationSubheading}>
-                            Vem kan se din position?
-                        </ThemedText>
-                        <Dropdown
-                            options={locationSharingOptions}
-                            selectedValue={formState?.settings?.show_location || 'NO_ONE'}
-                            onValueChange={(value) => {
-                                if (!formState || !formState.settings) {
-                                    return;
-                                }
-                                setFormState({
-                                    ...formState,
-                                    settings: {
-                                        ...formState.settings,
-                                        show_location: value as PrivacySetting,
-                                    },
-                                });
-                            }}
-                            placeholder="Välj alternativ"
-                            style={styles.dropdown}
-                        />
-                    </View>
-                </PrivacyInputGroup>
+                        }}
+                        placeholder="Välj alternativ"
+                        style={styles.dropdown}
+                    />
+                </PrivacyDropdownGroup>
 
                 <SectionHeader
                     title="Appinställningar"
