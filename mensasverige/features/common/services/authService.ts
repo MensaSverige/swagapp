@@ -27,7 +27,7 @@
  */
 
 import { AuthRequest, AuthResponse, HTTPValidationError, ValidationError } from '../../../api_schema/types';
-import axios, { AxiosResponse } from 'axios';
+import axios from 'axios';
 import * as SecureStore from "expo-secure-store";
 
 const authClient = axios.create({
@@ -106,19 +106,15 @@ export const getOrRefreshAccessToken = async (): Promise<string> => {
 }
 
 export const refreshAccessToken = async (refreshToken: string): Promise<string> => {
-    return authClient
-        .post('/refresh_token', { refresh_token: refreshToken })
-        .then((response: AxiosResponse) => {
-            if (response.status === 200) {
-                const data: AuthResponse = response.data;
-                console.log('Auth response', data);
-                storeAndValidateAuthResponse(data);
-                return data.accessToken;
-            }
-            else {
-                return Promise.reject('Failed to refresh access token');
-            }
-        })
+    const response = await authClient.post('/refresh_token', { refresh_token: refreshToken });
+    if (response.status === 200) {
+        const data: AuthResponse = response.data;
+        await SecureStore.setItemAsync('accessToken', data.accessToken);
+        await SecureStore.setItemAsync('accessTokenExpiry', data.accessTokenExpiry.toString());
+        await SecureStore.setItemAsync('refreshToken', data.refreshToken);
+        return data.accessToken;
+    }
+    throw new Error('Failed to refresh access token');
 }
 
 export const attemptLoginWithStoredCredentials = async (): Promise<AuthResponse> => {
