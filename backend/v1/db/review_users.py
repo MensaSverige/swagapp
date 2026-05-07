@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 from typing import List
 from v1.token_handler import create_token
 from v1.env_constants import APPLE_REVIEW_USER, GOOGLE_REVIEW_USER, REVIEW_PASSWORD
-from v1.db.models.user import ContactInfo, ShowLocation, User, UserSettings
+from v1.db.models.user import ContactInfo, PrivacySetting, User, UserSettings
 from v1.utilities import get_current_time
 
 apple_review_user_id = 1
@@ -12,15 +12,15 @@ google_review_user_id = 2
 review_users: List[User] = [
     User(userId=apple_review_user_id,
          isMember=True,
-         settings=UserSettings(show_location=ShowLocation.NO_ONE,
-                               show_email=False,
-                               show_phone=False),
+         settings=UserSettings(show_location=PrivacySetting.NO_ONE,
+                               show_email=PrivacySetting.NO_ONE,
+                               show_phone=PrivacySetting.NO_ONE),
          contact_info=ContactInfo(email="apple@apple.com")),
     User(userId=google_review_user_id,
          isMember=True,
-         settings=UserSettings(show_location=ShowLocation.NO_ONE,
-                               show_email=False,
-                               show_phone=False),
+         settings=UserSettings(show_location=PrivacySetting.NO_ONE,
+                               show_email=PrivacySetting.NO_ONE,
+                               show_phone=PrivacySetting.NO_ONE),
          contact_info=ContactInfo(email="google@google.com")),
 ]
 

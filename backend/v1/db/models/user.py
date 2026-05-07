@@ -11,19 +11,21 @@ class UserLocation(BaseModel):
     accuracy: float  # Accuracy in meters
 
 
-class ShowLocation(str, Enum):
-    NO_ONE = 'NO_ONE'
-    ALL_MEMBERS_WHO_SHARE_THEIR_OWN_LOCATION = 'ALL_MEMBERS_WHO_SHARE_THEIR_OWN_LOCATION'
-    ALL_MEMBERS = 'ALL_MEMBERS'
-    EVERYONE_WHO_SHARE_THEIR_OWN_LOCATION = 'EVERYONE_WHO_SHARE_THEIR_OWN_LOCATION'
-    EVERYONE = 'EVERYONE'
+class PrivacySetting(str, Enum):
+    NO_ONE          = 'NO_ONE'
+    MEMBERS_ONLY    = 'MEMBERS_ONLY'
+    MEMBERS_MUTUAL  = 'MEMBERS_MUTUAL'
+    EVERYONE_MUTUAL = 'EVERYONE_MUTUAL'
+    EVERYONE        = 'EVERYONE'
 
 
 class UserSettings(BaseModel):
-    show_location: ShowLocation = Field(default=ShowLocation.NO_ONE,
-                                        example=ShowLocation.EVERYONE)
-    show_email: bool = Field(default=False, example=True)
-    show_phone: bool = Field(default=False, example=True)
+    show_location: PrivacySetting = Field(default=PrivacySetting.NO_ONE,
+                                          example=PrivacySetting.EVERYONE)
+    show_profile: PrivacySetting = Field(default=PrivacySetting.MEMBERS_ONLY,
+                                         example=PrivacySetting.MEMBERS_ONLY)
+    show_email: PrivacySetting = Field(default=PrivacySetting.NO_ONE, example=PrivacySetting.MEMBERS_ONLY)
+    show_phone: PrivacySetting = Field(default=PrivacySetting.NO_ONE, example=PrivacySetting.MEMBERS_ONLY)
     
     location_update_interval_seconds: int = Field(default=60, example=60, description="Location update interval in seconds")
     events_refresh_interval_seconds: int = Field(default=60, example=60, description="Events refresh interval in seconds")

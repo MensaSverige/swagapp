@@ -1,7 +1,7 @@
 import json
 from typing import Optional
 from pydantic import ValidationError
-from v1.db.models.user import ContactInfo, ShowLocation, User, UserSettings
+from v1.db.models.user import ContactInfo, PrivacySetting, User, UserSettings
 from v1.db.mongo import user_collection
 
 
@@ -52,7 +52,7 @@ def get_users(show_location: Optional[bool] = None) -> list[User]:
     """
     query = {}
     if show_location is not None:
-        query = {'settings.show_location': {'$ne': ShowLocation.NO_ONE.value}}
+        query = {'settings.show_location': {'$ne': PrivacySetting.NO_ONE.value}}
     return list(user_collection.find(query))
 
 
@@ -62,7 +62,7 @@ def get_users_showing_location() -> list[User]:
 
     :return: The user documents.
     """
-    query = {"settings.show_location": {"$ne": ShowLocation.NO_ONE.value}}
+    query = {"settings.show_location": {"$ne": PrivacySetting.NO_ONE.value}}
     return list(user_collection.find(query))
 
 

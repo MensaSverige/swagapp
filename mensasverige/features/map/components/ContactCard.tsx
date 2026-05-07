@@ -114,7 +114,9 @@ const ContactCard: React.FC<ContactCardProps> = ({ user, showCard, onClose }) =>
                 
                 <View style={styles.contentContainer}>
                     <Text style={styles.heading}>
-                        {user.firstName} {user.lastName}
+                        {(user.firstName || user.lastName)
+                            ? `${user.firstName ?? ''} ${user.lastName ?? ''}`.trim()
+                            : 'Anonym'}
                     </Text>
                     {user.location.timestamp && (
                         <Text style={[styles.timeText, { color: getOnlineStatusColor(user.onlineStatus, colorScheme ?? 'light') }]}>

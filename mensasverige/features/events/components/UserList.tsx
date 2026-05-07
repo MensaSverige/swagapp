@@ -45,7 +45,9 @@ const UserList: React.FC<UserListProps> = ({
               />
               <View style={eventCardStyles.userListAvatar}>
                 <ThemedText>
-                  {user.firstName} {user.lastName}
+                  {(user.firstName || user.lastName)
+                      ? `${user.firstName ?? ''} ${user.lastName ?? ''}`.trim()
+                      : 'Anonym'}
                 </ThemedText>
               </View>
             </View>

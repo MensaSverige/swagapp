@@ -13,7 +13,7 @@ import ParallaxScrollView from '@/components/ParallaxScrollView';
 
 import useStore from '../../common/store/store';
 import { updateUser } from '../services/userService';
-import { ShowLocation, User, UserUpdate } from '../../../api_schema/types';
+import { PrivacySetting, User, UserUpdate } from '../../../api_schema/types';
 import { resetUserCredentials } from '../../common/services/authService';
 import ProfileEditAvatar from '../../common/components/ProfileEditAvatar';
 import { extractNumericValue } from '../../common/functions/extractNumericValue';
@@ -36,9 +36,10 @@ const UserSettings: React.FC = () => {
             phone: user?.contact_info?.phone || '',
         },
         settings: {
-            show_email: user?.settings?.show_email || false,
-            show_phone: user?.settings?.show_phone || false,
+            show_email: user?.settings?.show_email || 'NO_ONE',
+            show_phone: user?.settings?.show_phone || 'NO_ONE',
             show_location: user?.settings?.show_location || 'NO_ONE',
+            show_profile: user?.settings?.show_profile || DEFAULT_SETTINGS.SHOW_PROFILE,
             location_update_interval_seconds: user?.settings?.location_update_interval_seconds || DEFAULT_SETTINGS.LOCATION_UPDATE_INTERVAL_SECONDS,
             events_refresh_interval_seconds: user?.settings?.events_refresh_interval_seconds || DEFAULT_SETTINGS.EVENTS_REFRESH_INTERVAL_SECONDS,
             background_location_updates: user?.settings?.background_location_updates || DEFAULT_SETTINGS.BACKGROUND_LOCATION_UPDATES,
@@ -50,9 +51,10 @@ const UserSettings: React.FC = () => {
             return {
                 contact_info: { email: '', phone: '' },
                 settings: {
-                    show_email: false,
-                    show_phone: false,
+                    show_email: 'NO_ONE',
+                    show_phone: 'NO_ONE',
                     show_location: 'NO_ONE',
+                    show_profile: DEFAULT_SETTINGS.SHOW_PROFILE,
                     location_update_interval_seconds: DEFAULT_SETTINGS.LOCATION_UPDATE_INTERVAL_SECONDS,
                     events_refresh_interval_seconds: DEFAULT_SETTINGS.EVENTS_REFRESH_INTERVAL_SECONDS,
                     background_location_updates: DEFAULT_SETTINGS.BACKGROUND_LOCATION_UPDATES,
@@ -71,6 +73,9 @@ const UserSettings: React.FC = () => {
             return false;
         }
         return user.settings.show_location !== 'NO_ONE';
+    });
+    const [profileSwitch, setProfileSwitch] = useState<boolean>(() => {
+        return (user?.settings?.show_profile ?? DEFAULT_SETTINGS.SHOW_PROFILE) !== 'NO_ONE';
     });
     const [editingField, setEditingField] = useState<string | null>(null);
     // Temporary slider values to prevent saving on every change
@@ -147,16 +152,32 @@ const UserSettings: React.FC = () => {
             });
     };
 
-    const locationSharingOptions: DropdownOption[] = useMemo(() => user?.isMember ? [
-        // Members can choose between all options
-        { value: "ALL_MEMBERS_WHO_SHARE_THEIR_OWN_LOCATION", label: "Andra medlemmar som visar sin position" },
-        { value: "ALL_MEMBERS", label: "Alla medlemmar" },
-        // {value:    "EVERYONE_WHO_SHARE_THEIR_OWN_LOCATION", label: "Andra deltagare som visar sin position"},
-        // {value:                                 "EVERYONE", label: 'Alla'},
+    const contactSharingOptions: DropdownOption[] = useMemo(() => user?.isMember ? [
+        { value: "MEMBERS_ONLY",    label: "Alla medlemmar" },
+        { value: "MEMBERS_MUTUAL",  label: "Medlemmar som visar sin profil" },
+        { value: "EVERYONE_MUTUAL", label: "Alla inloggade deltagare som visar sin profil" },
+        { value: "EVERYONE",        label: "Alla deltagare (även gäster)" },
     ] : [
-        // Non-members can only choose between non member specific options
-        { value: "EVERYONE_WHO_SHARE_THEIR_OWN_LOCATION", label: 'Andra deltagare som visar sin position' },
-        { value: "EVERYONE", label: 'Alla' },
+        { value: "EVERYONE_MUTUAL", label: "Alla inloggade deltagare som visar sin profil" },
+        { value: "EVERYONE",        label: "Alla deltagare (även gäster)" },
+    ], [user?.isMember]);
+
+    const profileSharingOptions: DropdownOption[] = useMemo(() => user?.isMember ? [
+        { value: "MEMBERS_ONLY",    label: "Alla medlemmar" },
+        { value: "MEMBERS_MUTUAL",  label: "Medlemmar som visar sin profil" },
+        { value: "EVERYONE_MUTUAL", label: "Alla inloggade deltagare som visar sin profil" },
+        { value: "EVERYONE",        label: "Alla deltagare (även gäster)" },
+    ] : [
+        { value: "EVERYONE_MUTUAL", label: "Alla inloggade deltagare som visar sin profil" },
+        { value: "EVERYONE",        label: "Alla deltagare (även gäster)" },
+    ], [user?.isMember]);
+
+    const locationSharingOptions: DropdownOption[] = useMemo(() => user?.isMember ? [
+        { value: "MEMBERS_MUTUAL", label: "Andra medlemmar som visar sin position" },
+        { value: "MEMBERS_ONLY",   label: "Alla medlemmar" },
+    ] : [
+        { value: "EVERYONE_MUTUAL", label: 'Andra deltagare som visar sin position' },
+        { value: "EVERYONE",        label: 'Alla' },
     ], [user?.isMember]);
 
     // Reusable Components
@@ -280,43 +301,125 @@ const UserSettings: React.FC = () => {
 
                 <PrivacyInputGroup
                     title="E-postadress"
-                    description={formState?.settings?.show_email
+                    description={formState?.settings?.show_email !== 'NO_ONE'
                         ? "Andra kan se din e-post"
                         : "Din e-post är dold för andra"}
-                    value={formState?.settings?.show_email || false}
+                    value={formState?.settings?.show_email !== 'NO_ONE'}
                     onValueChange={(value) => {
-                        if (!formState || !formState.settings) {
-                            return;
-                        }
+                        if (!formState || !formState.settings) return;
                         setFormState({
                             ...formState,
                             settings: {
                                 ...formState.settings,
-                                show_email: value,
+                                show_email: value ? (user?.isMember ? 'MEMBERS_ONLY' : 'EVERYONE_MUTUAL') : 'NO_ONE',
                             },
                         });
-                    }}
-                />
+                    }}>
+                    <View>
+                        <ThemedText style={styles.locationSubheading}>
+                            Vem kan se din e-post?
+                        </ThemedText>
+                        <Dropdown
+                            options={contactSharingOptions}
+                            selectedValue={formState?.settings?.show_email || 'NO_ONE'}
+                            onValueChange={(value) => {
+                                if (!formState || !formState.settings) return;
+                                setFormState({
+                                    ...formState,
+                                    settings: { ...formState.settings, show_email: value as PrivacySetting },
+                                });
+                            }}
+                            placeholder="Välj alternativ"
+                            style={styles.dropdown}
+                        />
+                    </View>
+                </PrivacyInputGroup>
 
                 <PrivacyInputGroup
                     title="Telefonnummer"
-                    description={formState?.settings?.show_phone
+                    description={formState?.settings?.show_phone !== 'NO_ONE'
                         ? "Andra kan se ditt telefonnummer"
                         : "Ditt telefonnummer är dolt för andra"}
-                    value={formState?.settings?.show_phone || false}
+                    value={formState?.settings?.show_phone !== 'NO_ONE'}
                     onValueChange={(value) => {
-                        if (!formState || !formState.settings) {
-                            return;
-                        }
+                        if (!formState || !formState.settings) return;
                         setFormState({
                             ...formState,
                             settings: {
                                 ...formState.settings,
-                                show_phone: value,
+                                show_phone: value ? (user?.isMember ? 'MEMBERS_ONLY' : 'EVERYONE_MUTUAL') : 'NO_ONE',
                             },
                         });
-                    }}
-                />
+                    }}>
+                    <View>
+                        <ThemedText style={styles.locationSubheading}>
+                            Vem kan se ditt telefonnummer?
+                        </ThemedText>
+                        <Dropdown
+                            options={contactSharingOptions}
+                            selectedValue={formState?.settings?.show_phone || 'NO_ONE'}
+                            onValueChange={(value) => {
+                                if (!formState || !formState.settings) return;
+                                setFormState({
+                                    ...formState,
+                                    settings: { ...formState.settings, show_phone: value as PrivacySetting },
+                                });
+                            }}
+                            placeholder="Välj alternativ"
+                            style={styles.dropdown}
+                        />
+                    </View>
+                </PrivacyInputGroup>
+
+                <PrivacyInputGroup
+                    title="Profiluppgifter"
+                    description={profileSwitch
+                        ? "Andra kan se ditt namn och din profilbild"
+                        : "Ditt namn och din profilbild är dolda för andra"}
+                    value={profileSwitch}
+                    onValueChange={(value) => {
+                        if (!formState || !formState.settings) return;
+                        setProfileSwitch(value);
+                        if (value) {
+                            setFormState({
+                                ...formState,
+                                settings: {
+                                    ...formState.settings,
+                                    show_profile: user?.isMember ? 'MEMBERS_ONLY' : 'EVERYONE_MUTUAL',
+                                },
+                            });
+                        } else {
+                            setFormState({
+                                ...formState,
+                                settings: {
+                                    ...formState.settings,
+                                    show_profile: 'NO_ONE',
+                                },
+                            });
+                        }
+                    }}>
+                    <View>
+                        <ThemedText style={styles.locationSubheading}>
+                            Vem kan se ditt namn och din profilbild?
+                        </ThemedText>
+                        <Dropdown
+                            options={profileSharingOptions}
+                            selectedValue={formState?.settings?.show_profile || DEFAULT_SETTINGS.SHOW_PROFILE}
+                            onValueChange={(value) => {
+                                if (!formState || !formState.settings) return;
+                                setFormState({
+                                    ...formState,
+                                    settings: {
+                                        ...formState.settings,
+                                        show_profile: value as PrivacySetting,
+                                    },
+                                });
+                            }}
+                            placeholder="Välj alternativ"
+                            style={styles.dropdown}
+                        />
+                    </View>
+                </PrivacyInputGroup>
 
                 <PrivacyInputGroup
                     title="Platsuppgifter"
@@ -334,7 +437,7 @@ const UserSettings: React.FC = () => {
                                 ...formState,
                                 settings: {
                                     ...formState.settings,
-                                    show_location: user?.isMember ? 'ALL_MEMBERS_WHO_SHARE_THEIR_OWN_LOCATION' : 'EVERYONE_WHO_SHARE_THEIR_OWN_LOCATION',
+                                    show_location: user?.isMember ? 'MEMBERS_MUTUAL' : 'EVERYONE_MUTUAL',
                                 },
                             });
                         } else {
@@ -362,7 +465,7 @@ const UserSettings: React.FC = () => {
                                     ...formState,
                                     settings: {
                                         ...formState.settings,
-                                        show_location: value as ShowLocation,
+                                        show_location: value as PrivacySetting,
                                     },
                                 });
                             }}

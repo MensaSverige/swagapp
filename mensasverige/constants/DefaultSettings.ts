@@ -1,3 +1,5 @@
+import { PrivacySetting } from '@/api_schema/types';
+
 export const DEFAULT_SETTINGS = {
     // Location settings
     BACKGROUND_LOCATION_UPDATES: false,
@@ -10,4 +12,7 @@ export const DEFAULT_SETTINGS = {
     EVENTS_REFRESH_INTERVAL_SECONDS: 60,
     MIN_EVENTS_REFRESH_SECONDS: 10,
     MAX_EVENTS_REFRESH_SECONDS: 300,
+
+    // Profile visibility
+    SHOW_PROFILE: 'MEMBERS_ONLY' as PrivacySetting,
 } as const;
