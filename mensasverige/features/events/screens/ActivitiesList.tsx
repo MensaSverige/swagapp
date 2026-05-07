@@ -158,7 +158,6 @@ export const ActivitiesList: React.FC<ActivitiesListProps> = ({ initialFilter })
                     />
                 </View>
             </View>
-            coordinate
             {showSuccessMessage && (
                 <View style={styles.successMessage}>
                     <MaterialIcons name="check-circle" size={20} color="#059669" />
