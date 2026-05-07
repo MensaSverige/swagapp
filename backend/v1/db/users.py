@@ -66,6 +66,16 @@ def get_users_showing_location() -> list[User]:
     return list(user_collection.find(query))
 
 
+def update_user_from_authresponse(user_id: int, response_json: dict) -> None:
+    updates = {
+        "firstName": response_json.get("firstName"),
+        "lastName": response_json.get("lastName"),
+        "contact_info.email": response_json.get("email"),
+        "isMember": response_json.get("type") == "M",
+    }
+    user_collection.update_one({"userId": user_id}, {"$set": updates})
+
+
 def map_authresponse_to_user(response_json: dict) -> User:
     user = User(
         userId=response_json["memberId"],
