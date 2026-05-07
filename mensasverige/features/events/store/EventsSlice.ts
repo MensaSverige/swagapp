@@ -80,70 +80,43 @@ const defaultEventFilter: EventFilterOptions = {
 
 // Helper function to apply client-side filtering
 const filterEvents = (events: ExtendedEvent[], eventFilter: EventFilterOptions): ExtendedEvent[] => {
-  let filteredEvents = [...events];
-  
-  // Apply attendingOrHost filtering
-  if (eventFilter?.attendingOrHost !== null && eventFilter?.attendingOrHost !== undefined) {
-    filteredEvents = filteredEvents.filter(event => {
-      return event.attendingOrHost === eventFilter.attendingOrHost;
-    });
-  }
-  
-  // Apply bookable filtering
-  if (eventFilter?.bookable !== null && eventFilter?.bookable !== undefined) {
-    filteredEvents = filteredEvents.filter(event => {
-      return event.bookable === eventFilter.bookable;
-    });
-  }
-  
-  // Apply official filtering
-  if (eventFilter?.official !== null && eventFilter?.official !== undefined) {
-    filteredEvents = filteredEvents.filter(event => {
-      return event.official === eventFilter.official;
-    });
-  }
-  
-  // Apply category filtering
-  if (eventFilter?.categories && eventFilter.categories.length > 0) {
-    filteredEvents = filteredEvents.filter(event => {
-      if (!event.tags || event.tags.length === 0) {
-        return false;
-      }
-      
-      return event.tags.some(tag => eventFilter.categories!.includes(tag.code));
-    });
-  }
-  
-  // Apply date range filtering - always filter from "now" by default
-  filteredEvents = filteredEvents.filter(event => {
+  const now = new Date();
+  const fromDate = eventFilter.dateFrom ? new Date(eventFilter.dateFrom) : now;
+  const toDate = eventFilter.dateTo ? new Date(eventFilter.dateTo) : null;
+  const categorySet = eventFilter.categories && eventFilter.categories.length > 0
+    ? new Set(eventFilter.categories)
+    : null;
+
+  return events.filter(event => {
+    if (eventFilter.attendingOrHost !== null && eventFilter.attendingOrHost !== undefined) {
+      if (event.attendingOrHost !== eventFilter.attendingOrHost) return false;
+    }
+
+    if (eventFilter.bookable !== null && eventFilter.bookable !== undefined) {
+      if (event.bookable !== eventFilter.bookable) return false;
+    }
+
+    if (eventFilter.official !== null && eventFilter.official !== undefined) {
+      if (event.official !== eventFilter.official) return false;
+    }
+
+    if (categorySet) {
+      if (!event.tags || !event.tags.some(tag => categorySet.has(tag.code))) return false;
+    }
+
     if (!event.start) return false;
-    
     const eventStartDate = new Date(event.start);
-    const now = new Date();
-    
-    // Use dateFrom if explicitly set, otherwise use current time as default
-    const fromDate = eventFilter?.dateFrom ? new Date(eventFilter.dateFrom) : now;
-    
-    // Check if event has started but not ended yet (ongoing events)
+
     if (event.end) {
       const eventEndDate = new Date(event.end);
-      const isOngoing = eventStartDate <= now && eventEndDate >= now;
-      if (isOngoing) return true; // Include ongoing events
+      if (eventStartDate <= now && eventEndDate >= now) return true; // ongoing
     }
-    
-    // For events without end time or future events, check start time against fromDate
+
     if (eventStartDate < fromDate) return false;
-    
-    // Check if event is before dateTo (if specified) - use exact datetime
-    if (eventFilter?.dateTo) {
-      const toDate = new Date(eventFilter.dateTo);
-      if (eventStartDate > toDate) return false;
-    }
-    
+    if (toDate && eventStartDate > toDate) return false;
+
     return true;
   });
-  
-  return filteredEvents;
 };
 
 // Helper function to calculate category event counts
@@ -274,7 +247,8 @@ export const createEventsSlice: StateCreator<EventsSlice> = (set, get) => ({
     const events = eventsToFilter || state.events;
     const filteredEvents = filterEvents(events, state.currentEventFilter);
     const filteredGroupedEvents = groupEventsByDate(filteredEvents);
-    set({ filteredGroupedEvents, filteredCount: filteredEvents.length, filteredTotalCount: events.length });
+    const nonPastEvents = filterEvents(events, { attendingOrHost: null, bookable: null, official: null, categories: [], dateFrom: new Date(), dateTo: null });
+    set({ filteredGroupedEvents, filteredCount: filteredEvents.length, filteredTotalCount: nonPastEvents.length });
   },
   setCurrentEventFilter: (filter: EventFilterOptions) => {
     set({currentEventFilter: filter});
