@@ -1,7 +1,8 @@
-import { Tabs, useRouter } from 'expo-router';
+import { Tabs } from 'expo-router';
 import React from 'react';
-import { Platform, TouchableOpacity, View } from 'react-native';
+import { Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Image } from 'expo-image';
 
 import { HapticTab } from '@/components/HapticTab';
 import { IconSymbol } from '@/components/ui/IconSymbol';
@@ -10,25 +11,14 @@ import TabBarBackground from '@/components/ui/TabBarBackground';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { UpdateBanner } from '@/features/updateCheck/components/UpdateBanner';
+import useStore from '@/features/common/store/store';
+import { getFullUrl } from '@/features/common/functions/GetFullUrl';
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
   const insets = useSafeAreaInsets();
-  const router = useRouter();
-  
-  const defaultHeaderOptions = {
-    headerRight: () => (
-      <View style={{ flexDirection: 'row', alignItems: 'center', paddingRight: 8 }}>
-        <TouchableOpacity
-          style={{ padding: 12 }}
-          onPress={() => {
-            router.push('/(tabs)/settings');
-          }}>
-          <MaterialIcons name="settings" size={28} color={Colors[colorScheme ?? 'light'].text} />
-        </TouchableOpacity>
-      </View>
-    ),
-  };
+  const user = useStore(state => state.user);
+
   return (
     <>
     <UpdateBanner />
@@ -40,7 +30,6 @@ export default function TabLayout() {
         tabBarBackground: TabBarBackground,
         tabBarStyle: Platform.select({
           ios: {
-            // Use a transparent background on iOS to show the blur effect
             position: 'absolute',
             paddingBottom: insets.bottom,
           },
@@ -54,8 +43,6 @@ export default function TabLayout() {
         options={{
           title: 'Information',
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
-          ...defaultHeaderOptions,
-
         }}
       />
       <Tabs.Screen
@@ -73,10 +60,12 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="settings"
+        name="(profile)"
         options={{
-          title: 'Inställningar',
-          tabBarIcon: ({ color }) => <MaterialIcons name="settings" size={28} color={color} />,
+          title: 'Profil',
+          tabBarIcon: ({ color }) => user?.avatar_url
+            ? <Image source={{ uri: getFullUrl(user.avatar_url) }} style={{ width: 28, height: 28, borderRadius: 14 }} contentFit="cover" />
+            : <MaterialIcons name="account-circle" size={28} color={color} />,
         }}
       />
     </Tabs>
