@@ -274,7 +274,8 @@ export const createEventsSlice: StateCreator<EventsSlice> = (set, get) => ({
     const events = eventsToFilter || state.events;
     const filteredEvents = filterEvents(events, state.currentEventFilter);
     const filteredGroupedEvents = groupEventsByDate(filteredEvents);
-    set({ filteredGroupedEvents, filteredCount: filteredEvents.length, filteredTotalCount: events.length });
+    const nonPastEvents = filterEvents(events, { attendingOrHost: null, bookable: null, official: null, categories: [], dateFrom: new Date(), dateTo: null });
+    set({ filteredGroupedEvents, filteredCount: filteredEvents.length, filteredTotalCount: nonPastEvents.length });
   },
   setCurrentEventFilter: (filter: EventFilterOptions) => {
     set({currentEventFilter: filter});
