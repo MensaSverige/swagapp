@@ -94,8 +94,8 @@ const ProfileEditAvatar: React.FC<ProfileEditAvatarProps> = ({colorMode, onError
             >
                 <MaterialIcons
                     name="add"
-                    size={16}
-                    color={currentColorMode === 'light' ? Colors.light.primary800 : Colors.dark.info800}
+                    size={20}
+                    color={currentColorMode === 'light' ? Colors.light.primary800 : Colors.dark.info200}
                 />
             </Pressable>
         </View>
