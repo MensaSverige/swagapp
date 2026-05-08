@@ -167,13 +167,15 @@ const UserSettings: React.FC = () => {
     ], [user?.isMember]);
 
     const locationSharingOptions: DropdownOption[] = useMemo(() => user?.isMember ? [
-        { value: "NO_ONE",         label: "Ingen" },
-        { value: "MEMBERS_MUTUAL", label: "Andra medlemmar som visar sin position" },
-        { value: "MEMBERS_ONLY",   label: "Alla medlemmar" },
+        { value: "NO_ONE",          label: "Ingen" },
+        { value: "MEMBERS_ONLY",    label: "Alla medlemmar" },
+        { value: "MEMBERS_MUTUAL",  label: "Medlemmar som visar sin position" },
+        { value: "EVERYONE_MUTUAL", label: "Alla inloggade deltagare som visar sin position" },
+        { value: "EVERYONE",        label: "Alla deltagare (även gäster)" },
     ] : [
         { value: "NO_ONE",          label: "Ingen" },
-        { value: "EVERYONE_MUTUAL", label: 'Andra deltagare som visar sin position' },
-        { value: "EVERYONE",        label: 'Alla' },
+        { value: "EVERYONE_MUTUAL", label: "Alla inloggade deltagare som visar sin position" },
+        { value: "EVERYONE",        label: "Alla deltagare (även gäster)" },
     ], [user?.isMember]);
 
     // Reusable Components
