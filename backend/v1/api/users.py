@@ -72,11 +72,11 @@ async def get_user_by_id(user_id: int,
             settings.get("show_profile", PrivacySetting.MEMBERS_ONLY.value), current_user, "show_profile"):
         raise HTTPException(status_code=403, detail="Profile not visible")
 
-    # Enforce privacy: hide email/phone if disabled
+    # Enforce privacy: hide email/phone based on viewer's access
     contact = user.get("contact_info") or {}
-    if not settings.get("show_email"):
+    if not _viewer_can_see(settings.get("show_email", PrivacySetting.NO_ONE.value), current_user, "show_email"):
         contact["email"] = None
-    if not settings.get("show_phone"):
+    if not _viewer_can_see(settings.get("show_phone", PrivacySetting.NO_ONE.value), current_user, "show_phone"):
         contact["phone"] = None
     user["contact_info"] = contact
 
