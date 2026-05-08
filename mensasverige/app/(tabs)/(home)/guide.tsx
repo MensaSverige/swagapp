@@ -4,6 +4,7 @@ import { useLocalSearchParams } from 'expo-router';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { Collapsible } from '@/components/Collapsible';
+import { LinkableText } from '@/components/LinkableText';
 import { SWAG_GUIDE_SECTIONS } from '@/features/events/constants/swagGuideContent';
 import { Colors } from '@/constants/Colors';
 
@@ -60,12 +61,12 @@ export default function SwagGuideScreen() {
                                             {sub.title}
                                         </ThemedText>
                                     ) : null}
-                                    <ThemedText style={[
+                                    <LinkableText style={[
                                         styles.body,
                                         { color: colorScheme === 'dark' ? Colors.coolGray300 : Colors.coolGray700 }
                                     ]}>
                                         {sub.body}
-                                    </ThemedText>
+                                    </LinkableText>
                                 </View>
                             ))}
                         </Collapsible>
@@ -110,6 +111,7 @@ const styles = StyleSheet.create({
         marginBottom: 4,
     },
     body: {
+        fontSize: 16,
         lineHeight: 22,
     },
     bottomPadding: {
