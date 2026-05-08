@@ -6,14 +6,25 @@ import { ThemedView } from '@/components/ThemedView';
 import ParentEventDetails from './ParentEventDetails';
 import GroupedEventsList from './GroupedEventsList';
 import UnifiedEventModal from './UnifiedEventModal';
-import CategoryBadge from './badges/CategoryBadge';
 import { MaterialIcons } from '@expo/vector-icons';
 import { Colors } from '@/constants/Colors';
 import { useEvents } from '../hooks/useEvents';
-import { navigateToAttendingEvents, navigateToBookableEvents, navigateToScheduleWithFilter, navigateToLastMinuteEvents } from '../utilities/navigationUtils';
-import { EVENT_CATEGORIES } from '../utilities/EventCategories';
+import { navigateToAttendingEvents, navigateToBookableEvents, navigateToLastMinuteEvents } from '../utilities/navigationUtils';
 import { ExtendedEvent } from '../types/eventUtilTypes';
+import { router } from 'expo-router';
 import useStore from '@/features/common/store/store';
+
+type MaterialIconName = React.ComponentProps<typeof MaterialIcons>['name'];
+
+const INFO_SHORTCUTS: Array<{
+    id: string; label: string; icon: MaterialIconName;
+    iconColor: string; bgLight: string; bgDark: string;
+    section?: string;
+}> = [
+    { id: 'ankomst', label: 'SWAG Guide',  icon: 'info',     iconColor: Colors.teal500,  bgLight: Colors.teal50,   bgDark: Colors.teal900  },
+    { id: 'buddies',   label: 'SWAG Buddies', icon: 'favorite', iconColor: '#E91E8C',       bgLight: '#FCE4EF',        bgDark: '#4A1028',       section: 'buddies' },
+    { id: 'kontakt',    label: 'Kontakt',      icon: 'phone',    iconColor: Colors.amber600,    bgLight: Colors.amber100,    bgDark: Colors.amber900,    section: 'kontakt' },
+];
 
 const ParentEventDashboard = () => {
     const colorScheme = useColorScheme();
@@ -27,7 +38,6 @@ const ParentEventDashboard = () => {
         loading: eventsLoading,
         refetch,
         addOrUpdateEvent,
-        topCategories,
         lastMinuteEvents
     } = useEvents();
 
@@ -77,47 +87,6 @@ const ParentEventDashboard = () => {
         setShowCreateForm(false);
     }, []);
 
-    // Helper function to check if a category has events available
-    const hasCategoryEvents = (categoryCode: string): boolean => {
-        return topCategories.includes(categoryCode);
-    };
-
-    // Create navigation functions for each category
-    const createNavigateToCategory = (categoryCode: string) => () => {
-        navigateToScheduleWithFilter({
-            attendingOrHost: null,
-            bookable: categoryCode === 'M' ? true : null, // Only meals/dinner events need to be bookable
-            official: null,
-            categories: [categoryCode]
-        });
-    };
-
-    // Create navigation functions for event types
-    const createNavigateToEventType = (official: boolean) => () => {
-        navigateToScheduleWithFilter({
-            attendingOrHost: null,
-            bookable: null,
-            official: official,
-            categories: []
-        });
-    };
-
-    // Define shortcut configurations using EVENT_CATEGORIES
-    const categoryShortcuts = EVENT_CATEGORIES
-        .filter(category => hasCategoryEvents(category.code)) // Only show categories that have events
-        .map(category => ({
-            key: category.code,
-            type: 'category' as const,
-            label: category.label,
-            icon: category.icon,
-            color: category.color,
-            onPress: createNavigateToCategory(category.code),
-            showCondition: hasCategoryEvents(category.code)
-        }));
-
-    // Filter shortcuts to only show available ones (limit to first 6 to fit nicely)
-    const visibleShortcuts = categoryShortcuts.filter(shortcut => shortcut.showCondition).slice(0, 6);
-
     if (loading && !eventInfo) {
         return (
             <ThemedView style={styles.container}>
@@ -162,23 +131,22 @@ const ParentEventDashboard = () => {
             <ParentEventDetails />
 
 
-            {/* Quick Navigation Shortcuts */}
-            <View style={styles.shortcutsSection}>
-                <View style={styles.sectionTitleContainer}>
-                    <MaterialIcons name="explore" size={20} color={Colors.primary600} />
-                    <ThemedText type="subtitle" style={styles.shortcutsTitle}>Hitta aktiviteter</ThemedText>
-                </View>
-                <View style={styles.shortcutsGrid}>
-                    {visibleShortcuts.map((shortcut) => (
-                        <View key={shortcut.key} style={styles.shortcutButton}>
-                            <CategoryBadge
-                                categoryCode={shortcut.type === 'category' ? shortcut.key : undefined}
-                                label={shortcut.label}
-                                showLabel={true}
-                                size="small"
-                                onPress={shortcut.onPress}
-                            />
-                        </View>
+            {/* SWAG Guide Info Shortcuts */}
+            <View style={styles.infoSection}>
+                <View style={styles.infoGrid}>
+                    {INFO_SHORTCUTS.map(shortcut => (
+                        <TouchableOpacity
+                            key={shortcut.id}
+                            style={[
+                                styles.infoCard,
+                                { backgroundColor: colorScheme === 'dark' ? shortcut.bgDark : shortcut.bgLight },
+                            ]}
+                            onPress={() => router.push({ pathname: '/(tabs)/(home)/guide' as any, params: shortcut.section ? { initialSection: shortcut.section } : {} })}
+                            activeOpacity={0.7}
+                        >
+                            <MaterialIcons name={shortcut.icon} size={22} color={shortcut.iconColor} />
+                            <ThemedText style={styles.infoCardLabel}>{shortcut.label}</ThemedText>
+                        </TouchableOpacity>
                     ))}
                 </View>
             </View>
@@ -452,21 +420,26 @@ const createStyles = (colorScheme: string) => StyleSheet.create({
     createArrow: {
         opacity: 0.6,
     },
-    shortcutsSection: {
-        marginTop: 10
-    },
-    shortcutsTitle: {
-        marginBottom: 0,
-    },
-    shortcutsGrid: {
-        flexDirection: 'row',
-        gap: 4,
+    infoSection: {
         marginTop: 10,
     },
-    shortcutButton: {
+    infoGrid: {
+        flexDirection: 'row',
+        gap: 8,
+        marginTop: 10,
+    },
+    infoCard: {
         flex: 1,
-        paddingVertical: 8,
-        paddingHorizontal: 4,
+        paddingVertical: 12,
+        paddingHorizontal: 8,
+        borderRadius: 8,
+        alignItems: 'center',
+        gap: 4,
+    },
+    infoCardLabel: {
+        fontSize: 11,
+        textAlign: 'center',
+        color: colorScheme === 'dark' ? Colors.coolGray100 : Colors.coolGray800,
     },
     lastMinuteSection: {
         backgroundColor: colorScheme === 'dark' ? Colors.amber900 : Colors.amber100,
