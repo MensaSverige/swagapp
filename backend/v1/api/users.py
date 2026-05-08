@@ -52,7 +52,8 @@ async def get_users(show_location: bool = None,
         if not _viewer_can_see(settings.get("show_phone", PrivacySetting.NO_ONE.value), current_user, "show_phone"):
             contact["phone"] = None
         user["contact_info"] = contact
-        if not settings.get("show_location") or settings.get("show_location") == PrivacySetting.NO_ONE.value:
+        if user.get("userId") != current_user.get("userId") and not _viewer_can_see(
+                settings.get("show_location", PrivacySetting.NO_ONE.value), current_user, "show_location"):
             user["location"] = None
         if user.get("userId") == current_user.get("userId") or _viewer_can_see(
                 settings.get("show_profile", PrivacySetting.MEMBERS_ONLY.value), current_user, "show_profile"):
@@ -81,7 +82,8 @@ async def get_user_by_id(user_id: int,
     user["contact_info"] = contact
 
     # Hide location if user doesn't want to show it
-    if not settings.get("show_location") or settings.get("show_location") == PrivacySetting.NO_ONE.value:
+    if user.get("userId") != current_user.get("userId") and not _viewer_can_see(
+            settings.get("show_location", PrivacySetting.NO_ONE.value), current_user, "show_location"):
         user["location"] = None
 
     return user
