@@ -8,6 +8,7 @@ from apscheduler.triggers.cron import CronTrigger
 from apscheduler.triggers.interval import IntervalTrigger
 from v1.jobs.refresh_events import refresh_external_events
 from v1.jobs.refresh_news import refresh_external_news
+from v1.jobs.send_event_reminders import send_event_reminders
 
 log = logging.getLogger(__name__)
 
@@ -67,6 +68,13 @@ JOB_REGISTRY = [
         default_schedule={"type": "cron", "minute": "*/30"},
         env_prefix="REFRESH_EXTERNAL_NEWS",
         init=True,
+    ),
+    JobConfig(
+        name="send_event_reminders",
+        func=send_event_reminders,
+        default_schedule={"type": "cron", "minute": "*/15"},
+        env_prefix="SEND_EVENT_REMINDERS",
+        init=False,
     ),
 ]
 

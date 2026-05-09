@@ -72,6 +72,14 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       ],
       "expo-secure-store",
       [
+        "expo-notifications",
+        {
+          icon: "./assets/images/icon.png",
+          color: "#0077E6",
+          sounds: [],
+        },
+      ],
+      [
         "expo-image-picker",
         {
           "photosPermission": "The app accesses your photos to let you share them with your friends."

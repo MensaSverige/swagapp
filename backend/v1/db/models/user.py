@@ -1,6 +1,6 @@
 from enum import Enum
 from pydantic import BaseModel, Field, field_validator
-from typing import Optional
+from typing import List, Optional
 from datetime import datetime
 
 
@@ -38,6 +38,8 @@ class UserSettings(BaseModel):
     events_refresh_interval_seconds: int = Field(default=60, example=60, description="Events refresh interval in seconds")
 
     background_location_updates: bool = Field(default=False, example=True, description="Allow location updates when app is in background")
+
+    notifications_enabled: bool = Field(default=True, description="Allow push notifications")
 
     @field_validator("show_location", mode="before")
     @classmethod
@@ -82,6 +84,8 @@ class User(BaseModel):
                                       example="https://example.com/avatar.jpg")
     firstName: Optional[str] = Field(None, example="John Doe")
     lastName: Optional[str] = Field(None, example="John Doe")
+    isAdmin: bool = Field(default=False)
+    push_tokens: List[str] = Field(default_factory=list, exclude=True)
 
 
 class UserUpdate(BaseModel):

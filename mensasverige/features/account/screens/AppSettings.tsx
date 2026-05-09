@@ -14,6 +14,7 @@ type AppForm = {
     location_update_interval_seconds: number;
     events_refresh_interval_seconds: number;
     background_location_updates: boolean;
+    notifications_enabled: boolean;
 };
 
 const AppSettings: React.FC = () => {
@@ -36,6 +37,8 @@ const AppSettings: React.FC = () => {
         background_location_updates:
             user?.settings?.background_location_updates ||
             DEFAULT_SETTINGS.BACKGROUND_LOCATION_UPDATES,
+        notifications_enabled:
+            user?.settings?.notifications_enabled ?? true,
     });
 
     const [tempLocation, setTempLocation] = useState(form.location_update_interval_seconds);
@@ -168,6 +171,32 @@ const AppSettings: React.FC = () => {
                             trackColor={{ false: Colors.coolGray500, true: Colors.primary500 }}
                             thumbColor={
                                 form.background_location_updates ? Colors.white : Colors.coolGray100
+                            }
+                        />
+                    </View>
+                </ThemedView>
+
+                {/* Push notifications toggle */}
+                <ThemedView style={styles.card}>
+                    <View style={styles.switchRow}>
+                        <View style={styles.switchContent}>
+                            <ThemedText type="defaultSemiBold" style={styles.cardTitle}>
+                                Push-notiser
+                            </ThemedText>
+                            <ThemedText style={styles.cardDescription}>
+                                {form.notifications_enabled
+                                    ? 'Du får påminnelser om evenemang du anmält dig till'
+                                    : 'Push-notiser är avstängda'}
+                            </ThemedText>
+                        </View>
+                        <Switch
+                            value={form.notifications_enabled}
+                            onValueChange={v =>
+                                setForm(f => ({ ...f, notifications_enabled: v }))
+                            }
+                            trackColor={{ false: Colors.coolGray500, true: Colors.primary500 }}
+                            thumbColor={
+                                form.notifications_enabled ? Colors.white : Colors.coolGray100
                             }
                         />
                     </View>

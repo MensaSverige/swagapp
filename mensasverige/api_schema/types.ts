@@ -17,6 +17,7 @@ export type HTTPValidationError = components["schemas"]["HTTPValidationError"];
 export type News = components["schemas"]["EventSiteNews"];
 export type PrivacySetting = components["schemas"]["PrivacySetting"];
 export type User = components['schemas']['User'];
+export type UserSettings = components['schemas']['UserSettings'];
 export type UserEvent = components['schemas']['UserEvent'];
 export type UserEventLocation = components['schemas']['UserEvent']['location'];
 export type UserLocation = components["schemas"]["UserLocation"];

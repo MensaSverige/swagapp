@@ -20,6 +20,7 @@ from v1.external.event_site_news import get_event_site_news
 from v1.external.event_api import get_external_root, get_external_event_details
 from v1.db.external_events import clean_external_events, get_stored_external_event_details
 from v1.user_events.user_events_api import user_events_v1
+from v1.notifications.notifications_api import notifications_v1
 from v1.db.mongo import initialize_db
 from migrations.rename_privacy_settings import run as run_migrations
 from v1.dev.exception_handlers import register_exception_handlers
@@ -59,6 +60,7 @@ app.include_router(users_v1)
 app.include_router(events_v1)
 app.include_router(unified_events_v1)
 app.include_router(user_events_v1)
+app.include_router(notifications_v1)
 app.include_router(geolocation_v1)
 app.mount("/static/img", StaticFiles(directory="/static/img"), name="static")
 

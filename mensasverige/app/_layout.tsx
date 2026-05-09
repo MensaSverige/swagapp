@@ -11,6 +11,8 @@ import useStore from '@/features/common/store/store';
 import apiClient from '@/features/common/services/apiClient';
 import useUserLocation from '@/features/map/hooks/useUserLocation';
 import { UpdateRequiredModal } from '@/features/updateCheck/components/UpdateRequiredModal';
+import { registerPushToken } from '@/features/notifications/services/notificationService';
+import { useNotifications } from '@/features/notifications/hooks/useNotifications';
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
@@ -31,7 +33,15 @@ export default function RootLayout() {
   //   setUser(null);
   // }, []);
 
-    useUserLocation();
+  useUserLocation();
+  useNotifications();
+
+  useEffect(() => {
+    if (user) {
+      registerPushToken();
+    }
+  }, [user]);
+
   useEffect(() => {
     console.log('User state changed:', user);
     setIsLoggedIn(!!user);

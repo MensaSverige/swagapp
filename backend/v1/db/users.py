@@ -66,6 +66,27 @@ def get_users_showing_location() -> list[User]:
     return list(user_collection.find(query))
 
 
+def add_push_token(user_id: int, token: str) -> None:
+    user_collection.update_one(
+        {"userId": user_id},
+        {"$addToSet": {"push_tokens": token}}
+    )
+
+
+def remove_push_token(user_id: int, token: str) -> None:
+    user_collection.update_one(
+        {"userId": user_id},
+        {"$pull": {"push_tokens": token}}
+    )
+
+
+def get_users_with_push_tokens() -> list[dict]:
+    return list(user_collection.find(
+        {"push_tokens": {"$exists": True, "$not": {"$size": 0}}},
+        {"userId": 1, "push_tokens": 1, "settings.notifications_enabled": 1}
+    ))
+
+
 def update_user_from_authresponse(user_id: int, response_json: dict) -> None:
     updates = {
         "firstName": response_json.get("firstName"),

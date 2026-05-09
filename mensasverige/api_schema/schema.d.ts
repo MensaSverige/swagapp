@@ -353,6 +353,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/notifications/register-token": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Register Push Token */
+        post: operations["register_push_token_v1_notifications_register_token_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/notifications/broadcast": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Broadcast Notification */
+        post: operations["broadcast_notification_v1_notifications_broadcast_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/geolocation/{address}": {
         parameters: {
             query?: never;
@@ -457,6 +491,15 @@ export interface components {
         Body_update_user_avatar_v1_users_me_avatar_post: {
             /** File */
             file: string;
+        };
+        /** BroadcastRequest */
+        BroadcastRequest: {
+            /** Title */
+            title: string;
+            /** Body */
+            body: string;
+            /** Event Id */
+            event_id?: string | null;
         };
         /** Category */
         Category: {
@@ -858,6 +901,11 @@ export interface components {
             /** Refresh Token */
             refresh_token: string;
         };
+        /** RegisterTokenRequest */
+        RegisterTokenRequest: {
+            /** Token */
+            token: string;
+        };
         /** Report */
         Report: {
             /**
@@ -947,6 +995,11 @@ export interface components {
              * @example John Doe
              */
             lastName?: string | null;
+            /**
+             * Isadmin
+             * @default false
+             */
+            isAdmin: boolean;
         };
         /** UserLocation */
         UserLocation: {
@@ -1002,6 +1055,12 @@ export interface components {
              * @example true
              */
             background_location_updates: boolean;
+            /**
+             * Notifications Enabled
+             * @description Allow push notifications
+             * @default true
+             */
+            notifications_enabled: boolean;
         };
         /** UserUpdate */
         UserUpdate: {
@@ -1671,6 +1730,70 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ExtendedUserEvent"][];
+                };
+            };
+        };
+    };
+    register_push_token_v1_notifications_register_token_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RegisterTokenRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    broadcast_notification_v1_notifications_broadcast_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BroadcastRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
