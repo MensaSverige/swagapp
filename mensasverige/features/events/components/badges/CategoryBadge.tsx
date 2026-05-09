@@ -3,7 +3,6 @@ import {
   View,
   StyleSheet,
   TouchableOpacity,
-  useColorScheme
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { ThemedText } from '@/components/ThemedText';
@@ -47,8 +46,7 @@ const EVENT_TYPE_CONFIG = {
 
 // Isolated so useColorScheme is only called when a label is actually rendered.
 // In the events list showLabel is always false, so this component never mounts there.
-const BadgeLabel = React.memo(({ text, size }: { text: string; size: 'x-small' | 'small' | 'medium' }) => {
-  const colorScheme = useColorScheme();
+const BadgeLabel = React.memo(function BadgeLabel({ text, size }: { text: string; size: 'x-small' | 'small' | 'medium' }) {
   return (
     <ThemedText
       lightColor={Colors.coolGray700}
@@ -64,6 +62,10 @@ const BadgeLabel = React.memo(({ text, size }: { text: string; size: 'x-small' |
   );
 });
 
+type BadgeConfig =
+  | (typeof CATEGORY_CONFIG)[keyof typeof CATEGORY_CONFIG]
+  | (typeof EVENT_TYPE_CONFIG)[keyof typeof EVENT_TYPE_CONFIG];
+
 const CategoryBadge: React.FC<CategoryBadgeProps> = ({
   categoryCode,
   eventType,
@@ -73,7 +75,7 @@ const CategoryBadge: React.FC<CategoryBadgeProps> = ({
   onPress
 }) => {
   // Determine if this is a category or event type badge
-  let config: any = null;
+  let config: BadgeConfig | null = null;
   let isEventType = false;
 
   if (eventType) {
@@ -117,7 +119,7 @@ const CategoryBadge: React.FC<CategoryBadgeProps> = ({
 
   const icon = isEventType && config.icon === 'official'
     ? <OfficialEventIcon size={iconSize} color={config.color} />
-    : <MaterialIcons name={config.icon} size={iconSize} color={config.color} />;
+    : <MaterialIcons name={config.icon as keyof typeof MaterialIcons.glyphMap} size={iconSize} color={config.color} />;
 
   const badgeContent = (
     <>

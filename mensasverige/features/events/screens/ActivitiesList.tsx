@@ -274,7 +274,7 @@ const createStyles = (colorScheme: string) => StyleSheet.create({
     },
     divider: {
         height: 1,
-        backgroundColor: '#E5E7EB',
+        backgroundColor: colorScheme === 'dark' ? Colors.coolGray700 : Colors.coolGray200,
         marginBottom: 8,
     },
     noEventsContainer: {
