@@ -28,11 +28,12 @@ const EventListItem: React.FC<EventListItemProps> = ({
     const styles = useMemo(() => createStyles(colorScheme ?? 'light'), [colorScheme]);
 
     const shouldGrayOut = (!event.bookable && !event.attending) || !event.isFutureEvent;
+    const opacityStyle = useMemo(() => (opacity < 1 ? { opacity } : undefined), [opacity]);
 
     return (
         <TouchableOpacity
             onPress={() => onPress(event)}
-            style={shouldGrayOut ? styles.dimmed : (opacity < 1 ? { opacity } : undefined)}
+            style={shouldGrayOut ? styles.dimmed : opacityStyle}
         >
             {isNextEvent && !isFirstEventOfDay && nextEventMarkerRef && (
                 <View ref={nextEventMarkerRef} />
@@ -100,7 +101,7 @@ const createStyles = (colorScheme: string) => StyleSheet.create({
     },
     startTime: {
         fontSize: 14,
-        color: Colors.teal400,
+        color: colorScheme === 'dark' ? Colors.teal400 : Colors.teal600,
     },
     startTimeGrayOut: {
         fontSize: 14,
@@ -108,7 +109,7 @@ const createStyles = (colorScheme: string) => StyleSheet.create({
     },
     endTime: {
         fontSize: 14,
-        color: Colors.teal800,
+        color: colorScheme === 'dark' ? Colors.teal600 : Colors.teal800,
     },
     endTimeGrayOut: {
         fontSize: 14,

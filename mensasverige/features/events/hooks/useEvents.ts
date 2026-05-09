@@ -55,6 +55,10 @@ let isFetching = false;
 let globalInterval: ReturnType<typeof setInterval> | null = null;
 let intervalSubscribers = 0;
 
+// Always points to the most recently rendered refetch, so the singleton interval
+// never holds a stale closure when user or other dependencies change.
+let latestRefetch: (() => Promise<void>) | null = null;
+
 export const useEvents = (options: UseEventsOptions = {}): UseEventsReturn => {
   const {
     enableAutoRefresh = true
@@ -148,6 +152,16 @@ export const useEvents = (options: UseEventsOptions = {}): UseEventsReturn => {
     user
   ]);
 
+  // Keep the module-level pointer fresh so the singleton interval never uses a stale closure
+  latestRefetch = refetch;
+
+  // Reset initialized flag on logout so the next login triggers a fresh fetch
+  useEffect(() => {
+    if (!user) {
+      setEventsInitialized(false);
+    }
+  }, [user, setEventsInitialized]);
+
   // Initial load: only fetch if not yet initialized and nothing is in flight
   useEffect(() => {
     if (!eventsInitialized) {
@@ -163,7 +177,7 @@ export const useEvents = (options: UseEventsOptions = {}): UseEventsReturn => {
     if (!globalInterval) {
       const ms = getEventsRefreshInterval();
       globalInterval = setInterval(() => {
-        refetch().catch(error => console.error('Auto-refresh failed:', error));
+        latestRefetch?.().catch(error => console.error('Auto-refresh failed:', error));
       }, ms);
     }
 
