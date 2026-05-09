@@ -1,5 +1,5 @@
-import React from 'react';
-import { 
+import React, { useMemo } from 'react';
+import {
   View,
   StyleSheet,
   TouchableOpacity,
@@ -33,48 +33,63 @@ const CATEGORY_CONFIG = {
 
 // Event type definitions with colors and icons
 const EVENT_TYPE_CONFIG = {
-  'official': { 
-    label: 'Officiellt evenemang', 
-    color: Colors.primary500, 
+  'official': {
+    label: 'Officiellt evenemang',
+    color: Colors.primary500,
     icon: 'official' as const
   },
-  'non-official': { 
-    label: 'Medlemsaktivitet', 
-    color: Colors.info300, 
+  'non-official': {
+    label: 'Medlemsaktivitet',
+    color: Colors.info300,
     icon: 'person-add-alt-1' as keyof typeof MaterialIcons.glyphMap
   },
 };
 
-const CategoryBadge: React.FC<CategoryBadgeProps> = ({ 
-  categoryCode, 
-  eventType,
-  label, 
-  showLabel = true, 
-  size: labelSize = 'medium',
-  onPress 
-}) => {
+// Isolated so useColorScheme is only called when a label is actually rendered.
+// In the events list showLabel is always false, so this component never mounts there.
+const BadgeLabel = React.memo(({ text, size }: { text: string; size: 'x-small' | 'small' | 'medium' }) => {
   const colorScheme = useColorScheme();
-  
+  return (
+    <ThemedText
+      lightColor={Colors.coolGray700}
+      darkColor={Colors.coolGray200}
+      style={
+        size === 'x-small' ? styles.labelTextXSmall :
+        size === 'small' ? styles.labelTextSmall :
+        styles.labelTextMedium
+      }
+    >
+      {text}
+    </ThemedText>
+  );
+});
+
+const CategoryBadge: React.FC<CategoryBadgeProps> = ({
+  categoryCode,
+  eventType,
+  label,
+  showLabel = true,
+  size: labelSize = 'medium',
+  onPress
+}) => {
   // Determine if this is a category or event type badge
   let config: any = null;
   let isEventType = false;
-  
+
   if (eventType) {
     config = EVENT_TYPE_CONFIG[eventType];
     isEventType = true;
   } else if (categoryCode) {
     config = CATEGORY_CONFIG[categoryCode as keyof typeof CATEGORY_CONFIG];
   }
-  
-  // If no config found, return null (fallback handled by parent)
+
   if (!config) {
     return null;
   }
-  
-  // Define sizes based on labelSize
+
   let iconSize: number;
   let badgeSize: number;
-  
+
   switch (labelSize) {
     case 'x-small':
       badgeSize = 16;
@@ -90,42 +105,34 @@ const CategoryBadge: React.FC<CategoryBadgeProps> = ({
       iconSize = 16;
       break;
   }
-  
-  const renderIcon = () => {
-    if (isEventType && config.icon === 'official') {
-      return <OfficialEventIcon size={iconSize} color={config.color} />;
-    } else {
-      return <MaterialIcons name={config.icon} size={iconSize} color={config.color} />;
-    }
-  };
-  
+
+  const badgeCircleStyle = useMemo(() => ({
+    borderRadius: badgeSize / 2,
+    width: badgeSize,
+    height: badgeSize,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+    backgroundColor: config.color + '20',
+  }), [badgeSize, config.color]);
+
+  const icon = isEventType && config.icon === 'official'
+    ? <OfficialEventIcon size={iconSize} color={config.color} />
+    : <MaterialIcons name={config.icon} size={iconSize} color={config.color} />;
+
   const badgeContent = (
     <>
-      <View style={[{
-        borderRadius: badgeSize / 2,
-        width: badgeSize,
-        height: badgeSize,
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: config.color + '20'
-      }]}>
-        {renderIcon()}
+      <View style={badgeCircleStyle}>
+        {icon}
       </View>
       {showLabel && (
-        <ThemedText style={[
-          labelSize === 'x-small' ? styles.labelTextXSmall : 
-          labelSize === 'small' ? styles.labelTextSmall : styles.labelTextMedium,
-          { color: colorScheme === 'dark' ? Colors.coolGray200 : Colors.coolGray700 }
-        ]}>
-          {label || config.label}
-        </ThemedText>
+        <BadgeLabel text={label || config.label} size={labelSize} />
       )}
     </>
   );
 
   if (onPress) {
     return (
-      <TouchableOpacity 
+      <TouchableOpacity
         style={styles.container}
         onPress={onPress}
         activeOpacity={0.7}
@@ -164,4 +171,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default CategoryBadge;
+export default React.memo(CategoryBadge);

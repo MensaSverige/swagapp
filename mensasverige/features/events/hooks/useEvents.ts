@@ -1,4 +1,4 @@
-import { useEffect, useCallback, useRef } from 'react';
+import { useEffect, useCallback } from 'react';
 import { GroupedEvents, ExtendedEvent } from '../types/eventUtilTypes';
 import { createExtendedEvent } from '../utils/eventUtils';
 import { fetchEvents, attendEvent, unattendEvent } from '../services/eventService';
@@ -21,7 +21,8 @@ interface UseEventsReturn {
   filteredTotalCount: number;
   filteredCount: number;
 
-  // Shared loading and error states
+  // loading: true only during the initial fetch (before first success)
+  // refreshing: true during any active fetch (initial or manual pull-to-refresh)
   loading: boolean;
   error: Error | null;
   refreshing: boolean;
@@ -46,21 +47,29 @@ interface UseEventsReturn {
   unattendEventById: (eventId: string) => Promise<boolean>;
 }
 
+// Module-level guard: prevents concurrent fetches across multiple useEvents instances
+let isFetching = false;
+
+// Module-level auto-refresh singleton: only one interval runs regardless of how many
+// components call useEvents({ enableAutoRefresh: true })
+let globalInterval: ReturnType<typeof setInterval> | null = null;
+let intervalSubscribers = 0;
+
 export const useEvents = (options: UseEventsOptions = {}): UseEventsReturn => {
   const {
     enableAutoRefresh = true
   } = options;
-
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const {
     // Raw events
     events,
     eventsRefreshing,
     eventsLastFetched,
+    eventsInitialized,
     setEvents,
     setEventsRefreshing,
     setEventsLastFetched,
+    setEventsInitialized,
 
     // Dashboard events (attending + upcoming with limit)
     dashboardGroupedEvents,
@@ -91,23 +100,21 @@ export const useEvents = (options: UseEventsOptions = {}): UseEventsReturn => {
     getEventsRefreshInterval
   } = useStore();
 
-  // Refetch function that updates both schedule and dashboard
   const refetch = useCallback(async (): Promise<void> => {
+    if (isFetching) return;
+    isFetching = true;
     try {
       setEventsRefreshing(true);
       setDashboardLoading(true);
 
-      // Fetch all events - the store will automatically update derived lists
       const allEvents = await fetchEvents();
-      
-      // Validate events data before processing
+
       if (!Array.isArray(allEvents)) {
         throw new Error('Invalid events data received from API');
       }
 
-      // Setting events in store will automatically update both schedule and dashboard
       const processedEvents = allEvents
-        .filter(event => event && event.id) // Filter out null/invalid events
+        .filter(event => event && event.id)
         .map(event => {
           try {
             return createExtendedEvent(event, user?.userId);
@@ -116,16 +123,18 @@ export const useEvents = (options: UseEventsOptions = {}): UseEventsReturn => {
             return null;
           }
         })
-        .filter(Boolean) as ExtendedEvent[]; // Remove null entries
+        .filter(Boolean) as ExtendedEvent[];
 
       setEvents(processedEvents);
       setEventsLastFetched(new Date());
+      setEventsInitialized(true);
 
     } catch (err) {
       const error = err as Error;
       setDashboardError(error);
       console.error('Error fetching events:', err);
     } finally {
+      isFetching = false;
       setEventsRefreshing(false);
       setDashboardLoading(false);
     }
@@ -133,63 +142,45 @@ export const useEvents = (options: UseEventsOptions = {}): UseEventsReturn => {
     setEvents,
     setEventsRefreshing,
     setEventsLastFetched,
+    setEventsInitialized,
     setDashboardLoading,
     setDashboardError,
     user
   ]);
 
-  // Initial load
+  // Initial load: only fetch if not yet initialized and nothing is in flight
   useEffect(() => {
-    const loadEvents = async () => {
-      try {
-        // Only fetch if we don't have events or they're stale
-        if (events.length === 0) {
-          await refetch();
-        }
-      } catch (error) {
-        console.error('Error in loadEvents:', error);
-        setDashboardError(error as Error);
-      }
-    };
+    if (!eventsInitialized) {
+      refetch().catch(error => console.error('Error in initial loadEvents:', error));
+    }
+  }, [eventsInitialized, refetch]);
 
-    loadEvents();
-  }, [events.length, refetch, setDashboardError]);
-
-  // Auto-refresh next event detection
+  // Auto-refresh singleton: multiple consumers share one interval
   useEffect(() => {
-    // Clear any existing interval first
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
+    if (!enableAutoRefresh) return;
+
+    intervalSubscribers++;
+    if (!globalInterval) {
+      const ms = getEventsRefreshInterval();
+      globalInterval = setInterval(() => {
+        refetch().catch(error => console.error('Auto-refresh failed:', error));
+      }, ms);
     }
 
-    // Early exit if conditions aren't met
-    if (!enableAutoRefresh) {
-      return;
-    }
-
-    const refreshIntervalMs = getEventsRefreshInterval();
-    intervalRef.current = setInterval(() => {
-      refetch().catch(error => {
-        console.error('Auto-refresh failed:', error);
-      });
-    }, refreshIntervalMs);
-    
     return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
+      intervalSubscribers--;
+      if (intervalSubscribers === 0 && globalInterval) {
+        clearInterval(globalInterval);
+        globalInterval = null;
       }
     };
-  }, [enableAutoRefresh, getEventsRefreshInterval, refetch]);
+  }, [enableAutoRefresh, refetch, getEventsRefreshInterval]);
 
   // Event attendance functions
   const attendEventById = useCallback(
     async (eventId: string): Promise<boolean> => {
       try {
         const updatedEvent = await attendEvent(eventId);
-        
-        // Update the event in the store with the returned data
         const updatedEvents = events.map(event =>
           event.id === eventId ? createExtendedEvent(updatedEvent, user?.userId) : event
         );
@@ -207,8 +198,6 @@ export const useEvents = (options: UseEventsOptions = {}): UseEventsReturn => {
     async (eventId: string): Promise<boolean> => {
       try {
         await unattendEvent(eventId);
-        
-        // Update the event in the store to set attending to false
         const updatedEvents = events.map(event =>
           event.id === eventId
             ? createExtendedEvent({ ...event, attending: false }, user?.userId)
@@ -224,54 +213,35 @@ export const useEvents = (options: UseEventsOptions = {}): UseEventsReturn => {
     [events, setEvents, user?.userId]
   );
 
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      // Cleanup is handled by the interval cleanup
-    };
-  }, []);
-
-  // Determine overall loading and error states
-  const isLoading = dashboardLoading;
-  const hasError = dashboardError;
-
   return {
-    // All events data
     allEvents: events,
 
-    // Dashboard events (attending + upcoming with limit)
     dashboardGroupedEvents,
     dashboardHasMoreEvents: dashboardHasMore,
 
-    // Filtered events (based on current filters in store)
     filteredGroupedEvents,
     filteredTotalCount,
     filteredCount,
 
-    // Shared loading and error states
-    loading: isLoading,
-    error: hasError,
+    // loading is true only before the first successful fetch
+    loading: !eventsInitialized && dashboardLoading,
+    error: dashboardError,
+    // refreshing is true during any active fetch
     refreshing: eventsRefreshing,
     lastFetched: eventsLastFetched,
 
-    // Filter state and actions
     currentEventFilter,
     setCurrentEventFilter,
     resetFilters,
 
-    // Derived analytics
     categoryEventCounts,
     topCategories,
     lastMinuteEvents,
 
-    // Actions
     refetch,
     addOrUpdateEvent,
 
-    // Event attendance actions
     attendEventById,
     unattendEventById
   };
 };
-
-

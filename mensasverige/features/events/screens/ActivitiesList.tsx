@@ -1,15 +1,13 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
     ScrollView,
     View,
     Text,
-    TouchableOpacity,
     StyleSheet,
-    ActivityIndicator,
     useColorScheme,
     RefreshControl,
+    ActivityIndicator,
 } from 'react-native';
-import { Event } from '../../../api_schema/types';
 import useStore from '../../common/store/store';
 import NonMemberInfo from '../../common/components/NonMemberInfo';
 import UnifiedEventModal from '../components/UnifiedEventModal';
@@ -23,7 +21,7 @@ import { EventFilter } from '../components/EventFilter';
 import { EventFilterOptions } from '../store/EventsSlice';
 import { FilterButton } from '../components/FilterButton';
 import { Colors } from '@/constants/Colors';
-import { useLocalSearchParams, router } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import { ExtendedEvent } from '../types/eventUtilTypes';
 import { useBottomTabOverflow } from '@/components/ui/TabBarBackground';
 
@@ -34,16 +32,15 @@ interface ActivitiesListProps {
 export const ActivitiesList: React.FC<ActivitiesListProps> = ({ initialFilter }) => {
     const { user } = useStore();
     const colorScheme = useColorScheme();
-    const styles = createStyles(colorScheme ?? 'light');
+    const styles = useMemo(() => createStyles(colorScheme ?? 'light'), [colorScheme]);
     const bottom = useBottomTabOverflow();
     const [selectedEvent, setSelectedEvent] = useState<ExtendedEvent | null>(null);
-    const [didInitiallyScroll, setDidInitiallyScroll] = useState(false);
     const [showFilter, setShowFilter] = useState(false);
     const [showCreateForm, setShowCreateForm] = useState(false);
     const [showSuccessMessage, setShowSuccessMessage] = useState(false);
-    
+
     const params = useLocalSearchParams();
-    
+
     const parseURLParams = useCallback((currentParams: typeof params): EventFilterOptions => {
         const urlFilter: EventFilterOptions = {
             attendingOrHost: currentParams.attendingOrHost === 'true' ? true : currentParams.attendingOrHost === 'false' ? false : null,
@@ -57,15 +54,14 @@ export const ActivitiesList: React.FC<ActivitiesListProps> = ({ initialFilter })
         const hasParams = Object.values(currentParams).some(Boolean);
         return hasParams ? urlFilter : { attendingOrHost: null, bookable: null, official: null, categories: [], dateFrom: null, dateTo: null };
     }, []);
-    
+
     const getInitialFilter = useCallback((): EventFilterOptions => {
         if (initialFilter) {
             return initialFilter;
         }
-        
         return parseURLParams(params);
     }, [initialFilter, params, parseURLParams]);
-    
+
     const [eventFilter, setEventFilter] = useState<EventFilterOptions>(getInitialFilter());
 
     useEffect(() => {
@@ -73,22 +69,22 @@ export const ActivitiesList: React.FC<ActivitiesListProps> = ({ initialFilter })
         setEventFilter(newFilter);
     }, [params.attendingOrHost, params.bookable, params.official, params.categories, params.dateFrom, params.dateTo, parseURLParams]);
 
-    const { 
-        filteredGroupedEvents, 
-        loading, 
-        filteredCount, 
-        filteredTotalCount, 
+    const {
+        filteredGroupedEvents,
+        loading,
+        refreshing,
+        filteredCount,
+        filteredTotalCount,
         refetch,
         setCurrentEventFilter,
         addOrUpdateEvent
-    } = useEvents({ enableAutoRefresh: true});
+    } = useEvents({ enableAutoRefresh: true });
 
     useEffect(() => {
         setCurrentEventFilter(eventFilter);
     }, [eventFilter, setCurrentEventFilter]);
 
     const scrollViewRef = useRef<ScrollView>(null);
-    const nextEventMarkerRef = useRef<View>(null);
 
     const handlePress = useCallback((event: ExtendedEvent) => {
         setSelectedEvent(event);
@@ -109,14 +105,9 @@ export const ActivitiesList: React.FC<ActivitiesListProps> = ({ initialFilter })
     const handleEventSaved = useCallback((event: ExtendedEvent) => {
         setShowCreateForm(false);
         setShowSuccessMessage(true);
-
         setTimeout(() => setShowSuccessMessage(false), 3000);
         addOrUpdateEvent(event);
     }, [addOrUpdateEvent]);
-
-    const handleCancelCreate = useCallback(() => {
-        setShowCreateForm(false);
-    }, []);
 
     const isFilterActive = () => {
         return (
@@ -142,7 +133,7 @@ export const ActivitiesList: React.FC<ActivitiesListProps> = ({ initialFilter })
                 onEventUpdated={handleEventSaved}
                 onEventCreated={handleEventSaved}
             />
-            
+
             <View style={styles.header}>
                 <ThemedText type="title">Aktiviteter</ThemedText>
                 <View style={styles.headerActions}>
@@ -158,32 +149,39 @@ export const ActivitiesList: React.FC<ActivitiesListProps> = ({ initialFilter })
                     />
                 </View>
             </View>
+
             {showSuccessMessage && (
                 <View style={styles.successMessage}>
                     <MaterialIcons name="check-circle" size={20} color="#059669" />
                     <Text style={styles.successMessageText}>Event sparat!</Text>
                 </View>
             )}
-            <ScrollView 
-                ref={scrollViewRef} 
+
+            <ScrollView
+                ref={scrollViewRef}
                 style={styles.scrollContainer}
-                
                 refreshControl={
                     <RefreshControl
-                        refreshing={loading}
+                        refreshing={refreshing}
                         onRefresh={handleRefresh}
                         tintColor={colorScheme === 'dark' ? Colors.primary400 : Colors.primary600}
                     />
                 }
             >
-
-                {!filteredGroupedEvents || Object.keys(filteredGroupedEvents).length === 0 && !loading && (
+                {loading && (
+                    <ActivityIndicator
+                        style={styles.initialLoader}
+                        size="large"
+                        color={colorScheme === 'dark' ? Colors.primary400 : Colors.primary600}
+                    />
+                )}
+                {Object.keys(filteredGroupedEvents).length === 0 && !loading && !refreshing && (
                     <View style={styles.noEventsContainer}>
                         <MaterialIcons name="event-note" size={48} color={colorScheme === 'dark' ? Colors.coolGray500 : Colors.coolGray400} style={styles.noEventsIcon} />
                         <Text style={styles.noEventsText}>Inga aktiviteter hittades</Text>
                         <Text style={styles.noEventsSubtext}>
-                            {isFilterActive() 
-                                ? 'Prova att justera dina filter eller skapa en egen aktivitet!' 
+                            {isFilterActive()
+                                ? 'Prova att justera dina filter eller skapa en egen aktivitet!'
                                 : 'Bli den första att skapa en aktivitet och bjud in andra!'}
                         </Text>
                     </View>
@@ -192,12 +190,11 @@ export const ActivitiesList: React.FC<ActivitiesListProps> = ({ initialFilter })
                 <GroupedEventsList
                     groupedEvents={filteredGroupedEvents}
                     onEventPress={handlePress}
-                    nextEventMarkerRef={nextEventMarkerRef}
                     showCategories={true}
                     dateHeaderStyle="aligned"
                 />
             </ScrollView>
-            
+
             {!showCreateForm && (
                 <View style={{...styles.createButtonContainer, paddingBottom: styles.createButtonContainer.paddingBottom + bottom}}>
                     <ThemedButton
@@ -207,11 +204,11 @@ export const ActivitiesList: React.FC<ActivitiesListProps> = ({ initialFilter })
                     />
                 </View>
             )}
-            
+
             {user && !user.isMember && (
                 <NonMemberInfo />
             )}
-            
+
             <EventFilter
                 visible={showFilter}
                 onClose={() => setShowFilter(false)}
@@ -241,25 +238,9 @@ const createStyles = (colorScheme: string) => StyleSheet.create({
         color: colorScheme === 'dark' ? Colors.coolGray400 : Colors.coolGray500,
         fontWeight: '500',
     },
-    scrollToButton: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
     scrollContainer: {
         paddingBottom: 80,
         paddingHorizontal: 0,
-    },
-    loadingIndicator: {
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    loadingText: {
-        marginTop: 16,
-        fontSize: 16,
-        color: colorScheme === 'dark' ? Colors.coolGray400 : Colors.coolGray500,
     },
     noEventsContainer: {
         alignItems: 'center',
@@ -283,6 +264,9 @@ const createStyles = (colorScheme: string) => StyleSheet.create({
         textAlign: 'center',
         lineHeight: 20,
         paddingHorizontal: 20,
+    },
+    initialLoader: {
+        marginTop: 60,
     },
     createButtonContainer: {
         paddingHorizontal: 20,
