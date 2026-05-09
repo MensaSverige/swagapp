@@ -7,6 +7,7 @@ export default function TabLayout() {
       <Stack>
         <Stack.Screen name="index" options={{ headerShown: false }} />
         <Stack.Screen name="guide" options={{ title: 'SWAG Guide' }} />
+        <Stack.Screen name="[id]" options={{ headerBackTitle: 'Information' }} />
       </Stack>
   );
 }
