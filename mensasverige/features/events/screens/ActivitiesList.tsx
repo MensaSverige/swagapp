@@ -130,7 +130,7 @@ export const ActivitiesList: React.FC<ActivitiesListProps> = ({ initialFilter })
     };
 
     return (
-        <ThemedView useSafeArea={true} style={{ flex: 1 }}>
+        <ThemedView style={{ flex: 1 }}>
             <UnifiedEventModal
                 event={selectedEvent || undefined}
                 open={!!selectedEvent || showCreateForm}

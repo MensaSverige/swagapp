@@ -1,21 +1,18 @@
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import useStore from '@/features/common/store/store';
 import { Colors } from '@/constants/Colors';
 import { openStoreUrl } from '../functions/openStoreUrl';
 
 export const UpdateBanner: React.FC = () => {
   const { updateAvailableInfo } = useStore();
-  const insets = useSafeAreaInsets();
 
   if (!updateAvailableInfo) {
     return null;
   }
 
   return (
-    <View style={{ paddingTop: insets.top }}>
     <TouchableOpacity
       activeOpacity={0.85}
       style={styles.bannerContainer}
@@ -30,7 +27,7 @@ export const UpdateBanner: React.FC = () => {
             Uppdatering tillgänglig
           </Text>
           <Text style={styles.bannerMessage}>
-            En ny version av appen finns nu tillgänglig. 
+            En ny version av appen finns nu tillgänglig.
           </Text>
         </View>
         <View style={styles.bannerButton}>
@@ -38,7 +35,6 @@ export const UpdateBanner: React.FC = () => {
         </View>
       </View>
     </TouchableOpacity>
-    </View>
   );
 };
 
