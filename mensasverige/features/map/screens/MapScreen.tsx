@@ -25,6 +25,9 @@ import { useColorScheme } from '@/hooks/useColorScheme';
 import { ThemedView } from '@/components/ThemedView';
 import { useBottomTabOverflow } from '@/components/ui/TabBarBackground';
 import { UserListPanel } from '../components/UserListPanel';
+import { defaultFilter } from '../store/LocationSlice';
+
+const ZOOM_DELTA = 0.005;
 
 const createStyles = (colorMode: string) =>
   StyleSheet.create({
@@ -60,7 +63,7 @@ const MapScreen: React.FC = () => {
   const colorMode = colorScheme ?? 'light';
   const mapRef = useRef<ReactNativeMapView | null>(null);
   const bottom = useBottomTabOverflow();
-  const { region, filteredUsers, selectedUser, setSelectedUser, user } = useStore();
+  const { region, filteredUsers, selectedUser, setSelectedUser, user, userFilter } = useStore();
   const [visibleRegion, setVisibleRegion] = useState(region);
   const [showContactCard, setShowContactCard] = useState(false);
   const [showUserList, setShowUserList] = useState(false);
@@ -111,8 +114,8 @@ const MapScreen: React.FC = () => {
         {
           latitude: user.location.latitude,
           longitude: user.location.longitude,
-          latitudeDelta: 0.005,
-          longitudeDelta: 0.005,
+          latitudeDelta: ZOOM_DELTA,
+          longitudeDelta: ZOOM_DELTA,
         },
         350,
       );
@@ -286,7 +289,7 @@ const MapScreen: React.FC = () => {
                 <MaterialIcons
                   name="filter-list"
                   size={30}
-                  color={showUserList ? Colors.primary300 : Colors.coolGray400}
+                  color={(showUserList || userFilter.showHoursAgo !== defaultFilter.showHoursAgo) ? Colors.primary300 : Colors.coolGray400}
                 />
               </TouchableOpacity>
               <TouchableOpacity
