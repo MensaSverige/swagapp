@@ -10,7 +10,6 @@ import {
 } from 'react-native';
 import useStore from '../../common/store/store';
 import NonMemberInfo from '../../common/components/NonMemberInfo';
-import UnifiedEventModal from '../components/UnifiedEventModal';
 import { ThemedView } from '@/components/ThemedView';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedButton } from '@/components/ThemedButton';
@@ -20,7 +19,7 @@ import { EventFilter } from '../components/EventFilter';
 import { EventFilterOptions } from '../store/EventsSlice';
 import { FilterButton } from '../components/FilterButton';
 import { Colors } from '@/constants/Colors';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ExtendedEvent } from '../types/eventUtilTypes';
 import { useBottomTabOverflow } from '@/components/ui/TabBarBackground';
 import EventListItem from '../components/EventListItem';
@@ -34,13 +33,11 @@ type EventSection = { title: string; data: ExtendedEvent[] };
 
 export const ActivitiesList: React.FC<ActivitiesListProps> = ({ initialFilter }) => {
     const { user } = useStore();
+    const router = useRouter();
     const colorScheme = useColorScheme();
     const styles = useMemo(() => createStyles(colorScheme ?? 'light'), [colorScheme]);
     const bottom = useBottomTabOverflow();
-    const [selectedEvent, setSelectedEvent] = useState<ExtendedEvent | null>(null);
     const [showFilter, setShowFilter] = useState(false);
-    const [showCreateForm, setShowCreateForm] = useState(false);
-    const [showSuccessMessage, setShowSuccessMessage] = useState(false);
 
     const params = useLocalSearchParams();
 
@@ -80,7 +77,6 @@ export const ActivitiesList: React.FC<ActivitiesListProps> = ({ initialFilter })
         filteredTotalCount,
         refetch,
         setCurrentEventFilter,
-        addOrUpdateEvent
     } = useEvents({ enableAutoRefresh: true });
 
     useEffect(() => {
@@ -106,8 +102,8 @@ export const ActivitiesList: React.FC<ActivitiesListProps> = ({ initialFilter })
     );
 
     const handlePress = useCallback((event: ExtendedEvent) => {
-        setSelectedEvent(event);
-    }, []);
+        router.push({ pathname: '/(tabs)/(events)/[id]', params: { id: event.id } });
+    }, [router]);
 
     const handleApplyFilter = useCallback((filter: EventFilterOptions) => {
         setEventFilter(filter);
@@ -116,17 +112,6 @@ export const ActivitiesList: React.FC<ActivitiesListProps> = ({ initialFilter })
     const handleRefresh = useCallback(async () => {
         await refetch();
     }, [refetch]);
-
-    const handleCreateEvent = useCallback(() => {
-        setShowCreateForm(true);
-    }, []);
-
-    const handleEventSaved = useCallback((event: ExtendedEvent) => {
-        setShowCreateForm(false);
-        setShowSuccessMessage(true);
-        setTimeout(() => setShowSuccessMessage(false), 3000);
-        addOrUpdateEvent(event);
-    }, [addOrUpdateEvent]);
 
     const renderItem = useCallback(({ item, index }: { item: ExtendedEvent; index: number }) => (
         <EventListItem
@@ -168,18 +153,6 @@ export const ActivitiesList: React.FC<ActivitiesListProps> = ({ initialFilter })
 
     return (
         <ThemedView style={{ flex: 1 }}>
-            <UnifiedEventModal
-                event={selectedEvent || undefined}
-                open={!!selectedEvent || showCreateForm}
-                mode={showCreateForm ? 'create' : 'view'}
-                onClose={() => {
-                    setSelectedEvent(null);
-                    setShowCreateForm(false);
-                }}
-                onEventUpdated={handleEventSaved}
-                onEventCreated={handleEventSaved}
-            />
-
             <View style={styles.header}>
                 <ThemedText type="title">Aktiviteter</ThemedText>
                 <View style={styles.headerActions}>
@@ -195,13 +168,6 @@ export const ActivitiesList: React.FC<ActivitiesListProps> = ({ initialFilter })
                     />
                 </View>
             </View>
-
-            {showSuccessMessage && (
-                <View style={styles.successMessage}>
-                    <MaterialIcons name="check-circle" size={20} color="#059669" />
-                    <Text style={styles.successMessageText}>Event sparat!</Text>
-                </View>
-            )}
 
             <SectionList
                 sections={sections}
@@ -225,15 +191,13 @@ export const ActivitiesList: React.FC<ActivitiesListProps> = ({ initialFilter })
                 removeClippedSubviews={true}
             />
 
-            {!showCreateForm && (
-                <View style={{...styles.createButtonContainer, paddingBottom: styles.createButtonContainer.paddingBottom + bottom}}>
-                    <ThemedButton
-                        text="✨ Skapa din aktivitet"
-                        variant="primary"
-                        onPress={handleCreateEvent}
-                    />
-                </View>
-            )}
+            <View style={{...styles.createButtonContainer, paddingBottom: styles.createButtonContainer.paddingBottom + bottom}}>
+                <ThemedButton
+                    text="✨ Skapa din aktivitet"
+                    variant="primary"
+                    onPress={() => router.push({ pathname: '/(tabs)/(events)/create' })}
+                />
+            </View>
 
             {user && !user.isMember && (
                 <NonMemberInfo />
@@ -307,22 +271,6 @@ const createStyles = (colorScheme: string) => StyleSheet.create({
         paddingHorizontal: 20,
         paddingVertical: 10,
         paddingBottom: 20,
-    },
-    successMessage: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: '#D1FAE5',
-        paddingHorizontal: 16,
-        paddingVertical: 12,
-        marginHorizontal: 20,
-        marginTop: 8,
-        borderRadius: 8,
-        gap: 8,
-    },
-    successMessageText: {
-        color: '#065F46',
-        fontSize: 14,
-        fontWeight: '600',
     },
 });
 

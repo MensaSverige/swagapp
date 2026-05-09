@@ -9,7 +9,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
   const baseConfig: ExpoConfig = {
     name: "mensasverige",
     slug: "mensasverige",
-    version: "2.1.1",
+    version: "2.1.2",
     runtimeVersion: {
       policy: "appVersion",
     },
