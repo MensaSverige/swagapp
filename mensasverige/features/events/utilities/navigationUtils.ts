@@ -1,6 +1,5 @@
 import { router } from 'expo-router';
 import { EventFilterOptions } from '../store/EventsSlice';
-import { Event } from '../../../api_schema/types';
 
 /**
  * Creates date range for last minute events (next 2 hours)
@@ -38,7 +37,6 @@ export const navigateToScheduleWithFilter = (filter: EventFilterOptions) => {
 };
 
 // Convenience functions
-export const navigateToAttendingEvents = () => navigateToScheduleWithFilter({ attendingOrHost: true, bookable: null, official: null, categories: [] });
 export const navigateToBookableEvents = () => navigateToScheduleWithFilter({ attendingOrHost: null, bookable: true, official: null, categories: [] });
 export const navigateToOfficialEvents = () => navigateToScheduleWithFilter({ attendingOrHost: null, bookable: null, official: true, categories: [] });
 export const navigateToLastMinuteEvents = () => {
@@ -56,5 +54,6 @@ export const navigateToLastMinuteEvents = () => {
 
 export const navigateToUserEvents = (userId?: number) => {
     const params = userId ? { userId: String(userId) } : {};
+    router.navigate({ pathname: '/(tabs)/(events)' });
     router.push({ pathname: '/(tabs)/(events)/user-events', params });
 };

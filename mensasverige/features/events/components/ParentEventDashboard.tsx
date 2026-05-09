@@ -51,7 +51,7 @@ const ParentEventDashboard = () => {
         };
 
         loadParentEventInfo();
-    }, []);
+    }, [setEventInfo, setEventInfoLoading]);
 
     const loading = eventInfoLoading || eventsLoading;
 
@@ -64,7 +64,7 @@ const ParentEventDashboard = () => {
     };
 
     const handleEventPress = (event: ExtendedEvent) => {
-        router.push({ pathname: '/(tabs)/(home)/[id]', params: { id: event.id } });
+        router.navigate({ pathname: '/(tabs)/(events)/[id]', params: { id: event.id } });
     };
 
     if (loading && !eventInfo) {
