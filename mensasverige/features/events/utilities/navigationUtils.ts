@@ -54,6 +54,5 @@ export const navigateToLastMinuteEvents = () => {
 
 export const navigateToUserEvents = (userId?: number) => {
     const params = userId ? { userId: String(userId) } : {};
-    router.navigate({ pathname: '/(tabs)/(events)' });
     router.push({ pathname: '/(tabs)/(events)/user-events', params });
 };
