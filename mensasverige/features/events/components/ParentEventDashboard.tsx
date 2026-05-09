@@ -8,7 +8,7 @@ import GroupedEventsList from './GroupedEventsList';
 import { MaterialIcons } from '@expo/vector-icons';
 import { Colors } from '@/constants/Colors';
 import { useEvents } from '../hooks/useEvents';
-import { navigateToAttendingEvents, navigateToBookableEvents, navigateToLastMinuteEvents } from '../utilities/navigationUtils';
+import { navigateToUserEvents, navigateToBookableEvents, navigateToLastMinuteEvents } from '../utilities/navigationUtils';
 import { ExtendedEvent } from '../types/eventUtilTypes';
 import { router } from 'expo-router';
 import useStore from '@/features/common/store/store';
@@ -28,7 +28,7 @@ const INFO_SHORTCUTS: Array<{
 const ParentEventDashboard = () => {
     const colorScheme = useColorScheme();
     const styles = createStyles(colorScheme ?? 'light');
-    const {eventInfo, eventInfoLoading, setEventInfo, setEventInfoLoading} = useStore();
+    const {eventInfo, eventInfoLoading, setEventInfo, setEventInfoLoading, user} = useStore();
 
     const {
         dashboardGroupedEvents,
@@ -56,7 +56,7 @@ const ParentEventDashboard = () => {
     const loading = eventInfoLoading || eventsLoading;
 
     const navigateToFullSchedule = () => {
-        navigateToAttendingEvents();
+        navigateToUserEvents(user?.userId);
     };
 
     const navigateToAllEvents = () => {
