@@ -36,6 +36,7 @@ export const UserListPanel: React.FC<Props> = ({ visible, onClose, onUserPress, 
 
     const slideAnim = useRef(new Animated.Value(PANEL_WIDTH)).current;
     const overlayOpacity = useRef(new Animated.Value(0)).current;
+    const [isMounted, setIsMounted] = useState(false);
 
     useEffect(() => {
         setNumberOfFilteredUsers(filterUsers(usersShowingLocation, filter).length);
@@ -43,6 +44,11 @@ export const UserListPanel: React.FC<Props> = ({ visible, onClose, onUserPress, 
     }, [visible, userFilter]);
 
     useEffect(() => {
+        if (visible) setIsMounted(true);
+    }, [visible]);
+
+    useEffect(() => {
+        if (!isMounted) return;
         if (visible) {
             Animated.parallel([
                 Animated.timing(slideAnim, { toValue: 0, duration: 300, useNativeDriver: true }),
@@ -52,9 +58,9 @@ export const UserListPanel: React.FC<Props> = ({ visible, onClose, onUserPress, 
             Animated.parallel([
                 Animated.timing(slideAnim, { toValue: PANEL_WIDTH, duration: 250, useNativeDriver: true }),
                 Animated.timing(overlayOpacity, { toValue: 0, duration: 250, useNativeDriver: true }),
-            ]).start();
+            ]).start(() => setIsMounted(false));
         }
-    }, [visible]);
+    }, [visible, isMounted]);
 
     const hasLocation = hasLocationPermission &&
         (currentLocation.latitude !== 0 || currentLocation.longitude !== 0);
@@ -90,9 +96,9 @@ export const UserListPanel: React.FC<Props> = ({ visible, onClose, onUserPress, 
     const handleSearchChange = (text: string) => setSearchText(text);
     const handleSearchClear = () => setSearchText('');
 
-    if (!visible) return null;
+    const styles = useMemo(() => createStyles(colorScheme), [colorScheme]);
 
-    const styles = createStyles(colorScheme);
+    if (!isMounted) return null;
 
     return (
         <View style={[StyleSheet.absoluteFillObject, { zIndex: 1000 }]}>
@@ -127,9 +133,9 @@ export const UserListPanel: React.FC<Props> = ({ visible, onClose, onUserPress, 
                                 minimumValue={1}
                                 maximumValue={24}
                                 step={1}
-                                thumbTintColor={Colors.blue400 || '#60a5fa'}
-                                minimumTrackTintColor={Colors.blue400 || '#60a5fa'}
-                                maximumTrackTintColor={Colors.trueGray200 || '#e5e7eb'}
+                                thumbTintColor={Colors.blue400}
+                                minimumTrackTintColor={Colors.blue400}
+                                maximumTrackTintColor={Colors.trueGray200}
                                 onValueChange={(value: number) =>
                                     setFilterAndCount({ ...filter, showHoursAgo: value })
                                 }
