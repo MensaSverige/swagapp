@@ -64,7 +64,7 @@ const ParentEventDashboard = () => {
     };
 
     const handleEventPress = (event: ExtendedEvent) => {
-        router.navigate({ pathname: '/(tabs)/(events)/[id]', params: { id: event.id } });
+        router.push({ pathname: '/(tabs)/(events)/[id]', params: { id: event.id } });
     };
 
     if (loading && !eventInfo) {
