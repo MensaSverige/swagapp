@@ -6,6 +6,8 @@ export default function TabLayout() {
   return (
       <Stack>
         <Stack.Screen name="index" options={{ headerShown: false }} />
+        <Stack.Screen name="[id]" options={{ headerBackTitle: 'Aktiviteter' }} />
+        <Stack.Screen name="create" options={{ headerBackTitle: 'Aktiviteter' }} />
       </Stack>
   );
 }

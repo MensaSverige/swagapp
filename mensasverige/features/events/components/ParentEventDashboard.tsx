@@ -1,11 +1,10 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect } from 'react';
 import { View, StyleSheet, TouchableOpacity, useColorScheme } from 'react-native';
 import { fetchExternalRoot } from '../services/eventService';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import ParentEventDetails from './ParentEventDetails';
 import GroupedEventsList from './GroupedEventsList';
-import UnifiedEventModal from './UnifiedEventModal';
 import { MaterialIcons } from '@expo/vector-icons';
 import { Colors } from '@/constants/Colors';
 import { useEvents } from '../hooks/useEvents';
@@ -30,14 +29,10 @@ const ParentEventDashboard = () => {
     const colorScheme = useColorScheme();
     const styles = createStyles(colorScheme ?? 'light');
     const {eventInfo, eventInfoLoading, setEventInfo, setEventInfoLoading} = useStore();
-    const [selectedEvent, setSelectedEvent] = useState<ExtendedEvent | null>(null);
-    const [showCreateForm, setShowCreateForm] = useState(false);
-    
+
     const {
         dashboardGroupedEvents,
         loading: eventsLoading,
-        refetch,
-        addOrUpdateEvent,
         lastMinuteEvents
     } = useEvents();
 
@@ -61,31 +56,16 @@ const ParentEventDashboard = () => {
     const loading = eventInfoLoading || eventsLoading;
 
     const navigateToFullSchedule = () => {
-        // Navigate to schedule with attending filter set to true
         navigateToAttendingEvents();
     };
 
     const navigateToAllEvents = () => {
-        // Navigate to schedule showing bookable events (for discovery)
         navigateToBookableEvents();
     };
 
     const handleEventPress = (event: ExtendedEvent) => {
-        // Show the modal with event details instead of just navigating
-        setSelectedEvent(event);
+        router.push({ pathname: '/(tabs)/(events)/[id]', params: { id: event.id } });
     };
-
-    const handleEventCreated = useCallback((event: ExtendedEvent) => {
-        setShowCreateForm(false);
-        // Add the new event to the store - this will automatically update all views
-        addOrUpdateEvent(event);
-        // Optionally show the created event details after a brief delay
-        setTimeout(() => setSelectedEvent(event), 500);
-    }, [addOrUpdateEvent]);
-
-    const handleCancelCreate = useCallback(() => {
-        setShowCreateForm(false);
-    }, []);
 
     if (loading && !eventInfo) {
         return (
@@ -95,7 +75,6 @@ const ParentEventDashboard = () => {
         );
     }
 
-    // If no parent event exists, show a simple message
     if (!eventInfo) {
         return (
             <ThemedView style={styles.container}>
@@ -109,27 +88,7 @@ const ParentEventDashboard = () => {
 
     return (
         <ThemedView style={styles.container}>
-            {/* Unified Event Modal - handles both view/edit and create modes */}
-            <UnifiedEventModal
-                event={selectedEvent || undefined}
-                open={!!selectedEvent || showCreateForm}
-                mode={showCreateForm ? 'create' : 'view'}
-                onClose={() => {
-                    setSelectedEvent(null);
-                    setShowCreateForm(false);
-                }}
-                onEventUpdated={(updatedEvent: ExtendedEvent) => {
-                    // The event has been updated, add/update it in the store
-                    console.log('Event updated:', updatedEvent);
-                    addOrUpdateEvent(updatedEvent);
-                    setSelectedEvent(null);
-                }}
-                onEventCreated={handleEventCreated}
-            />
-
-
             <ParentEventDetails />
-
 
             {/* SWAG Guide Info Shortcuts */}
             <View style={styles.infoSection}>
@@ -153,7 +112,6 @@ const ParentEventDashboard = () => {
 
             {/* Last Minute and Create Activity Side by Side */}
             <View style={styles.actionsRow}>
-                {/* Last Minute Section */}
                 {lastMinuteEvents.length > 0 && (
                     <TouchableOpacity
                         style={[
@@ -172,37 +130,34 @@ const ParentEventDashboard = () => {
                             <ThemedText style={styles.lastMinuteDescription}>
                                 Hinner du med? {lastMinuteEvents.length} {lastMinuteEvents.length === 1 ? 'aktivitet' : 'aktiviteter'} startar snart!
                             </ThemedText>
-
                             <MaterialIcons name="arrow-forward" size={16} color={colorScheme === 'dark' ? Colors.amber400 : Colors.amber700} style={styles.actionArrow} />
                         </View>
                     </TouchableOpacity>
                 )}
 
-                {/* Create Activity Invitation Section */}
-                { Object.keys(dashboardGroupedEvents).length !== 0 && eventInfo && ( 
-                <TouchableOpacity
-                    style={[
-                        styles.actionCard,
-                        styles.createCard,
-                        lastMinuteEvents.length > 0 ? styles.equalWidth : styles.fullWidthSingle
-                    ]}
-                    onPress={() => setShowCreateForm(true)}
-                    activeOpacity={0.7}
-                >
-                    <View style={styles.actionContent}>
-                        <View style={styles.titleContainer}>
-                            <MaterialIcons name="celebration" size={20} color={Colors.primary300} />
-                            <ThemedText type="subtitle" style={styles.createTitle}>Bjud in andra!</ThemedText>
+                {Object.keys(dashboardGroupedEvents).length !== 0 && eventInfo && (
+                    <TouchableOpacity
+                        style={[
+                            styles.actionCard,
+                            styles.createCard,
+                            lastMinuteEvents.length > 0 ? styles.equalWidth : styles.fullWidthSingle
+                        ]}
+                        onPress={() => router.push({ pathname: '/(tabs)/(events)/create' })}
+                        activeOpacity={0.7}
+                    >
+                        <View style={styles.actionContent}>
+                            <View style={styles.titleContainer}>
+                                <MaterialIcons name="celebration" size={20} color={Colors.primary300} />
+                                <ThemedText type="subtitle" style={styles.createTitle}>Bjud in andra!</ThemedText>
+                            </View>
+                            <ThemedText style={styles.createDescription}>
+                                Skapa dina egna aktiviteter och träffa nya vänner.
+                            </ThemedText>
+                            <MaterialIcons name="arrow-forward" size={16} color={Colors.primary400} style={styles.actionArrow} />
                         </View>
-                        <ThemedText style={styles.createDescription}>
-                            Skapa dina egna aktiviteter och träffa nya vänner.
-                        </ThemedText>
-                        <MaterialIcons name="arrow-forward" size={16} color={Colors.primary400} style={styles.actionArrow} />
-                    </View>
-                </TouchableOpacity>
+                    </TouchableOpacity>
                 )}
             </View>
-
 
             {/* Upcoming Events Section */}
             {Object.keys(dashboardGroupedEvents).length > 0 && (
@@ -232,10 +187,7 @@ const ParentEventDashboard = () => {
 
             {/* No upcoming events message */}
             {!loading && Object.keys(dashboardGroupedEvents).length === 0 && eventInfo && (
-                <TouchableOpacity
-                    onPress={navigateToAllEvents}
-                //style={styles.browseButton}
-                >
+                <TouchableOpacity onPress={navigateToAllEvents}>
                     <View style={[styles.noEventsContainer, styles.actionCard]}>
                         <MaterialIcons name="event-note" size={48} color={Colors.coolGray400} style={styles.noEventsIcon} />
                         <ThemedText style={styles.noEventsText}>
@@ -245,7 +197,6 @@ const ParentEventDashboard = () => {
                             Upptäck intressanta aktiviteter eller skapa din egen!
                         </ThemedText>
                         <View style={styles.noEventsActions}>
-
                             <MaterialIcons name="arrow-forward" size={16} color={Colors.coolGray600} style={styles.actionArrow} />
                         </View>
                     </View>
@@ -324,26 +275,6 @@ const createStyles = (colorScheme: string) => StyleSheet.create({
         flexDirection: 'row',
         gap: 12,
     },
-    createAltButton: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingHorizontal: 20,
-        paddingVertical: 12,
-        backgroundColor: 'transparent',
-        borderRadius: 8,
-        borderWidth: 1,
-        borderColor: Colors.primary500,
-        gap: 8,
-    },
-    createAltButtonText: {
-        color: Colors.primary500,
-        fontSize: 14,
-        fontWeight: '500',
-    },
-    newsSection: {
-        marginTop: 24,
-    },
-    // Side by side action cards
     actionsRow: {
         flexDirection: 'row',
         gap: 8,
@@ -361,7 +292,7 @@ const createStyles = (colorScheme: string) => StyleSheet.create({
         flex: 1,
     },
     fullWidth: {
-        flex: 2, // Take up full width when no last minute section
+        flex: 2,
     },
     lastMinuteCard: {
         backgroundColor: colorScheme === 'dark' ? Colors.amber900 : Colors.amber100,
@@ -405,21 +336,6 @@ const createStyles = (colorScheme: string) => StyleSheet.create({
     actionArrow: {
         opacity: 0.6,
     },
-    // Legacy styles (can be removed if not used elsewhere)
-    createSection: {
-        marginTop: 10,
-        backgroundColor: colorScheme === 'dark' ? Colors.primary900 : Colors.primary50,
-        paddingVertical: 10,
-        paddingHorizontal: 12,
-        borderRadius: 8
-    },
-    createContent: {
-        alignItems: 'center',
-        gap: 4,
-    },
-    createArrow: {
-        opacity: 0.6,
-    },
     infoSection: {
         marginTop: 10,
     },
@@ -440,27 +356,6 @@ const createStyles = (colorScheme: string) => StyleSheet.create({
         fontSize: 11,
         textAlign: 'center',
         color: colorScheme === 'dark' ? Colors.coolGray100 : Colors.coolGray800,
-    },
-    lastMinuteSection: {
-        backgroundColor: colorScheme === 'dark' ? Colors.amber900 : Colors.amber100,
-        marginTop: 10,
-        paddingVertical: 12,
-        paddingHorizontal: 16,
-        borderRadius: 12,
-        borderWidth: 1,
-        borderColor: colorScheme === 'dark' ? Colors.amber800 : Colors.amber200,
-    },
-    lastMinuteContent: {
-        flexDirection: 'row',
-        alignItems: 'flex-start',
-        justifyContent: 'space-between',
-        gap: 6
-    },
-    lastMinuteLeft: {
-        flex: 1,
-    },
-    lastMinuteArrow: {
-        marginLeft: 8,
     },
 });
 
