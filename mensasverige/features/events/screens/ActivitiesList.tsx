@@ -1,6 +1,6 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-    ScrollView,
+    SectionList,
     View,
     Text,
     StyleSheet,
@@ -11,7 +11,6 @@ import {
 import useStore from '../../common/store/store';
 import NonMemberInfo from '../../common/components/NonMemberInfo';
 import UnifiedEventModal from '../components/UnifiedEventModal';
-import GroupedEventsList from '../components/GroupedEventsList';
 import { ThemedView } from '@/components/ThemedView';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedButton } from '@/components/ThemedButton';
@@ -24,10 +23,14 @@ import { Colors } from '@/constants/Colors';
 import { useLocalSearchParams } from 'expo-router';
 import { ExtendedEvent } from '../types/eventUtilTypes';
 import { useBottomTabOverflow } from '@/components/ui/TabBarBackground';
+import EventListItem from '../components/EventListItem';
+import { displayLocaleTimeStringDate } from '../utils/eventUtils';
 
 interface ActivitiesListProps {
     initialFilter?: EventFilterOptions;
 }
+
+type EventSection = { title: string; data: ExtendedEvent[] };
 
 export const ActivitiesList: React.FC<ActivitiesListProps> = ({ initialFilter }) => {
     const { user } = useStore();
@@ -84,7 +87,23 @@ export const ActivitiesList: React.FC<ActivitiesListProps> = ({ initialFilter })
         setCurrentEventFilter(eventFilter);
     }, [eventFilter, setCurrentEventFilter]);
 
-    const scrollViewRef = useRef<ScrollView>(null);
+    const sections = useMemo<EventSection[]>(
+        () => Object.keys(filteredGroupedEvents).map(date => ({
+            title: date,
+            data: filteredGroupedEvents[date],
+        })),
+        [filteredGroupedEvents]
+    );
+
+    const isFilterActive = useMemo(() =>
+        eventFilter.attendingOrHost !== null ||
+        eventFilter.bookable !== null ||
+        eventFilter.official !== null ||
+        (eventFilter.categories?.length ?? 0) > 0 ||
+        eventFilter.dateFrom !== null ||
+        eventFilter.dateTo !== null,
+        [eventFilter]
+    );
 
     const handlePress = useCallback((event: ExtendedEvent) => {
         setSelectedEvent(event);
@@ -109,16 +128,43 @@ export const ActivitiesList: React.FC<ActivitiesListProps> = ({ initialFilter })
         addOrUpdateEvent(event);
     }, [addOrUpdateEvent]);
 
-    const isFilterActive = () => {
-        return (
-            eventFilter.attendingOrHost !== null ||
-            eventFilter.bookable !== null ||
-            eventFilter.official !== null ||
-            (eventFilter.categories && eventFilter.categories.length > 0) ||
-            eventFilter.dateFrom !== null ||
-            eventFilter.dateTo !== null
-        );
-    };
+    const renderItem = useCallback(({ item, index }: { item: ExtendedEvent; index: number }) => (
+        <EventListItem
+            event={item}
+            onPress={handlePress}
+            showCategories={true}
+            isFirstEventOfDay={index === 0}
+        />
+    ), [handlePress]);
+
+    const renderSectionHeader = useCallback(({ section }: { section: EventSection }) => (
+        <View>
+            <ThemedText style={styles.dateHeaderAligned} type="defaultSemiBold">
+                {displayLocaleTimeStringDate(section.title)}
+            </ThemedText>
+            <View style={styles.divider} />
+        </View>
+    ), [styles]);
+
+    const listHeader = useMemo(() => loading ? (
+        <ActivityIndicator
+            style={styles.initialLoader}
+            size="large"
+            color={colorScheme === 'dark' ? Colors.primary400 : Colors.primary600}
+        />
+    ) : null, [loading, styles, colorScheme]);
+
+    const listEmpty = useMemo(() => !loading && !refreshing ? (
+        <View style={styles.noEventsContainer}>
+            <MaterialIcons name="event-note" size={48} color={colorScheme === 'dark' ? Colors.coolGray500 : Colors.coolGray400} style={styles.noEventsIcon} />
+            <Text style={styles.noEventsText}>Inga aktiviteter hittades</Text>
+            <Text style={styles.noEventsSubtext}>
+                {isFilterActive
+                    ? 'Prova att justera dina filter eller skapa en egen aktivitet!'
+                    : 'Bli den första att skapa en aktivitet och bjud in andra!'}
+            </Text>
+        </View>
+    ) : null, [loading, refreshing, isFilterActive, styles, colorScheme]);
 
     return (
         <ThemedView style={{ flex: 1 }}>
@@ -144,7 +190,7 @@ export const ActivitiesList: React.FC<ActivitiesListProps> = ({ initialFilter })
                     )}
                     <FilterButton
                         onPress={() => setShowFilter(true)}
-                        isActive={isFilterActive()}
+                        isActive={isFilterActive}
                         icon="filter-list"
                     />
                 </View>
@@ -157,9 +203,11 @@ export const ActivitiesList: React.FC<ActivitiesListProps> = ({ initialFilter })
                 </View>
             )}
 
-            <ScrollView
-                ref={scrollViewRef}
-                style={styles.scrollContainer}
+            <SectionList
+                sections={sections}
+                keyExtractor={(item) => item.id}
+                renderItem={renderItem}
+                renderSectionHeader={renderSectionHeader}
                 refreshControl={
                     <RefreshControl
                         refreshing={refreshing}
@@ -167,33 +215,15 @@ export const ActivitiesList: React.FC<ActivitiesListProps> = ({ initialFilter })
                         tintColor={colorScheme === 'dark' ? Colors.primary400 : Colors.primary600}
                     />
                 }
-            >
-                {loading && (
-                    <ActivityIndicator
-                        style={styles.initialLoader}
-                        size="large"
-                        color={colorScheme === 'dark' ? Colors.primary400 : Colors.primary600}
-                    />
-                )}
-                {Object.keys(filteredGroupedEvents).length === 0 && !loading && !refreshing && (
-                    <View style={styles.noEventsContainer}>
-                        <MaterialIcons name="event-note" size={48} color={colorScheme === 'dark' ? Colors.coolGray500 : Colors.coolGray400} style={styles.noEventsIcon} />
-                        <Text style={styles.noEventsText}>Inga aktiviteter hittades</Text>
-                        <Text style={styles.noEventsSubtext}>
-                            {isFilterActive()
-                                ? 'Prova att justera dina filter eller skapa en egen aktivitet!'
-                                : 'Bli den första att skapa en aktivitet och bjud in andra!'}
-                        </Text>
-                    </View>
-                )}
-
-                <GroupedEventsList
-                    groupedEvents={filteredGroupedEvents}
-                    onEventPress={handlePress}
-                    showCategories={true}
-                    dateHeaderStyle="aligned"
-                />
-            </ScrollView>
+                ListHeaderComponent={listHeader}
+                ListEmptyComponent={listEmpty}
+                contentContainerStyle={{ paddingBottom: 80 + bottom }}
+                stickySectionHeadersEnabled={false}
+                initialNumToRender={12}
+                maxToRenderPerBatch={10}
+                windowSize={10}
+                removeClippedSubviews={true}
+            />
 
             {!showCreateForm && (
                 <View style={{...styles.createButtonContainer, paddingBottom: styles.createButtonContainer.paddingBottom + bottom}}>
@@ -238,9 +268,14 @@ const createStyles = (colorScheme: string) => StyleSheet.create({
         color: colorScheme === 'dark' ? Colors.coolGray400 : Colors.coolGray500,
         fontWeight: '500',
     },
-    scrollContainer: {
-        paddingBottom: 80,
-        paddingHorizontal: 0,
+    dateHeaderAligned: {
+        paddingHorizontal: 20,
+        marginBottom: 8,
+    },
+    divider: {
+        height: 1,
+        backgroundColor: '#E5E7EB',
+        marginBottom: 8,
     },
     noEventsContainer: {
         alignItems: 'center',
