@@ -1,16 +1,14 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   StyleSheet,
-  Image,
   Platform,
   TouchableWithoutFeedback,
   Keyboard,
   View,
-  SafeAreaView,
   KeyboardAvoidingView,
   TouchableOpacity,
 } from 'react-native';
-import ReactNativeMapView, { PROVIDER_GOOGLE } from 'react-native-maps';
+import ReactNativeMapView from 'react-native-maps';
 import UserMarker from '../components/markers/UserMarker';
 import useStore from '../../common/store/store';
 import useRequestLocationPermission from '../hooks/useRequestLocationPermission';
@@ -18,34 +16,24 @@ import useGetUsersShowingLocation from '../hooks/useGetUsersShowingLocation';
 import lightMapstyle from '../styles/light';
 import darkMapstyle from '../styles/dark';
 import ContactCard from '../components/ContactCard';
-import { getFullUrl } from '../../common/functions/GetFullUrl';
 import UserWithLocation from '../types/userWithLocation';
 import { useFocusEffect } from '@react-navigation/native';
-import { FilterMarkersComponent } from '../components/FilterMarkers';
 import IncognitoInfo from '../components/IncognitoInfo';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
-import { SearchParticipants } from '../components/SearchParticipants';
 import { ThemedView } from '@/components/ThemedView';
 import { useBottomTabOverflow } from '@/components/ui/TabBarBackground';
+import { UserListPanel } from '../components/UserListPanel';
 
 const createStyles = (colorMode: string) =>
   StyleSheet.create({
     map: {
       ...StyleSheet.absoluteFillObject,
     },
-    searchWrapper: {
-      position: 'absolute',
-      top: 60,
-      left: 10,
-      right: 10,
-      zIndex: 1,
-      backgroundColor: 'transparent',
-    },
     mapControlsWrapper: {
       position: 'absolute',
-      top: 150,
+      top: 50,
       right: 10,
       zIndex: 1,
       backgroundColor: 'transparent',
@@ -72,10 +60,10 @@ const MapScreen: React.FC = () => {
   const colorMode = colorScheme ?? 'light';
   const mapRef = useRef<ReactNativeMapView | null>(null);
   const bottom = useBottomTabOverflow();
-  const { region, usersShowingLocation, filteredUsers, selectedUser, userFilter, setSelectedUser, setFilteredUsers, setUserFilter, user } = useStore();
+  const { region, filteredUsers, selectedUser, setSelectedUser, user } = useStore();
   const [visibleRegion, setVisibleRegion] = useState(region);
   const [showContactCard, setShowContactCard] = useState(false);
-  const [showFilter, setshowFilter] = useState(false);
+  const [showUserList, setShowUserList] = useState(false);
   const [hasPerformedInitialZoom, setHasPerformedInitialZoom] = useState(false);
 
   useFocusEffect(
@@ -100,44 +88,35 @@ const MapScreen: React.FC = () => {
   }, [selectedUser, showContactCard]);
 
   const focusOnUser = (user: UserWithLocation) => {
-    const isAlreadySelected = selectedUser?.userId === user.userId;
-    console.log('Focusing on user:', user.userId, 'Already selected:', isAlreadySelected);
     setSelectedUser(user);
     setShowContactCard(true);
+    setFollowsUserLocation(false);
 
-    if (!usersShowingLocation) {
-      return;
+    if (user.location) {
+      mapRef.current?.animateToRegion(
+        {
+          latitude: user.location.latitude,
+          longitude: user.location.longitude,
+          latitudeDelta: visibleRegion.latitudeDelta,
+          longitudeDelta: visibleRegion.longitudeDelta,
+        },
+        350,
+      );
     }
-
-    // If the same user is tapped again, zoom in
-    if (isAlreadySelected) {
-      setFollowsUserLocation(false);
-      if (user.location) {
-        mapRef.current?.animateToRegion(
-          {
-            latitude: user.location.latitude,
-            longitude: user.location.longitude,
-            latitudeDelta: region.latitudeDelta,
-            longitudeDelta: region.longitudeDelta,
-          },
-          350,
-        );
-      }
-    }
-  }
-
-  const handleSearchChange = (text: string) => {
-    setUserFilter({ ...userFilter, name: text });
   };
 
-  const handleSearchClear = () => {
-    setUserFilter({ ...userFilter, name: '' });
-  };
-
-  const openFilter = () => {
-    setShowContactCard(false);
-    setSelectedUser(null);
-    setshowFilter(true);
+  const zoomToUser = (user: UserWithLocation) => {
+    if (user.location) {
+      mapRef.current?.animateToRegion(
+        {
+          latitude: user.location.latitude,
+          longitude: user.location.longitude,
+          latitudeDelta: 0.005,
+          longitudeDelta: 0.005,
+        },
+        350,
+      );
+    }
   };
 
   const handleFollowLocationPress = async () => {
@@ -168,9 +147,7 @@ const MapScreen: React.FC = () => {
       setSelectedUser(null);
     }
     setShowContactCard(false);
-    setshowFilter(false);
-
-  }, [followsUserLocation, selectedUser, showContactCard, showFilter]);
+  }, [followsUserLocation, selectedUser, showContactCard]);
 
   const zoomToFitAllUsers = useMemo(() => (users: typeof filteredUsers) => {
     if (!users || users.length === 0) {
@@ -222,22 +199,17 @@ const MapScreen: React.FC = () => {
                 key={`${selectedUser.userId}-${colorMode}`}
                 user={selectedUser}
                 showCard={showContactCard}
-                onClose={onClose} />}
+                onClose={onClose}
+                onZoom={() => zoomToUser(selectedUser)} />}
 
-            <SearchParticipants
-              value={userFilter.name || ''}
-              onChangeText={handleSearchChange}
-              onClear={handleSearchClear}
-            />
-
-            <FilterMarkersComponent
-              showFilterView={showFilter}
-              onClose={
-                () => {
-                  setshowFilter(false);
-                }
-              }
+            <UserListPanel
+              visible={showUserList}
+              onClose={() => setShowUserList(false)}
               onFilterApplied={() => zoomToFitAllUsers(filteredUsers)}
+              onUserPress={(u) => {
+                setShowUserList(false);
+                focusOnUser(u);
+              }}
             />
 
             <ReactNativeMapView
@@ -310,11 +282,11 @@ const MapScreen: React.FC = () => {
             <View style={styles.mapControlsWrapper}>
               <TouchableOpacity
                 style={styles.mapControlsButton}
-                onPress={openFilter}>
+                onPress={() => setShowUserList(true)}>
                 <MaterialIcons
                   name="filter-list"
                   size={30}
-                  color={userFilter && (userFilter.name || userFilter.showHoursAgo !== 24) ? Colors.primary300 : Colors.coolGray400}
+                  color={showUserList ? Colors.primary300 : Colors.coolGray400}
                 />
               </TouchableOpacity>
               <TouchableOpacity

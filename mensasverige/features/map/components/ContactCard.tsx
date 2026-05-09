@@ -66,9 +66,10 @@ type ContactCardProps = {
     user: UserWithLocation;
     showCard: boolean;
     onClose: () => void;
+    onZoom?: () => void;
 };
 
-const ContactCard: React.FC<ContactCardProps> = ({ user, showCard, onClose }) => {
+const ContactCard: React.FC<ContactCardProps> = ({ user, showCard, onClose, onZoom }) => {
     const ref = React.useRef(null);
     const colorScheme = useColorScheme();
     const styles = createStyles(colorScheme ?? 'light');
@@ -146,6 +147,11 @@ const ContactCard: React.FC<ContactCardProps> = ({ user, showCard, onClose }) =>
                             </TouchableOpacity>
                         )}
 
+                        {onZoom && (
+                            <TouchableOpacity style={styles.actionButton} onPress={onZoom}>
+                                <MaterialIcons name="zoom-in-map" size={24} color={Colors.primary400} />
+                            </TouchableOpacity>
+                        )}
                         {user.location && (
                             <LocationLinkButton latitude={user.location.latitude} longitude={user.location.longitude} />
                         )}

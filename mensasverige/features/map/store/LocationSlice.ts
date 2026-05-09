@@ -42,7 +42,7 @@ export interface LocationSlice {
   setUsersShowingLocation: (users: UserWithLocation[]) => void;
   setHasLocationPermission: (hasLocationPermission: boolean) => void;
   setRegion: (region: Region) => void;
-  setUserLocation: (longitude: number, latitude: number) => void;
+  setUserLocation: (latitude: number, longitude: number) => void;
   setSelectedUser: (user: UserWithLocation | null) => void;
 }
 
@@ -82,7 +82,7 @@ export const createLocationSlice: StateCreator<LocationSlice> = (set, get) => ({
   setHasLocationPermission: hasLocationPermission =>
     set({hasLocationPermission}),
   setRegion: region => set({region}),
-  setUserLocation: (longitude, latitude) =>
+  setUserLocation: (latitude, longitude) =>
     set(state => ({
       currentLocation: {
         ...state.currentLocation,
