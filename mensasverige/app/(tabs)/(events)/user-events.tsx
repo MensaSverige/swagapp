@@ -1,13 +1,12 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useCallback } from 'react';
 import {
-    View,
     StyleSheet,
     ActivityIndicator,
     ScrollView,
     RefreshControl,
     useColorScheme,
 } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import useStore from '@/features/common/store/store';
 import { useEvents } from '@/features/events/hooks/useEvents';
 import { ThemedView } from '@/components/ThemedView';
@@ -54,9 +53,9 @@ export default function UserEventsScreen() {
         return groupEventsByDate(sortEventsByDate(filtered));
     }, [allEvents, targetUserId, isOwnEvents]);
 
-    const handleEventPress = (event: ExtendedEvent) => {
+    const handleEventPress = useCallback((event: ExtendedEvent) => {
         router.push({ pathname: '/(tabs)/(events)/[id]', params: { id: event.id } });
-    };
+    }, [router]);
 
     const isEmpty = Object.keys(userGroupedEvents).length === 0;
 
@@ -70,6 +69,7 @@ export default function UserEventsScreen() {
 
     return (
         <ThemedView style={{ flex: 1 }}>
+            <Stack.Screen options={{ title: isOwnEvents ? 'Mina bokningar' : 'Bokningar' }} />
             {loading ? (
                 <ActivityIndicator
                     style={styles.loader}

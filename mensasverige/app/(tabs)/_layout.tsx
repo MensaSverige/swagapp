@@ -50,7 +50,14 @@ export default function TabLayout() {
         options={{
           title: 'Aktiviteter',
           tabBarIcon: ({ color }) => <MaterialIcons name="local-activity" size={28} color={color} />,
+          lazy: false,
         }}
+        listeners={({ navigation }) => ({
+          tabPress: (e) => {
+            e.preventDefault();
+            navigation.navigate('(events)', { screen: 'index' });
+          },
+        })}
       />
       <Tabs.Screen
         name="map"
