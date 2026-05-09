@@ -11,7 +11,7 @@ export default function WelcomeScreen() {
     const { user } = useStore();
     return (
         <>
-            <ParallaxScrollView useSafeArea={true}
+            <ParallaxScrollView
                 headerImage={
                     <Image
                         source={require('@/assets/images/mensa_sverige_1024_500.jpg')}

@@ -1,11 +1,10 @@
 import React from 'react';
 import { View, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { Colors } from '@/constants/Colors';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 
-const createStyles = (colorScheme: string, topInset: number) => StyleSheet.create({
+const createStyles = (colorScheme: string) => StyleSheet.create({
   searchContainer: {
     backgroundColor: colorScheme === 'dark' ? '#1f2937' : '#ffffff',
     borderRadius: 8,
@@ -14,7 +13,6 @@ const createStyles = (colorScheme: string, topInset: number) => StyleSheet.creat
     paddingHorizontal: 12,
     paddingVertical: 8,
     margin: 16,
-    marginTop: topInset + 16,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
@@ -49,8 +47,7 @@ export const SearchParticipants: React.FC<SearchParticipantsProps> = ({
   placeholder = "Sök deltagare..." 
 }) => {
   const colorScheme = useColorScheme();
-  const insets = useSafeAreaInsets();
-  const styles = createStyles(colorScheme ?? 'light', insets.top);
+  const styles = createStyles(colorScheme ?? 'light');
 
   return (
     <View style={styles.searchContainer}>

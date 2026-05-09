@@ -103,7 +103,7 @@ const UserProfile: React.FC = () => {
             <ScrollView
                 contentContainerStyle={[
                     styles.scroll,
-                    { paddingTop: insets.top + 8, paddingBottom: insets.bottom + 24 },
+                    { paddingTop: 8, paddingBottom: insets.bottom + 24 },
                 ]}
                 showsVerticalScrollIndicator={false}>
 

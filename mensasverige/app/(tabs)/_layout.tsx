@@ -1,7 +1,7 @@
 import { Tabs } from 'expo-router';
 import React from 'react';
 import { Platform } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSafeAreaInsets, SafeAreaView } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
 
 import { HapticTab } from '@/components/HapticTab';
@@ -20,7 +20,7 @@ export default function TabLayout() {
   const user = useStore(state => state.user);
 
   return (
-    <>
+    <SafeAreaView edges={['top']} style={{ flex: 1 }}>
     <UpdateBanner />
     <Tabs
       screenOptions={{
@@ -69,6 +69,6 @@ export default function TabLayout() {
         }}
       />
     </Tabs>
-    </>
+    </SafeAreaView>
   );
 }
