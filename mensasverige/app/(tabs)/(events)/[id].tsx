@@ -31,7 +31,7 @@ export default function EventDetailScreen() {
 
     const headerRight = useCallback(() => (
         <TouchableOpacity
-            onPress={() => router.push({ pathname: '/(tabs)/(events)/create', params: { id } })}
+            onPress={() => router.push({ pathname: '/(tabs)/(events)/event-form', params: { id } })}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
             <MaterialIcons name="edit" size={22} color={iconColor} />

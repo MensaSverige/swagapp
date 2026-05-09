@@ -142,7 +142,7 @@ const ParentEventDashboard = () => {
                             styles.createCard,
                             lastMinuteEvents.length > 0 ? styles.equalWidth : styles.fullWidthSingle
                         ]}
-                        onPress={() => router.push({ pathname: '/(tabs)/(events)/create' })}
+                        onPress={() => router.push({ pathname: '/(tabs)/(events)/event-form' })}
                         activeOpacity={0.7}
                     >
                         <View style={styles.actionContent}>
