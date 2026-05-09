@@ -10,6 +10,7 @@ import { canUserEditEvent } from '@/features/events/utils/eventPermissions';
 import useStore from '@/features/common/store/store';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { useBottomTabOverflow } from '@/components/ui/TabBarBackground';
+import { Colors } from '@/constants/Colors';
 
 export default function EventDetailScreen() {
     const { id } = useLocalSearchParams<{ id: string }>();
@@ -42,7 +43,7 @@ export default function EventDetailScreen() {
         return (
             <ThemedView style={styles.notFound}>
                 <Stack.Screen options={{ title: 'Aktivitet' }} />
-                <MaterialIcons name="event-busy" size={48} color="#9CA3AF" />
+                <MaterialIcons name="event-busy" size={48} color={Colors.coolGray400} />
                 <ThemedText style={styles.notFoundText}>Aktiviteten hittades inte</ThemedText>
             </ThemedView>
         );
