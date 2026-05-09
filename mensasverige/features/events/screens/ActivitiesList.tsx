@@ -195,7 +195,7 @@ export const ActivitiesList: React.FC<ActivitiesListProps> = ({ initialFilter })
                 <ThemedButton
                     text="✨ Skapa din aktivitet"
                     variant="primary"
-                    onPress={() => router.push({ pathname: '/(tabs)/(events)/create' })}
+                    onPress={() => router.push({ pathname: '/(tabs)/(events)/event-form' })}
                 />
             </View>
 

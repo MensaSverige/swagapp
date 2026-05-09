@@ -9,7 +9,7 @@ import { useEvents } from '@/features/events/hooks/useEvents';
 import { ExtendedEvent } from '@/features/events/types/eventUtilTypes';
 import { useBottomTabOverflow } from '@/components/ui/TabBarBackground';
 
-export default function CreateEventScreen() {
+export default function EventFormScreen() {
     const { id } = useLocalSearchParams<{ id?: string }>();
     const router = useRouter();
     const { allEvents, addOrUpdateEvent } = useEvents();
