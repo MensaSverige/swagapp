@@ -1,11 +1,8 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, useColorScheme } from 'react-native';
-import { Event } from '../../../api_schema/types';
 import { DisplayTime } from '../utilities/DisplayTime';
 import CategoryBadge from './badges/CategoryBadge';
 import { Colors } from '@/constants/Colors';
-import { MaterialIcons } from '@expo/vector-icons';
-import OfficialEventIcon from '../../../components/icons/OfficialEventIcon';
 import { ExtendedEvent } from '../types/eventUtilTypes';
 
 interface EventListItemProps {
@@ -28,17 +25,14 @@ const EventListItem: React.FC<EventListItemProps> = ({
     isFirstEventOfDay = false
 }) => {
     const colorScheme = useColorScheme();
-    const styles = createStyles(colorScheme ?? 'light');
+    const styles = useMemo(() => createStyles(colorScheme ?? 'light'), [colorScheme]);
 
     const shouldGrayOut = (!event.bookable && !event.attending) || !event.isFutureEvent;
-    const eventOpacity = shouldGrayOut ? 0.4 : opacity;
 
     return (
         <TouchableOpacity
             onPress={() => onPress(event)}
-            style={{
-                opacity: eventOpacity
-            }}
+            style={shouldGrayOut ? styles.dimmed : (opacity < 1 ? { opacity } : undefined)}
         >
             {isNextEvent && !isFirstEventOfDay && nextEventMarkerRef && (
                 <View ref={nextEventMarkerRef} />
@@ -49,15 +43,10 @@ const EventListItem: React.FC<EventListItemProps> = ({
                 event.attending && styles.attendingEventItem,
             ]}>
                 <View style={styles.timeContainer}>
-                    <Text style={[styles.startTime,
-                    shouldGrayOut ? { color: Colors.red600 } : { color: Colors.teal400 }
-
-                    ]}>
+                    <Text style={shouldGrayOut ? styles.startTimeGrayOut : styles.startTime}>
                         {DisplayTime(event.start)}
                     </Text>
-                    <Text style={[styles.endTime,
-                    shouldGrayOut ? { color: Colors.red800 } : { color: Colors.teal800 }
-                    ]}>
+                    <Text style={shouldGrayOut ? styles.endTimeGrayOut : styles.endTime}>
                         {event.end ? DisplayTime(event.end) : ''}
                     </Text>
                 </View>
@@ -67,28 +56,17 @@ const EventListItem: React.FC<EventListItemProps> = ({
                     size="x-small"
                 />
                 <View style={styles.eventContent}>
-
                     <View style={styles.titleContainer}>
-
-                        <Text style={[
-                            styles.eventTitle,
-                            shouldGrayOut ? { fontWeight: '400' } : { fontWeight: '600' }
-                        ]}>
+                        <Text style={shouldGrayOut ? styles.eventTitleGrayOut : styles.eventTitle}>
                             {event.name}
                         </Text>
-
-
                     </View>
                     <Text style={styles.eventLocation}>
                         {event.locationDescription}
                     </Text>
-
                 </View>
                 {showCategories && (
                     <View style={styles.categoriesContainer}>
-
-
-                        {/* Category badges */}
                         {event.tags?.map((category, index) => (
                             <CategoryBadge
                                 key={index}
@@ -99,7 +77,6 @@ const EventListItem: React.FC<EventListItemProps> = ({
                         ))}
                     </View>
                 )}
-
             </View>
         </TouchableOpacity>
     );
@@ -115,26 +92,41 @@ const createStyles = (colorScheme: string) => StyleSheet.create({
     attendingEventItem: {
         backgroundColor: 'rgba(16, 185, 129, 0.1)',
     },
+    dimmed: {
+        opacity: 0.4,
+    },
     timeContainer: {
         justifyContent: 'flex-start',
     },
     startTime: {
         fontSize: 14,
-        color: colorScheme === 'dark' ? Colors.teal400 : Colors.teal600,
+        color: Colors.teal400,
+    },
+    startTimeGrayOut: {
+        fontSize: 14,
+        color: Colors.red600,
     },
     endTime: {
         fontSize: 14,
-        color: colorScheme === 'dark' ? Colors.teal600 : Colors.teal800,
+        color: Colors.teal800,
+    },
+    endTimeGrayOut: {
+        fontSize: 14,
+        color: Colors.red800,
     },
     eventContent: {
         flex: 1,
-        marginLeft: 0,
         flexDirection: 'column',
         justifyContent: 'space-between',
     },
     eventTitle: {
         fontSize: 16,
         fontWeight: '600',
+        color: colorScheme === 'dark' ? Colors.info500 : Colors.info700,
+    },
+    eventTitleGrayOut: {
+        fontSize: 16,
+        fontWeight: '400',
         color: colorScheme === 'dark' ? Colors.info500 : Colors.info700,
     },
     titleContainer: {
@@ -149,12 +141,6 @@ const createStyles = (colorScheme: string) => StyleSheet.create({
         fontSize: 14,
         color: Colors.coolGray600,
     },
-    iconContainer: {
-        alignItems: 'center',
-        justifyContent: 'flex-start',
-        paddingHorizontal: 6,
-        marginTop: 2,
-    },
 });
 
-export default EventListItem;
+export default React.memo(EventListItem);

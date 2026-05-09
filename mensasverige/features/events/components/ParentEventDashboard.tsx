@@ -21,7 +21,7 @@ const INFO_SHORTCUTS: Array<{
     iconColor: string; bgLight: string; bgDark: string;
     section?: string;
 }> = [
-    { id: 'ankomst', label: 'SWAG Guide',  icon: 'info',     iconColor: Colors.teal500,  bgLight: Colors.teal50,   bgDark: Colors.teal900  },
+    { id: 'ankomst', label: 'SWAG Guide',  icon: 'info',     iconColor: Colors.teal600,  bgLight: Colors.teal100,   bgDark: Colors.teal900  },
     { id: 'buddies',   label: 'SWAG Buddies', icon: 'favorite', iconColor: '#E91E8C',       bgLight: '#FCE4EF',        bgDark: '#4A1028',       section: 'buddies' },
     { id: 'kontakt',    label: 'Kontakt',      icon: 'phone',    iconColor: Colors.amber600,    bgLight: Colors.amber100,    bgDark: Colors.amber900,    section: 'kontakt' },
 ];

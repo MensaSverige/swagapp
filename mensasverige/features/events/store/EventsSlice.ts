@@ -18,6 +18,7 @@ export interface EventsSlice {
   events: ExtendedEvent[];
   eventsRefreshing: boolean;
   eventsLastFetched: Date | null;
+  eventsInitialized: boolean;
 
   // Parent event info
   eventInfo: ExternalRoot | null;
@@ -45,6 +46,7 @@ export interface EventsSlice {
   setEvents: (events: ExtendedEvent[]) => void;
   setEventsRefreshing: (eventsRefreshing: boolean) => void;
   setEventsLastFetched: (eventsLastFetched: Date | null) => void;
+  setEventsInitialized: (initialized: boolean) => void;
 
   // Event info actions
   setEventInfo: (eventInfo: ExternalRoot | null) => void;
@@ -149,6 +151,7 @@ export const createEventsSlice: StateCreator<EventsSlice> = (set, get) => ({
   events: [],
   eventsRefreshing: false,
   eventsLastFetched: null,
+  eventsInitialized: false,
 
   // Parent event info
   eventInfo: null,
@@ -224,8 +227,8 @@ export const createEventsSlice: StateCreator<EventsSlice> = (set, get) => ({
     }
   },
   setEventsRefreshing: (eventsRefreshing: boolean) => set({eventsRefreshing}),
-  setEventsLastFetched: (eventsLastFetched: Date | null) =>
-    set({eventsLastFetched}),
+  setEventsLastFetched: (eventsLastFetched: Date | null) => set({eventsLastFetched}),
+  setEventsInitialized: (eventsInitialized: boolean) => set({eventsInitialized}),
 
   // Event info actions
   setEventInfo: (eventInfo: ExternalRoot | null) => set({eventInfo}),
