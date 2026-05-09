@@ -43,13 +43,18 @@ export const navigateToBookableEvents = () => navigateToScheduleWithFilter({ att
 export const navigateToOfficialEvents = () => navigateToScheduleWithFilter({ attendingOrHost: null, bookable: null, official: true, categories: [] });
 export const navigateToLastMinuteEvents = () => {
     const { now, twoHoursFromNow } = getLastMinuteDateRange();
-    
-    return navigateToScheduleWithFilter({ 
-        attendingOrHost: null, 
+
+    return navigateToScheduleWithFilter({
+        attendingOrHost: null,
         bookable: true, // Only show bookable events for last minute
-        official: null, 
+        official: null,
         categories: [],
         dateFrom: now,
         dateTo: twoHoursFromNow
     });
+};
+
+export const navigateToUserEvents = (userId?: number) => {
+    const params = userId ? { userId: String(userId) } : {};
+    router.push({ pathname: '/(tabs)/(events)/user-events', params });
 };
