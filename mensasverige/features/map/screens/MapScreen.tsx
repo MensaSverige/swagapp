@@ -261,10 +261,10 @@ const MapScreen: React.FC = () => {
               {filteredUsers &&
 
                 filteredUsers
-                  .filter(u => u.location.latitude >= visibleRegion.latitude - visibleRegion.latitudeDelta * 5 &&
-                    u.location.latitude <= visibleRegion.latitude + visibleRegion.latitudeDelta * 5 &&
-                    u.location.longitude >= visibleRegion.longitude - visibleRegion.longitudeDelta * 5 &&
-                    u.location.longitude <= visibleRegion.longitude + visibleRegion.longitudeDelta * 5
+                  .filter(u => u.location.latitude >= visibleRegion.latitude - visibleRegion.latitudeDelta * 3 &&
+                    u.location.latitude <= visibleRegion.latitude + visibleRegion.latitudeDelta * 3 &&
+                    u.location.longitude >= visibleRegion.longitude - visibleRegion.longitudeDelta * 3 &&
+                    u.location.longitude <= visibleRegion.longitude + visibleRegion.longitudeDelta * 3
                   )
                   .map((u) => {
                     return (

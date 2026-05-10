@@ -64,6 +64,7 @@ export default function TabLayout() {
         options={{
           title: 'Karta',
           tabBarIcon: ({ color }) => <MaterialIcons name="person-pin" size={28} color={color} />,
+          lazy: false
         }}
       />
       <Tabs.Screen
