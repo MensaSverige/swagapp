@@ -102,7 +102,7 @@ export const ActivitiesList: React.FC<ActivitiesListProps> = ({ initialFilter })
     );
 
     const handlePress = useCallback((event: ExtendedEvent) => {
-        router.push({ pathname: '/(tabs)/(events)/[id]', params: { id: event.id } });
+        router.push({ pathname: '/events/[id]', params: { id: event.id } });
     }, [router]);
 
     const handleApplyFilter = useCallback((filter: EventFilterOptions) => {

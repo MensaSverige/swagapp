@@ -54,7 +54,7 @@ export default function UserEventsScreen() {
     }, [allEvents, targetUserId, isOwnEvents]);
 
     const handleEventPress = useCallback((event: ExtendedEvent) => {
-        router.push({ pathname: '/(tabs)/(events)/[id]', params: { id: event.id } });
+        router.push({ pathname: '/events/[id]', params: { id: event.id } });
     }, [router]);
 
     const isEmpty = Object.keys(userGroupedEvents).length === 0;

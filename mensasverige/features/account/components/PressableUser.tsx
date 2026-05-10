@@ -43,7 +43,7 @@ const PressableUser: React.FC<PressableUserProps> = ({
 
   return (
     <TouchableOpacity
-      onPress={() => router.push({ pathname: '/(tabs)/(profile)/[userId]', params: { userId: String(userId) } })}
+      onPress={() => router.navigate({ pathname: '/profile/[userId]', params: { userId: String(userId) } })}
       activeOpacity={0.7}
     >
       {item}

@@ -10,7 +10,7 @@ import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 const createStyles = (colorScheme: string) => StyleSheet.create({
     cardContainer: {
         position: 'absolute',
-        bottom: 60,
+        bottom: 20,
         left: 20,
         right: 20,
         backgroundColor: colorScheme === 'dark' ? '#1f2937' : '#ffffff',
@@ -29,10 +29,6 @@ const createStyles = (colorScheme: string) => StyleSheet.create({
     closeButton: {
         alignSelf: 'flex-end',
         padding: 8,
-    },
-    headerContainer: {
-        flexDirection: 'column',
-        marginTop: 10,
     },
     actionsContainer: {
         flexDirection: 'row',
@@ -71,7 +67,7 @@ const ContactCard: React.FC<ContactCardProps> = ({ user, showCard, onClose, onZo
                 />
             </TouchableOpacity>
 
-            <View style={styles.headerContainer}>
+
                 <PressableUser
                     userId={user.userId}
                     firstName={user.firstName}
@@ -91,7 +87,6 @@ const ContactCard: React.FC<ContactCardProps> = ({ user, showCard, onClose, onZo
                         <LocationLinkButton latitude={user.location.latitude} longitude={user.location.longitude} />
                     )}
                 </View>
-            </View>
         </View>
     );
 };

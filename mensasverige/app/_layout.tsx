@@ -31,7 +31,7 @@ export default function RootLayout() {
   //   setUser(null);
   // }, []);
 
-    useUserLocation();
+  useUserLocation();
   useEffect(() => {
     console.log('User state changed:', user);
     setIsLoggedIn(!!user);
@@ -74,6 +74,9 @@ export default function RootLayout() {
         <Stack>
           <Stack.Protected guard={isLoggedIn}>
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+            <Stack.Screen name="events/[id]" options={{ headerBackTitle: 'Tillbaka' }} />
+            <Stack.Screen name="events/user-events" options={{ title: 'Mina aktiviteter', headerBackTitle: 'Tillbaka' }} />
+            <Stack.Screen name="profile/[userId]" options={{ title: 'Profil', headerBackTitle: 'Tillbaka' }} />
           </Stack.Protected>
 
           <Stack.Protected guard={!isLoggedIn}>
