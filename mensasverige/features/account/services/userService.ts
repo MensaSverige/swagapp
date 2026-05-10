@@ -130,9 +130,13 @@ let _interestCategoriesCache: InterestCategory[] | null = null;
 
 export const getInterestCategories = async (): Promise<InterestCategory[]> => {
   if (_interestCategoriesCache) return _interestCategoriesCache;
-  const response = await apiClient.get('/interests');
-  _interestCategoriesCache = response.data;
-  return _interestCategoriesCache!;
+  try {
+    const response = await apiClient.get('/interests');
+    _interestCategoriesCache = response.data;
+    return _interestCategoriesCache!;
+  } catch {
+    return [];
+  }
 };
 
 export const getUserById = async (userId: number): Promise<User> => {
