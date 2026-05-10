@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Marker, MarkerPressEvent } from 'react-native-maps';
 import UserWithLocation from '../../types/userWithLocation';
 import UserAvatar from '../UserAvatar';
@@ -10,9 +10,11 @@ const UserMarker: React.FC<{
   onPress: (event: MarkerPressEvent) => void;
 }> = ({ user, zIndex, highlighted, onPress }) => {
   const markerSize = 'md';
+  const markerSize = 'lg';
+  const [tracksViewChanges, setTracksViewChanges] = useState(true);
   return (
     <Marker
-      tracksViewChanges={true}
+      tracksViewChanges={tracksViewChanges}
       coordinate={{
         latitude: user.location.latitude,
         longitude: user.location.longitude,
@@ -26,6 +28,7 @@ const UserMarker: React.FC<{
         avatar_url={user.avatar_url}
         avatarSize={markerSize}
         onlineStatus={user.onlineStatus}
+        onReady={() => setTracksViewChanges(false)}
       />
     </Marker>
   );

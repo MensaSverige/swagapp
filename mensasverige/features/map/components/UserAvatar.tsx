@@ -13,6 +13,7 @@ type UserAvatarProps = {
     avatar_url: string | null | undefined;
     avatarSize?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl';
     onlineStatus?: OnlineStatus;
+    onReady?: () => void;
 };
 
 const getSizeValue = (size: string) => {
@@ -29,12 +30,12 @@ const getSizeValue = (size: string) => {
 
 export const getOnlineStatusColor = (status: OnlineStatus, colorMode: string) => {
     switch (status) {
-      case 'online':
-        return colorMode === 'dark' ? '#10b981' : '#059669';
-      case 'away':
-        return colorMode === 'dark' ? '#f59e0b' : '#d97706';
-      default:
-        return colorMode === 'dark' ? '#6b7280' : '#9ca3af';
+        case 'online':
+            return colorMode === 'dark' ? '#10b981' : '#059669';
+        case 'away':
+            return colorMode === 'dark' ? '#f59e0b' : '#d97706';
+        default:
+            return colorMode === 'dark' ? '#6b7280' : '#9ca3af';
     }
 };
 
@@ -66,7 +67,7 @@ const createStyles = (size: number, borderColor: string, colorMode: string) => S
     },
 });
 
-const UserAvatar: React.FC<UserAvatarProps> = ({ firstName, lastName, avatar_url, avatarSize, onlineStatus }) => {
+const UserAvatar: React.FC<UserAvatarProps> = ({ firstName, lastName, avatar_url, avatarSize, onlineStatus, onReady }) => {
     const colorScheme = useColorScheme();
     const colorMode = colorScheme ?? 'light';
     const size = getSizeValue(avatarSize || 'lg');
@@ -78,6 +79,10 @@ const UserAvatar: React.FC<UserAvatarProps> = ({ firstName, lastName, avatar_url
         setInitials(getInitials());
     }, [firstName, lastName]);
 
+    useEffect(() => {
+        if (!avatar_url) onReady?.();
+    }, []);
+
     const getInitials = () => {
         const first = firstName?.charAt(0) || '';
         const last = lastName?.charAt(0) || '';
@@ -88,11 +93,13 @@ const UserAvatar: React.FC<UserAvatarProps> = ({ firstName, lastName, avatar_url
         <View style={styles.container}>
             {avatar_url ? (
                 <Image
-                    source={{ 
+                    source={{
                         uri: getFullUrl(avatar_url),
                     }}
                     style={styles.image}
                     contentFit="cover"
+                    onLoad={onReady}
+                    onError={onReady}
                 />
             ) : (
                 <>
