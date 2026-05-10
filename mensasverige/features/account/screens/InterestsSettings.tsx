@@ -27,6 +27,10 @@ const InterestsSettings: React.FC = () => {
   );
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const initializedRef = useRef(false);
+  const userRef = useRef(user);
+  const showToastRef = useRef(showToast);
+  userRef.current = user;
+  showToastRef.current = showToast;
 
   useEffect(() => {
     getInterestCategories()
@@ -42,23 +46,24 @@ const InterestsSettings: React.FC = () => {
       initializedRef.current = true;
       return;
     }
-    if (!user) return;
+    const currentUser = userRef.current;
+    if (!currentUser) return;
 
     if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
     saveTimeoutRef.current = setTimeout(() => {
-      showToast('Sparar...', 'info');
-      updateUser({ settings: user.settings, contact_info: user.contact_info, interests: selected })
+      showToastRef.current('Sparar...', 'info');
+      updateUser({ settings: currentUser.settings, contact_info: currentUser.contact_info, interests: selected })
         .then(returned => {
-          if (returned) setUser({ ...user, ...returned });
-          showToast('Sparat!', 'success');
+          if (returned) setUser({ ...currentUser, ...returned });
+          showToastRef.current('Sparat!', 'success');
         })
-        .catch(() => showToast('Fel vid sparande', 'error'));
+        .catch(() => showToastRef.current('Fel vid sparande', 'error'));
     }, 600);
 
     return () => {
       if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
     };
-  }, [selected, user, showToast]);
+  }, [selected]);
 
   const toggle = (interest: UserInterest) => {
     setSelected(prev =>
