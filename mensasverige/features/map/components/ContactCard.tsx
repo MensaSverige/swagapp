@@ -1,65 +1,48 @@
-import React, { useEffect, useState } from 'react';
-import { Linking, View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { useRouter } from 'expo-router';
+import React from 'react';
+import { View, TouchableOpacity, StyleSheet } from 'react-native';
 import UserWithLocation from '../types/userWithLocation';
-import { timeUntil } from '../../events/utilities/TimeLeft';
-import UserAvatar, { getOnlineStatusColor } from './UserAvatar';
 import { LocationLinkButton } from './LocationLinkIcon';
+import PressableUser from '@/features/account/components/PressableUser';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { Colors } from '@/constants/Colors';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 
 const createStyles = (colorScheme: string) => StyleSheet.create({
-  cardContainer: {
-    position: 'absolute',
-    bottom: 60,
-    left: 20,
-    right: 20,
-    backgroundColor: colorScheme === 'dark' ? '#1f2937' : '#ffffff',
-    borderRadius: 12,
-    padding: 20,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
+    cardContainer: {
+        position: 'absolute',
+        bottom: 60,
+        left: 20,
+        right: 20,
+        backgroundColor: colorScheme === 'dark' ? '#1f2937' : '#ffffff',
+        borderRadius: 12,
+        padding: 20,
+        shadowColor: '#000',
+        shadowOffset: {
+            width: 0,
+            height: 2,
+        },
+        shadowOpacity: 0.25,
+        shadowRadius: 4,
+        elevation: 5,
+        zIndex: 1000,
     },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
-    zIndex: 1000,
-  },
-  closeButton: {
-    alignSelf: 'flex-end',
-    padding: 8,
-  },
-  headerContainer: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    marginTop: 10,
-  },
-  contentContainer: {
-    flex: 1,
-    marginLeft: 16,
-  },
-  heading: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: Colors.primary400,
-    marginBottom: 4,
-  },
-  timeText: {
-    fontSize: 14,
-    marginBottom: 12,
-  },
-  actionsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    alignItems: 'center',
-    gap: 16,
-  },
-  actionButton: {
-    padding: 8,
-  },
+    closeButton: {
+        alignSelf: 'flex-end',
+        padding: 8,
+    },
+    headerContainer: {
+        flexDirection: 'column',
+        marginTop: 10,
+    },
+    actionsContainer: {
+        flexDirection: 'row',
+        justifyContent: 'flex-end',
+        alignItems: 'center',
+        gap: 16,
+    },
+    actionButton: {
+        padding: 8,
+    },
 });
 
 
@@ -71,99 +54,42 @@ type ContactCardProps = {
 };
 
 const ContactCard: React.FC<ContactCardProps> = ({ user, showCard, onClose, onZoom }) => {
-    const ref = React.useRef(null);
     const colorScheme = useColorScheme();
-    const router = useRouter();
     const styles = createStyles(colorScheme ?? 'light');
-    const [comparisonDate, setComparisonDate] = useState(new Date());
 
-    useEffect(() => {
-        let intervalId = null;
-
-        if (showCard) {
-            intervalId = setInterval(() => {
-                setComparisonDate(new Date());
-            }, 1000);
-        }
-
-        return () => {
-            if (intervalId) {
-                clearInterval(intervalId);
-            }
-        };
-    }, [showCard]);
-    
     if (!showCard) {
         return null;
     }
-    
+
     return (
         <View style={styles.cardContainer}>
             <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-                <MaterialIcons 
-                    name="close" 
-                    size={24} 
-                    color={colorScheme === 'dark' ? '#ffffff' : '#000000'} 
+                <MaterialIcons
+                    name="close"
+                    size={24}
+                    color={colorScheme === 'dark' ? '#ffffff' : '#000000'}
                 />
             </TouchableOpacity>
-            
+
             <View style={styles.headerContainer}>
-                <UserAvatar 
-                    firstName={user.firstName} 
-                    lastName={user.lastName} 
-                    avatar_url={user.avatar_url} 
-                    onlineStatus={user.onlineStatus} 
+                <PressableUser
+                    userId={user.userId}
+                    firstName={user.firstName}
+                    lastName={user.lastName}
+                    avatar_url={user.avatar_url}
+                    onlineStatus={user.onlineStatus}
+                    avatarSize="lg"
+                    timestamp={user.location.timestamp}
                 />
-                
-                <View style={styles.contentContainer}>
-                    <Text style={styles.heading}>
-                        {(user.firstName || user.lastName)
-                            ? `${user.firstName ?? ''} ${user.lastName ?? ''}`.trim()
-                            : 'Anonym'}
-                    </Text>
-                    {user.location.timestamp && (
-                        <Text style={[styles.timeText, { color: getOnlineStatusColor(user.onlineStatus, colorScheme ?? 'light') }]}>
-                            {timeUntil(comparisonDate, user.location.timestamp)} sedan
-                        </Text>
-                    )}
-
-                    <View style={styles.actionsContainer}>
-                        <TouchableOpacity
-                            style={styles.actionButton}
-                            onPress={() => router.push({ pathname: '/(tabs)/(profile)/[userId]', params: { userId: String(user.userId) } })}
-                        >
-                            <MaterialIcons name="person" size={24} color={Colors.primary400} />
+                <View style={styles.actionsContainer}>
+                    {onZoom && (
+                        <TouchableOpacity style={styles.actionButton} onPress={onZoom}>
+                            <MaterialIcons name="zoom-in-map" size={24} color={Colors.primary400} />
                         </TouchableOpacity>
-                        {user.contact_info?.phone && user.contact_info.phone.trim() !== '' && (
-                            <TouchableOpacity
-                                style={styles.actionButton}
-                                onPress={() => {
-                                    Linking.openURL(`tel:${user.contact_info?.phone}`);
-                                }}
-                            >
-                                <MaterialIcons name="phone" size={24} color={Colors.green500 || '#10b981'} />
-                            </TouchableOpacity>
-                        )}
-                        {user.contact_info?.email && user.contact_info.email.trim() !== '' && (
-                            <TouchableOpacity
-                                style={styles.actionButton}
-                                onPress={() => {
-                                    Linking.openURL(`mailto:${user.contact_info?.email}`);
-                                }}
-                            >
-                                <MaterialIcons name="email" size={24} color={Colors.warmGray400 || '#9ca3af'} />
-                            </TouchableOpacity>
-                        )}
-
-                        {onZoom && (
-                            <TouchableOpacity style={styles.actionButton} onPress={onZoom}>
-                                <MaterialIcons name="zoom-in-map" size={24} color={Colors.primary400} />
-                            </TouchableOpacity>
-                        )}
-                        {user.location && (
-                            <LocationLinkButton latitude={user.location.latitude} longitude={user.location.longitude} />
-                        )}
-                    </View>
+                    )}
+                    {user.location && (
+                        <LocationLinkButton latitude={user.location.latitude} longitude={user.location.longitude} />
+                    )}
                 </View>
             </View>
         </View>

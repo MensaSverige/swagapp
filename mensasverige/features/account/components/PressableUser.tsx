@@ -7,12 +7,13 @@ import { OnlineStatus } from '@/features/map/types/userWithLocation';
 type AvatarSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl';
 
 type PressableUserProps = {
-  userId: number;
+  userId?: number | null;
   firstName?: string | null;
   lastName?: string | null;
   avatar_url?: string | null;
   onlineStatus?: OnlineStatus;
   avatarSize?: AvatarSize;
+  timestamp?: string | null;
 };
 
 const PressableUser: React.FC<PressableUserProps> = ({
@@ -22,21 +23,30 @@ const PressableUser: React.FC<PressableUserProps> = ({
   avatar_url,
   onlineStatus,
   avatarSize,
+  timestamp,
 }) => {
   const router = useRouter();
+
+  const item = (
+    <UserListItem
+      firstName={firstName}
+      lastName={lastName}
+      avatar_url={avatar_url}
+      onlineStatus={onlineStatus}
+      avatarSize={avatarSize}
+      timestamp={timestamp}
+      pressable={!!userId}
+    />
+  );
+
+  if (!userId) return item;
 
   return (
     <TouchableOpacity
       onPress={() => router.push({ pathname: '/(tabs)/(profile)/[userId]', params: { userId: String(userId) } })}
       activeOpacity={0.7}
     >
-      <UserListItem
-        firstName={firstName}
-        lastName={lastName}
-        avatar_url={avatar_url}
-        onlineStatus={onlineStatus}
-        avatarSize={avatarSize}
-      />
+      {item}
     </TouchableOpacity>
   );
 };

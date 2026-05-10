@@ -93,7 +93,7 @@ const PublicUserProfile: React.FC<Props> = ({ userId }) => {
             firstName={user.firstName}
             lastName={user.lastName}
             avatar_url={user.avatar_url}
-            avatarSize="xl"
+            avatarSize="2xl"
             onlineStatus="offline"
           />
           <ThemedText type="title" style={styles.name}>{displayName}</ThemedText>

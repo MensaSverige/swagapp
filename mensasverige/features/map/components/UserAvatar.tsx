@@ -19,10 +19,10 @@ const getSizeValue = (size: string) => {
     switch (size) {
         case 'xs': return 24;
         case 'sm': return 32;
-        case 'md': return 40;
-        case 'lg': return 48;
-        case 'xl': return 56;
-        case '2xl': return 64;
+        case 'md': return 48;
+        case 'lg': return 72;
+        case 'xl': return 108;
+        case '2xl': return 162;
         default: return 48;
     }
 };
