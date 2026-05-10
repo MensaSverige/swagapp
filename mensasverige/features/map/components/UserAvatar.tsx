@@ -79,6 +79,10 @@ const UserAvatar: React.FC<UserAvatarProps> = ({ firstName, lastName, avatar_url
         setInitials(getInitials());
     }, [firstName, lastName]);
 
+    useEffect(() => {
+        if (!avatar_url) onReady?.();
+    }, []);
+
     const getInitials = () => {
         const first = firstName?.charAt(0) || '';
         const last = lastName?.charAt(0) || '';

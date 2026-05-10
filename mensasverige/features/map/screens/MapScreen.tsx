@@ -261,6 +261,10 @@ const MapScreen: React.FC = () => {
               {filteredUsers &&
 
                 filteredUsers
+                  .filter(u =>
+                    u.userId !== user?.userId ||
+                    (user?.settings?.show_location && user.settings.show_location !== 'NO_ONE')
+                  )
                   .filter(u => u.location.latitude >= visibleRegion.latitude - visibleRegion.latitudeDelta * 3 &&
                     u.location.latitude <= visibleRegion.latitude + visibleRegion.latitudeDelta * 3 &&
                     u.location.longitude >= visibleRegion.longitude - visibleRegion.longitudeDelta * 3 &&
