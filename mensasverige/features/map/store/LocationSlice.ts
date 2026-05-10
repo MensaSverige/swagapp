@@ -56,9 +56,7 @@ export const createLocationSlice: StateCreator<LocationSlice> = (set, get) => ({
   setFilteredUsers: (users?: UserWithLocation[]) => {
     const { userFilter, usersShowingLocation } = get();
     const usersToFilter = users ?? usersShowingLocation;
-    console.log('Filtering users:', userFilter);
     const filteredUsers = filterUsers(usersToFilter, userFilter);
-    console.log('Filtered users:', filteredUsers.length);
     set({ filteredUsers });
   },
   currentLocation: {
