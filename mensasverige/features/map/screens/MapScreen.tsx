@@ -7,6 +7,7 @@ import {
   View,
   KeyboardAvoidingView,
   TouchableOpacity,
+  Animated,
 } from 'react-native';
 import ReactNativeMapView from 'react-native-maps';
 import UserMarker from '../components/markers/UserMarker';
@@ -17,7 +18,7 @@ import lightMapstyle from '../styles/light';
 import darkMapstyle from '../styles/dark';
 import ContactCard from '../components/ContactCard';
 import UserWithLocation from '../types/userWithLocation';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect, useIsFocused } from '@react-navigation/native';
 import IncognitoInfo from '../components/IncognitoInfo';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { Colors } from '@/constants/Colors';
@@ -64,7 +65,9 @@ const MapScreen: React.FC = () => {
   const [visibleRegion, setVisibleRegion] = useState(region);
   const [showContactCard, setShowContactCard] = useState(false);
   const [showUserList, setShowUserList] = useState(false);
-  const [hasPerformedInitialZoom, setHasPerformedInitialZoom] = useState(false);
+  const hasPerformedInitialZoom = useRef(false);
+  const isFocused = useIsFocused();
+  const mapOpacity = useRef(new Animated.Value(0)).current;
 
   useFocusEffect(
     React.useCallback(() => {
@@ -180,10 +183,22 @@ const MapScreen: React.FC = () => {
   }, [resetSelectedUser]);
 
   useEffect(() => {
-    if (!filteredUsers || filteredUsers.length === 0 || hasPerformedInitialZoom) {
+    if (isFocused) {
+      Animated.timing(mapOpacity, {
+        toValue: 1,
+        duration: 250,
+        useNativeDriver: true,
+      }).start();
+    } else {
+      mapOpacity.setValue(0);
+    }
+  }, [isFocused]);
+
+  useEffect(() => {
+    if (!filteredUsers || filteredUsers.length === 0 || hasPerformedInitialZoom.current) {
       return;
     }
-    setHasPerformedInitialZoom(true);
+    hasPerformedInitialZoom.current = true;
     zoomToFitAllUsers(filteredUsers);
   }, [filteredUsers, zoomToFitAllUsers]);
 
@@ -212,97 +227,96 @@ const MapScreen: React.FC = () => {
               }}
             />
 
-            <ReactNativeMapView
-              ref={mapRef}
-              style={{ flex: 1 }}
-              initialRegion={
-                user?.location
-                  ? {
-                    latitude: user.location.latitude,
-                    longitude: user.location.longitude,
-                    latitudeDelta: region.latitudeDelta,
-                    longitudeDelta: region.longitudeDelta,
-                  }
-                  : region
-              }
-              followsUserLocation={followsUserLocation}
-              showsMyLocationButton={false}
-              onUserLocationChange={e => {
-                if (e.nativeEvent.coordinate && followsUserLocation) {
-                  mapRef.current?.animateToRegion(
-                    {
-                      latitude: e.nativeEvent.coordinate?.latitude,
-                      longitude: e.nativeEvent.coordinate?.longitude,
-                      latitudeDelta: region.latitudeDelta,
-                      longitudeDelta: region.longitudeDelta,
-                    },
-                    350
-                  );
+            {isFocused && (
+              <Animated.View style={{ flex: 1, opacity: mapOpacity }}>
+              <ReactNativeMapView
+                ref={mapRef}
+                style={{ flex: 1 }}
+                initialRegion={
+                  user?.location
+                    ? {
+                      latitude: user.location.latitude,
+                      longitude: user.location.longitude,
+                      latitudeDelta: visibleRegion.latitudeDelta,
+                      longitudeDelta: visibleRegion.longitudeDelta,
+                    }
+                    : visibleRegion
                 }
-              }}
-              onRegionChangeComplete={setVisibleRegion}
-              onPanDrag={resetSelectedUser}
-              onPress={resetSelectedUser}
-              mapPadding={{
-                top: 10,
-                right: 10,
-                bottom: 10,
-                left: 10,
-              }}
-              customMapStyle={colorMode === 'dark'
-                ? darkMapstyle
-                : lightMapstyle}>
-              {filteredUsers &&
-
-                filteredUsers
-                  .map((u) => {
-                    return (
-                      <UserMarker
-                        key={u.userId}
-                        user={u}
-                        zIndex={100}
-                        highlighted={selectedUser?.userId === u.userId}
-                        onPress={(e) => {
-                          e.stopPropagation();
-                          focusOnUser(u);
-                        }}
-                      />
+                followsUserLocation={followsUserLocation}
+                showsMyLocationButton={false}
+                onUserLocationChange={e => {
+                  if (e.nativeEvent.coordinate && followsUserLocation) {
+                    mapRef.current?.animateToRegion(
+                      {
+                        latitude: e.nativeEvent.coordinate?.latitude,
+                        longitude: e.nativeEvent.coordinate?.longitude,
+                        latitudeDelta: region.latitudeDelta,
+                        longitudeDelta: region.longitudeDelta,
+                      },
+                      350
                     );
-                  })
-
-              }
-            </ReactNativeMapView>
-            <View style={styles.mapControlsWrapper}>
-              <TouchableOpacity
-                style={styles.mapControlsButton}
-                onPress={() => setShowUserList(true)}>
-                <MaterialIcons
-                  name="filter-list"
-                  size={30}
-                  color={(showUserList || userFilter.showHoursAgo !== defaultFilter.showHoursAgo) ? Colors.primary300 : Colors.coolGray400}
-                />
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.mapControlsButton}
-                onPress={handleFollowLocationPress}>
-                <MaterialIcons
-                  name="my-location"
-                  size={30}
-                  color={followsUserLocation
-                    ? Colors.primary300
-                    : Colors.coolGray400}
-                />
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.mapControlsButton}
-                onPress={() => zoomToFitAllUsers(filteredUsers)}>
-                <MaterialIcons
-                  name="zoom-out-map"
-                  size={30}
-                  color={Colors.coolGray400}
-                />
-              </TouchableOpacity>
-            </View>
+                  }
+                }}
+                onRegionChangeComplete={setVisibleRegion}
+                onPanDrag={resetSelectedUser}
+                onPress={resetSelectedUser}
+                mapPadding={{
+                  top: 10,
+                  right: 10,
+                  bottom: 10,
+                  left: 10,
+                }}
+                customMapStyle={colorMode === 'dark'
+                  ? darkMapstyle
+                  : lightMapstyle}>
+                {filteredUsers &&
+                  filteredUsers.map((u) => (
+                    <UserMarker
+                      key={u.userId}
+                      user={u}
+                      zIndex={100}
+                      highlighted={selectedUser?.userId === u.userId}
+                      onPress={(e) => {
+                        e.stopPropagation();
+                        focusOnUser(u);
+                      }}
+                    />
+                  ))
+                }
+              </ReactNativeMapView>
+              <View style={styles.mapControlsWrapper}>
+                <TouchableOpacity
+                  style={styles.mapControlsButton}
+                  onPress={() => setShowUserList(true)}>
+                  <MaterialIcons
+                    name="filter-list"
+                    size={30}
+                    color={(showUserList || userFilter.showHoursAgo !== defaultFilter.showHoursAgo) ? Colors.primary300 : Colors.coolGray400}
+                  />
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.mapControlsButton}
+                  onPress={handleFollowLocationPress}>
+                  <MaterialIcons
+                    name="my-location"
+                    size={30}
+                    color={followsUserLocation
+                      ? Colors.primary300
+                      : Colors.coolGray400}
+                  />
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.mapControlsButton}
+                  onPress={() => zoomToFitAllUsers(filteredUsers)}>
+                  <MaterialIcons
+                    name="zoom-out-map"
+                    size={30}
+                    color={Colors.coolGray400}
+                  />
+                </TouchableOpacity>
+              </View>
+              </Animated.View>
+            )}
             <IncognitoInfo />
           </View>
         </TouchableWithoutFeedback>
