@@ -245,6 +245,7 @@ const MapScreen: React.FC = () => {
                   );
                 }
               }}
+              onRegionChange={setVisibleRegion}
               onRegionChangeComplete={setVisibleRegion}
               onPanDrag={resetSelectedUser}
               onPress={resetSelectedUser}
