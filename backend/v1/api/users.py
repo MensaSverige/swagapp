@@ -116,6 +116,9 @@ async def get_current_user(current_user: User = Depends(validate_request)):
 async def update_current_user(user_update: UserUpdate,
                               current_user: User = Depends(validate_request)):
     update_dict = user_update.model_dump(exclude_unset=True)
+    if 'settings' in update_dict:
+        existing_settings = current_user.get('settings', {})
+        update_dict['settings'] = {**existing_settings, **update_dict['settings']}
     current_user.update(update_dict)
 
     return update_user(current_user['userId'], current_user)
