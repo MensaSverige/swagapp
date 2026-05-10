@@ -5,6 +5,8 @@ import {
   ActivityIndicator,
   StyleSheet,
   useColorScheme,
+  Linking,
+  TouchableOpacity,
 } from 'react-native';
 import { ThemedView } from '@/components/ThemedView';
 import { ThemedText } from '@/components/ThemedText';
@@ -107,16 +109,26 @@ const PublicUserProfile: React.FC<Props> = ({ userId }) => {
           <ThemedView style={styles.card}>
             <ThemedText style={styles.cardLabel}>Kontaktuppgifter</ThemedText>
             {hasEmail && (
-              <View style={styles.contactRow}>
-                <MaterialIcons name="email" size={18} color={Colors.coolGray500} />
+              <TouchableOpacity
+                style={styles.contactRow}
+                onPress={() => {
+                  Linking.openURL(`mailto:${user.contact_info?.email}`);
+                }}
+              >
+                <MaterialIcons name="email" size={18} color={Colors.warmGray400} />
                 <ThemedText style={styles.contactText}>{user.contact_info!.email}</ThemedText>
-              </View>
+              </TouchableOpacity>
             )}
             {hasPhone && (
-              <View style={styles.contactRow}>
-                <MaterialIcons name="phone" size={18} color={Colors.coolGray500} />
+              <TouchableOpacity
+                style={styles.contactRow}
+                onPress={() => {
+                  Linking.openURL(`tel:${user.contact_info?.phone}`);
+                }}
+              >
+                <MaterialIcons name="phone" size={18} color={Colors.green500} />
                 <ThemedText style={styles.contactText}>{user.contact_info!.phone}</ThemedText>
-              </View>
+              </TouchableOpacity>
             )}
           </ThemedView>
         )}
@@ -144,7 +156,9 @@ const PublicUserProfile: React.FC<Props> = ({ userId }) => {
   );
 };
 
-const createStyles = (isDark: boolean) => StyleSheet.create({
+const createStyles = (isDark: boolean) => {
+  const linkColor = isDark ? Colors.dark.primary500 : Colors.light.primary500;
+  return StyleSheet.create({
   container: { flex: 1 },
   scroll: { padding: 20, paddingBottom: 40 },
   centered: {
@@ -197,6 +211,7 @@ const createStyles = (isDark: boolean) => StyleSheet.create({
   contactText: {
     fontSize: 15,
     flex: 1,
+    color: linkColor,
   },
   categoryBlock: {
     marginBottom: 12,
@@ -218,6 +233,7 @@ const createStyles = (isDark: boolean) => StyleSheet.create({
   chipText: {
     fontSize: 13,
   },
-});
+  });
+};
 
 export default PublicUserProfile;
