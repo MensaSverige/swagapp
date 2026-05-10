@@ -21,15 +21,19 @@ const InterestsSettings: React.FC = () => {
 
   const [categories, setCategories] = useState<InterestCategory[]>([]);
   const [loadingCategories, setLoadingCategories] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [selected, setSelected] = useState<UserInterest[]>(
-    ((user as any)?.interests as UserInterest[] | undefined) ?? []
+    user?.interests ?? []
   );
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const initializedRef = useRef(false);
 
   useEffect(() => {
     getInterestCategories()
-      .then(setCategories)
+      .then(cats => {
+        setCategories(cats);
+        if (cats.length === 0) setLoadError(true);
+      })
       .finally(() => setLoadingCategories(false));
   }, []);
 
@@ -43,7 +47,7 @@ const InterestsSettings: React.FC = () => {
     if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
     saveTimeoutRef.current = setTimeout(() => {
       showToast('Sparar...', 'info');
-      updateUser({ settings: user.settings, contact_info: user.contact_info, interests: selected } as any)
+      updateUser({ settings: user.settings, contact_info: user.contact_info, interests: selected })
         .then(returned => {
           if (returned) setUser({ ...user, ...returned });
           showToast('Sparat!', 'success');
@@ -54,7 +58,7 @@ const InterestsSettings: React.FC = () => {
     return () => {
       if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
     };
-  }, [selected]);
+  }, [selected, user, showToast]);
 
   const toggle = (interest: UserInterest) => {
     setSelected(prev =>
@@ -66,6 +70,15 @@ const InterestsSettings: React.FC = () => {
     return (
       <ThemedView style={styles.centered}>
         <ActivityIndicator size="large" color={Colors.primary500} />
+      </ThemedView>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <ThemedView style={styles.centered}>
+        <MaterialIcons name="wifi-off" size={40} color={Colors.coolGray400} />
+        <ThemedText style={styles.errorText}>Kunde inte hämta intressen</ThemedText>
       </ThemedView>
     );
   }
@@ -105,7 +118,8 @@ const InterestsSettings: React.FC = () => {
 
 const createStyles = (isDark: boolean) => StyleSheet.create({
   container: { flex: 1 },
-  centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  centered: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12, padding: 32 },
+  errorText: { textAlign: 'center', opacity: 0.6, fontSize: 15 },
   scroll: { padding: 20 },
   categoryBlock: {
     marginBottom: 20,

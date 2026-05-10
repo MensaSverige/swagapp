@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, TouchableOpacity, StyleSheet, Linking } from 'react-native';
 import UserWithLocation from '../types/userWithLocation';
 import { LocationLinkButton } from './LocationLinkIcon';
 import PressableUser from '@/features/account/components/PressableUser';
@@ -67,26 +67,41 @@ const ContactCard: React.FC<ContactCardProps> = ({ user, showCard, onClose, onZo
                 />
             </TouchableOpacity>
 
-
-                <PressableUser
-                    userId={user.userId}
-                    firstName={user.firstName}
-                    lastName={user.lastName}
-                    avatar_url={user.avatar_url}
-                    onlineStatus={user.onlineStatus}
-                    avatarSize="lg"
-                    timestamp={user.location.timestamp}
-                />
-                <View style={styles.actionsContainer}>
-                    {onZoom && (
-                        <TouchableOpacity style={styles.actionButton} onPress={onZoom}>
-                            <MaterialIcons name="zoom-in-map" size={24} color={Colors.primary400} />
-                        </TouchableOpacity>
-                    )}
-                    {user.location && (
-                        <LocationLinkButton latitude={user.location.latitude} longitude={user.location.longitude} />
-                    )}
-                </View>
+            <PressableUser
+                userId={user.userId}
+                firstName={user.firstName}
+                lastName={user.lastName}
+                avatar_url={user.avatar_url}
+                onlineStatus={user.onlineStatus}
+                avatarSize="lg"
+                timestamp={user.location.timestamp}
+            />
+            <View style={styles.actionsContainer}>
+                {user.contact_info?.phone?.trim() && (
+                    <TouchableOpacity
+                        style={styles.actionButton}
+                        onPress={() => Linking.openURL(`tel:${user.contact_info!.phone}`)}
+                    >
+                        <MaterialIcons name="phone" size={24} color={Colors.green500} />
+                    </TouchableOpacity>
+                )}
+                {user.contact_info?.email?.trim() && (
+                    <TouchableOpacity
+                        style={styles.actionButton}
+                        onPress={() => Linking.openURL(`mailto:${user.contact_info!.email}`)}
+                    >
+                        <MaterialIcons name="email" size={24} color={Colors.warmGray400} />
+                    </TouchableOpacity>
+                )}
+                {onZoom && (
+                    <TouchableOpacity style={styles.actionButton} onPress={onZoom}>
+                        <MaterialIcons name="zoom-in-map" size={24} color={Colors.primary400} />
+                    </TouchableOpacity>
+                )}
+                {user.location && (
+                    <LocationLinkButton latitude={user.location.latitude} longitude={user.location.longitude} />
+                )}
+            </View>
         </View>
     );
 };

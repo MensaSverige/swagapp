@@ -20,5 +20,6 @@ export type User = components['schemas']['User'];
 export type UserEvent = components['schemas']['UserEvent'];
 export type UserEventLocation = components['schemas']['UserEvent']['location'];
 export type UserLocation = components["schemas"]["UserLocation"];
+export type UserSettings = components["schemas"]["UserSettings"];
 export type UserUpdate = components["schemas"]["UserUpdate"];
 export type ValidationError = components["schemas"]["ValidationError"];

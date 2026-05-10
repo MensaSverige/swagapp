@@ -73,7 +73,7 @@ const PublicUserProfile: React.FC<Props> = ({ userId }) => {
   const hasPhone = !!user.contact_info?.phone;
   const hasContact = hasEmail || hasPhone;
 
-  const userInterests: string[] = (user as any).interests ?? [];
+  const userInterests = user.interests ?? [];
   const interestCategories = categories
     .map(cat => ({ ...cat, items: cat.items.filter(i => userInterests.includes(i)) }))
     .filter(cat => cat.items.length > 0);

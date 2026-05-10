@@ -33,7 +33,7 @@ const PrivacySettings: React.FC = () => {
         show_phone: user?.settings?.show_phone || 'NO_ONE',
         show_profile: user?.settings?.show_profile || DEFAULT_SETTINGS.SHOW_PROFILE,
         show_location: user?.settings?.show_location || 'NO_ONE',
-        show_interests: (user?.settings as any)?.show_interests || 'MEMBERS_ONLY',
+        show_interests: user?.settings?.show_interests || 'MEMBERS_ONLY',
     });
 
     useEffect(() => {

@@ -33,9 +33,7 @@ export default function RootLayout() {
 
   useUserLocation();
   useEffect(() => {
-    console.log('User state changed:', user);
     setIsLoggedIn(!!user);
-    console.log('Is logged in:', !!user); // isLoggedin doesn't have time to update before this log
   }, [user]);
 
   useEffect(() => {

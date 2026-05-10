@@ -20,7 +20,6 @@ class UserInterest(str, Enum):
     SKRIVANDE = 'Skrivande'
     INREDNINGSDESIGN = 'Inredningsdesign'
     LOPPIS = 'Loppis och second hand'
-    MUSIK = 'Musik'
     SPELA_INSTRUMENT = 'Spela instrument'
     SJUNGA = 'Sjunga'
     PRODUCERA_MUSIK = 'Producera musik'
