@@ -7,7 +7,6 @@ import Dropdown, { DropdownOption } from '../../common/components/inputs/Dropdow
 import useStore from '../../common/store/store';
 import { updateUser } from '../services/userService';
 import { PrivacySetting } from '../../../api_schema/types';
-import { Colors } from '@/constants/Colors';
 import { DEFAULT_SETTINGS } from '@/constants/DefaultSettings';
 import { useToast } from '@/hooks/useToast';
 
@@ -16,11 +15,13 @@ type PrivacyForm = {
     show_phone: PrivacySetting;
     show_profile: PrivacySetting;
     show_location: PrivacySetting;
+    show_interests: PrivacySetting;
 };
 
 const PrivacySettings: React.FC = () => {
     const { user, setUser } = useStore();
-    const colorScheme = useColorScheme() ?? 'light';
+    const colorSchemeRaw = useColorScheme();
+    const colorScheme: 'light' | 'dark' = colorSchemeRaw === 'dark' ? 'dark' : 'light';
     const { showToast, ToastComponent } = useToast(colorScheme);
     const insets = useSafeAreaInsets();
     const initializedRef = useRef(false);
@@ -32,6 +33,7 @@ const PrivacySettings: React.FC = () => {
         show_phone: user?.settings?.show_phone || 'NO_ONE',
         show_profile: user?.settings?.show_profile || DEFAULT_SETTINGS.SHOW_PROFILE,
         show_location: user?.settings?.show_location || 'NO_ONE',
+        show_interests: (user?.settings as any)?.show_interests || 'MEMBERS_ONLY',
     });
 
     useEffect(() => {
@@ -140,6 +142,13 @@ const PrivacySettings: React.FC = () => {
                     options={locationOptions}
                     value={form.show_location}
                     onChange={v => setForm(f => ({ ...f, show_location: v }))}
+                />
+                <PrivacyCard
+                    title="Intressen"
+                    description="Vem kan se dina intressen och hobbyer?"
+                    options={profileOptions}
+                    value={form.show_interests}
+                    onChange={v => setForm(f => ({ ...f, show_interests: v }))}
                 />
             </ScrollView>
         </ThemedView>

@@ -162,6 +162,13 @@ const UserProfile: React.FC = () => {
                         onPress={() => router.push('/(tabs)/(profile)/app-settings')}
                         hasBorder
                     />
+                    <NavRow
+                        icon="interests"
+                        title="Intressen"
+                        subtitle="Välj dina intressen och hobbyer"
+                        onPress={() => router.push('/(tabs)/(profile)/interests')}
+                        hasBorder
+                    />
                 </ThemedView>
 
             </ScrollView>

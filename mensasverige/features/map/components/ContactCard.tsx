@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { Linking, Platform, View, Text, TouchableOpacity, StyleSheet, Pressable } from 'react-native';
+import { Linking, View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { useRouter } from 'expo-router';
 import UserWithLocation from '../types/userWithLocation';
 import { timeUntil } from '../../events/utilities/TimeLeft';
 import UserAvatar, { getOnlineStatusColor } from './UserAvatar';
@@ -72,6 +73,7 @@ type ContactCardProps = {
 const ContactCard: React.FC<ContactCardProps> = ({ user, showCard, onClose, onZoom }) => {
     const ref = React.useRef(null);
     const colorScheme = useColorScheme();
+    const router = useRouter();
     const styles = createStyles(colorScheme ?? 'light');
     const [comparisonDate, setComparisonDate] = useState(new Date());
 
@@ -126,6 +128,12 @@ const ContactCard: React.FC<ContactCardProps> = ({ user, showCard, onClose, onZo
                     )}
 
                     <View style={styles.actionsContainer}>
+                        <TouchableOpacity
+                            style={styles.actionButton}
+                            onPress={() => router.push({ pathname: '/(tabs)/(profile)/[userId]', params: { userId: String(user.userId) } })}
+                        >
+                            <MaterialIcons name="person" size={24} color={Colors.primary400} />
+                        </TouchableOpacity>
                         {user.contact_info?.phone && user.contact_info.phone.trim() !== '' && (
                             <TouchableOpacity
                                 style={styles.actionButton}

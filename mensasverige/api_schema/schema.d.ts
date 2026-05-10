@@ -158,6 +158,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/interests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Interest Categories */
+        get: operations["get_interest_categories_v1_interests_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/external_root": {
         parameters: {
             query?: never;
@@ -362,6 +379,57 @@ export interface paths {
         };
         /** Getlocationbyadress */
         get: operations["getLocationByAdress_v1_geolocation__address__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/dev/clear_user_events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Clear User Events */
+        get: operations["clear_user_events_v1_dev_clear_user_events_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/dev/create_dummy_user_event": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Dummy User Event */
+        get: operations["get_dummy_user_event_v1_dev_create_dummy_user_event_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/dev/create_my_dummy_event": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Create My Dummy Event */
+        get: operations["create_my_dummy_event_v1_dev_create_my_dummy_event_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -769,6 +837,13 @@ export interface components {
              */
             userId: number;
         };
+        /** InterestCategory */
+        InterestCategory: {
+            /** Category */
+            category: string;
+            /** Items */
+            items: components["schemas"]["UserInterest"][];
+        };
         /** Location */
         Location: {
             /**
@@ -825,6 +900,11 @@ export interface components {
          * @enum {string}
          */
         ShowAttendees: "none" | "all" | "toAttending";
+        /** StatusResponseWithMessage */
+        StatusResponseWithMessage: {
+            /** Message */
+            message: string;
+        };
         /** Tag */
         Tag: {
             /** Code */
@@ -891,7 +971,17 @@ export interface components {
              * @example John Doe
              */
             lastName?: string | null;
+            /**
+             * Interests
+             * @example []
+             */
+            interests?: components["schemas"]["UserInterest"][];
         };
+        /**
+         * UserInterest
+         * @enum {string}
+         */
+        UserInterest: "Konst" | "Teater" | "Slöjd och handarbete" | "Pyssel" | "Fotografi" | "Skrivande" | "Inredningsdesign" | "Loppis och second hand" | "Musik" | "Spela instrument" | "Sjunga" | "Producera musik" | "Gå på konsert" | "Lyssna på musik" | "Bollsport" | "Idrott" | "Motorsport" | "Skidor och vintersport" | "Löpning" | "Konditionsträning" | "Kampsport" | "Hästsport" | "Klättring/Bouldering" | "Dykning" | "Gym" | "Yoga" | "Golf" | "Dans" | "Böcker och litteratur" | "Film och tv-serier" | "Fest" | "Tv-spel/datorspel" | "Brädspel" | "Kortspel" | "Odling och trädgårdsarbete" | "Botanik" | "Lantbruk" | "Friluftsliv" | "Vandring och hiking" | "Husdjur" | "Zoologi" | "Camping" | "Fiske" | "Fågelskådning" | "Programmering och IT" | "Elektronik" | "Teknikprylar" | "Vetenskap och forskning" | "Matematik" | "Astronomi" | "Akademiska studier" | "Livslångt lärande" | "Historia" | "Läsning" | "Fonder och Aktier" | "Företagande och entreprenörskap" | "Politik" | "Kultur" | "Språk" | "Resor" | "Filosofi" | "Psykologi" | "Personlig utveckling" | "Religion" | "Meditation" | "Sex och sexualitet" | "Relationer och relationstyper" | "Föräldraskap och uppfostran" | "Restaurang och matupplevelser" | "Matlagning" | "Bakning" | "Öl" | "Whisky" | "Vin" | "Kläder och personlig stil" | "Hår och makeup" | "Återbruk" | "Prepping" | "Självhushåll" | "Bygg och renovering";
         /** UserLocation */
         UserLocation: {
             /** Latitude */
@@ -946,6 +1036,11 @@ export interface components {
              * @example true
              */
             background_location_updates: boolean;
+            /**
+             * @default MEMBERS_ONLY
+             * @example MEMBERS_ONLY
+             */
+            show_interests: components["schemas"]["PrivacySetting"];
         };
         /** UserUpdate */
         UserUpdate: {
@@ -962,6 +1057,11 @@ export interface components {
              * @example Live and Let Live
              */
             slogan?: string | null;
+            /**
+             * Interests
+             * @example []
+             */
+            interests?: components["schemas"]["UserInterest"][] | null;
         };
         /** ValidationError */
         ValidationError: {
@@ -1281,6 +1381,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_interest_categories_v1_interests_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InterestCategory"][];
                 };
             };
         };
@@ -1646,6 +1766,66 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    clear_user_events_v1_dev_clear_user_events_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StatusResponseWithMessage"];
+                };
+            };
+        };
+    };
+    get_dummy_user_event_v1_dev_create_dummy_user_event_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExtendedUserEvent"];
+                };
+            };
+        };
+    };
+    create_my_dummy_event_v1_dev_create_my_dummy_event_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExtendedUserEvent"];
                 };
             };
         };

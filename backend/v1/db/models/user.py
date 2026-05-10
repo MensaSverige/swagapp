@@ -1,6 +1,6 @@
 from enum import Enum
 from pydantic import BaseModel, Field, field_validator
-from typing import Optional
+from typing import Optional, List
 from datetime import datetime
 
 
@@ -9,6 +9,89 @@ class UserLocation(BaseModel):
     longitude: float
     timestamp: Optional[datetime]
     accuracy: float  # Accuracy in meters
+
+
+class UserInterest(str, Enum):
+    KONST = 'Konst'
+    TEATER = 'Teater'
+    SLOJD_HANDARBETE = 'Slöjd och handarbete'
+    PYSSEL = 'Pyssel'
+    FOTOGRAFI = 'Fotografi'
+    SKRIVANDE = 'Skrivande'
+    INREDNINGSDESIGN = 'Inredningsdesign'
+    LOPPIS = 'Loppis och second hand'
+    MUSIK = 'Musik'
+    SPELA_INSTRUMENT = 'Spela instrument'
+    SJUNGA = 'Sjunga'
+    PRODUCERA_MUSIK = 'Producera musik'
+    KONSERT = 'Gå på konsert'
+    LYSSNA_MUSIK = 'Lyssna på musik'
+    BOLLSPORT = 'Bollsport'
+    IDROTT = 'Idrott'
+    MOTORSPORT = 'Motorsport'
+    SKIDOR = 'Skidor och vintersport'
+    LOPNING = 'Löpning'
+    KONDITIONSTRANING = 'Konditionsträning'
+    KAMPSPORT = 'Kampsport'
+    HASTSPORT = 'Hästsport'
+    KLATTRING = 'Klättring/Bouldering'
+    DYKNING = 'Dykning'
+    GYM = 'Gym'
+    YOGA = 'Yoga'
+    GOLF = 'Golf'
+    DANS = 'Dans'
+    BOCKER = 'Böcker och litteratur'
+    FILM_TV = 'Film och tv-serier'
+    FEST = 'Fest'
+    TVSPEL = 'Tv-spel/datorspel'
+    BRADSPEL = 'Brädspel'
+    KORTSPEL = 'Kortspel'
+    ODLING = 'Odling och trädgårdsarbete'
+    BOTANIK = 'Botanik'
+    LANTBRUK = 'Lantbruk'
+    FRILUFTSLIV = 'Friluftsliv'
+    VANDRING = 'Vandring och hiking'
+    HUSDJUR = 'Husdjur'
+    ZOOLOGI = 'Zoologi'
+    CAMPING = 'Camping'
+    FISKE = 'Fiske'
+    FAGELSKADNING = 'Fågelskådning'
+    PROGRAMMERING = 'Programmering och IT'
+    ELEKTRONIK = 'Elektronik'
+    TEKNIKPRYLAR = 'Teknikprylar'
+    VETENSKAP = 'Vetenskap och forskning'
+    MATEMATIK = 'Matematik'
+    ASTRONOMI = 'Astronomi'
+    AKADEMISKA_STUDIER = 'Akademiska studier'
+    LIVSLANGT_LARANDE = 'Livslångt lärande'
+    HISTORIA = 'Historia'
+    LASNING = 'Läsning'
+    FONDER_AKTIER = 'Fonder och Aktier'
+    FORETAGANDE = 'Företagande och entreprenörskap'
+    POLITIK = 'Politik'
+    KULTUR = 'Kultur'
+    SPRAK = 'Språk'
+    RESOR = 'Resor'
+    FILOSOFI = 'Filosofi'
+    PSYKOLOGI = 'Psykologi'
+    PERSONLIG_UTVECKLING = 'Personlig utveckling'
+    RELIGION = 'Religion'
+    MEDITATION = 'Meditation'
+    SEX_SEXUALITET = 'Sex och sexualitet'
+    RELATIONER = 'Relationer och relationstyper'
+    FORALDRASKAP = 'Föräldraskap och uppfostran'
+    RESTAURANG = 'Restaurang och matupplevelser'
+    MATLAGNING = 'Matlagning'
+    BAKNING = 'Bakning'
+    OL = 'Öl'
+    WHISKY = 'Whisky'
+    VIN = 'Vin'
+    KLADER = 'Kläder och personlig stil'
+    HAR_MAKEUP = 'Hår och makeup'
+    ATERBRUK = 'Återbruk'
+    PREPPING = 'Prepping'
+    SJALVHUSHALL = 'Självhushåll'
+    BYGG_RENOVERING = 'Bygg och renovering'
 
 
 class PrivacySetting(str, Enum):
@@ -38,6 +121,7 @@ class UserSettings(BaseModel):
     events_refresh_interval_seconds: int = Field(default=60, example=60, description="Events refresh interval in seconds")
 
     background_location_updates: bool = Field(default=False, example=True, description="Allow location updates when app is in background")
+    show_interests: PrivacySetting = Field(default=PrivacySetting.MEMBERS_ONLY, example=PrivacySetting.MEMBERS_ONLY)
 
     @field_validator("show_location", mode="before")
     @classmethod
@@ -82,6 +166,7 @@ class User(BaseModel):
                                       example="https://example.com/avatar.jpg")
     firstName: Optional[str] = Field(None, example="John Doe")
     lastName: Optional[str] = Field(None, example="John Doe")
+    interests: List[UserInterest] = Field(default_factory=list, example=[])
 
 
 class UserUpdate(BaseModel):
@@ -93,3 +178,4 @@ class UserUpdate(BaseModel):
                                                     "phone": "+1234567890"
                                                 })
     slogan: Optional[str] = Field(None, example="Live and Let Live")
+    interests: Optional[List[UserInterest]] = Field(None, example=[])
