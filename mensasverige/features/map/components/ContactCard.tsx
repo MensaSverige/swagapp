@@ -77,22 +77,6 @@ const ContactCard: React.FC<ContactCardProps> = ({ user, showCard, onClose, onZo
                 timestamp={user.location.timestamp}
             />
             <View style={styles.actionsContainer}>
-                {user.contact_info?.phone?.trim() && (
-                    <TouchableOpacity
-                        style={styles.actionButton}
-                        onPress={() => Linking.openURL(`tel:${user.contact_info!.phone}`)}
-                    >
-                        <MaterialIcons name="phone" size={24} color={Colors.green500} />
-                    </TouchableOpacity>
-                )}
-                {user.contact_info?.email?.trim() && (
-                    <TouchableOpacity
-                        style={styles.actionButton}
-                        onPress={() => Linking.openURL(`mailto:${user.contact_info!.email}`)}
-                    >
-                        <MaterialIcons name="email" size={24} color={Colors.warmGray400} />
-                    </TouchableOpacity>
-                )}
                 {onZoom && (
                     <TouchableOpacity style={styles.actionButton} onPress={onZoom}>
                         <MaterialIcons name="zoom-in-map" size={24} color={Colors.primary400} />
