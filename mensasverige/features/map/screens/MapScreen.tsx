@@ -31,9 +31,6 @@ const ZOOM_DELTA = 0.005;
 
 const createStyles = (colorMode: string) =>
   StyleSheet.create({
-    map: {
-      ...StyleSheet.absoluteFillObject,
-    },
     mapControlsWrapper: {
       position: 'absolute',
       top: 50,
@@ -88,7 +85,7 @@ const MapScreen: React.FC = () => {
   const onClose = useMemo(() => () => {
     setShowContactCard(false);
     setSelectedUser(null);
-  }, [selectedUser, showContactCard]);
+  }, []);
 
   const focusOnUser = (user: UserWithLocation) => {
     setSelectedUser(user);
@@ -150,7 +147,7 @@ const MapScreen: React.FC = () => {
       setSelectedUser(null);
     }
     setShowContactCard(false);
-  }, [followsUserLocation, selectedUser, showContactCard]);
+  }, [followsUserLocation, selectedUser]);
 
   const zoomToFitAllUsers = useMemo(() => (users: typeof filteredUsers) => {
     if (!users || users.length === 0) {
@@ -171,8 +168,8 @@ const MapScreen: React.FC = () => {
     const midLat = (minLat + maxLat) / 2;
     const midLong = (minLong + maxLong) / 2;
 
-    const deltaLat = (maxLat - minLat) * 1.2;
-    const deltaLong = (maxLong - minLong) * 1.2;
+    const deltaLat = Math.max((maxLat - minLat) * 1.2, ZOOM_DELTA);
+    const deltaLong = Math.max((maxLong - minLong) * 1.2, ZOOM_DELTA);
 
     mapRef.current?.animateToRegion({
       latitude: midLat,
@@ -218,8 +215,6 @@ const MapScreen: React.FC = () => {
             <ReactNativeMapView
               ref={mapRef}
               style={{ flex: 1 }}
-              //style={styles.map}
-              //showsUserLocation={true}
               initialRegion={
                 user?.location
                   ? {
