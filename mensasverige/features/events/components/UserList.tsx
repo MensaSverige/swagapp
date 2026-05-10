@@ -2,7 +2,7 @@ import React from 'react';
 import { View, useColorScheme } from 'react-native';
 import { User } from '../../../api_schema/types';
 import { ThemedText } from '@/components/ThemedText';
-import UserAvatar from '@/features/map/components/UserAvatar';
+import PressableUser from '@/features/account/components/PressableUser';
 import { createEventCardStyles } from '../styles/eventCardStyles';
 
 interface UserListProps {
@@ -35,22 +35,13 @@ const UserList: React.FC<UserListProps> = ({
       {users.length > 0 ? (
         <View style={eventCardStyles.userListContainer}>
           {users.slice(0, maxDisplayCount).map((user, index) => (
-            <View key={user.userId || index} style={eventCardStyles.userListItem}>
-              <UserAvatar
-                avatarSize="sm"
-                firstName={user.firstName}
-                lastName={user.lastName}
-                avatar_url={user.avatar_url ?? ""}
-                onlineStatus="offline"
-              />
-              <View style={eventCardStyles.userListAvatar}>
-                <ThemedText>
-                  {(user.firstName || user.lastName)
-                      ? `${user.firstName ?? ''} ${user.lastName ?? ''}`.trim()
-                      : 'Anonym'}
-                </ThemedText>
-              </View>
-            </View>
+            <PressableUser
+              key={user.userId || index}
+              userId={user.userId}
+              firstName={user.firstName}
+              lastName={user.lastName}
+              avatar_url={user.avatar_url}
+            />
           ))}
           {users.length > maxDisplayCount && (
             <ThemedText style={eventCardStyles.attendeesMoreText}>

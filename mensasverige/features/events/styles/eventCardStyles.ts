@@ -109,8 +109,8 @@ export const createEventCardStyles = (colorScheme: string) => {
 
   // UserList styles
   userListContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    //flexDirection: 'row',
+    //flexWrap: 'wrap',
     gap: 10,
   },
   userListItem: {

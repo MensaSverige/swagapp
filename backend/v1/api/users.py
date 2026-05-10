@@ -55,6 +55,8 @@ async def get_users(show_location: bool = None,
         if user.get("userId") != current_user.get("userId") and not _viewer_can_see(
                 settings.get("show_location", PrivacySetting.NO_ONE.value), current_user, "show_location"):
             user["location"] = None
+        if not _viewer_can_see(settings.get("show_interests", PrivacySetting.MEMBERS_ONLY.value), current_user, "show_interests") and user.get("userId") != current_user.get("userId"):
+            user["interests"] = []
         if user.get("userId") == current_user.get("userId") or _viewer_can_see(
                 settings.get("show_profile", PrivacySetting.MEMBERS_ONLY.value), current_user, "show_profile"):
             result.append(user)
@@ -86,6 +88,10 @@ async def get_user_by_id(user_id: int,
             settings.get("show_location", PrivacySetting.NO_ONE.value), current_user, "show_location"):
         user["location"] = None
 
+    if user.get("userId") != current_user.get("userId") and not _viewer_can_see(
+            settings.get("show_interests", PrivacySetting.MEMBERS_ONLY.value), current_user, "show_interests"):
+        user["interests"] = []
+
     return user
 
 
@@ -110,6 +116,9 @@ async def get_current_user(current_user: User = Depends(validate_request)):
 async def update_current_user(user_update: UserUpdate,
                               current_user: User = Depends(validate_request)):
     update_dict = user_update.model_dump(exclude_unset=True)
+    if 'settings' in update_dict:
+        existing_settings = current_user.get('settings', {})
+        update_dict['settings'] = {**existing_settings, **update_dict['settings']}
     current_user.update(update_dict)
 
     return update_user(current_user['userId'], current_user)

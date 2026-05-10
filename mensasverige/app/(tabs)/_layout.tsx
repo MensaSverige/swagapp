@@ -64,7 +64,7 @@ export default function TabLayout() {
         options={{
           title: 'Karta',
           tabBarIcon: ({ color }) => <MaterialIcons name="person-pin" size={28} color={color} />,
-          lazy: false
+          //lazy: false
         }}
       />
       <Tabs.Screen
@@ -74,6 +74,7 @@ export default function TabLayout() {
           tabBarIcon: ({ color }) => user?.avatar_url
             ? <Image source={{ uri: getFullUrl(user.avatar_url) }} style={{ width: 28, height: 28, borderRadius: 14 }} contentFit="cover" />
             : <MaterialIcons name="account-circle" size={28} color={color} />,
+          lazy: false,
         }}
       />
     </Tabs>

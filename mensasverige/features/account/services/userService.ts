@@ -2,6 +2,7 @@ import apiClient from '../../common/services/apiClient';
 import { UserUpdate } from '../../../api_schema/types';
 import { AuthResponse, User } from '../../../api_schema/types';
 import { attemptLoginWithStoredCredentials, storeAndValidateAuthResponse } from '../../common/services/authService';
+import { InterestCategory } from '../constants/interests';
 
 
 export const updateUser = async (
@@ -124,6 +125,24 @@ export const getUsersByIds = async (userIds: string[]): Promise<User[]> => {
     return [];
   }
 }
+
+let _interestCategoriesCache: InterestCategory[] | null = null;
+
+export const getInterestCategories = async (): Promise<InterestCategory[]> => {
+  if (_interestCategoriesCache) return _interestCategoriesCache;
+  try {
+    const response = await apiClient.get('/interests');
+    _interestCategoriesCache = response.data;
+    return _interestCategoriesCache!;
+  } catch {
+    return [];
+  }
+};
+
+export const getUserById = async (userId: number): Promise<User> => {
+  const response = await apiClient.get(`/users/${userId}`);
+  return response.data;
+};
 
 export const getUser = async (userName: string): Promise<User> => {
   if (!userName) {
