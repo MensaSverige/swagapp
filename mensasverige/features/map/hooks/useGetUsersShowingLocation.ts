@@ -38,7 +38,7 @@ const useGetUsersShowingLocation = () => {
     poll();
 
     return () => { active = false; };
-  }, [user?.userId, setUsersShowingLocation, getLocationUpdateInterval]);
+  }, [user?.userId,  user?.settings?.show_location, setUsersShowingLocation, getLocationUpdateInterval]);
 };
 
 export default useGetUsersShowingLocation;

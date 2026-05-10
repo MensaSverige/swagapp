@@ -9,7 +9,7 @@ const UserMarker: React.FC<{
   highlighted: boolean;
   onPress: (event: MarkerPressEvent) => void;
 }> = ({ user, zIndex, highlighted, onPress }) => {
-  const markerSize = 'lg';
+  const markerSize = 'md';
   const [tracksViewChanges, setTracksViewChanges] = useState(true);
   return (
     <Marker
