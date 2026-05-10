@@ -245,7 +245,6 @@ const MapScreen: React.FC = () => {
                   );
                 }
               }}
-              onRegionChange={setVisibleRegion}
               onRegionChangeComplete={setVisibleRegion}
               onPanDrag={resetSelectedUser}
               onPress={resetSelectedUser}
@@ -264,11 +263,6 @@ const MapScreen: React.FC = () => {
                   .filter(u =>
                     u.userId !== user?.userId ||
                     (user?.settings?.show_location && user.settings.show_location !== 'NO_ONE')
-                  )
-                  .filter(u => u.location.latitude >= visibleRegion.latitude - visibleRegion.latitudeDelta * 3 &&
-                    u.location.latitude <= visibleRegion.latitude + visibleRegion.latitudeDelta * 3 &&
-                    u.location.longitude >= visibleRegion.longitude - visibleRegion.longitudeDelta * 3 &&
-                    u.location.longitude <= visibleRegion.longitude + visibleRegion.longitudeDelta * 3
                   )
                   .map((u) => {
                     return (

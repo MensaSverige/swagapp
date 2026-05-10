@@ -1,39 +1,34 @@
-import {useCallback, useEffect, useState} from 'react';
+import {useEffect} from 'react';
 import useStore from '../../common/store/store';
 import {getUserLocations} from '../services/locationService';
 
 const useGetUsersShowingLocation = () => {
-  const { user, getLocationUpdateInterval, setUsersShowingLocation } = useStore();
-  const [isPolling, setIsPolling] = useState(true);
-
-  const fetchUserLocations = useCallback(async () => {
-    try {
-      const users = await getUserLocations();
-      setUsersShowingLocation(users);
-      if (isPolling && user) { // Check user again in case they logged out during the call
-        const locationUpdateInterval = getLocationUpdateInterval();
-        setTimeout(fetchUserLocations, locationUpdateInterval);
-      }
-    } catch (error) {
-      console.error('Error fetching user locations:', error);
-      // Stop polling on error to avoid continuous failed requests
-      setIsPolling(false);
-    }
-  }, [isPolling, getLocationUpdateInterval, user]);
+  const user = useStore(state => state.user);
+  const getLocationUpdateInterval = useStore(state => state.getLocationUpdateInterval);
+  const setUsersShowingLocation = useStore(state => state.setUsersShowingLocation);
 
   useEffect(() => {
-    // Only start polling if user is logged in
-    if (user) {
-      fetchUserLocations();
-    } else {
-      // Clear users when logged out
+    if (!user) {
       setUsersShowingLocation([]);
-      setIsPolling(false);
+      return;
     }
-    return () => setIsPolling(false); // Stop polling when the component is unmounted
-  }, [fetchUserLocations, user]);
 
-  return { isPolling, setIsPolling };
+    let active = true;
+
+    const poll = async () => {
+      try {
+        const users = await getUserLocations();
+        if (active) setUsersShowingLocation(users);
+      } catch (error) {
+        console.error('Error fetching user locations:', error);
+      }
+      if (active) setTimeout(poll, getLocationUpdateInterval());
+    };
+
+    poll();
+
+    return () => { active = false; };
+  }, [user?.userId, setUsersShowingLocation, getLocationUpdateInterval]);
 };
 
 export default useGetUsersShowingLocation;
