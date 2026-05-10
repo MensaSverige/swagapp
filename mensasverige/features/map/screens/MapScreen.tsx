@@ -255,10 +255,6 @@ const MapScreen: React.FC = () => {
               {filteredUsers &&
 
                 filteredUsers
-                  .filter(u =>
-                    u.userId !== user?.userId ||
-                    (user?.settings?.show_location && user.settings.show_location !== 'NO_ONE')
-                  )
                   .map((u) => {
                     return (
                       <UserMarker
