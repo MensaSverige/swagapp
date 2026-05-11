@@ -6,7 +6,7 @@
 version: 2
 updates:
   - package-ecosystem: "npm" # See documentation for possible values
-    directory: "/app" # Location of package manifests
+    directory: "/mensasverige" # Location of package manifests
     schedule:
       interval: "weekly"
     reviewers:
@@ -22,7 +22,7 @@ updates:
            - "minor"
     
   - package-ecosystem: "pip"
-    directory: "/backend"
+    directory: "/backend/v1"
     schedule:
       interval: "weekly"
     reviewers:
