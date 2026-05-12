@@ -6,6 +6,7 @@ import PressableUser from '@/features/account/components/PressableUser';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { Colors } from '@/constants/Colors';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import { useBottomTabOverflow } from '@/components/ui/TabBarBackground';
 
 const createStyles = (colorScheme: string) => StyleSheet.create({
     cardContainer: {
@@ -51,6 +52,7 @@ type ContactCardProps = {
 
 const ContactCard: React.FC<ContactCardProps> = ({ user, showCard, onClose, onZoom }) => {
     const colorScheme = useColorScheme();
+    const bottom = useBottomTabOverflow();
     const styles = createStyles(colorScheme ?? 'light');
 
     if (!showCard) {
@@ -58,7 +60,7 @@ const ContactCard: React.FC<ContactCardProps> = ({ user, showCard, onClose, onZo
     }
 
     return (
-        <View style={styles.cardContainer}>
+        <View style={[styles.cardContainer, { marginBottom: bottom }]}>
             <TouchableOpacity style={styles.closeButton} onPress={onClose}>
                 <MaterialIcons
                     name="close"
