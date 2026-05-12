@@ -52,8 +52,7 @@ const useUserLocation = () => {
           longitude !== undefined
         ) {
           setUserLocation(latitude, longitude);
-          const backgroundActive = user.settings.background_location_updates === true;
-          if (user.settings.show_location !== "NO_ONE" && !backgroundActive) {
+          if (user.settings.show_location !== "NO_ONE") {
             const locationUpdateData: UserLocation = {
                 latitude: latitude,
                 longitude: longitude,

@@ -22,7 +22,7 @@ TaskManager.defineTask(
     const payload: UserLocation = {
       latitude,
       longitude,
-      timestamp: new Date(latest.timestamp).toISOString(),
+      timestamp: null,
       accuracy: accuracy ?? 0,
     };
     try {
@@ -35,21 +35,22 @@ TaskManager.defineTask(
 
 export const startBackgroundLocationTask = async (timeInterval: number): Promise<void> => {
   const isRunning = await Location.hasStartedLocationUpdatesAsync(BACKGROUND_LOCATION_TASK);
-  if (isRunning) {
-    await Location.stopLocationUpdatesAsync(BACKGROUND_LOCATION_TASK);
+  if (!isRunning) {
+    console.log('[BackgroundLocation] Starting task, interval:', timeInterval);
+    await Location.startLocationUpdatesAsync(BACKGROUND_LOCATION_TASK, {
+      accuracy: Location.Accuracy.High,
+      timeInterval,
+      distanceInterval: 0,
+      showsBackgroundLocationIndicator: true,
+      foregroundService: {
+        notificationTitle: 'Mensa Sverige',
+        notificationBody: 'Platsdelning är aktiv i bakgrunden',
+      },
+    });
+    console.log('[BackgroundLocation] Task started successfully');
+  } else {
+    console.log('[BackgroundLocation] Task already running');
   }
-  console.log('[BackgroundLocation] Starting task, interval:', timeInterval);
-  await Location.startLocationUpdatesAsync(BACKGROUND_LOCATION_TASK, {
-    accuracy: Location.Accuracy.High,
-    timeInterval,
-    distanceInterval: 0,
-    showsBackgroundLocationIndicator: true,
-    foregroundService: {
-      notificationTitle: 'Mensa Sverige',
-      notificationBody: 'Platsdelning är aktiv i bakgrunden',
-    },
-  });
-  console.log('[BackgroundLocation] Task started successfully');
 };
 
 export const stopBackgroundLocationTask = async (): Promise<void> => {
