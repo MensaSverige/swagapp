@@ -147,7 +147,8 @@ export const getProfileOptions = async (): Promise<ProfileOptionCategory[]> => {
     const response = await apiClient.get('/profile-options');
     _profileOptionCategoriesCache = response.data;
     return _profileOptionCategoriesCache!;
-  } catch {
+  } catch (e) {
+    console.log('Failed to load profile options', e);
     return [];
   }
 };
