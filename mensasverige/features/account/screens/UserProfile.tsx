@@ -243,24 +243,24 @@ const UserProfile: React.FC = () => {
                     />
                 </ThemedView>
 
+                {/* Logout — fixed at bottom, above the tab bar */}
+                <View style={[styles.logoutContainer, { bottom: tabBarHeight }]}>
+                    <TouchableOpacity
+                        style={styles.logoutButton}
+                        onPress={handleLogout}
+                        disabled={isLoading}
+                        activeOpacity={0.7}>
+                        {isLoading
+                            ? <ActivityIndicator size="small" color="#EF4444" />
+                            : <>
+                                <MaterialIcons name="logout" size={18} color="#EF4444" style={styles.logoutIcon} />
+                                <ThemedText style={styles.logoutText} type="defaultSemiBold">Logga ut</ThemedText>
+                            </>
+                        }
+                    </TouchableOpacity>
+                </View>
             </ScrollView>
 
-            {/* Logout — fixed at bottom, above the tab bar */}
-            <View style={[styles.logoutContainer, { bottom: tabBarHeight }]}>
-                <TouchableOpacity
-                    style={styles.logoutButton}
-                    onPress={handleLogout}
-                    disabled={isLoading}
-                    activeOpacity={0.7}>
-                    {isLoading
-                        ? <ActivityIndicator size="small" color="#EF4444" />
-                        : <>
-                            <MaterialIcons name="logout" size={18} color="#EF4444" style={styles.logoutIcon} />
-                            <ThemedText style={styles.logoutText} type="defaultSemiBold">Logga ut</ThemedText>
-                          </>
-                    }
-                </TouchableOpacity>
-            </View>
         </ThemedView>
     );
 };
@@ -300,7 +300,6 @@ const createStyles = (colorScheme: string) => {
             elevation: 1,
         },
         logoutContainer: {
-            position: 'absolute',
             left: 0,
             right: 0,
             paddingHorizontal: 20,
