@@ -14,6 +14,7 @@ import { ThemedView } from '@/components/ThemedView';
 import { ThemedText } from '@/components/ThemedText';
 import { MaterialIcons } from '@expo/vector-icons';
 import { Colors } from '@/constants/Colors';
+import { useBottomTabOverflow } from '@/components/ui/TabBarBackground';
 import useStore from '../../common/store/store';
 import { resetUserCredentials } from '../../common/services/authService';
 import ProfileEditAvatar from '../../common/components/ProfileEditAvatar';
@@ -28,6 +29,7 @@ const UserProfile: React.FC = () => {
     const colorScheme = useColorScheme() ?? 'light';
     const { showToast, ToastComponent } = useToast(colorScheme);
     const insets = useSafeAreaInsets();
+    const tabBarHeight = useBottomTabOverflow();
     const [isLoading, setIsLoading] = useState(false);
     const [editingField, setEditingField] = useState<string | null>(null);
     const [phone, setPhone] = useState(user?.contact_info?.phone || '');
@@ -103,7 +105,7 @@ const UserProfile: React.FC = () => {
             <ScrollView
                 contentContainerStyle={[
                     styles.scroll,
-                    { paddingTop: 8, paddingBottom: insets.bottom + 24 },
+                    { paddingTop: 8, paddingBottom: tabBarHeight + 88 },
                 ]}
                 showsVerticalScrollIndicator={false}>
 
@@ -173,8 +175,8 @@ const UserProfile: React.FC = () => {
 
             </ScrollView>
 
-            {/* Logout — fixed at bottom */}
-            <View style={[styles.logoutContainer, { paddingBottom: insets.bottom + 12 }]}>
+            {/* Logout — fixed at bottom, above the tab bar */}
+            <View style={[styles.logoutContainer, { bottom: tabBarHeight }]}>
                 <TouchableOpacity
                     style={styles.logoutButton}
                     onPress={handleLogout}
@@ -228,8 +230,12 @@ const createStyles = (colorScheme: string) => {
             elevation: 1,
         },
         logoutContainer: {
+            position: 'absolute',
+            left: 0,
+            right: 0,
             paddingHorizontal: 20,
             paddingTop: 8,
+            paddingBottom: 12,
         },
         logoutButton: {
             flexDirection: 'row',
