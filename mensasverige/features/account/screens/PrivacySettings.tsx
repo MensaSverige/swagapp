@@ -19,7 +19,6 @@ type PrivacyForm = {
     show_hometown: PrivacySetting;
     show_birthdate: PrivacySetting;
     show_gender: PrivacySetting;
-    show_gender_identity: PrivacySetting;
     show_sexuality: PrivacySetting;
     show_relationship_style: PrivacySetting;
     show_relationship_status: PrivacySetting;
@@ -45,7 +44,6 @@ const PrivacySettings: React.FC = () => {
         show_hometown: user?.settings?.show_hometown || 'MEMBERS_ONLY',
         show_birthdate: user?.settings?.show_birthdate || 'MEMBERS_ONLY',
         show_gender: user?.settings?.show_gender || 'NO_ONE',
-        show_gender_identity: user?.settings?.show_gender_identity || 'NO_ONE',
         show_sexuality: user?.settings?.show_sexuality || 'NO_ONE',
         show_relationship_style: user?.settings?.show_relationship_style || 'NO_ONE',
         show_relationship_status: user?.settings?.show_relationship_status || 'NO_ONE',
@@ -186,13 +184,6 @@ const PrivacySettings: React.FC = () => {
                     options={profileOptions}
                     value={form.show_gender}
                     onChange={v => setForm(f => ({ ...f, show_gender: v }))}
-                />
-                <PrivacyCard
-                    title="Könsidentitet"
-                    description="Vem kan se din könsidentitet?"
-                    options={profileOptions}
-                    value={form.show_gender_identity}
-                    onChange={v => setForm(f => ({ ...f, show_gender_identity: v }))}
                 />
                 <PrivacyCard
                     title="Läggning"

@@ -67,9 +67,6 @@ async def get_users(show_location: bool = None,
                 settings.get("show_gender", PrivacySetting.NO_ONE.value), current_user, "show_gender"):
             user["gender"] = None
         if user.get("userId") != current_user.get("userId") and not _viewer_can_see(
-                settings.get("show_gender_identity", PrivacySetting.NO_ONE.value), current_user, "show_gender_identity"):
-            user["gender_identity"] = None
-        if user.get("userId") != current_user.get("userId") and not _viewer_can_see(
                 settings.get("show_sexuality", PrivacySetting.NO_ONE.value), current_user, "show_sexuality"):
             user["sexuality"] = None
         if user.get("userId") != current_user.get("userId") and not _viewer_can_see(
@@ -125,9 +122,6 @@ async def get_user_by_id(user_id: int,
     if user.get("userId") != current_user.get("userId") and not _viewer_can_see(
             settings.get("show_gender", PrivacySetting.NO_ONE.value), current_user, "show_gender"):
         user["gender"] = None
-    if user.get("userId") != current_user.get("userId") and not _viewer_can_see(
-            settings.get("show_gender_identity", PrivacySetting.NO_ONE.value), current_user, "show_gender_identity"):
-        user["gender_identity"] = None
     if user.get("userId") != current_user.get("userId") and not _viewer_can_see(
             settings.get("show_sexuality", PrivacySetting.NO_ONE.value), current_user, "show_sexuality"):
         user["sexuality"] = None

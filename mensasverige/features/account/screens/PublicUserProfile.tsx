@@ -151,20 +151,6 @@ const PublicUserProfile: React.FC<Props> = ({ userId }) => {
             </View>
           )}
         </View>
-                {/* Social flags */}
-        {hasSocialFlags && (
-          <ThemedView style={styles.card}>
-            <View style={styles.chipsRow}>
-              {visibleSocialFlags.map(flag => (
-                <View key={flag.value} style={[styles.socialChip, { backgroundColor: isDark ? '#374151' : '#F3F4F6' }]}>
-                  <MaterialIcons name={flag.icon as React.ComponentProps<typeof MaterialIcons>['name']} size={14} color={Colors.warmGray400} />
-                  <ThemedText style={styles.chipText}>{flag.label}</ThemedText>
-                </View>
-              ))}
-            </View>
-          </ThemedView>
-        )}
-
         {/* Contact info */}
         {hasContact && (
           <ThemedView style={styles.card}>
