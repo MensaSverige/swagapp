@@ -28,7 +28,7 @@ PROFILE_OPTION_CATEGORIES: List[ProfileOptionCategory] = [
     ProfileOptionCategory(key='sexuality', label='Läggning', multi=False, items=[
         ProfileOptionItem(value='hetero',   label='Heterosexuell',                   icon='straight'),
         ProfileOptionItem(value='homo',        label='Homosexuell',                  icon='turn-sharp-right'),
-        ProfileOptionItem(value='bi_pan',     label='Bisexuell/Pansexuell',       icon='auto-renew'),
+        ProfileOptionItem(value='bi_pan',     label='Bisexuell/Pansexuell',       icon='loop'),
         ProfileOptionItem(value='asexual',    label='Asexuell',                   icon='panorama-fish-eye'),
     ]),
     ProfileOptionCategory(key='relationship_style', label='Relationsform', multi=False, items=[
