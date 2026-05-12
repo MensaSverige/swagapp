@@ -97,7 +97,6 @@ const PublicUserProfile: React.FC<Props> = ({ userId }) => {
 
   const identityItems = [
     { key: 'gender',               val: user.gender },
-    { key: 'gender_identity',      val: user.gender_identity },
     { key: 'sexuality',            val: user.sexuality },
     { key: 'relationship_style',   val: user.relationship_style },
     { key: 'relationship_status',  val: user.relationship_status },
@@ -152,6 +151,19 @@ const PublicUserProfile: React.FC<Props> = ({ userId }) => {
             </View>
           )}
         </View>
+                {/* Social flags */}
+        {hasSocialFlags && (
+          <ThemedView style={styles.card}>
+            <View style={styles.chipsRow}>
+              {visibleSocialFlags.map(flag => (
+                <View key={flag.value} style={[styles.socialChip, { backgroundColor: isDark ? '#374151' : '#F3F4F6' }]}>
+                  <MaterialIcons name={flag.icon as React.ComponentProps<typeof MaterialIcons>['name']} size={14} color={Colors.warmGray400} />
+                  <ThemedText style={styles.chipText}>{flag.label}</ThemedText>
+                </View>
+              ))}
+            </View>
+          </ThemedView>
+        )}
 
         {/* Contact info */}
         {hasContact && (
@@ -159,7 +171,7 @@ const PublicUserProfile: React.FC<Props> = ({ userId }) => {
             <ThemedText style={styles.cardLabel}>Kontaktuppgifter</ThemedText>
             {hasEmail && (
               <TouchableOpacity
-                style={styles.contactRow}
+                style={styles.row}
                 onPress={() => {
                   Linking.openURL(`mailto:${user.contact_info?.email}`);
                 }}
@@ -170,7 +182,7 @@ const PublicUserProfile: React.FC<Props> = ({ userId }) => {
             )}
             {hasPhone && (
               <TouchableOpacity
-                style={styles.contactRow}
+                style={styles.row}
                 onPress={() => {
                   Linking.openURL(`tel:${user.contact_info?.phone}`);
                 }}
@@ -187,7 +199,7 @@ const PublicUserProfile: React.FC<Props> = ({ userId }) => {
           <ThemedView style={styles.card}>
             <ThemedText style={styles.cardLabel}>Identitet & relation</ThemedText>
             {identityItems.map(item => (
-              <View key={item.value} style={styles.identityRow}>
+              <View key={item.value} style={styles.row}>
                 <MaterialIcons name={item.icon as React.ComponentProps<typeof MaterialIcons>['name']} size={18} color={Colors.warmGray400} />
                 <ThemedText style={styles.identityText}>{item.label}</ThemedText>
               </View>
@@ -195,20 +207,7 @@ const PublicUserProfile: React.FC<Props> = ({ userId }) => {
           </ThemedView>
         )}
 
-        {/* Social flags */}
-        {hasSocialFlags && (
-          <ThemedView style={styles.card}>
-            <ThemedText style={styles.cardLabel}>Socialt</ThemedText>
-            <View style={styles.chipsRow}>
-              {visibleSocialFlags.map(flag => (
-                <View key={flag.value} style={[styles.socialChip, { backgroundColor: isDark ? '#374151' : '#F3F4F6' }]}>
-                  <MaterialIcons name={flag.icon as React.ComponentProps<typeof MaterialIcons>['name']} size={14} color={Colors.warmGray400} />
-                  <ThemedText style={styles.chipText}>{flag.label}</ThemedText>
-                </View>
-              ))}
-            </View>
-          </ThemedView>
-        )}
+
 
         {/* Interests */}
         {hasInterests && (
@@ -281,11 +280,11 @@ const createStyles = (isDark: boolean) => {
     opacity: 0.6,
   },
   card: {
-    borderRadius: 12,
+    //borderRadius: 12,
     padding: 16,
-    marginBottom: 16,
-    shadowOpacity: 0.05,
-    elevation: 1,
+    //marginBottom: 8,
+    //shadowOpacity: 0.05,
+    //elevation: 1,
   },
   cardLabel: {
     fontSize: 11,
@@ -295,7 +294,7 @@ const createStyles = (isDark: boolean) => {
     opacity: 0.5,
     marginBottom: 12,
   },
-  contactRow: {
+  row: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 8,
