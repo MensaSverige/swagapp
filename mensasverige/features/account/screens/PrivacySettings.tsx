@@ -16,6 +16,8 @@ type PrivacyForm = {
     show_profile: PrivacySetting;
     show_location: PrivacySetting;
     show_interests: PrivacySetting;
+    show_hometown: PrivacySetting;
+    show_birthdate: PrivacySetting;
 };
 
 const PrivacySettings: React.FC = () => {
@@ -34,6 +36,8 @@ const PrivacySettings: React.FC = () => {
         show_profile: user?.settings?.show_profile || DEFAULT_SETTINGS.SHOW_PROFILE,
         show_location: user?.settings?.show_location || 'NO_ONE',
         show_interests: user?.settings?.show_interests || 'MEMBERS_ONLY',
+        show_hometown: user?.settings?.show_hometown || 'MEMBERS_ONLY',
+        show_birthdate: user?.settings?.show_birthdate || 'MEMBERS_ONLY',
     });
 
     useEffect(() => {
@@ -149,6 +153,20 @@ const PrivacySettings: React.FC = () => {
                     options={profileOptions}
                     value={form.show_interests}
                     onChange={v => setForm(f => ({ ...f, show_interests: v }))}
+                />
+                <PrivacyCard
+                    title="Hemstad"
+                    description="Vem kan se din hemstad?"
+                    options={profileOptions}
+                    value={form.show_hometown}
+                    onChange={v => setForm(f => ({ ...f, show_hometown: v }))}
+                />
+                <PrivacyCard
+                    title="Födelsedag"
+                    description="Vem kan se din födelsedag (ålder)?"
+                    options={profileOptions}
+                    value={form.show_birthdate}
+                    onChange={v => setForm(f => ({ ...f, show_birthdate: v }))}
                 />
             </ScrollView>
         </ThemedView>

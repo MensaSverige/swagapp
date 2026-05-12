@@ -22,6 +22,7 @@ interface DateFieldProps {
   minimumDate?: Date;
   optional?: boolean;
   placeholder?: string;
+  mode?: 'date' | 'datetime';
   onDateChange: (date?: Date) => void;
 }
 
@@ -30,6 +31,7 @@ export const DatepickerField: React.FC<DateFieldProps> = ({
   date,
   minimumDate,
   placeholder,
+  mode = 'datetime',
   onDateChange,
 }) => {
   const colorTheme = useColorScheme();
@@ -88,7 +90,7 @@ export const DatepickerField: React.FC<DateFieldProps> = ({
               <DateTimePicker
                 testID="dateTimePicker"
                 value={date}
-                mode="datetime"
+                mode={mode}
                 themeVariant={colorTheme === 'dark' ? 'dark' : 'light'}
                 is24Hour={false}
                 onChange={(event: DateTimePickerEvent, selectedDate?: Date) => {
@@ -110,7 +112,7 @@ export const DatepickerField: React.FC<DateFieldProps> = ({
             >
               <Text style={styles.heading}>{label}</Text>
               <ThemedText style={[styles.pressableText, styles.placeholderText]}>
-                {placeholder || "Välj datum och tid"}
+                {placeholder || (mode === 'date' ? "Välj datum" : "Välj datum och tid")}
               </ThemedText>
             </TouchableOpacity>
           )
@@ -128,14 +130,16 @@ export const DatepickerField: React.FC<DateFieldProps> = ({
                   </ThemedText>
                 </TouchableOpacity>
 
-                <TouchableOpacity
-                  key={"timepicker-" + label?.toString()}
-                  onPress={() => showAndroidPicker("time")}
-                >
-                  <ThemedText style={styles.pressableText}>
-                    {formatTime(date)}
-                  </ThemedText>
-                </TouchableOpacity>
+                {mode === 'datetime' && (
+                  <TouchableOpacity
+                    key={"timepicker-" + label?.toString()}
+                    onPress={() => showAndroidPicker("time")}
+                  >
+                    <ThemedText style={styles.pressableText}>
+                      {formatTime(date)}
+                    </ThemedText>
+                  </TouchableOpacity>
+                )}
               </View>
             </View>
           ) : (
@@ -145,7 +149,7 @@ export const DatepickerField: React.FC<DateFieldProps> = ({
             >
               <Text style={styles.heading}>{label}</Text>
               <ThemedText style={[styles.pressableText, styles.placeholderText]}>
-                {placeholder || "Välj datum"}
+                {placeholder || (mode === 'date' ? "Välj datum" : "Välj datum och tid")}
               </ThemedText>
             </TouchableOpacity>
           )

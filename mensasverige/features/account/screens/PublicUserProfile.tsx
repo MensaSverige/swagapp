@@ -19,6 +19,14 @@ import { InterestCategory } from '../constants/interests';
 
 type Props = { userId: number };
 
+function computeAge(birthdate: string): number {
+  const today = new Date();
+  const bd = new Date(birthdate);
+  let age = today.getFullYear() - bd.getFullYear();
+  if (today < new Date(today.getFullYear(), bd.getMonth(), bd.getDate())) age--;
+  return age;
+}
+
 const PublicUserProfile: React.FC<Props> = ({ userId }) => {
   const colorScheme = useColorScheme() ?? 'light';
   const isDark = colorScheme === 'dark';
@@ -73,6 +81,8 @@ const PublicUserProfile: React.FC<Props> = ({ userId }) => {
   const hasPhone = !!user.contact_info?.phone;
   const hasContact = hasEmail || hasPhone;
 
+  const age = user.birthdate ? computeAge(user.birthdate) : null;
+
   const userInterests = user.interests ?? [];
   const interestCategories = categories
     .map(cat => ({ ...cat, items: cat.items.filter(i => userInterests.includes(i)) }))
@@ -102,6 +112,22 @@ const PublicUserProfile: React.FC<Props> = ({ userId }) => {
           {user.slogan ? (
             <ThemedText style={styles.slogan}>{user.slogan}</ThemedText>
           ) : null}
+          {(user.hometown || age !== null) && (
+            <View style={styles.heroMeta}>
+              {user.hometown ? (
+                <View style={styles.heroMetaItem}>
+                  <MaterialIcons name="home" size={14} color={Colors.coolGray400} />
+                  <ThemedText style={styles.heroMetaText}>{user.hometown}</ThemedText>
+                </View>
+              ) : null}
+              {age !== null ? (
+                <View style={styles.heroMetaItem}>
+                  <MaterialIcons name="cake" size={14} color={Colors.coolGray400} />
+                  <ThemedText style={styles.heroMetaText}>{age} år</ThemedText>
+                </View>
+              ) : null}
+            </View>
+          )}
         </View>
 
         {/* Contact info */}
@@ -186,6 +212,22 @@ const createStyles = (isDark: boolean) => {
     fontSize: 14,
     opacity: 0.65,
     textAlign: 'center',
+  },
+  heroMeta: {
+    flexDirection: 'row',
+    gap: 16,
+    marginTop: 8,
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+  },
+  heroMetaItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  heroMetaText: {
+    fontSize: 13,
+    opacity: 0.6,
   },
   card: {
     borderRadius: 12,

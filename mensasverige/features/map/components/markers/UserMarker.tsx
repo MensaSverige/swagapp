@@ -13,7 +13,7 @@ const UserMarker: React.FC<{
   const [tracksViewChanges, setTracksViewChanges] = useState(true);
   return (
     <Marker
-      tracksViewChanges={tracksViewChanges}
+      tracksViewChanges={true}
       coordinate={{
         latitude: user.location.latitude,
         longitude: user.location.longitude,
