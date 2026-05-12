@@ -243,8 +243,8 @@ const UserProfile: React.FC = () => {
                     />
                 </ThemedView>
 
-                {/* Logout — fixed at bottom, above the tab bar */}
-                <View style={[styles.logoutContainer, { bottom: tabBarHeight }]}>
+                {/* Logout */}
+                <View style={styles.logoutContainer}>
                     <TouchableOpacity
                         style={styles.logoutButton}
                         onPress={handleLogout}
