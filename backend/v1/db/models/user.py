@@ -121,6 +121,8 @@ class UserSettings(BaseModel):
 
     background_location_updates: bool = Field(default=False, example=True, description="Allow location updates when app is in background")
     show_interests: PrivacySetting = Field(default=PrivacySetting.MEMBERS_ONLY, example=PrivacySetting.MEMBERS_ONLY)
+    show_hometown: PrivacySetting = Field(default=PrivacySetting.MEMBERS_ONLY, example=PrivacySetting.MEMBERS_ONLY)
+    show_birthdate: PrivacySetting = Field(default=PrivacySetting.MEMBERS_ONLY, example=PrivacySetting.MEMBERS_ONLY)
 
     @field_validator("show_location", mode="before")
     @classmethod
@@ -166,6 +168,8 @@ class User(BaseModel):
     firstName: Optional[str] = Field(None, example="John Doe")
     lastName: Optional[str] = Field(None, example="John Doe")
     interests: List[UserInterest] = Field(default_factory=list, example=[])
+    hometown: Optional[str] = Field(None, example="Stockholm")
+    birthdate: Optional[str] = Field(None, example="1989-11-15")
 
 
 class UserUpdate(BaseModel):
@@ -178,3 +182,5 @@ class UserUpdate(BaseModel):
                                                 })
     slogan: Optional[str] = Field(None, example="Live and Let Live")
     interests: Optional[List[UserInterest]] = Field(None, example=[])
+    hometown: Optional[str] = Field(None, example="Stockholm")
+    birthdate: Optional[str] = Field(None, example="1989-11-15")

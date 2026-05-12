@@ -57,6 +57,12 @@ async def get_users(show_location: bool = None,
             user["location"] = None
         if not _viewer_can_see(settings.get("show_interests", PrivacySetting.MEMBERS_ONLY.value), current_user, "show_interests") and user.get("userId") != current_user.get("userId"):
             user["interests"] = []
+        if user.get("userId") != current_user.get("userId") and not _viewer_can_see(
+                settings.get("show_hometown", PrivacySetting.MEMBERS_ONLY.value), current_user, "show_hometown"):
+            user["hometown"] = None
+        if user.get("userId") != current_user.get("userId") and not _viewer_can_see(
+                settings.get("show_birthdate", PrivacySetting.MEMBERS_ONLY.value), current_user, "show_birthdate"):
+            user["birthdate"] = None
         if user.get("userId") == current_user.get("userId") or _viewer_can_see(
                 settings.get("show_profile", PrivacySetting.MEMBERS_ONLY.value), current_user, "show_profile"):
             result.append(user)
@@ -91,6 +97,13 @@ async def get_user_by_id(user_id: int,
     if user.get("userId") != current_user.get("userId") and not _viewer_can_see(
             settings.get("show_interests", PrivacySetting.MEMBERS_ONLY.value), current_user, "show_interests"):
         user["interests"] = []
+
+    if user.get("userId") != current_user.get("userId") and not _viewer_can_see(
+            settings.get("show_hometown", PrivacySetting.MEMBERS_ONLY.value), current_user, "show_hometown"):
+        user["hometown"] = None
+    if user.get("userId") != current_user.get("userId") and not _viewer_can_see(
+            settings.get("show_birthdate", PrivacySetting.MEMBERS_ONLY.value), current_user, "show_birthdate"):
+        user["birthdate"] = None
 
     return user
 

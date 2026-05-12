@@ -22,6 +22,8 @@ import EditableField from '../../common/components/inputs/EditableField';
 import { extractNumericValue } from '../../common/functions/extractNumericValue';
 import { updateUser } from '../services/userService';
 import { useToast } from '@/hooks/useToast';
+import { DatepickerField } from '../../common/components/inputs/DatepickerField';
+import { getGeoLocation } from '@/features/map/services/locationService';
 
 const UserProfile: React.FC = () => {
     const { user, setUser } = useStore();
@@ -33,6 +35,10 @@ const UserProfile: React.FC = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [editingField, setEditingField] = useState<string | null>(null);
     const [phone, setPhone] = useState(user?.contact_info?.phone || '');
+    const [hometown, setHometown] = useState(user?.hometown ?? '');
+    const [birthdate, setBirthdate] = useState<Date | undefined>(
+        user?.birthdate ? new Date(user.birthdate) : undefined
+    );
 
     const styles = createStyles(colorScheme);
 
@@ -70,6 +76,39 @@ const UserProfile: React.FC = () => {
                 phone: cleaned,
             },
         })
+            .then(returned => {
+                if (returned) setUser({ ...user, ...returned });
+                showToast('Sparat!', 'success');
+            })
+            .catch(() => showToast('Fel vid sparande', 'error'));
+    }
+
+    async function saveHometown(value: string) {
+        if (!user) return;
+        setEditingField(null);
+        showToast('Sparar...', 'info');
+        let resolved = value;
+        try {
+            const geo = await getGeoLocation(value);
+            resolved = geo.formatted_address || value;
+        } catch {
+            // geocoding failed, store as typed
+        }
+        setHometown(resolved);
+        updateUser({ settings: user.settings, hometown: resolved })
+            .then(returned => {
+                if (returned) setUser({ ...user, ...returned });
+                showToast('Sparat!', 'success');
+            })
+            .catch(() => showToast('Fel vid sparande', 'error'));
+    }
+
+    function saveBirthdate(date: Date | undefined) {
+        if (!user || !date) return;
+        setBirthdate(date);
+        const formatted = date.toISOString().slice(0, 10);
+        showToast('Sparar...', 'info');
+        updateUser({ settings: user.settings, birthdate: formatted })
             .then(returned => {
                 if (returned) setUser({ ...user, ...returned });
                 showToast('Sparat!', 'success');
@@ -143,6 +182,37 @@ const UserProfile: React.FC = () => {
                                 onSave={savePhone}
                                 onValueChange={value => setPhone(extractNumericValue(value) || '')}
                                 keyboardType="phone-pad"
+                            />
+                        </View>
+                    </View>
+                </ThemedView>
+
+                {/* Personal details card */}
+                <ThemedView style={styles.card}>
+                    <ThemedText style={styles.cardLabel}>Personuppgifter</ThemedText>
+                    <View style={styles.contactRow}>
+                        <MaterialIcons name="home" size={18} color={Colors.coolGray500} />
+                        <View style={styles.contactFieldWrap}>
+                            <EditableField
+                                label="Hemstad"
+                                value={hometown}
+                                placeholder="Stockholm"
+                                isEditing={editingField === 'hometown'}
+                                onEdit={() => setEditingField('hometown')}
+                                onSave={saveHometown}
+                                onValueChange={setHometown}
+                            />
+                        </View>
+                    </View>
+                    <View style={[styles.contactRow, { marginTop: 8 }]}>
+                        <MaterialIcons name="cake" size={18} color={Colors.coolGray500} style={styles.contactIcon} />
+                        <View style={styles.contactFieldWrap}>
+                            <DatepickerField
+                                label="Födelsedag"
+                                date={birthdate}
+                                mode="date"
+                                placeholder="Välj datum"
+                                onDateChange={saveBirthdate}
                             />
                         </View>
                     </View>
