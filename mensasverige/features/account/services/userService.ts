@@ -45,10 +45,10 @@ export const uploadAvatar = async (uri: string): Promise<User> => {
     } as any);
     
     const response = await apiClient.post('/users/me/avatar', formData, {
-      headers: { 
+      headers: {
         'Content-Type': 'multipart/form-data',
       },
-      timeout: 3000,
+      timeout: 60000,
     });
     
     if (response.status === 200 && response.data) {

@@ -52,10 +52,10 @@ export const useToast = (colorScheme: 'light' | 'dark' | null = 'light') => {
         }),
       ]).start();
 
-      // Auto-hide after 2 seconds
+      const durationMs = toast.type === 'error' ? 4000 : 2000;
       const timer = setTimeout(() => {
         hideToastWithAnimation();
-      }, 2000);
+      }, durationMs);
 
       return () => clearTimeout(timer);
     }
