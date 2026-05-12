@@ -42,7 +42,6 @@ const UserProfile: React.FC = () => {
         user?.birthdate ? new Date(user.birthdate) : undefined
     );
     const [gender, setGender] = useState<string | null>(user?.gender ?? null);
-    const [genderIdentity, setGenderIdentity] = useState<string | null>(user?.gender_identity ?? null);
     const [sexuality, setSexuality] = useState<string | null>(user?.sexuality ?? null);
     const [relationshipStyle, setRelationshipStyle] = useState<string | null>(user?.relationship_style ?? null);
     const [relationshipStatus, setRelationshipStatus] = useState<string | null>(user?.relationship_status ?? null);
@@ -267,7 +266,6 @@ const UserProfile: React.FC = () => {
                     <ThemedText style={styles.cardLabel}>Identitet & relation</ThemedText>
                     {([
                         { icon: 'wc' as const,              label: 'Kön',           key: 'gender',               value: gender,             setter: setGender },
-                        { icon: 'transgender' as const,     label: 'Könsidentitet', key: 'gender_identity',      value: genderIdentity,     setter: setGenderIdentity },
                         { icon: 'favorite' as const,        label: 'Läggning',      key: 'sexuality',            value: sexuality,          setter: setSexuality },
                         { icon: 'group' as const,           label: 'Relationsform', key: 'relationship_style',   value: relationshipStyle,  setter: setRelationshipStyle },
                         { icon: 'favorite-border' as const, label: 'Status',        key: 'relationship_status',  value: relationshipStatus, setter: setRelationshipStatus },

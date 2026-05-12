@@ -25,12 +25,6 @@ PROFILE_OPTION_CATEGORIES: List[ProfileOptionCategory] = [
         ProfileOptionItem(value='female', label='Kvinna', icon='woman'),
         ProfileOptionItem(value='other',  label='Annat',  icon='man-4'),
     ]),
-    ProfileOptionCategory(key='gender_identity', label='Könsidentitet', multi=False, items=[
-        ProfileOptionItem(value='man',         label='Man',         icon='male'),
-        ProfileOptionItem(value='woman',       label='Kvinna',      icon='female'),
-        ProfileOptionItem(value='agender',     label='Agender',     icon='person-off'),
-        ProfileOptionItem(value='transgender', label='Transgender', icon='transgender'),
-    ]),
     ProfileOptionCategory(key='sexuality', label='Läggning', multi=False, items=[
         ProfileOptionItem(value='straight',   label='Straight',                   icon='highlight'),
         ProfileOptionItem(value='gay',        label='Gay',                        icon='error-med'),
