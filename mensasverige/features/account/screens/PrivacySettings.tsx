@@ -22,7 +22,6 @@ type PrivacyForm = {
     show_sexuality: PrivacySetting;
     show_relationship_style: PrivacySetting;
     show_relationship_status: PrivacySetting;
-    show_social_flags: PrivacySetting;
 };
 
 const PrivacySettings: React.FC = () => {
@@ -46,8 +45,7 @@ const PrivacySettings: React.FC = () => {
         show_gender: user?.settings?.show_gender || 'NO_ONE',
         show_sexuality: user?.settings?.show_sexuality || 'NO_ONE',
         show_relationship_style: user?.settings?.show_relationship_style || 'NO_ONE',
-        show_relationship_status: user?.settings?.show_relationship_status || 'NO_ONE',
-        show_social_flags: user?.settings?.show_social_flags || 'MEMBERS_ONLY',
+        show_relationship_status: user?.settings?.show_relationship_status || 'NO_ONE'  
     });
 
     useEffect(() => {
@@ -205,13 +203,6 @@ const PrivacySettings: React.FC = () => {
                     options={profileOptions}
                     value={form.show_relationship_status}
                     onChange={v => setForm(f => ({ ...f, show_relationship_status: v }))}
-                />
-                <PrivacyCard
-                    title="Socialt"
-                    description="Vem kan se dina sociala inställningar?"
-                    options={profileOptions}
-                    value={form.show_social_flags}
-                    onChange={v => setForm(f => ({ ...f, show_social_flags: v }))}
                 />
             </ScrollView>
         </ThemedView>
