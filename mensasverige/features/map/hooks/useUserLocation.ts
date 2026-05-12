@@ -66,7 +66,7 @@ const useUserLocation = () => {
           }
         }
       } catch (e) {
-        //console.error('Location.getCurrentPositionAsync error: ', e);
+        console.log('Location.getCurrentPositionAsync error: ', e);
       }
     };
 
@@ -105,11 +105,22 @@ const useUserLocation = () => {
     const activate = async () => {
       const { status } = await Location.getBackgroundPermissionsAsync();
       let hasBackground = status === 'granted';
+      console.log('[BackgroundLocation] Background permission status:', status);
       if (!hasBackground) {
         hasBackground = await requestBackgroundLocationPermission();
+        console.log('[BackgroundLocation] Permission after request:', hasBackground);
       }
       if (hasBackground) {
-        startBackgroundLocationTask(getLocationUpdateInterval()).catch(() => {});
+        startBackgroundLocationTask(getLocationUpdateInterval()).catch((e) => {
+          const msg = String(e);
+          if (msg.includes('SharedPreferences') || msg.includes('NullPointer')) {
+            console.warn('[BackgroundLocation] Native module context was GC\'d after a JS reload. Fully restart the dev client app (kill from launcher, reopen) — this is dev-build only.');
+          } else {
+            console.warn('[BackgroundLocation] Failed to start task:', e);
+          }
+        });
+      } else {
+        console.warn('[BackgroundLocation] Background permission not granted, task will not start');
       }
     };
 

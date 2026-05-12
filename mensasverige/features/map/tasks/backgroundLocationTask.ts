@@ -10,7 +10,11 @@ type BackgroundLocationData = { locations: Location.LocationObject[] };
 TaskManager.defineTask(
   BACKGROUND_LOCATION_TASK,
   async ({ data, error }: TaskManager.TaskManagerTaskBody<BackgroundLocationData>) => {
-    if (error || !data) return;
+    if (error) {
+      console.warn('[BackgroundLocation] Task error:', error);
+      return;
+    }
+    if (!data) return;
     const latest = data.locations[data.locations.length - 1];
     if (!latest) return;
     const { latitude, longitude, accuracy } = latest.coords;
@@ -28,12 +32,20 @@ TaskManager.defineTask(
 export const startBackgroundLocationTask = async (timeInterval: number): Promise<void> => {
   const isRunning = await Location.hasStartedLocationUpdatesAsync(BACKGROUND_LOCATION_TASK);
   if (!isRunning) {
+    console.log('[BackgroundLocation] Starting task, interval:', timeInterval);
     await Location.startLocationUpdatesAsync(BACKGROUND_LOCATION_TASK, {
       accuracy: Location.Accuracy.High,
       timeInterval,
-      distanceInterval: 10,
+      distanceInterval: 0,
       showsBackgroundLocationIndicator: true,
+      foregroundService: {
+        notificationTitle: 'Mensa Sverige',
+        notificationBody: 'Platsdelning är aktiv i bakgrunden',
+      },
     });
+    console.log('[BackgroundLocation] Task started successfully');
+  } else {
+    console.log('[BackgroundLocation] Task already running');
   }
 };
 
