@@ -60,7 +60,6 @@ const MapScreen: React.FC = () => {
   const colorScheme = useColorScheme();
   const colorMode = colorScheme ?? 'light';
   const mapRef = useRef<ReactNativeMapView | null>(null);
-  const bottom = useBottomTabOverflow();
   const { region, filteredUsers, selectedUser, setSelectedUser, user, userFilter } = useStore();
   const [visibleRegion, setVisibleRegion] = useState(region);
   const [showContactCard, setShowContactCard] = useState(false);
@@ -206,7 +205,7 @@ const MapScreen: React.FC = () => {
     <ThemedView style={{ flex: 1 }}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={{ flex: 1, marginBottom: bottom }}>
+        style={{ flex: 1}}>
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
           <View style={{ flex: 1 }}>
             {selectedUser && showContactCard &&
