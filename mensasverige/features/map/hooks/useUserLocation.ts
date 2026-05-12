@@ -5,6 +5,11 @@ import {
   updateUserLocation,
 } from '../services/locationService';
 import { UserLocation } from '../../../api_schema/types';
+import {
+  startBackgroundLocationTask,
+  stopBackgroundLocationTask,
+} from '../tasks/backgroundLocationTask';
+import { requestBackgroundLocationPermission } from '../functions/requestLocationPermission';
 
 const useUserLocation = () => {
   const {user, getLocationUpdateInterval, hasLocationPermission, setUserLocation, requiredUpdateInfo} =
@@ -61,7 +66,7 @@ const useUserLocation = () => {
           }
         }
       } catch (e) {
-        //console.error('Location.getCurrentPositionAsync error: ', e);
+        console.log('Location.getCurrentPositionAsync error: ', e);
       }
     };
 
@@ -83,6 +88,52 @@ const useUserLocation = () => {
     };
   }, [getLocationUpdateInterval, hasLocationPermission, user?.settings.show_location, user, requiredUpdateInfo]);
 
+  // Background location task lifecycle
+  useEffect(() => {
+    const shouldRunBackground =
+      !!user &&
+      !requiredUpdateInfo &&
+      hasLocationPermission &&
+      user.settings.show_location !== 'NO_ONE' &&
+      user.settings.background_location_updates === true;
+
+    if (!shouldRunBackground) {
+      stopBackgroundLocationTask().catch(() => {});
+      return;
+    }
+
+    const activate = async () => {
+      const { status } = await Location.getBackgroundPermissionsAsync();
+      let hasBackground = status === 'granted';
+      console.log('[BackgroundLocation] Background permission status:', status);
+      if (!hasBackground) {
+        hasBackground = await requestBackgroundLocationPermission();
+        console.log('[BackgroundLocation] Permission after request:', hasBackground);
+      }
+      if (hasBackground) {
+        startBackgroundLocationTask(getLocationUpdateInterval()).catch((e) => {
+          const msg = String(e);
+          if (msg.includes('SharedPreferences') || msg.includes('NullPointer')) {
+            console.warn('[BackgroundLocation] Native module context was GC\'d after a JS reload. Fully restart the dev client app (kill from launcher, reopen) — this is dev-build only.');
+          } else {
+            console.warn('[BackgroundLocation] Failed to start task:', e);
+          }
+        });
+      } else {
+        console.warn('[BackgroundLocation] Background permission not granted, task will not start');
+      }
+    };
+
+    activate();
+  }, [
+    user,
+    requiredUpdateInfo,
+    hasLocationPermission,
+    user?.settings?.show_location,
+    user?.settings?.background_location_updates,
+    getLocationUpdateInterval,
+  ]);
+
   // Cleanup on unmount
   useEffect(() => {
     return () => {
@@ -91,6 +142,7 @@ const useUserLocation = () => {
         clearInterval(intervalRef.current);
         intervalRef.current = null;
       }
+      stopBackgroundLocationTask().catch(() => {});
     };
   }, []);
 };
