@@ -10,7 +10,6 @@ const UserMarker: React.FC<{
   onPress: (event: MarkerPressEvent) => void;
 }> = ({ user, zIndex, highlighted, onPress }) => {
   const markerSize = 'md';
-  const [tracksViewChanges, setTracksViewChanges] = useState(true);
   return (
     <Marker
       tracksViewChanges={true}
@@ -27,7 +26,6 @@ const UserMarker: React.FC<{
         avatar_url={user.avatar_url}
         avatarSize={markerSize}
         onlineStatus={user.onlineStatus}
-        onReady={() => setTracksViewChanges(false)}
       />
     </Marker>
   );

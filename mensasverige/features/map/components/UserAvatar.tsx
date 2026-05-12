@@ -13,7 +13,6 @@ type UserAvatarProps = {
     avatar_url: string | null | undefined;
     avatarSize?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl';
     onlineStatus?: OnlineStatus;
-    onReady?: () => void;
 };
 
 const getSizeValue = (size: string) => {
@@ -67,7 +66,7 @@ const createStyles = (size: number, borderColor: string, colorMode: string) => S
     },
 });
 
-const UserAvatar: React.FC<UserAvatarProps> = ({ firstName, lastName, avatar_url, avatarSize, onlineStatus, onReady }) => {
+const UserAvatar: React.FC<UserAvatarProps> = ({ firstName, lastName, avatar_url, avatarSize, onlineStatus }) => {
     const colorScheme = useColorScheme();
     const colorMode = colorScheme ?? 'light';
     const size = getSizeValue(avatarSize || 'lg');
@@ -78,10 +77,6 @@ const UserAvatar: React.FC<UserAvatarProps> = ({ firstName, lastName, avatar_url
     useEffect(() => {
         setInitials(getInitials());
     }, [firstName, lastName]);
-
-    useEffect(() => {
-        if (!avatar_url) onReady?.();
-    }, []);
 
     const getInitials = () => {
         const first = firstName?.charAt(0) || '';
@@ -98,8 +93,6 @@ const UserAvatar: React.FC<UserAvatarProps> = ({ firstName, lastName, avatar_url
                     }}
                     style={styles.image}
                     contentFit="cover"
-                    onLoad={onReady}
-                    onError={onReady}
                 />
             ) : (
                 <>
