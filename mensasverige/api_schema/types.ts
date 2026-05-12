@@ -23,3 +23,5 @@ export type UserLocation = components["schemas"]["UserLocation"];
 export type UserSettings = components["schemas"]["UserSettings"];
 export type UserUpdate = components["schemas"]["UserUpdate"];
 export type ValidationError = components["schemas"]["ValidationError"];
+export type ProfileOptionItem = components["schemas"]["ProfileOptionItem"];
+export type ProfileOptionCategory = components["schemas"]["ProfileOptionCategory"];

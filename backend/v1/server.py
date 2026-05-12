@@ -15,6 +15,7 @@ from v1.api.auth import auth_v1
 from v1.api.health import health_v1
 from v1.api.users import users_v1
 from v1.api.interests import interests_v1
+from v1.api.profile_options import profile_options_v1
 from v1.api.external_events import events_v1
 from v1.events.events_api import unified_events_v1
 from v1.external.event_site_news import get_event_site_news
@@ -58,6 +59,7 @@ app.include_router(auth_v1)
 app.include_router(health_v1)
 app.include_router(users_v1)
 app.include_router(interests_v1)
+app.include_router(profile_options_v1)
 app.include_router(events_v1)
 app.include_router(unified_events_v1)
 app.include_router(user_events_v1)

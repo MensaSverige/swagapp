@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
     StyleSheet,
     View,
@@ -20,10 +20,12 @@ import { resetUserCredentials } from '../../common/services/authService';
 import ProfileEditAvatar from '../../common/components/ProfileEditAvatar';
 import EditableField from '../../common/components/inputs/EditableField';
 import { extractNumericValue } from '../../common/functions/extractNumericValue';
-import { updateUser } from '../services/userService';
+import { updateUser, getProfileOptions } from '../services/userService';
 import { useToast } from '@/hooks/useToast';
 import { DatepickerField } from '../../common/components/inputs/DatepickerField';
 import { getGeoLocation } from '@/features/map/services/locationService';
+import { ProfileOptionCategory, ProfileOptionItem } from '../constants/profileOptions';
+import Dropdown from '../../common/components/inputs/Dropdown';
 
 const UserProfile: React.FC = () => {
     const { user, setUser } = useStore();
@@ -39,8 +41,23 @@ const UserProfile: React.FC = () => {
     const [birthdate, setBirthdate] = useState<Date | undefined>(
         user?.birthdate ? new Date(user.birthdate) : undefined
     );
+    const [gender, setGender] = useState<string | null>(user?.gender ?? null);
+    const [genderIdentity, setGenderIdentity] = useState<string | null>(user?.gender_identity ?? null);
+    const [sexuality, setSexuality] = useState<string | null>(user?.sexuality ?? null);
+    const [relationshipStyle, setRelationshipStyle] = useState<string | null>(user?.relationship_style ?? null);
+    const [relationshipStatus, setRelationshipStatus] = useState<string | null>(user?.relationship_status ?? null);
+    const [socialFlags, setSocialFlags] = useState<string[]>(user?.social_flags ?? []);
+    const [profileOptionCategories, setProfileOptionCategories] = useState<ProfileOptionCategory[]>([]);
+
+    useEffect(() => {
+        getProfileOptions().then(setProfileOptionCategories);
+    }, []);
 
     const styles = createStyles(colorScheme);
+
+    function getCategoryItems(key: string): ProfileOptionItem[] {
+        return profileOptionCategories.find(c => c.key === key)?.items ?? [];
+    }
 
     function handleLogout() {
         Alert.alert(
@@ -96,6 +113,33 @@ const UserProfile: React.FC = () => {
         }
         setHometown(resolved);
         updateUser({ settings: user.settings, hometown: resolved })
+            .then(returned => {
+                if (returned) setUser({ ...user, ...returned });
+                showToast('Sparat!', 'success');
+            })
+            .catch(() => showToast('Fel vid sparande', 'error'));
+    }
+
+    function saveIdentityField(field: string, value: string, setter: (v: string) => void) {
+        if (!user) return;
+        setter(value);
+        showToast('Sparar...', 'info');
+        updateUser({ settings: user.settings, [field]: value || null })
+            .then(returned => {
+                if (returned) setUser({ ...user, ...returned });
+                showToast('Sparat!', 'success');
+            })
+            .catch(() => showToast('Fel vid sparande', 'error'));
+    }
+
+    function toggleSocialFlag(value: string) {
+        if (!user) return;
+        const next = socialFlags.includes(value)
+            ? socialFlags.filter(f => f !== value)
+            : [...socialFlags, value];
+        setSocialFlags(next);
+        showToast('Sparar...', 'info');
+        updateUser({ settings: user.settings, social_flags: next })
             .then(returned => {
                 if (returned) setUser({ ...user, ...returned });
                 showToast('Sparat!', 'success');
@@ -215,6 +259,60 @@ const UserProfile: React.FC = () => {
                                 onDateChange={saveBirthdate}
                             />
                         </View>
+                    </View>
+                </ThemedView>
+
+                {/* Identity & relation */}
+                <ThemedView style={styles.card}>
+                    <ThemedText style={styles.cardLabel}>Identitet & relation</ThemedText>
+                    {([
+                        { icon: 'wc' as const,              label: 'Kön',           key: 'gender',               value: gender,             setter: setGender },
+                        { icon: 'transgender' as const,     label: 'Könsidentitet', key: 'gender_identity',      value: genderIdentity,     setter: setGenderIdentity },
+                        { icon: 'favorite' as const,        label: 'Läggning',      key: 'sexuality',            value: sexuality,          setter: setSexuality },
+                        { icon: 'group' as const,           label: 'Relationsform', key: 'relationship_style',   value: relationshipStyle,  setter: setRelationshipStyle },
+                        { icon: 'favorite-border' as const, label: 'Status',        key: 'relationship_status',  value: relationshipStatus, setter: setRelationshipStatus },
+                    ]).map(row => (
+                        <View key={row.key} style={[styles.contactRow, { marginBottom: 8, alignItems: 'flex-start' }]}>
+                            <MaterialIcons name={row.icon} size={18} color={Colors.coolGray500} style={{ marginTop: 10 }} />
+                            <View style={styles.contactFieldWrap}>
+                                <ThemedText style={styles.identityLabel}>{row.label}</ThemedText>
+                                <Dropdown
+                                    options={[{ value: '', label: 'Ej angett' }, ...getCategoryItems(row.key)]}
+                                    selectedValue={row.value || ''}
+                                    onValueChange={v => saveIdentityField(row.key, v, row.setter)}
+                                    placeholder="Välj alternativ"
+                                />
+                            </View>
+                        </View>
+                    ))}
+                </ThemedView>
+
+                {/* Social flags */}
+                <ThemedView style={styles.card}>
+                    <ThemedText style={styles.cardLabel}>Socialt</ThemedText>
+                    <View style={styles.socialChipsRow}>
+                        {getCategoryItems('social_flags').map(opt => {
+                            const selected = socialFlags.includes(opt.value);
+                            return (
+                                <TouchableOpacity
+                                    key={opt.value}
+                                    style={[
+                                        styles.socialChip,
+                                        selected && styles.socialChipSelected,
+                                    ]}
+                                    onPress={() => toggleSocialFlag(opt.value)}
+                                    activeOpacity={0.7}>
+                                    <MaterialIcons
+                                        name={opt.icon as React.ComponentProps<typeof MaterialIcons>['name']}
+                                        size={16}
+                                        color={selected ? Colors.primary500 : Colors.coolGray500}
+                                    />
+                                    <ThemedText style={[styles.socialChipText, selected && styles.socialChipTextSelected]}>
+                                        {opt.label}
+                                    </ThemedText>
+                                </TouchableOpacity>
+                            );
+                        })}
                     </View>
                 </ThemedView>
 
@@ -369,6 +467,24 @@ const createStyles = (colorScheme: string) => {
         navRowContent: { flex: 1 },
         navRowTitle: { fontSize: 15 },
         navRowSubtitle: { fontSize: 12, opacity: 0.6, marginTop: 1 },
+
+        identityLabel: { fontSize: 12, opacity: 0.55, marginBottom: 2 },
+
+        socialChipsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+        socialChip: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: 6,
+            borderRadius: 20,
+            paddingHorizontal: 12,
+            paddingVertical: 6,
+            backgroundColor: isDark ? '#1f2937' : '#f3f4f6',
+        },
+        socialChipSelected: {
+            backgroundColor: isDark ? 'rgba(79,193,255,0.12)' : 'rgba(0,119,230,0.08)',
+        },
+        socialChipText: { fontSize: 13, opacity: 0.7 },
+        socialChipTextSelected: { opacity: 1, color: Colors.primary500 },
 
     });
 };

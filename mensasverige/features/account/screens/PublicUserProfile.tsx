@@ -13,9 +13,10 @@ import { ThemedText } from '@/components/ThemedText';
 import { MaterialIcons } from '@expo/vector-icons';
 import { Colors } from '@/constants/Colors';
 import UserAvatar from '@/features/map/components/UserAvatar';
-import { User } from '../../../api_schema/types';
-import { getUserById, getInterestCategories } from '../services/userService';
+import { User, ProfileOptionCategory } from '../../../api_schema/types';
+import { getUserById, getInterestCategories, getProfileOptions } from '../services/userService';
 import { InterestCategory } from '../constants/interests';
+import { findOption } from '../constants/profileOptions';
 
 type Props = { userId: number };
 
@@ -34,13 +35,15 @@ const PublicUserProfile: React.FC<Props> = ({ userId }) => {
 
   const [user, setUser] = useState<User | null>(null);
   const [categories, setCategories] = useState<InterestCategory[]>([]);
+  const [profileOptionCategories, setProfileOptionCategories] = useState<ProfileOptionCategory[]>([]);
   const [status, setStatus] = useState<'loading' | 'loaded' | 'forbidden' | 'not_found' | 'error'>('loading');
 
   useEffect(() => {
-    Promise.all([getUserById(userId), getInterestCategories()])
-      .then(([data, cats]) => {
+    Promise.all([getUserById(userId), getInterestCategories(), getProfileOptions()])
+      .then(([data, cats, opts]) => {
         setUser(data);
         setCategories(cats);
+        setProfileOptionCategories(opts);
         setStatus('loaded');
       })
       .catch((err: any) => {
@@ -88,6 +91,26 @@ const PublicUserProfile: React.FC<Props> = ({ userId }) => {
     .map(cat => ({ ...cat, items: cat.items.filter(i => userInterests.includes(i)) }))
     .filter(cat => cat.items.length > 0);
   const hasInterests = interestCategories.length > 0;
+
+  const getCategoryItems = (key: string) =>
+    profileOptionCategories.find(c => c.key === key)?.items ?? [];
+
+  const identityItems = [
+    { key: 'gender',               val: user.gender },
+    { key: 'gender_identity',      val: user.gender_identity },
+    { key: 'sexuality',            val: user.sexuality },
+    { key: 'relationship_style',   val: user.relationship_style },
+    { key: 'relationship_status',  val: user.relationship_status },
+  ].flatMap(({ key, val }) => {
+    const found = findOption(getCategoryItems(key), val);
+    return found ? [found] : [];
+  });
+  const hasIdentity = identityItems.length > 0;
+
+  const visibleSocialFlags = getCategoryItems('social_flags').filter(o =>
+    (user.social_flags ?? []).includes(o.value)
+  );
+  const hasSocialFlags = visibleSocialFlags.length > 0;
 
   const displayName = (user.firstName || user.lastName)
     ? `${user.firstName ?? ''} ${user.lastName ?? ''}`.trim()
@@ -156,6 +179,34 @@ const PublicUserProfile: React.FC<Props> = ({ userId }) => {
                 <ThemedText style={styles.contactText}>{user.contact_info!.phone}</ThemedText>
               </TouchableOpacity>
             )}
+          </ThemedView>
+        )}
+
+        {/* Identity */}
+        {hasIdentity && (
+          <ThemedView style={styles.card}>
+            <ThemedText style={styles.cardLabel}>Identitet & relation</ThemedText>
+            {identityItems.map(item => (
+              <View key={item.value} style={styles.identityRow}>
+                <MaterialIcons name={item.icon as React.ComponentProps<typeof MaterialIcons>['name']} size={18} color={Colors.warmGray400} />
+                <ThemedText style={styles.identityText}>{item.label}</ThemedText>
+              </View>
+            ))}
+          </ThemedView>
+        )}
+
+        {/* Social flags */}
+        {hasSocialFlags && (
+          <ThemedView style={styles.card}>
+            <ThemedText style={styles.cardLabel}>Socialt</ThemedText>
+            <View style={styles.chipsRow}>
+              {visibleSocialFlags.map(flag => (
+                <View key={flag.value} style={[styles.socialChip, { backgroundColor: isDark ? '#374151' : '#F3F4F6' }]}>
+                  <MaterialIcons name={flag.icon as React.ComponentProps<typeof MaterialIcons>['name']} size={14} color={Colors.warmGray400} />
+                  <ThemedText style={styles.chipText}>{flag.label}</ThemedText>
+                </View>
+              ))}
+            </View>
           </ThemedView>
         )}
 
@@ -274,6 +325,23 @@ const createStyles = (isDark: boolean) => {
   },
   chipText: {
     fontSize: 13,
+  },
+  identityRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: 8,
+  },
+  identityText: {
+    fontSize: 15,
+  },
+  socialChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
   },
   });
 };

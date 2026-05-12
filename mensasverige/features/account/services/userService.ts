@@ -1,6 +1,6 @@
 import apiClient from '../../common/services/apiClient';
 import { UserUpdate } from '../../../api_schema/types';
-import { AuthResponse, User } from '../../../api_schema/types';
+import { AuthResponse, User, ProfileOptionCategory } from '../../../api_schema/types';
 import { attemptLoginWithStoredCredentials, storeAndValidateAuthResponse } from '../../common/services/authService';
 import { InterestCategory } from '../constants/interests';
 
@@ -134,6 +134,19 @@ export const getInterestCategories = async (): Promise<InterestCategory[]> => {
     const response = await apiClient.get('/interests');
     _interestCategoriesCache = response.data;
     return _interestCategoriesCache!;
+  } catch {
+    return [];
+  }
+};
+
+let _profileOptionCategoriesCache: ProfileOptionCategory[] | null = null;
+
+export const getProfileOptions = async (): Promise<ProfileOptionCategory[]> => {
+  if (_profileOptionCategoriesCache) return _profileOptionCategoriesCache;
+  try {
+    const response = await apiClient.get('/profile-options');
+    _profileOptionCategoriesCache = response.data;
+    return _profileOptionCategoriesCache!;
   } catch {
     return [];
   }
