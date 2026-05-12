@@ -5,6 +5,11 @@ import {
   updateUserLocation,
 } from '../services/locationService';
 import { UserLocation } from '../../../api_schema/types';
+import {
+  startBackgroundLocationTask,
+  stopBackgroundLocationTask,
+} from '../tasks/backgroundLocationTask';
+import { requestBackgroundLocationPermission } from '../functions/requestLocationPermission';
 
 const useUserLocation = () => {
   const {user, getLocationUpdateInterval, hasLocationPermission, setUserLocation, requiredUpdateInfo} =
@@ -83,6 +88,41 @@ const useUserLocation = () => {
     };
   }, [getLocationUpdateInterval, hasLocationPermission, user?.settings.show_location, user, requiredUpdateInfo]);
 
+  // Background location task lifecycle
+  useEffect(() => {
+    const shouldRunBackground =
+      !!user &&
+      !requiredUpdateInfo &&
+      hasLocationPermission &&
+      user.settings.show_location !== 'NO_ONE' &&
+      user.settings.background_location_updates === true;
+
+    if (!shouldRunBackground) {
+      stopBackgroundLocationTask().catch(() => {});
+      return;
+    }
+
+    const activate = async () => {
+      const { status } = await Location.getBackgroundPermissionsAsync();
+      let hasBackground = status === 'granted';
+      if (!hasBackground) {
+        hasBackground = await requestBackgroundLocationPermission();
+      }
+      if (hasBackground) {
+        startBackgroundLocationTask(getLocationUpdateInterval()).catch(() => {});
+      }
+    };
+
+    activate();
+  }, [
+    user,
+    requiredUpdateInfo,
+    hasLocationPermission,
+    user?.settings?.show_location,
+    user?.settings?.background_location_updates,
+    getLocationUpdateInterval,
+  ]);
+
   // Cleanup on unmount
   useEffect(() => {
     return () => {
@@ -91,6 +131,7 @@ const useUserLocation = () => {
         clearInterval(intervalRef.current);
         intervalRef.current = null;
       }
+      stopBackgroundLocationTask().catch(() => {});
     };
   }, []);
 };

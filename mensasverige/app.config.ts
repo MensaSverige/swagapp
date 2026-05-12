@@ -9,7 +9,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
   const baseConfig: ExpoConfig = {
     name: "mensasverige",
     slug: "mensasverige",
-    version: "2.1.4",
+    version: "2.1.5",
     runtimeVersion: {
       policy: "appVersion",
     },
@@ -28,13 +28,13 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       infoPlist: {
         ITSAppUsesNonExemptEncryption: false,
         NSLocationAlwaysAndWhenInUseUsageDescription:
-          "Din platsinformation används för att visa din position för andra användare. Varje platsuppdatering lagras i upp till en timme.",
+          "Din platsinformation används för att visa din position för andra användare. Varje platsuppdatering lagras i upp till 24 timmar.",
         NSLocationAlwaysUsageDescription:
-          "Din platsinformation används för att visa din position för andra användare. Varje platsuppdatering lagras i upp till en timme.",
+          "Din platsinformation används för att visa din position för andra användare. Varje platsuppdatering lagras i upp till 24 timmar.",
         NSLocationUsageDescription:
-          "Din platsinformation används för att visa din position för andra användare. Varje platsuppdatering lagras i upp till en timme.",
+          "Din platsinformation används för att visa din position för andra användare. Varje platsuppdatering lagras i upp till 24 timmar.",
         NSLocationWhenInUseUsageDescription:
-          "Din platsinformation används för att visa din position för andra användare. Varje platsuppdatering lagras i upp till en timme.",
+          "Din platsinformation används för att visa din position för andra användare. Varje platsuppdatering lagras i upp till 24 timmar.",
         NSPhotoLibraryUsageDescription:
           "Bildgalleriet används för att visa dig bilder så du kan välja profilbild för uppladdning. Bara den bild du väljer används av appen.",
       },
@@ -46,6 +46,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       //   backgroundColor: "#ffffff"
       // },
       package: "se.mensasverige",
+      permissions: ["ACCESS_BACKGROUND_LOCATION"],
     },
     web: {
       bundler: "metro",
@@ -54,6 +55,16 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     },
     plugins: [
       "expo-router",
+      [
+        "expo-location",
+        {
+          locationAlwaysAndWhenInUsePermission:
+            "Din platsinformation används för att visa din position för andra användare. Varje platsuppdatering lagras i upp till 24 timmar.",
+          isAndroidBackgroundLocationEnabled: true,
+          isAndroidForegroundServiceEnabled: true,
+        },
+      ],
+      "expo-task-manager",
       [
         "expo-splash-screen",
         {
