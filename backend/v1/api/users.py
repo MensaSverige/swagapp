@@ -63,6 +63,24 @@ async def get_users(show_location: bool = None,
         if user.get("userId") != current_user.get("userId") and not _viewer_can_see(
                 settings.get("show_birthdate", PrivacySetting.MEMBERS_ONLY.value), current_user, "show_birthdate"):
             user["birthdate"] = None
+        if user.get("userId") != current_user.get("userId") and not _viewer_can_see(
+                settings.get("show_gender", PrivacySetting.NO_ONE.value), current_user, "show_gender"):
+            user["gender"] = None
+        if user.get("userId") != current_user.get("userId") and not _viewer_can_see(
+                settings.get("show_gender_identity", PrivacySetting.NO_ONE.value), current_user, "show_gender_identity"):
+            user["gender_identity"] = None
+        if user.get("userId") != current_user.get("userId") and not _viewer_can_see(
+                settings.get("show_sexuality", PrivacySetting.NO_ONE.value), current_user, "show_sexuality"):
+            user["sexuality"] = None
+        if user.get("userId") != current_user.get("userId") and not _viewer_can_see(
+                settings.get("show_relationship_style", PrivacySetting.NO_ONE.value), current_user, "show_relationship_style"):
+            user["relationship_style"] = None
+        if user.get("userId") != current_user.get("userId") and not _viewer_can_see(
+                settings.get("show_relationship_status", PrivacySetting.NO_ONE.value), current_user, "show_relationship_status"):
+            user["relationship_status"] = None
+        if user.get("userId") != current_user.get("userId") and not _viewer_can_see(
+                settings.get("show_social_flags", PrivacySetting.MEMBERS_ONLY.value), current_user, "show_social_flags"):
+            user["social_flags"] = []
         if user.get("userId") == current_user.get("userId") or _viewer_can_see(
                 settings.get("show_profile", PrivacySetting.MEMBERS_ONLY.value), current_user, "show_profile"):
             result.append(user)
@@ -104,6 +122,24 @@ async def get_user_by_id(user_id: int,
     if user.get("userId") != current_user.get("userId") and not _viewer_can_see(
             settings.get("show_birthdate", PrivacySetting.MEMBERS_ONLY.value), current_user, "show_birthdate"):
         user["birthdate"] = None
+    if user.get("userId") != current_user.get("userId") and not _viewer_can_see(
+            settings.get("show_gender", PrivacySetting.NO_ONE.value), current_user, "show_gender"):
+        user["gender"] = None
+    if user.get("userId") != current_user.get("userId") and not _viewer_can_see(
+            settings.get("show_gender_identity", PrivacySetting.NO_ONE.value), current_user, "show_gender_identity"):
+        user["gender_identity"] = None
+    if user.get("userId") != current_user.get("userId") and not _viewer_can_see(
+            settings.get("show_sexuality", PrivacySetting.NO_ONE.value), current_user, "show_sexuality"):
+        user["sexuality"] = None
+    if user.get("userId") != current_user.get("userId") and not _viewer_can_see(
+            settings.get("show_relationship_style", PrivacySetting.NO_ONE.value), current_user, "show_relationship_style"):
+        user["relationship_style"] = None
+    if user.get("userId") != current_user.get("userId") and not _viewer_can_see(
+            settings.get("show_relationship_status", PrivacySetting.NO_ONE.value), current_user, "show_relationship_status"):
+        user["relationship_status"] = None
+    if user.get("userId") != current_user.get("userId") and not _viewer_can_see(
+            settings.get("show_social_flags", PrivacySetting.MEMBERS_ONLY.value), current_user, "show_social_flags"):
+        user["social_flags"] = []
 
     return user
 

@@ -844,6 +844,26 @@ export interface components {
             /** Items */
             items: components["schemas"]["UserInterest"][];
         };
+        /** ProfileOptionItem */
+        ProfileOptionItem: {
+            /** Value */
+            value: string;
+            /** Label */
+            label: string;
+            /** Icon */
+            icon: string;
+        };
+        /** ProfileOptionCategory */
+        ProfileOptionCategory: {
+            /** Key */
+            key: string;
+            /** Label */
+            label: string;
+            /** Multi */
+            multi: boolean;
+            /** Items */
+            items: components["schemas"]["ProfileOptionItem"][];
+        };
         /** Location */
         Location: {
             /**
@@ -986,6 +1006,36 @@ export interface components {
              * @example 1989-11-15
              */
             birthdate?: string | null;
+            /**
+             * Gender
+             * @example male
+             */
+            gender?: string | null;
+            /**
+             * Gender Identity
+             * @example transgender
+             */
+            gender_identity?: string | null;
+            /**
+             * Sexuality
+             * @example straight
+             */
+            sexuality?: string | null;
+            /**
+             * Relationship Style
+             * @example monogamous
+             */
+            relationship_style?: string | null;
+            /**
+             * Relationship Status
+             * @example has_partner
+             */
+            relationship_status?: string | null;
+            /**
+             * Social Flags
+             * @example []
+             */
+            social_flags?: string[];
         };
         /**
          * UserInterest
@@ -1061,6 +1111,36 @@ export interface components {
              * @example MEMBERS_ONLY
              */
             show_birthdate: components["schemas"]["PrivacySetting"];
+            /**
+             * @default NO_ONE
+             * @example MEMBERS_ONLY
+             */
+            show_gender: components["schemas"]["PrivacySetting"];
+            /**
+             * @default NO_ONE
+             * @example MEMBERS_ONLY
+             */
+            show_gender_identity: components["schemas"]["PrivacySetting"];
+            /**
+             * @default NO_ONE
+             * @example MEMBERS_ONLY
+             */
+            show_sexuality: components["schemas"]["PrivacySetting"];
+            /**
+             * @default NO_ONE
+             * @example MEMBERS_ONLY
+             */
+            show_relationship_style: components["schemas"]["PrivacySetting"];
+            /**
+             * @default NO_ONE
+             * @example MEMBERS_ONLY
+             */
+            show_relationship_status: components["schemas"]["PrivacySetting"];
+            /**
+             * @default MEMBERS_ONLY
+             * @example MEMBERS_ONLY
+             */
+            show_social_flags: components["schemas"]["PrivacySetting"];
         };
         /** UserUpdate */
         UserUpdate: {
@@ -1092,6 +1172,36 @@ export interface components {
              * @example 1989-11-15
              */
             birthdate?: string | null;
+            /**
+             * Gender
+             * @example male
+             */
+            gender?: string | null;
+            /**
+             * Gender Identity
+             * @example transgender
+             */
+            gender_identity?: string | null;
+            /**
+             * Sexuality
+             * @example straight
+             */
+            sexuality?: string | null;
+            /**
+             * Relationship Style
+             * @example monogamous
+             */
+            relationship_style?: string | null;
+            /**
+             * Relationship Status
+             * @example has_partner
+             */
+            relationship_status?: string | null;
+            /**
+             * Social Flags
+             * @example []
+             */
+            social_flags?: string[] | null;
         };
         /** ValidationError */
         ValidationError: {

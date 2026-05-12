@@ -123,6 +123,12 @@ class UserSettings(BaseModel):
     show_interests: PrivacySetting = Field(default=PrivacySetting.MEMBERS_ONLY, example=PrivacySetting.MEMBERS_ONLY)
     show_hometown: PrivacySetting = Field(default=PrivacySetting.MEMBERS_ONLY, example=PrivacySetting.MEMBERS_ONLY)
     show_birthdate: PrivacySetting = Field(default=PrivacySetting.MEMBERS_ONLY, example=PrivacySetting.MEMBERS_ONLY)
+    show_gender: PrivacySetting = Field(default=PrivacySetting.NO_ONE, example=PrivacySetting.MEMBERS_ONLY)
+    show_gender_identity: PrivacySetting = Field(default=PrivacySetting.NO_ONE, example=PrivacySetting.MEMBERS_ONLY)
+    show_sexuality: PrivacySetting = Field(default=PrivacySetting.NO_ONE, example=PrivacySetting.MEMBERS_ONLY)
+    show_relationship_style: PrivacySetting = Field(default=PrivacySetting.NO_ONE, example=PrivacySetting.MEMBERS_ONLY)
+    show_relationship_status: PrivacySetting = Field(default=PrivacySetting.NO_ONE, example=PrivacySetting.MEMBERS_ONLY)
+    show_social_flags: PrivacySetting = Field(default=PrivacySetting.MEMBERS_ONLY, example=PrivacySetting.MEMBERS_ONLY)
 
     @field_validator("show_location", mode="before")
     @classmethod
@@ -170,6 +176,12 @@ class User(BaseModel):
     interests: List[UserInterest] = Field(default_factory=list, example=[])
     hometown: Optional[str] = Field(None, example="Stockholm")
     birthdate: Optional[str] = Field(None, example="1989-11-15")
+    gender: Optional[str] = Field(None, example="male")
+    gender_identity: Optional[str] = Field(None, example="transgender")
+    sexuality: Optional[str] = Field(None, example="straight")
+    relationship_style: Optional[str] = Field(None, example="monogamous")
+    relationship_status: Optional[str] = Field(None, example="has_partner")
+    social_flags: List[str] = Field(default_factory=list, example=[])
 
 
 class UserUpdate(BaseModel):
@@ -184,3 +196,9 @@ class UserUpdate(BaseModel):
     interests: Optional[List[UserInterest]] = Field(None, example=[])
     hometown: Optional[str] = Field(None, example="Stockholm")
     birthdate: Optional[str] = Field(None, example="1989-11-15")
+    gender: Optional[str] = Field(None, example="male")
+    gender_identity: Optional[str] = Field(None, example="transgender")
+    sexuality: Optional[str] = Field(None, example="straight")
+    relationship_style: Optional[str] = Field(None, example="monogamous")
+    relationship_status: Optional[str] = Field(None, example="has_partner")
+    social_flags: Optional[List[str]] = Field(None, example=[])
