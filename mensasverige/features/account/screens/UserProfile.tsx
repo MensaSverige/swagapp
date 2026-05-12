@@ -285,35 +285,6 @@ const UserProfile: React.FC = () => {
                     ))}
                 </ThemedView>
 
-                {/* Social flags */}
-                <ThemedView style={styles.card}>
-                    <ThemedText style={styles.cardLabel}>Socialt</ThemedText>
-                    <View style={styles.socialChipsRow}>
-                        {getCategoryItems('social_flags').map(opt => {
-                            const selected = socialFlags.includes(opt.value);
-                            return (
-                                <TouchableOpacity
-                                    key={opt.value}
-                                    style={[
-                                        styles.socialChip,
-                                        selected && styles.socialChipSelected,
-                                    ]}
-                                    onPress={() => toggleSocialFlag(opt.value)}
-                                    activeOpacity={0.7}>
-                                    <MaterialIcons
-                                        name={opt.icon as React.ComponentProps<typeof MaterialIcons>['name']}
-                                        size={16}
-                                        color={selected ? Colors.primary500 : Colors.coolGray500}
-                                    />
-                                    <ThemedText style={[styles.socialChipText, selected && styles.socialChipTextSelected]}>
-                                        {opt.label}
-                                    </ThemedText>
-                                </TouchableOpacity>
-                            );
-                        })}
-                    </View>
-                </ThemedView>
-
                 {/* Settings navigation */}
                 <ThemedView style={styles.card}>
                     <ThemedText style={styles.cardLabel}>Inställningar</ThemedText>

@@ -175,6 +175,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/profile-options": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Profile Option Categories */
+        get: operations["get_profile_option_categories_v1_profile_options_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/external_root": {
         parameters: {
             query?: never;
@@ -844,26 +861,6 @@ export interface components {
             /** Items */
             items: components["schemas"]["UserInterest"][];
         };
-        /** ProfileOptionItem */
-        ProfileOptionItem: {
-            /** Value */
-            value: string;
-            /** Label */
-            label: string;
-            /** Icon */
-            icon: string;
-        };
-        /** ProfileOptionCategory */
-        ProfileOptionCategory: {
-            /** Key */
-            key: string;
-            /** Label */
-            label: string;
-            /** Multi */
-            multi: boolean;
-            /** Items */
-            items: components["schemas"]["ProfileOptionItem"][];
-        };
         /** Location */
         Location: {
             /**
@@ -897,6 +894,26 @@ export interface components {
          * @enum {string}
          */
         PrivacySetting: "NO_ONE" | "MEMBERS_ONLY" | "MEMBERS_MUTUAL" | "EVERYONE_MUTUAL" | "EVERYONE";
+        /** ProfileOptionCategory */
+        ProfileOptionCategory: {
+            /** Key */
+            key: string;
+            /** Label */
+            label: string;
+            /** Multi */
+            multi: boolean;
+            /** Items */
+            items: components["schemas"]["ProfileOptionItem"][];
+        };
+        /** ProfileOptionItem */
+        ProfileOptionItem: {
+            /** Value */
+            value: string;
+            /** Label */
+            label: string;
+            /** Icon */
+            icon: string;
+        };
         /** RefreshTokenRequest */
         RefreshTokenRequest: {
             /** Refresh Token */
@@ -1012,11 +1029,6 @@ export interface components {
              */
             gender?: string | null;
             /**
-             * Gender Identity
-             * @example transgender
-             */
-            gender_identity?: string | null;
-            /**
              * Sexuality
              * @example straight
              */
@@ -1120,11 +1132,6 @@ export interface components {
              * @default NO_ONE
              * @example MEMBERS_ONLY
              */
-            show_gender_identity: components["schemas"]["PrivacySetting"];
-            /**
-             * @default NO_ONE
-             * @example MEMBERS_ONLY
-             */
             show_sexuality: components["schemas"]["PrivacySetting"];
             /**
              * @default NO_ONE
@@ -1177,11 +1184,6 @@ export interface components {
              * @example male
              */
             gender?: string | null;
-            /**
-             * Gender Identity
-             * @example transgender
-             */
-            gender_identity?: string | null;
             /**
              * Sexuality
              * @example straight
@@ -1541,6 +1543,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["InterestCategory"][];
+                };
+            };
+        };
+    };
+    get_profile_option_categories_v1_profile_options_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfileOptionCategory"][];
                 };
             };
         };

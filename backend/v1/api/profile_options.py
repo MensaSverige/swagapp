@@ -26,26 +26,26 @@ PROFILE_OPTION_CATEGORIES: List[ProfileOptionCategory] = [
         ProfileOptionItem(value='other',  label='Annat',  icon='man-4'),
     ]),
     ProfileOptionCategory(key='sexuality', label='Läggning', multi=False, items=[
-        ProfileOptionItem(value='straight',   label='Straight',                   icon='highlight'),
-        ProfileOptionItem(value='gay',        label='Gay',                        icon='error-med'),
-        ProfileOptionItem(value='bi_pan',     label='Bisexuell/Pansexuell',       icon='change-circle'),
-        ProfileOptionItem(value='asexual',    label='Asexuell',                   icon='radio-button-unchecked'),
+        ProfileOptionItem(value='hetero',   label='Heterosexuell',                   icon='straight'),
+        ProfileOptionItem(value='homo',        label='Homosexuell',                  icon='turn-sharp-right'),
+        ProfileOptionItem(value='bi_pan',     label='Bisexuell/Pansexuell',       icon='auto-renew'),
+        ProfileOptionItem(value='asexual',    label='Asexuell',                   icon='panorama-fish-eye'),
     ]),
     ProfileOptionCategory(key='relationship_style', label='Relationsform', multi=False, items=[
         ProfileOptionItem(value='monogamous', label='Monogam',          icon='keyboard-command-key'),
-        ProfileOptionItem(value='poly',        label='Flersam', icon='all-inclusive'),
+        ProfileOptionItem(value='poly',        label='Flersam', icon='diversity-1'),
     ]),
     ProfileOptionCategory(key='relationship_status', label='Relationsstatus', multi=False, items=[
         ProfileOptionItem(value='single',         label='Singel',               icon='favorite-border'),
         ProfileOptionItem(value='has_partner',         label='Har partner',       icon='favorite'),
     ]),
-    ProfileOptionCategory(key='social_flags', label='Socialt', multi=True, items=[
-        ProfileOptionItem(value='ask_if_new',     label='Fråga mig om du är ny',            icon='live-help'),
-        ProfileOptionItem(value='no_hugs',        label='Krama mig inte',                   icon='do-not-touch'),
-        ProfileOptionItem(value='personal_space', label='Respektera mitt personliga space', icon='security'),
-        ProfileOptionItem(value='talk_to_me',     label='Prata med mig',                    icon='chat'),
-        ProfileOptionItem(value='no_interact',    label='Interagera inte med mig',          icon='do-not-disturb-on'),
-    ]),
+    # ProfileOptionCategory(key='social_flags', label='Socialt', multi=True, items=[
+    #     ProfileOptionItem(value='ask_if_new',     label='Fråga mig om du är ny',            icon='live-help'),
+    #     ProfileOptionItem(value='no_hugs',        label='Krama mig inte',                   icon='do-not-touch'),
+    #     ProfileOptionItem(value='personal_space', label='Respektera mitt personliga space', icon='security'),
+    #     ProfileOptionItem(value='talk_to_me',     label='Prata med mig',                    icon='chat'),
+    #     ProfileOptionItem(value='no_interact',    label='Interagera inte med mig',          icon='do-not-disturb-on'),
+    # ]),
 ]
 
 
