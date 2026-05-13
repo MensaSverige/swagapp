@@ -18,6 +18,7 @@ import { ThemedButton } from '@/components/ThemedButton';
 import { ThemedInput } from '@/components/ThemedInput';
 import { Colors } from '@/constants/Colors';
 import { useToast } from '@/hooks/useToast';
+import FeedbackBody from '../components/FeedbackBody';
 import {
   listFeedback,
   listComments,
@@ -145,7 +146,9 @@ const FeedbackDetail: React.FC = () => {
           </View>
 
           {!!item.body && (
-            <ThemedText style={styles.body}>{item.body}</ThemedText>
+            <View style={styles.bodyWrap}>
+              <FeedbackBody body={item.body} textStyle={styles.body} />
+            </View>
           )}
 
           <View style={styles.voteBar}>
@@ -222,7 +225,9 @@ const FeedbackDetail: React.FC = () => {
                       {new Date(c.created_at).toLocaleDateString('sv-SE')}
                     </ThemedText>
                   </View>
-                  <ThemedText style={styles.commentBody}>{c.body}</ThemedText>
+                  <View style={styles.commentBodyWrap}>
+                    <FeedbackBody body={c.body} textStyle={styles.commentBody} />
+                  </View>
                 </View>
               ))}
             </View>
@@ -295,11 +300,12 @@ const createStyles = (isDark: boolean) =>
       borderRadius: 6,
     },
     devBadgeText: { color: Colors.white, fontSize: 10, fontWeight: '600' },
+    bodyWrap: { marginTop: 12 },
     body: {
-      marginTop: 12,
       fontSize: 14,
       lineHeight: 21,
     },
+    commentBodyWrap: { marginTop: 6 },
     voteBar: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -332,7 +338,6 @@ const createStyles = (isDark: boolean) =>
       gap: 6,
     },
     commentBody: {
-      marginTop: 6,
       fontSize: 14,
       lineHeight: 20,
     },

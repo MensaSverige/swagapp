@@ -115,9 +115,11 @@ const Feedback: React.FC = () => {
   const handleSubmit = () => {
     if (!title.trim() || !body.trim() || submitting) return;
     setSubmitting(true);
-    const attachmentMd = attachments.map(url => `![](${url})`).join('\n');
-    const finalBody = attachmentMd
-      ? `${body.trim()}\n\n${attachmentMd}`
+    const attachmentHtml = attachments
+      .map(url => `<img src="${url}" width="400" />`)
+      .join('\n');
+    const finalBody = attachmentHtml
+      ? `${body.trim()}\n\n${attachmentHtml}`
       : body.trim();
     createFeedback({ title: title.trim(), body: finalBody, kind })
       .then(() => {
