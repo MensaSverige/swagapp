@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import {
   ScrollView,
   StyleSheet,
-  TextInput,
   TouchableOpacity,
   View,
   ActivityIndicator,
@@ -15,6 +14,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { ThemedView } from '@/components/ThemedView';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedButton } from '@/components/ThemedButton';
+import { ThemedInput } from '@/components/ThemedInput';
 import Dropdown, { DropdownOption } from '../../common/components/inputs/Dropdown';
 import { Colors } from '@/constants/Colors';
 import { useToast } from '@/hooks/useToast';
@@ -100,22 +100,19 @@ const Feedback: React.FC = () => {
           />
 
           <ThemedText style={styles.fieldLabel}>Rubrik</ThemedText>
-          <TextInput
-            style={styles.input}
+          <ThemedInput
             value={title}
             onChangeText={setTitle}
             placeholder="Kort beskrivning"
-            placeholderTextColor={Colors.coolGray500}
             maxLength={200}
           />
 
           <ThemedText style={styles.fieldLabel}>Beskrivning</ThemedText>
-          <TextInput
-            style={[styles.input, styles.bodyInput]}
+          <ThemedInput
+            style={styles.bodyInput}
             value={body}
             onChangeText={setBody}
             placeholder="Vad vill du berätta?"
-            placeholderTextColor={Colors.coolGray500}
             multiline
             textAlignVertical="top"
           />
@@ -206,18 +203,8 @@ const createStyles = (isDark: boolean) =>
       marginBottom: 6,
     },
     dropdown: { marginTop: 0 },
-    input: {
-      borderWidth: 1,
-      borderColor: isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.12)',
-      borderRadius: 10,
-      paddingHorizontal: 12,
-      paddingVertical: 10,
-      fontSize: 15,
-      color: isDark ? Colors.white : Colors.dark.text,
-      backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.02)',
-    },
     bodyInput: {
-      minHeight: 120,
+      height: 140,
       paddingTop: 12,
     },
     submit: { marginTop: 18 },
