@@ -1,15 +1,15 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   ScrollView,
   StyleSheet,
   TouchableOpacity,
   View,
   ActivityIndicator,
-  Linking,
   useColorScheme,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
+import { router } from 'expo-router';
 
 import { ThemedView } from '@/components/ThemedView';
 import { ThemedText } from '@/components/ThemedText';
@@ -21,6 +21,7 @@ import { useToast } from '@/hooks/useToast';
 import {
   createFeedback,
   listFeedback,
+  voteFeedback,
   FeedbackItem,
   FeedbackKind,
 } from '../services/feedbackService';
@@ -41,22 +42,23 @@ const Feedback: React.FC = () => {
   const [body, setBody] = useState('');
   const [kind, setKind] = useState<FeedbackKind>('feedback');
   const [submitting, setSubmitting] = useState(false);
-  const [loadingHistory, setLoadingHistory] = useState(true);
-  const [history, setHistory] = useState<FeedbackItem[]>([]);
+  const [loadingList, setLoadingList] = useState(true);
+  const [items, setItems] = useState<FeedbackItem[]>([]);
+  const [voting, setVoting] = useState<number | null>(null);
 
   const styles = createStyles(colorScheme === 'dark');
 
-  const refreshHistory = () => {
-    setLoadingHistory(true);
-    listFeedback()
-      .then(items => setHistory(items))
-      .catch(() => setHistory([]))
-      .finally(() => setLoadingHistory(false));
-  };
+  const refresh = useCallback(() => {
+    setLoadingList(true);
+    listFeedback('all')
+      .then(setItems)
+      .catch(() => setItems([]))
+      .finally(() => setLoadingList(false));
+  }, []);
 
   useEffect(() => {
-    refreshHistory();
-  }, []);
+    refresh();
+  }, [refresh]);
 
   const handleSubmit = () => {
     if (!title.trim() || !body.trim() || submitting) return;
@@ -67,10 +69,24 @@ const Feedback: React.FC = () => {
         setTitle('');
         setBody('');
         setKind('feedback');
-        refreshHistory();
+        refresh();
       })
       .catch(() => showToast('Kunde inte skicka. Försök igen.', 'error'))
       .finally(() => setSubmitting(false));
+  };
+
+  const handleVote = (item: FeedbackItem, value: -1 | 1) => {
+    if (item.mine || voting === item.number) return;
+    const nextValue: -1 | 0 | 1 = item.votes.my_vote === value ? 0 : value;
+    setVoting(item.number);
+    voteFeedback(item.number, nextValue)
+      .then(votes => {
+        setItems(prev =>
+          prev.map(i => (i.number === item.number ? { ...i, votes } : i)),
+        );
+      })
+      .catch(() => showToast('Rösten kunde inte sparas.', 'error'))
+      .finally(() => setVoting(null));
   };
 
   return (
@@ -86,8 +102,8 @@ const Feedback: React.FC = () => {
             Nytt inlägg
           </ThemedText>
           <ThemedText style={styles.cardDescription}>
-            Skicka en idé, en bugg eller annan feedback. Inläggen blir
-            ärenden på vår GitHub och är synliga publikt.
+            Skicka en idé, en bugg eller annan feedback. Inläggen blir ärenden
+            på vår GitHub och syns publikt.
           </ThemedText>
 
           <ThemedText style={styles.fieldLabel}>Typ</ThemedText>
@@ -96,7 +112,6 @@ const Feedback: React.FC = () => {
             selectedValue={kind}
             onValueChange={v => setKind(v as FeedbackKind)}
             placeholder="Välj typ"
-            style={styles.dropdown}
           />
 
           <ThemedText style={styles.fieldLabel}>Rubrik</ThemedText>
@@ -128,48 +143,114 @@ const Feedback: React.FC = () => {
         </ThemedView>
 
         <ThemedView style={styles.card}>
-          <ThemedText type="defaultSemiBold" style={styles.cardTitle}>
-            Mina inlägg
-          </ThemedText>
+          <View style={styles.listHeader}>
+            <ThemedText type="defaultSemiBold" style={styles.cardTitle}>
+              Alla inlägg
+            </ThemedText>
+            <TouchableOpacity onPress={refresh} disabled={loadingList}>
+              <MaterialIcons
+                name="refresh"
+                size={20}
+                color={Colors.coolGray500}
+              />
+            </TouchableOpacity>
+          </View>
           <ThemedText style={styles.cardDescription}>
-            Här ser du dina tidigare inlägg och deras status.
+            Rösta på idéer från andra och följ vad utvecklarna gör med dem.
           </ThemedText>
 
-          {loadingHistory ? (
+          {loadingList ? (
             <ActivityIndicator style={styles.loader} color={Colors.primary500} />
-          ) : history.length === 0 ? (
-            <ThemedText style={styles.empty}>
-              Du har inga inlägg ännu.
-            </ThemedText>
+          ) : items.length === 0 ? (
+            <ThemedText style={styles.empty}>Inga inlägg ännu.</ThemedText>
           ) : (
-            <View style={styles.historyList}>
-              {history.map((item, idx) => (
-                <TouchableOpacity
+            <View style={styles.list}>
+              {items.map((item, idx) => (
+                <View
                   key={item.number}
-                  style={[styles.historyRow, idx > 0 && styles.historyRowBorder]}
-                  onPress={() => Linking.openURL(item.html_url)}
-                  activeOpacity={0.7}>
-                  <View style={styles.historyTitleRow}>
-                    <ThemedText type="defaultSemiBold" style={styles.historyTitle} numberOfLines={1}>
-                      {item.title}
+                  style={[styles.row, idx > 0 && styles.rowBorder]}>
+                  <View style={styles.voteCol}>
+                    <TouchableOpacity
+                      hitSlop={8}
+                      disabled={item.mine || voting === item.number}
+                      onPress={() => handleVote(item, 1)}>
+                      <MaterialIcons
+                        name="keyboard-arrow-up"
+                        size={26}
+                        color={
+                          item.mine
+                            ? Colors.coolGray300
+                            : item.votes.my_vote === 1
+                              ? Colors.primary500
+                              : Colors.coolGray500
+                        }
+                      />
+                    </TouchableOpacity>
+                    <ThemedText type="defaultSemiBold" style={styles.voteScore}>
+                      {item.votes.score}
                     </ThemedText>
-                    <View
-                      style={[
-                        styles.statePill,
-                        item.state === 'closed' ? styles.statePillClosed : styles.statePillOpen,
-                      ]}>
-                      <ThemedText style={styles.statePillText}>
-                        {item.state === 'closed' ? 'Stängd' : 'Öppen'}
+                    <TouchableOpacity
+                      hitSlop={8}
+                      disabled={item.mine || voting === item.number}
+                      onPress={() => handleVote(item, -1)}>
+                      <MaterialIcons
+                        name="keyboard-arrow-down"
+                        size={26}
+                        color={
+                          item.mine
+                            ? Colors.coolGray300
+                            : item.votes.my_vote === -1
+                              ? '#EF4444'
+                              : Colors.coolGray500
+                        }
+                      />
+                    </TouchableOpacity>
+                  </View>
+
+                  <TouchableOpacity
+                    style={styles.rowMain}
+                    activeOpacity={0.7}
+                    onPress={() =>
+                      router.push(`/(tabs)/(profile)/feedback/${item.number}`)
+                    }>
+                    <View style={styles.titleRow}>
+                      <ThemedText type="defaultSemiBold" style={styles.title} numberOfLines={2}>
+                        {item.title}
                       </ThemedText>
+                      <View
+                        style={[
+                          styles.statePill,
+                          item.state === 'closed' ? styles.statePillClosed : styles.statePillOpen,
+                        ]}>
+                        <ThemedText style={styles.statePillText}>
+                          {item.state === 'closed' ? 'Stängd' : 'Öppen'}
+                        </ThemedText>
+                      </View>
                     </View>
-                  </View>
-                  <View style={styles.historyMeta}>
-                    <ThemedText style={styles.historyMetaText}>
-                      #{item.number} · {new Date(item.created_at).toLocaleDateString('sv-SE')}
-                    </ThemedText>
-                    <MaterialIcons name="open-in-new" size={14} color={Colors.coolGray500} />
-                  </View>
-                </TouchableOpacity>
+                    <View style={styles.metaRow}>
+                      {item.mine ? (
+                        <View style={styles.mineBadge}>
+                          <ThemedText style={styles.mineBadgeText}>Du</ThemedText>
+                        </View>
+                      ) : (
+                        <ThemedText style={styles.metaText}>{item.author.label}</ThemedText>
+                      )}
+                      <ThemedText style={styles.metaDot}>·</ThemedText>
+                      <ThemedText style={styles.metaText}>#{item.number}</ThemedText>
+                      <ThemedText style={styles.metaDot}>·</ThemedText>
+                      <ThemedText style={styles.metaText}>
+                        {new Date(item.created_at).toLocaleDateString('sv-SE')}
+                      </ThemedText>
+                      {item.comments > 0 && (
+                        <>
+                          <ThemedText style={styles.metaDot}>·</ThemedText>
+                          <MaterialIcons name="chat-bubble-outline" size={12} color={Colors.coolGray500} />
+                          <ThemedText style={styles.metaText}>{item.comments}</ThemedText>
+                        </>
+                      )}
+                    </View>
+                  </TouchableOpacity>
+                </View>
               ))}
             </View>
           )}
@@ -202,40 +283,67 @@ const createStyles = (isDark: boolean) =>
       marginTop: 14,
       marginBottom: 6,
     },
-    dropdown: { marginTop: 0 },
     bodyInput: {
       height: 140,
       paddingTop: 12,
     },
     submit: { marginTop: 18 },
+    listHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
     loader: { marginVertical: 16 },
     empty: {
       marginTop: 12,
       opacity: 0.6,
       fontSize: 13,
     },
-    historyList: { marginTop: 8 },
-    historyRow: {
+    list: { marginTop: 8 },
+    row: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
       paddingVertical: 12,
+      gap: 8,
     },
-    historyRowBorder: {
+    rowBorder: {
       borderTopWidth: StyleSheet.hairlineWidth,
       borderTopColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)',
     },
-    historyTitleRow: {
+    voteCol: {
+      alignItems: 'center',
+      minWidth: 36,
+      paddingTop: 2,
+    },
+    voteScore: {
+      fontSize: 13,
+    },
+    rowMain: { flex: 1 },
+    titleRow: {
       flexDirection: 'row',
       alignItems: 'center',
-      justifyContent: 'space-between',
       gap: 8,
     },
-    historyTitle: { flex: 1 },
-    historyMeta: {
+    title: { flex: 1, fontSize: 14, lineHeight: 19 },
+    metaRow: {
       flexDirection: 'row',
       alignItems: 'center',
-      justifyContent: 'space-between',
+      gap: 4,
       marginTop: 4,
     },
-    historyMetaText: { fontSize: 12, opacity: 0.55 },
+    metaText: { fontSize: 11, opacity: 0.6 },
+    metaDot: { fontSize: 11, opacity: 0.4 },
+    mineBadge: {
+      backgroundColor: Colors.primary500,
+      paddingHorizontal: 6,
+      paddingVertical: 1,
+      borderRadius: 6,
+    },
+    mineBadgeText: {
+      color: Colors.white,
+      fontSize: 10,
+      fontWeight: '600',
+    },
     statePill: {
       paddingHorizontal: 8,
       paddingVertical: 2,
@@ -243,7 +351,7 @@ const createStyles = (isDark: boolean) =>
     },
     statePillOpen: { backgroundColor: 'rgba(34, 197, 94, 0.15)' },
     statePillClosed: { backgroundColor: 'rgba(148, 163, 184, 0.18)' },
-    statePillText: { fontSize: 11, fontWeight: '600' },
+    statePillText: { fontSize: 10, fontWeight: '600' },
   });
 
 export default Feedback;

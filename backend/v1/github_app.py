@@ -124,3 +124,66 @@ def search_issues_by_hash(user_hash: str, per_page: int = 30) -> list[dict]:
             f"Failed to search issues: {res.status_code} {res.text}"
         )
     return res.json().get("items", [])
+
+
+def list_feedback_issues(per_page: int = 50) -> list[dict]:
+    res = requests.get(
+        f"{GITHUB_API}/repos/{GITHUB_REPO_OWNER}/{GITHUB_REPO_NAME}/issues",
+        params={
+            "labels": "feedback-from-app",
+            "state": "all",
+            "per_page": per_page,
+            "sort": "created",
+            "direction": "desc",
+        },
+        headers=_auth_headers(),
+        timeout=15,
+    )
+    if res.status_code != 200:
+        raise RuntimeError(
+            f"Failed to list feedback issues: {res.status_code} {res.text}"
+        )
+    return [
+        i for i in res.json() if "pull_request" not in i
+    ]
+
+
+def get_issue(issue_number: int) -> dict:
+    res = requests.get(
+        f"{GITHUB_API}/repos/{GITHUB_REPO_OWNER}/{GITHUB_REPO_NAME}/issues/{issue_number}",
+        headers=_auth_headers(),
+        timeout=15,
+    )
+    if res.status_code != 200:
+        raise RuntimeError(
+            f"Failed to fetch issue: {res.status_code} {res.text}"
+        )
+    return res.json()
+
+
+def list_issue_comments(issue_number: int) -> list[dict]:
+    res = requests.get(
+        f"{GITHUB_API}/repos/{GITHUB_REPO_OWNER}/{GITHUB_REPO_NAME}/issues/{issue_number}/comments",
+        params={"per_page": 100},
+        headers=_auth_headers(),
+        timeout=15,
+    )
+    if res.status_code != 200:
+        raise RuntimeError(
+            f"Failed to list comments: {res.status_code} {res.text}"
+        )
+    return res.json()
+
+
+def create_issue_comment(issue_number: int, body: str) -> dict:
+    res = requests.post(
+        f"{GITHUB_API}/repos/{GITHUB_REPO_OWNER}/{GITHUB_REPO_NAME}/issues/{issue_number}/comments",
+        json={"body": body},
+        headers=_auth_headers(),
+        timeout=15,
+    )
+    if res.status_code not in (200, 201):
+        raise RuntimeError(
+            f"Failed to create comment: {res.status_code} {res.text}"
+        )
+    return res.json()

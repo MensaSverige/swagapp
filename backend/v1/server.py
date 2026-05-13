@@ -75,6 +75,9 @@ def initialize_app():
     initialize_db()
     run_migrations()
 
+    from v1.db.feedback_votes import initialize_indexes as init_feedback_votes
+    init_feedback_votes()
+
     scheduler = create_scheduler()
     scheduler.start()
 
