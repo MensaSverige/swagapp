@@ -81,3 +81,5 @@ yarn-error.log
 /docs/frontend
 /docs/source/*.rst
 !/docs/source/index.rst
+
+.grit-cache

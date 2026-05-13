@@ -9,6 +9,7 @@ import { updateUser } from '../services/userService';
 import { Colors } from '@/constants/Colors';
 import { DEFAULT_SETTINGS } from '@/constants/DefaultSettings';
 import { useToast } from '@/hooks/useToast';
+import BackgroundLocationDisclosure from '../components/BackgroundLocationDisclosure';
 
 type AppForm = {
     location_update_interval_seconds: number;
@@ -40,6 +41,7 @@ const AppSettings: React.FC = () => {
 
     const [tempLocation, setTempLocation] = useState(form.location_update_interval_seconds);
     const [tempEvents, setTempEvents] = useState(form.events_refresh_interval_seconds);
+    const [disclosureVisible, setDisclosureVisible] = useState(false);
 
     useEffect(() => {
         if (!initializedRef.current) {
@@ -162,9 +164,13 @@ const AppSettings: React.FC = () => {
                         </View>
                         <Switch
                             value={form.background_location_updates}
-                            onValueChange={v =>
-                                setForm(f => ({ ...f, background_location_updates: v }))
-                            }
+                            onValueChange={v => {
+                                if (v) {
+                                    setDisclosureVisible(true);
+                                } else {
+                                    setForm(f => ({ ...f, background_location_updates: false }));
+                                }
+                            }}
                             trackColor={{ false: Colors.coolGray500, true: Colors.primary500 }}
                             thumbColor={
                                 form.background_location_updates ? Colors.white : Colors.coolGray100
@@ -174,6 +180,15 @@ const AppSettings: React.FC = () => {
                 </ThemedView>
 
             </ScrollView>
+
+            <BackgroundLocationDisclosure
+                visible={disclosureVisible}
+                onConfirm={() => {
+                    setDisclosureVisible(false);
+                    setForm(f => ({ ...f, background_location_updates: true }));
+                }}
+                onCancel={() => setDisclosureVisible(false)}
+            />
         </ThemedView>
     );
 };
