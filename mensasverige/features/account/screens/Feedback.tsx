@@ -122,12 +122,16 @@ const Feedback: React.FC = () => {
       ? `${body.trim()}\n\n${attachmentHtml}`
       : body.trim();
     createFeedback({ title: title.trim(), body: finalBody, kind })
-      .then(() => {
+      .then(created => {
         showToast('Tack! Inlägget är skickat.', 'success');
         setTitle('');
         setBody('');
         setKind('feedback');
         setAttachments([]);
+        // Optimistically prepend the just-created item so the user sees
+        // it immediately, then refresh in the background to pick up the
+        // canonical record (timestamps, server-side fields).
+        setItems(prev => [created, ...prev.filter(i => i.number !== created.number)]);
         refresh();
       })
       .catch(() => showToast('Kunde inte skicka. Försök igen.', 'error'))
