@@ -3,14 +3,20 @@ import hashlib
 import logging
 import os
 import re
+import shutil
+import uuid
 from typing import List, Optional, Literal
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from pydantic import BaseModel, Field
 
 from v1.request_filter import validate_request
 from v1 import github_app
 from v1.db.feedback_votes import set_vote, get_tally, get_tallies
+from v1.db.feedback_user_index import register_user as register_feedback_user
+
+FEEDBACK_ATTACHMENT_DIR = "/static/img/feedback"
+ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".gif", ".webp"}
 
 logger = logging.getLogger(__name__)
 
@@ -78,9 +84,14 @@ def _user_hash(user: dict) -> str:
         ident = f"member:{member_number}"
     else:
         ident = f"user:{user.get('userId')}"
-    return hmac.new(
+    h = hmac.new(
         secret.encode("utf-8"), ident.encode("utf-8"), hashlib.sha256
     ).hexdigest()
+    # Persist the hash→user mapping every time we generate the hash for a
+    # request. This lets admins look up authorship for moderation
+    # (e.g. who posted abusive content on the public GitHub repo).
+    register_feedback_user(user, h)
+    return h
 
 
 def _wrap_body_with_hash(body: str, user_hash: str) -> str:
@@ -131,6 +142,33 @@ def _issue_to_item(issue: dict, current_user_hash: str, tally: dict) -> Feedback
         mine=mine,
         votes=VoteTally(**tally),
     )
+
+
+class AttachmentResponse(BaseModel):
+    url: str
+
+
+@feedback_v1.post("/feedback/attachments", response_model=AttachmentResponse)
+async def upload_feedback_attachment(
+    file: UploadFile = File(...),
+    current_user: dict = Depends(validate_request),
+):
+    extension = os.path.splitext(file.filename or "")[1].lower()
+    if extension not in ALLOWED_EXTENSIONS:
+        raise HTTPException(
+            status_code=400,
+            detail="Endast bildfiler (JPG, PNG, GIF, WEBP) tillåts.",
+        )
+
+    os.makedirs(FEEDBACK_ATTACHMENT_DIR, exist_ok=True)
+    name = f"{uuid.uuid4().hex}{extension}"
+    disk_path = os.path.join(FEEDBACK_ATTACHMENT_DIR, name)
+    with open(disk_path, "wb") as out:
+        shutil.copyfileobj(file.file, out)
+
+    base = os.getenv("PUBLIC_BASE_URL", "https://app.events.mensa.se/api").rstrip("/")
+    public_url = f"{base}/static/img/feedback/{name}"
+    return AttachmentResponse(url=public_url)
 
 
 @feedback_v1.post("/feedback", response_model=FeedbackItem)

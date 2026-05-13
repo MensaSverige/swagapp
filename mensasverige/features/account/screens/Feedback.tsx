@@ -1,15 +1,20 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import {
+  Image,
   ScrollView,
   StyleSheet,
   TouchableOpacity,
   View,
   ActivityIndicator,
+  Platform,
   useColorScheme,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import * as Application from 'expo-application';
+import * as ImagePicker from 'expo-image-picker';
+import Constants from 'expo-constants';
 
 import { ThemedView } from '@/components/ThemedView';
 import { ThemedText } from '@/components/ThemedText';
@@ -22,6 +27,7 @@ import {
   createFeedback,
   listFeedback,
   voteFeedback,
+  uploadFeedbackAttachment,
   FeedbackItem,
   FeedbackKind,
 } from '../services/feedbackService';
@@ -32,6 +38,34 @@ const KIND_OPTIONS: DropdownOption[] = [
   { value: 'bug', label: 'Bugg' },
 ];
 
+const BUG_DIAGNOSTICS_MARKER = '<!-- bug-diagnostics -->';
+
+const buildBugDiagnostics = (): string => {
+  const appName = Application.applicationName ?? 'Mensa Sverige';
+  const appVersion = Application.nativeApplicationVersion ?? '?';
+  const buildNumber = Application.nativeBuildVersion ?? '?';
+  const platform = Platform.OS === 'ios' ? 'iOS' : Platform.OS === 'android' ? 'Android' : Platform.OS;
+  const osVersion = String(Platform.Version);
+  const deviceName = Constants.deviceName ?? '?';
+  const expoSdk = (Constants.expoConfig as any)?.sdkVersion ?? '?';
+  const now = new Date().toISOString().replace('T', ' ').replace(/\..+$/, ' UTC');
+
+  return [
+    '',
+    '',
+    '',
+    '',
+    '---',
+    `${BUG_DIAGNOSTICS_MARKER}`,
+    'Diagnostik (radera rader du inte vill dela):',
+    `- App: ${appName} ${appVersion} (build ${buildNumber})`,
+    `- Plattform: ${platform} ${osVersion}`,
+    `- Enhet: ${deviceName}`,
+    `- Expo SDK: ${expoSdk}`,
+    `- Tid: ${now}`,
+  ].join('\n');
+};
+
 const Feedback: React.FC = () => {
   const colorSchemeRaw = useColorScheme();
   const colorScheme: 'light' | 'dark' = colorSchemeRaw === 'dark' ? 'dark' : 'light';
@@ -40,11 +74,14 @@ const Feedback: React.FC = () => {
 
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
+  const [bodySelection, setBodySelection] = useState<{ start: number; end: number } | undefined>(undefined);
   const [kind, setKind] = useState<FeedbackKind>('feedback');
   const [submitting, setSubmitting] = useState(false);
   const [loadingList, setLoadingList] = useState(true);
   const [items, setItems] = useState<FeedbackItem[]>([]);
   const [voting, setVoting] = useState<number | null>(null);
+  const [attachments, setAttachments] = useState<string[]>([]);
+  const [uploadingAttachment, setUploadingAttachment] = useState(false);
 
   const styles = createStyles(colorScheme === 'dark');
 
@@ -60,19 +97,68 @@ const Feedback: React.FC = () => {
     refresh();
   }, [refresh]);
 
+  // Auto-prefill bug template when user picks Bug and the body is empty
+  // or only contains a previous diagnostics block. Position the cursor at
+  // the top so the user can start typing immediately above the diagnostics.
+  useEffect(() => {
+    if (kind !== 'bug') return;
+    setBody(prev => {
+      const trimmed = prev.trim();
+      const isEmpty = trimmed.length === 0;
+      const isPriorBugTemplate = trimmed.includes(BUG_DIAGNOSTICS_MARKER);
+      if (!isEmpty && !isPriorBugTemplate) return prev;
+      setBodySelection({ start: 0, end: 0 });
+      return buildBugDiagnostics();
+    });
+  }, [kind]);
+
   const handleSubmit = () => {
     if (!title.trim() || !body.trim() || submitting) return;
     setSubmitting(true);
-    createFeedback({ title: title.trim(), body: body.trim(), kind })
+    const attachmentMd = attachments.map(url => `![](${url})`).join('\n');
+    const finalBody = attachmentMd
+      ? `${body.trim()}\n\n${attachmentMd}`
+      : body.trim();
+    createFeedback({ title: title.trim(), body: finalBody, kind })
       .then(() => {
         showToast('Tack! Inlägget är skickat.', 'success');
         setTitle('');
         setBody('');
         setKind('feedback');
+        setAttachments([]);
         refresh();
       })
       .catch(() => showToast('Kunde inte skicka. Försök igen.', 'error'))
       .finally(() => setSubmitting(false));
+  };
+
+  const handlePickAttachment = async () => {
+    if (uploadingAttachment) return;
+    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!perm.granted) {
+      showToast('Behöver tillgång till bilder.', 'error');
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      quality: 0.8,
+      allowsMultipleSelection: false,
+    });
+    if (result.canceled || !result.assets?.[0]) return;
+    const asset = result.assets[0];
+    setUploadingAttachment(true);
+    try {
+      const { url } = await uploadFeedbackAttachment(asset.uri, asset.fileName ?? undefined);
+      setAttachments(prev => [...prev, url]);
+    } catch {
+      showToast('Kunde inte ladda upp bilden.', 'error');
+    } finally {
+      setUploadingAttachment(false);
+    }
+  };
+
+  const removeAttachment = (url: string) => {
+    setAttachments(prev => prev.filter(u => u !== url));
   };
 
   const handleVote = (item: FeedbackItem, value: -1 | 1) => {
@@ -126,17 +212,54 @@ const Feedback: React.FC = () => {
           <ThemedInput
             style={styles.bodyInput}
             value={body}
-            onChangeText={setBody}
+            onChangeText={text => {
+              setBody(text);
+              if (bodySelection) setBodySelection(undefined);
+            }}
+            selection={bodySelection}
+            onSelectionChange={() => {
+              if (bodySelection) setBodySelection(undefined);
+            }}
             placeholder="Vad vill du berätta?"
             multiline
             textAlignVertical="top"
           />
 
+          {attachments.length > 0 && (
+            <View style={styles.attachmentRow}>
+              {attachments.map(url => (
+                <View key={url} style={styles.attachmentThumb}>
+                  <Image source={{ uri: url }} style={styles.attachmentImage} />
+                  <TouchableOpacity
+                    style={styles.attachmentRemove}
+                    onPress={() => removeAttachment(url)}>
+                    <MaterialIcons name="close" size={14} color={Colors.white} />
+                  </TouchableOpacity>
+                </View>
+              ))}
+            </View>
+          )}
+
+          <TouchableOpacity
+            style={styles.attachButton}
+            onPress={handlePickAttachment}
+            disabled={uploadingAttachment}
+            activeOpacity={0.7}>
+            {uploadingAttachment ? (
+              <ActivityIndicator size="small" color={Colors.primary500} />
+            ) : (
+              <MaterialIcons name="attach-file" size={18} color={Colors.primary500} />
+            )}
+            <ThemedText style={styles.attachButtonText}>
+              {uploadingAttachment ? 'Laddar upp...' : 'Lägg till skärmdump'}
+            </ThemedText>
+          </TouchableOpacity>
+
           <ThemedButton
             text="Skicka"
             variant="primary"
             isLoading={submitting}
-            isDisabled={!title.trim() || !body.trim()}
+            isDisabled={!title.trim() || !body.trim() || uploadingAttachment}
             onPress={handleSubmit}
             style={styles.submit}
           />
@@ -287,6 +410,46 @@ const createStyles = (isDark: boolean) =>
       height: 140,
       paddingTop: 12,
     },
+    attachmentRow: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: 8,
+      marginTop: 12,
+    },
+    attachmentThumb: {
+      position: 'relative',
+      width: 64,
+      height: 64,
+      borderRadius: 8,
+      overflow: 'hidden',
+      backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)',
+    },
+    attachmentImage: { width: '100%', height: '100%' },
+    attachmentRemove: {
+      position: 'absolute',
+      top: 4,
+      right: 4,
+      backgroundColor: 'rgba(0,0,0,0.6)',
+      borderRadius: 10,
+      width: 20,
+      height: 20,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    attachButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+      marginTop: 14,
+      paddingVertical: 10,
+      paddingHorizontal: 12,
+      borderRadius: 10,
+      borderWidth: 1,
+      borderColor: isDark ? 'rgba(0,119,230,0.5)' : 'rgba(0,119,230,0.4)',
+      borderStyle: 'dashed',
+      alignSelf: 'flex-start',
+    },
+    attachButtonText: { color: Colors.primary500, fontSize: 14 },
     submit: { marginTop: 18 },
     listHeader: {
       flexDirection: 'row',

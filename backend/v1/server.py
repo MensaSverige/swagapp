@@ -77,6 +77,8 @@ def initialize_app():
 
     from v1.db.feedback_votes import initialize_indexes as init_feedback_votes
     init_feedback_votes()
+    from v1.db.feedback_user_index import initialize_indexes as init_feedback_user_index
+    init_feedback_user_index()
 
     scheduler = create_scheduler()
     scheduler.start()

@@ -69,3 +69,28 @@ export const createComment = (
 ): Promise<FeedbackComment> => {
   return apiClient.post(`/feedback/${number}/comments`, { body }).then(res => res.data);
 };
+
+export const uploadFeedbackAttachment = async (
+  uri: string,
+  fileName?: string,
+): Promise<{ url: string }> => {
+  const form = new FormData();
+  const inferredName = fileName ?? uri.split('/').pop() ?? 'attachment.jpg';
+  const lower = inferredName.toLowerCase();
+  const mime = lower.endsWith('.png')
+    ? 'image/png'
+    : lower.endsWith('.gif')
+      ? 'image/gif'
+      : lower.endsWith('.webp')
+        ? 'image/webp'
+        : 'image/jpeg';
+  form.append('file', {
+    uri,
+    name: inferredName,
+    type: mime,
+  } as any);
+  const res = await apiClient.post('/feedback/attachments', form, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  return res.data;
+};
