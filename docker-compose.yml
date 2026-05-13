@@ -28,6 +28,10 @@ services:
       GOOGLE_REVIEW_USER: google@google.com
       REVIEW_PASSWORD: some-nice-password # Different in production
       GOOGLE_MAPS_API_KEY: ${GOOGLE_MAPS_API_KEY}
+      GITHUB_APP_ID: ${GITHUB_APP_ID:-}
+      GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID:-}
+      GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET:-}
+      GITHUB_APP_PRIVATE_KEY: ${GITHUB_APP_PRIVATE_KEY:-}
 
   mongo:
     image: mongo:latest
