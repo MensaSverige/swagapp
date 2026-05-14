@@ -22,15 +22,15 @@
       "se.mensasverige": {
         "Android": {
           "StoreUrl": "https://play.google.com/store/apps/details?id=se.mensasverige",
-          "LatestVersion": "2.1.2",
+          "LatestVersion": "2.1.5",
           "MinSupportedVersion": "2.1.1",
-          "LatestBuildNumber": 25
+          "LatestBuildNumber": 31
         },
         "Ios": {
           "StoreUrl": "https://apps.apple.com/se/app/mensasverige/id6755419896",
-          "LatestVersion": "2.1.1",
+          "LatestVersion": "2.1.5",
           "MinSupportedVersion": "2.1.1",
-          "LatestBuildNumber": 7
+          "LatestBuildNumber": 11
         }
       }
     }
