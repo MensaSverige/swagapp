@@ -118,8 +118,8 @@ const PublicUserProfile: React.FC<Props> = ({ userId }) => {
   });
   const hasIdentity = identityItems.length > 0;
 
-  const visibleSocialFlags = getCategoryItems('social_flags').filter(o =>
-    (user.social_flags ?? []).includes(o.value)
+  const visibleSocialFlags = getCategoryItems('social_vibes').filter(o =>
+    (user.social_vibes ?? []).includes(o.value)
   );
   const hasSocialFlags = visibleSocialFlags.length > 0;
 

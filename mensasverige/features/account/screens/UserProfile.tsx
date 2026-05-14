@@ -45,7 +45,7 @@ const UserProfile: React.FC = () => {
     const [sexuality, setSexuality] = useState<string | null>(user?.sexuality ?? null);
     const [relationshipStyle, setRelationshipStyle] = useState<string | null>(user?.relationship_style ?? null);
     const [relationshipStatus, setRelationshipStatus] = useState<string | null>(user?.relationship_status ?? null);
-    const [socialFlags, setSocialFlags] = useState<string[]>(user?.social_flags ?? []);
+    const [socialFlags, setSocialFlags] = useState<string[]>(user?.social_vibes ?? []);
     const [profileOptionCategories, setProfileOptionCategories] = useState<ProfileOptionCategory[]>([]);
 
     useEffect(() => {
@@ -138,7 +138,7 @@ const UserProfile: React.FC = () => {
             : [...socialFlags, value];
         setSocialFlags(next);
         showToast('Sparar...', 'info');
-        updateUser({ settings: user.settings, social_flags: next })
+        updateUser({ settings: user.settings, social_vibes: next })
             .then(returned => {
                 if (returned) setUser({ ...user, ...returned });
                 showToast('Sparat!', 'success');
