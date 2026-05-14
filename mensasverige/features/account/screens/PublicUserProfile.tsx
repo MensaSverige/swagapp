@@ -108,10 +108,10 @@ const PublicUserProfile: React.FC<Props> = ({ userId }) => {
     profileOptionCategories.find(c => c.key === key)?.items ?? [];
 
   const identityItems = [
-    { key: 'gender',               val: user.gender },
-    { key: 'sexuality',            val: user.sexuality },
-    { key: 'relationship_style',   val: user.relationship_style },
-    { key: 'relationship_status',  val: user.relationship_status },
+    { key: 'gender', val: user.gender },
+    { key: 'sexuality', val: user.sexuality },
+    { key: 'relationship_style', val: user.relationship_style },
+    { key: 'relationship_status', val: user.relationship_status },
   ].flatMap(({ key, val }) => {
     const found = findOption(getCategoryItems(key), val);
     return found ? [found] : [];
@@ -163,10 +163,34 @@ const PublicUserProfile: React.FC<Props> = ({ userId }) => {
             </View>
           )}
         </View>
+        {/* Identity */}
+        {hasIdentity && (
+          <ThemedView style={styles.card}>
+            <ThemedText style={styles.cardLabel}>Identitet & relation</ThemedText>
+            <View style={styles.identityGrid}>
+              {identityItems.map(item => (
+                <View key={item.value} style={styles.identityItem}>
+                  <MaterialIcons name={item.icon as React.ComponentProps<typeof MaterialIcons>['name']} size={16} color={isDark ? Colors.coolGray400 : Colors.warmGray400} />
+                  <ThemedText style={styles.identityItemText}>{item.label}</ThemedText>
+                </View>
+              ))}
+            </View>
+          </ThemedView>
+        )}
+        {/* Interests */}
+        {hasInterests && (
+          <InterestsCard
+            sharedInterests={sharedInterests}
+            nonSharedCategories={nonSharedCategories}
+            allInterestCategories={allInterestCategories}
+            hasSharedInterests={hasSharedInterests}
+            isDark={isDark}
+          />
+        )}
         {/* Contact info */}
         {hasContact && (
           <ThemedView style={styles.card}>
-            <ThemedText style={styles.cardLabel}>Kontaktuppgifter</ThemedText>
+            <ThemedText style={styles.cardLabel}>Kontakt</ThemedText>
             {hasEmail && (
               <TouchableOpacity
                 style={styles.row}
@@ -192,31 +216,7 @@ const PublicUserProfile: React.FC<Props> = ({ userId }) => {
           </ThemedView>
         )}
 
-        {/* Identity */}
-        {hasIdentity && (
-          <ThemedView style={styles.card}>
-            <ThemedText style={styles.cardLabel}>Identitet & relation</ThemedText>
-            <View style={styles.identityGrid}>
-              {identityItems.map(item => (
-                <View key={item.value} style={styles.identityItem}>
-                  <MaterialIcons name={item.icon as React.ComponentProps<typeof MaterialIcons>['name']} size={16} color={isDark ? Colors.coolGray400 : Colors.warmGray400} />
-                  <ThemedText style={styles.identityItemText}>{item.label}</ThemedText>
-                </View>
-              ))}
-            </View>
-          </ThemedView>
-        )}
 
-        {/* Interests */}
-        {hasInterests && (
-          <InterestsCard
-            sharedInterests={sharedInterests}
-            nonSharedCategories={nonSharedCategories}
-            allInterestCategories={allInterestCategories}
-            hasSharedInterests={hasSharedInterests}
-            isDark={isDark}
-          />
-        )}
       </ScrollView>
     </ThemedView>
   );
@@ -225,153 +225,153 @@ const PublicUserProfile: React.FC<Props> = ({ userId }) => {
 const createStyles = (isDark: boolean) => {
   const linkColor = isDark ? Colors.dark.primary500 : Colors.light.primary500;
   return StyleSheet.create({
-  container: { flex: 1 },
-  scroll: { padding: 20, paddingBottom: 40 },
-  centered: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 12,
-    padding: 32,
-  },
-  emptyText: {
-    textAlign: 'center',
-    opacity: 0.6,
-    fontSize: 15,
-  },
-  hero: {
-    alignItems: 'center',
-    paddingBottom: 24,
-  },
-  name: {
-    textAlign: 'center',
-    marginTop: 12,
-  },
-  slogan: {
-    marginTop: 6,
-    fontSize: 14,
-    opacity: 0.65,
-    textAlign: 'center',
-  },
-  heroMeta: {
-    flexDirection: 'row',
-    gap: 16,
-    marginTop: 8,
-    flexWrap: 'wrap',
-    justifyContent: 'center',
-  },
-  heroMetaItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  heroMetaText: {
-    fontSize: 13,
-    opacity: 0.6,
-  },
-  card: {
-    //borderRadius: 12,
-    padding: 16,
-    //marginBottom: 8,
-    //shadowOpacity: 0.05,
-    //elevation: 1,
-  },
-  cardLabelRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 12,
-  },
-  cardLabel: {
-    fontSize: 11,
-    fontWeight: '600',
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
-    opacity: 0.5,
-  },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-    gap: 10,
-  },
-  contactText: {
-    fontSize: 15,
-    flex: 1,
-    color: linkColor,
-  },
-  categoryBlock: {
-    marginBottom: 12,
-  },
-  categoryTitle: {
-    fontSize: 13,
-    marginBottom: 6,
-  },
-  chipsRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 6,
-  },
-  chip: {
-    borderRadius: 20,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-  },
-  chipText: {
-    fontSize: 13,
-  },
-  otherChip: {
-    backgroundColor: isDark ? Colors.coolGray700 : Colors.coolGray100,
-  },
-  identityGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-  },
-  identityItem: {
-    width: '50%',
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    paddingVertical: 6,
-  },
-  identityItemText: {
-    fontSize: 14,
-    flexShrink: 1,
-  },
-  socialChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    borderRadius: 20,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-  },
-  sharedChip: {
-    backgroundColor:  isDark ? Colors.backgroundDarkInfo : Colors.primary50,
-    borderWidth: 1,
-    borderColor: isDark ? Colors.dark.primary600 : Colors.primary300,
-  },
-  interestSectionLabel: {
-    fontSize: 11,
-    fontWeight: '600',
-    opacity: 0.5,
-    marginBottom: 8,
-    marginTop: 4,
-  },
-  showMoreButton: {
-    marginTop: 10,
-    alignSelf: 'center',
-  },
-  showMoreText: {
-    fontSize: 13,
-    opacity: 0.55,
-  },
-  nonSharedSection: {
-    marginTop: 16,
-    paddingTop: 16,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: isDark ? '#374151' : '#E5E7EB',
-  },
+    container: { flex: 1 },
+    scroll: { padding: 20, paddingBottom: 40 },
+    centered: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 12,
+      padding: 32,
+    },
+    emptyText: {
+      textAlign: 'center',
+      opacity: 0.6,
+      fontSize: 15,
+    },
+    hero: {
+      alignItems: 'center',
+      paddingBottom: 24,
+    },
+    name: {
+      textAlign: 'center',
+      marginTop: 12,
+    },
+    slogan: {
+      marginTop: 6,
+      fontSize: 14,
+      opacity: 0.65,
+      textAlign: 'center',
+    },
+    heroMeta: {
+      flexDirection: 'row',
+      gap: 16,
+      marginTop: 8,
+      flexWrap: 'wrap',
+      justifyContent: 'center',
+    },
+    heroMetaItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
+    },
+    heroMetaText: {
+      fontSize: 13,
+      opacity: 0.6,
+    },
+    card: {
+      //borderRadius: 12,
+      padding: 16,
+      //marginBottom: 8,
+      //shadowOpacity: 0.05,
+      //elevation: 1,
+    },
+    cardLabelRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      marginBottom: 12,
+    },
+    cardLabel: {
+      fontSize: 11,
+      fontWeight: '600',
+      textTransform: 'uppercase',
+      letterSpacing: 0.8,
+      opacity: 0.5,
+    },
+    row: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 8,
+      gap: 10,
+    },
+    contactText: {
+      fontSize: 15,
+      flex: 1,
+      color: linkColor,
+    },
+    categoryBlock: {
+      marginBottom: 12,
+    },
+    categoryTitle: {
+      fontSize: 13,
+      marginBottom: 6,
+    },
+    chipsRow: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: 6,
+    },
+    chip: {
+      borderRadius: 20,
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+    },
+    chipText: {
+      fontSize: 13,
+    },
+    otherChip: {
+      backgroundColor: isDark ? Colors.coolGray700 : Colors.coolGray100,
+    },
+    identityGrid: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+    },
+    identityItem: {
+      width: '50%',
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+      paddingVertical: 6,
+    },
+    identityItemText: {
+      fontSize: 14,
+      flexShrink: 1,
+    },
+    socialChip: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+      borderRadius: 20,
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+    },
+    sharedChip: {
+      backgroundColor: isDark ? Colors.backgroundDarkInfo : Colors.primary50,
+      borderWidth: 1,
+      borderColor: isDark ? Colors.dark.primary600 : Colors.primary300,
+    },
+    interestSectionLabel: {
+      fontSize: 11,
+      fontWeight: '600',
+      opacity: 0.5,
+      marginBottom: 8,
+      marginTop: 4,
+    },
+    showMoreButton: {
+      marginTop: 10,
+      alignSelf: 'center',
+    },
+    showMoreText: {
+      fontSize: 13,
+      opacity: 0.55,
+    },
+    nonSharedSection: {
+      marginTop: 16,
+      paddingTop: 16,
+      borderTopWidth: StyleSheet.hairlineWidth,
+      borderTopColor: isDark ? '#374151' : '#E5E7EB',
+    },
   });
 };
 
