@@ -158,7 +158,7 @@ export const ActivitiesList: React.FC<ActivitiesListProps> = ({ initialFilter })
                 <View style={styles.headerActions}>
                     {filteredCount !== filteredTotalCount && (
                         <Text style={styles.filterCount}>
-                            Visar {filteredCount} av {filteredTotalCount} aktiviteter
+                            {filteredCount} / {filteredTotalCount}
                         </Text>
                     )}
                     <FilterButton
