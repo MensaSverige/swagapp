@@ -314,6 +314,17 @@ const UserProfile: React.FC = () => {
                     </View>
                 </ThemedView>
 
+                {/* Intressen */}
+                <ThemedView style={styles.card}>
+                    <ThemedText style={styles.cardLabel}>Intressen</ThemedText>
+                    <NavRow
+                        icon="interests"
+                        title="Mina intressen"
+                        subtitle="Välj dina intressen och hobbyer"
+                        onPress={() => router.push('/(tabs)/(profile)/interests')}
+                    />
+                </ThemedView>
+
                 {/* Settings navigation */}
                 <ThemedView style={styles.card}>
                     <ThemedText style={styles.cardLabel}>Inställningar</ThemedText>
@@ -331,25 +342,13 @@ const UserProfile: React.FC = () => {
                         hasBorder
                     />
                     <NavRow
-                        icon="interests"
-                        title="Intressen"
-                        subtitle="Välj dina intressen och hobbyer"
-                        onPress={() => router.push('/(tabs)/(profile)/interests')}
+                        icon="forum"
+                        title="Feedback & idéer"
+                        subtitle="Dela förslag eller rapportera problem"
+                        onPress={() => router.push('/(tabs)/(profile)/feedback')}
                         hasBorder
                     />
                 </ThemedView>
-
-                {/* Feedback link */}
-                <View style={styles.feedbackContainer}>
-                    <TouchableOpacity
-                        style={styles.feedbackButton}
-                        onPress={() => router.push('/(tabs)/(profile)/feedback')}
-                        activeOpacity={0.7}>
-                        <MaterialIcons name="forum" size={18} color={Colors.primary500} style={styles.feedbackIcon} />
-                        <ThemedText style={styles.feedbackText} type="defaultSemiBold">Feedback & idéer</ThemedText>
-                        <MaterialIcons name="chevron-right" size={20} color={Colors.coolGray500} style={styles.feedbackChevron} />
-                    </TouchableOpacity>
-                </View>
 
                 {/* Logout */}
                 <View style={styles.logoutContainer}>
@@ -406,28 +405,6 @@ const createStyles = (colorScheme: string) => {
             marginBottom: 16,
             shadowOpacity: 0.05,
             elevation: 1,
-        },
-        feedbackContainer: {
-            paddingHorizontal: 20,
-            paddingTop: 4,
-            paddingBottom: 8,
-        },
-        feedbackButton: {
-            flexDirection: 'row',
-            alignItems: 'center',
-            borderRadius: 10,
-            padding: 16,
-            backgroundColor: isDark ? 'rgba(0, 119, 230, 0.12)' : 'rgba(0, 119, 230, 0.08)',
-        },
-        feedbackIcon: {
-            marginRight: 10,
-        },
-        feedbackText: {
-            flex: 1,
-            color: Colors.primary500,
-        },
-        feedbackChevron: {
-            marginLeft: 8,
         },
         logoutContainer: {
             left: 0,
