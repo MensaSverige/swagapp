@@ -1044,10 +1044,15 @@ export interface components {
              */
             relationship_status?: string | null;
             /**
-             * Social Flags
+             * Social Vibes
              * @example []
              */
             social_vibes?: string[];
+            /**
+             * Pronomen
+             * @example hen
+             */
+            pronomen?: string | null;
         };
         /**
          * UserInterest
@@ -1148,6 +1153,11 @@ export interface components {
              * @example MEMBERS_ONLY
              */
             show_social_vibes: components["schemas"]["PrivacySetting"];
+            /**
+             * @default NO_ONE
+             * @example MEMBERS_ONLY
+             */
+            show_pronomen: components["schemas"]["PrivacySetting"];
         };
         /** UserUpdate */
         UserUpdate: {
@@ -1200,10 +1210,15 @@ export interface components {
              */
             relationship_status?: string | null;
             /**
-             * Social Flags
+             * Social Vibes
              * @example []
              */
             social_vibes?: string[] | null;
+            /**
+             * Pronomen
+             * @example hen
+             */
+            pronomen?: string | null;
         };
         /** ValidationError */
         ValidationError: {

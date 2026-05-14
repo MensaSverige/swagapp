@@ -22,6 +22,7 @@ type PrivacyForm = {
     show_sexuality: PrivacySetting;
     show_relationship_style: PrivacySetting;
     show_relationship_status: PrivacySetting;
+    show_pronomen: PrivacySetting;
 };
 
 const PrivacySettings: React.FC = () => {
@@ -45,7 +46,8 @@ const PrivacySettings: React.FC = () => {
         show_gender: user?.settings?.show_gender || 'NO_ONE',
         show_sexuality: user?.settings?.show_sexuality || 'NO_ONE',
         show_relationship_style: user?.settings?.show_relationship_style || 'NO_ONE',
-        show_relationship_status: user?.settings?.show_relationship_status || 'NO_ONE'  
+        show_relationship_status: user?.settings?.show_relationship_status || 'NO_ONE',
+        show_pronomen: user?.settings?.show_pronomen || 'NO_ONE',
     });
 
     useEffect(() => {
@@ -203,6 +205,13 @@ const PrivacySettings: React.FC = () => {
                     options={profileOptions}
                     value={form.show_relationship_status}
                     onChange={v => setForm(f => ({ ...f, show_relationship_status: v }))}
+                />
+                <PrivacyCard
+                    title="Pronomen"
+                    description="Vem kan se dina pronomen?"
+                    options={profileOptions}
+                    value={form.show_pronomen}
+                    onChange={v => setForm(f => ({ ...f, show_pronomen: v }))}
                 />
             </ScrollView>
         </ThemedView>
