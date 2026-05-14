@@ -1,9 +1,8 @@
 import React from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, Pressable } from 'react-native';
 import { ThemedView } from '@/components/ThemedView';
 import { ThemedText } from '@/components/ThemedText';
-import { Collapsible } from '@/components/Collapsible';
-import { Colors } from '@/constants/Colors';
+import { IconSymbol } from '@/components/ui/IconSymbol';
 import { InterestCategory } from '../constants/interests';
 
 type Props = {
@@ -14,84 +13,57 @@ type Props = {
   isDark: boolean;
 };
 
+const VISIBLE_LIMIT = 6;
+
 const InterestsCard: React.FC<Props> = ({
   sharedInterests,
-  nonSharedCategories,
   allInterestCategories,
-  hasSharedInterests,
   isDark,
 }) => {
+  const [showAll, setShowAll] = React.useState(false);
   const styles = createStyles(isDark);
+
+  const allChips = [
+    ...sharedInterests,
+    ...allInterestCategories.flatMap(cat => cat.items).filter(i => !sharedInterests.includes(i)),
+  ];
+  const hasOverflow = allChips.length > VISIBLE_LIMIT;
+  const visibleChips = showAll ? allChips : allChips.slice(0, VISIBLE_LIMIT);
+  const hiddenCount = allChips.length - VISIBLE_LIMIT;
 
   return (
     <ThemedView style={styles.card}>
-      <View style={styles.cardLabelRow}>
+      <View style={styles.headerRow}>
         <ThemedText style={styles.cardLabel}>Intressen</ThemedText>
+        {hasOverflow && (
+          <Pressable onPress={() => setShowAll(v => !v)} hitSlop={8} style={styles.viewAllButton}>
+            <ThemedText style={styles.viewAllText}>
+              {showAll ? 'Visa färre' : 'Visa alla'}
+            </ThemedText>
+            <IconSymbol
+              name="chevron.right"
+              size={18}
+              weight="medium"
+              color={isDark ? 'rgba(255,255,255,0.55)' : 'rgba(0,0,0,0.55)'}
+              style={{ transform: [{ rotate: showAll ? '270deg' : '90deg' }] }}
+            />
+          </Pressable>
+        )}
       </View>
 
-      {hasSharedInterests ? (
-        <>
-          <View style={styles.chipsRow}>
-            {sharedInterests.map(item => (
-              <View key={item} style={[styles.chip, styles.sharedChip]}>
-                <ThemedText style={styles.chipText}>{item}</ThemedText>
-              </View>
-            ))}
+      <View style={styles.chipsRow}>
+        {visibleChips.map(item => (
+          <View
+            key={item}
+            style={[
+              styles.chip,
+              sharedInterests.includes(item) ? styles.sharedChip : styles.otherChip,
+            ]}
+          >
+            <ThemedText style={styles.chipText}>{item}</ThemedText>
           </View>
-
-          {nonSharedCategories.length > 0 && (
-            <Collapsible
-              title={`Se ${nonSharedCategories.reduce((n, c) => n + c.items.length, 0)} fler intressen`}
-            >
-              {nonSharedCategories.map(cat => (
-                <View key={cat.category} style={styles.categoryBlock}>
-                  <ThemedText type="defaultSemiBold" style={styles.categoryTitle}>{cat.category}</ThemedText>
-                  <View style={styles.chipsRow}>
-                    {cat.items.map(item => (
-                      <View key={item} style={[styles.chip, styles.otherChip]}>
-                        <ThemedText style={styles.chipText}>{item}</ThemedText>
-                      </View>
-                    ))}
-                  </View>
-                </View>
-              ))}
-            </Collapsible>
-          )}
-        </>
-      ) : (
-        <>
-          {allInterestCategories.slice(0, 2).map(cat => (
-            <View key={cat.category} style={styles.categoryBlock}>
-              <ThemedText type="defaultSemiBold" style={styles.categoryTitle}>{cat.category}</ThemedText>
-              <View style={styles.chipsRow}>
-                {cat.items.map(item => (
-                  <View key={item} style={[styles.chip, styles.otherChip]}>
-                    <ThemedText style={styles.chipText}>{item}</ThemedText>
-                  </View>
-                ))}
-              </View>
-            </View>
-          ))}
-          {allInterestCategories.length > 2 && (
-            <Collapsible
-              title={`Visa fler (${allInterestCategories.length - 2} kategorier)`}
-            >
-              {allInterestCategories.slice(2).map(cat => (
-                <View key={cat.category} style={styles.categoryBlock}>
-                  <ThemedText type="defaultSemiBold" style={styles.categoryTitle}>{cat.category}</ThemedText>
-                  <View style={styles.chipsRow}>
-                    {cat.items.map(item => (
-                      <View key={item} style={[styles.chip, styles.otherChip]}>
-                        <ThemedText style={styles.chipText}>{item}</ThemedText>
-                      </View>
-                    ))}
-                  </View>
-                </View>
-              ))}
-            </Collapsible>
-          )}
-        </>
-      )}
+        ))}
+      </View>
     </ThemedView>
   );
 };
@@ -102,7 +74,10 @@ const createStyles = (isDark: boolean) =>
       paddingHorizontal: 18,
       paddingVertical: 16,
     },
-    cardLabelRow: {
+    headerRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
       marginBottom: 14,
     },
     cardLabel: {
@@ -112,56 +87,54 @@ const createStyles = (isDark: boolean) =>
       letterSpacing: 1.2,
       opacity: 0.45,
     },
-
+    viewAllButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
+    },
+    viewAllText: {
+      fontSize: 12,
+      fontWeight: '600',
+      opacity: 0.55,
+    },
     chipsRow: {
       flexDirection: 'row',
       flexWrap: 'wrap',
       gap: 8,
     },
-
     chip: {
       borderRadius: 999,
       paddingHorizontal: 14,
       paddingVertical: 9,
     },
-
     chipText: {
       fontSize: 14,
       fontWeight: '500',
       lineHeight: 18,
     },
-
     sharedChip: {
       backgroundColor: isDark
         ? 'rgba(59,130,246,0.14)'
         : 'rgba(59,130,246,0.10)',
-
       shadowColor: '#3B82F6',
       shadowOpacity: isDark ? 0.18 : 0.08,
       shadowRadius: 8,
-      shadowOffset: {
-        width: 0,
-        height: 2,
-      },
-
+      shadowOffset: { width: 0, height: 2 },
       elevation: 2,
     },
-
     otherChip: {
-      backgroundColor: isDark
-        ? 'rgba(255,255,255,0.06)'
-        : '#F3F4F6',
+      backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : '#F3F4F6',
     },
-
-    categoryBlock: {
-      marginTop: 18,
+    moreChip: {
+      backgroundColor: 'transparent',
+      borderWidth: 1,
+      borderColor: isDark ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.12)',
     },
-
-    categoryTitle: {
-      fontSize: 13,
-      fontWeight: '700',
-      marginBottom: 10,
-      opacity: 0.72,
+    moreChipText: {
+      fontSize: 14,
+      fontWeight: '500',
+      lineHeight: 18,
+      opacity: 0.65,
     },
   });
 
