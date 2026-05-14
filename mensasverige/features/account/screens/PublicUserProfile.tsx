@@ -109,6 +109,7 @@ const PublicUserProfile: React.FC<Props> = ({ userId }) => {
 
   const identityItems = [
     { key: 'gender', val: user.gender },
+    { key: 'pronomen', val: user.pronomen },
     { key: 'sexuality', val: user.sexuality },
     { key: 'relationship_style', val: user.relationship_style },
     { key: 'relationship_status', val: user.relationship_status },

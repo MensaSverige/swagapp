@@ -78,6 +78,9 @@ async def get_users(show_location: bool = None,
         if user.get("userId") != current_user.get("userId") and not _viewer_can_see(
                 settings.get("show_social_vibes", PrivacySetting.MEMBERS_ONLY.value), current_user, "show_social_vibes"):
             user["social_vibes"] = []
+        if user.get("userId") != current_user.get("userId") and not _viewer_can_see(
+                settings.get("show_pronomen", PrivacySetting.NO_ONE.value), current_user, "show_pronomen"):
+            user["pronomen"] = None
         if user.get("userId") == current_user.get("userId") or _viewer_can_see(
                 settings.get("show_profile", PrivacySetting.MEMBERS_ONLY.value), current_user, "show_profile"):
             result.append(user)
@@ -134,6 +137,9 @@ async def get_user_by_id(user_id: int,
     if user.get("userId") != current_user.get("userId") and not _viewer_can_see(
             settings.get("show_social_vibes", PrivacySetting.MEMBERS_ONLY.value), current_user, "show_social_vibes"):
         user["social_vibes"] = []
+    if user.get("userId") != current_user.get("userId") and not _viewer_can_see(
+            settings.get("show_pronomen", PrivacySetting.NO_ONE.value), current_user, "show_pronomen"):
+        user["pronomen"] = None
 
     return user
 

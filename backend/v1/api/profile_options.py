@@ -39,6 +39,11 @@ PROFILE_OPTION_CATEGORIES: List[ProfileOptionCategory] = [
         ProfileOptionItem(value='single',         label='Singel',               icon='favorite-border'),
         ProfileOptionItem(value='has_partner',         label='Har partner',       icon='favorite'),
     ]),
+    ProfileOptionCategory(key='pronomen', label='Pronomen', multi=False, items=[
+        ProfileOptionItem(value='han',      label='Han/honom',     icon='man'),
+        ProfileOptionItem(value='hon',      label='Hon/henne',     icon='woman'),
+        ProfileOptionItem(value='hen',      label='Hen/hen',       icon='person'),
+    ]),
     ProfileOptionCategory(key='social_vibes', label='Socialt', multi=True, items=[
         ProfileOptionItem(value='come_say_hi', label='Säg gärna hej', icon='waving-hand'),
         ProfileOptionItem(value='include_me', label='Inkludera mig gärna', icon='group-add'),

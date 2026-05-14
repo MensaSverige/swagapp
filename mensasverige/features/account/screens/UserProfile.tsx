@@ -46,6 +46,7 @@ const UserProfile: React.FC = () => {
     const [relationshipStyle, setRelationshipStyle] = useState<string | null>(user?.relationship_style ?? null);
     const [relationshipStatus, setRelationshipStatus] = useState<string | null>(user?.relationship_status ?? null);
     const [socialFlags, setSocialFlags] = useState<string[]>(user?.social_vibes ?? []);
+    const [pronomen, setPronomen] = useState<string | null>(user?.pronomen ?? null);
     const [profileOptionCategories, setProfileOptionCategories] = useState<ProfileOptionCategory[]>([]);
 
     useEffect(() => {
@@ -265,10 +266,12 @@ const UserProfile: React.FC = () => {
                 <ThemedView style={styles.card}>
                     <ThemedText style={styles.cardLabel}>Identitet & relation</ThemedText>
                     {([
-                        { icon: 'wc' as const,              label: 'Kön',           key: 'gender',               value: gender,             setter: setGender },
-                        { icon: 'favorite' as const,        label: 'Läggning',      key: 'sexuality',            value: sexuality,          setter: setSexuality },
-                        { icon: 'group' as const,           label: 'Relationsform', key: 'relationship_style',   value: relationshipStyle,  setter: setRelationshipStyle },
-                        { icon: 'favorite-border' as const, label: 'Status',        key: 'relationship_status',  value: relationshipStatus, setter: setRelationshipStatus },
+                        { icon: 'wc' as const,                  label: 'Kön',           key: 'gender',               value: gender,             setter: setGender },
+                        { icon: 'record-voice-over' as const,   label: 'Pronomen',      key: 'pronomen',             value: pronomen,           setter: setPronomen },
+                        { icon: 'favorite' as const,            label: 'Läggning',      key: 'sexuality',            value: sexuality,          setter: setSexuality },
+                        { icon: 'group' as const,               label: 'Relationsform', key: 'relationship_style',   value: relationshipStyle,  setter: setRelationshipStyle },
+                        { icon: 'favorite-border' as const,     label: 'Status',        key: 'relationship_status',  value: relationshipStatus, setter: setRelationshipStatus },
+
                     ]).map(row => (
                         <View key={row.key} style={[styles.contactRow, { marginBottom: 8, alignItems: 'flex-start' }]}>
                             <MaterialIcons name={row.icon} size={18} color={Colors.coolGray500} style={{ marginTop: 10 }} />
