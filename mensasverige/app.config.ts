@@ -59,9 +59,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
         "expo-location",
         {
           locationAlwaysAndWhenInUsePermission:
-            "Din platsinformation används för att visa din position för andra användare. Varje platsuppdatering lagras i upp till 24 timmar.",
-          isAndroidBackgroundLocationEnabled: true,
-          isAndroidForegroundServiceEnabled: true,
+            "Din platsinformation används för att visa din position för andra användare. Varje platsuppdatering lagras i upp till 24 timmar."
         },
       ],
       "expo-task-manager",
