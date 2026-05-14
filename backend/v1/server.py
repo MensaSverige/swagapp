@@ -17,6 +17,7 @@ from v1.api.users import users_v1
 from v1.api.interests import interests_v1
 from v1.api.profile_options import profile_options_v1
 from v1.api.external_events import events_v1
+from v1.api.feedback import feedback_v1
 from v1.events.events_api import unified_events_v1
 from v1.external.event_site_news import get_event_site_news
 from v1.external.event_api import get_external_root, get_external_event_details
@@ -64,6 +65,7 @@ app.include_router(events_v1)
 app.include_router(unified_events_v1)
 app.include_router(user_events_v1)
 app.include_router(geolocation_v1)
+app.include_router(feedback_v1)
 app.mount("/static/img", StaticFiles(directory="/static/img"), name="static")
 
 if os.getenv("ENABLE_DEV_ENDPOINTS") == "true":
@@ -74,6 +76,11 @@ if os.getenv("ENABLE_DEV_ENDPOINTS") == "true":
 def initialize_app():
     initialize_db()
     run_migrations()
+
+    from v1.db.feedback_votes import initialize_indexes as init_feedback_votes
+    init_feedback_votes()
+    from v1.db.feedback_user_index import initialize_indexes as init_feedback_user_index
+    init_feedback_user_index()
 
     scheduler = create_scheduler()
     scheduler.start()
