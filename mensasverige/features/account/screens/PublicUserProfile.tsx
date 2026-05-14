@@ -283,11 +283,11 @@ const createStyles = (isDark: boolean) => {
       marginBottom: 12,
     },
     cardLabel: {
-      fontSize: 11,
-      fontWeight: '600',
+      fontSize: 12,
+      fontWeight: '700',
       textTransform: 'uppercase',
-      letterSpacing: 0.8,
-      opacity: 0.5,
+      letterSpacing: 1.2,
+      opacity: 0.45,
     },
     row: {
       flexDirection: 'row',

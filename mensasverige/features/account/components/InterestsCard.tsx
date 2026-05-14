@@ -13,7 +13,7 @@ type Props = {
   isDark: boolean;
 };
 
-const VISIBLE_LIMIT = 6;
+const VISIBLE_LIMIT = 8;
 
 const InterestsCard: React.FC<Props> = ({
   sharedInterests,
