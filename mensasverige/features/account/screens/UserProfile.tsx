@@ -285,6 +285,32 @@ const UserProfile: React.FC = () => {
                     ))}
                 </ThemedView>
 
+                {/* Social vibes */}
+                <ThemedView style={styles.card}>
+                    <ThemedText style={styles.cardLabel}>Socialt</ThemedText>
+                    <View style={styles.socialChipsRow}>
+                        {getCategoryItems('social_vibes').map(item => {
+                            const selected = socialFlags.includes(item.value);
+                            return (
+                                <TouchableOpacity
+                                    key={item.value}
+                                    style={[styles.socialChip, selected && styles.socialChipSelected]}
+                                    onPress={() => toggleSocialFlag(item.value)}
+                                    activeOpacity={0.7}>
+                                    <MaterialIcons
+                                        name={item.icon as React.ComponentProps<typeof MaterialIcons>['name']}
+                                        size={16}
+                                        color={selected ? Colors.teal600 : Colors.coolGray500}
+                                    />
+                                    <ThemedText style={[styles.socialChipText, selected && styles.socialChipTextSelected]}>
+                                        {item.label}
+                                    </ThemedText>
+                                </TouchableOpacity>
+                            );
+                        })}
+                    </View>
+                </ThemedView>
+
                 {/* Settings navigation */}
                 <ThemedView style={styles.card}>
                     <ThemedText style={styles.cardLabel}>Inställningar</ThemedText>
@@ -444,16 +470,16 @@ const createStyles = (colorScheme: string) => {
             flexDirection: 'row',
             alignItems: 'center',
             gap: 6,
-            borderRadius: 20,
-            paddingHorizontal: 12,
-            paddingVertical: 6,
-            backgroundColor: isDark ? '#1f2937' : '#f3f4f6',
+            borderRadius: 999,
+            paddingHorizontal: 14,
+            paddingVertical: 9,
+            backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : '#F3F4F6',
         },
         socialChipSelected: {
-            backgroundColor: isDark ? 'rgba(79,193,255,0.12)' : 'rgba(0,119,230,0.08)',
+            backgroundColor: isDark ? 'rgba(20,184,166,0.15)' : 'rgba(20,184,166,0.10)',
         },
-        socialChipText: { fontSize: 13, opacity: 0.7 },
-        socialChipTextSelected: { opacity: 1, color: Colors.primary500 },
+        socialChipText: { fontSize: 14, fontWeight: '500', lineHeight: 18 },
+        socialChipTextSelected: { color: Colors.teal600 },
 
     });
 };
