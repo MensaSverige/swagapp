@@ -177,6 +177,24 @@ const PublicUserProfile: React.FC<Props> = ({ userId }) => {
             </View>
           </ThemedView>
         )}
+        {/* Social vibes */}
+        {hasSocialFlags && (
+          <ThemedView style={styles.card}>
+            <ThemedText style={styles.cardLabel}>Socialt</ThemedText>
+            <View style={styles.chipsRow}>
+              {visibleSocialFlags.map(item => (
+                <View key={item.value} style={styles.socialChip}>
+                  <MaterialIcons
+                    name={item.icon as React.ComponentProps<typeof MaterialIcons>['name']}
+                    size={15}
+                    color={isDark ? '#2dd4bf' : '#0d9488'}
+                  />
+                  <ThemedText style={{ fontSize: 13 }}>{item.label}</ThemedText>
+                </View>
+              ))}
+            </View>
+          </ThemedView>
+        )}
         {/* Interests */}
         {hasInterests && (
           <InterestsCard
@@ -342,9 +360,10 @@ const createStyles = (isDark: boolean) => {
       flexDirection: 'row',
       alignItems: 'center',
       gap: 6,
-      borderRadius: 20,
-      paddingHorizontal: 12,
-      paddingVertical: 6,
+      borderRadius: 999,
+      paddingHorizontal: 14,
+      paddingVertical: 9,
+      backgroundColor: isDark ? 'rgba(20,184,166,0.22)' : '#ccfbf1',
     },
     sharedChip: {
       backgroundColor: isDark ? Colors.backgroundDarkInfo : Colors.primary50,
