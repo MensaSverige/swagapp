@@ -46,7 +46,6 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       //   backgroundColor: "#ffffff"
       // },
       package: "se.mensasverige",
-      permissions: ["ACCESS_BACKGROUND_LOCATION"],
     },
     web: {
       bundler: "metro",
@@ -57,10 +56,6 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       "expo-router",
       [
         "expo-location",
-        {
-          locationAlwaysAndWhenInUsePermission:
-            "Din platsinformation används för att visa din position för andra användare. Varje platsuppdatering lagras i upp till 24 timmar."
-        },
       ],
       "expo-task-manager",
       [
