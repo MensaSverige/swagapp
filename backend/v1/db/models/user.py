@@ -127,7 +127,7 @@ class UserSettings(BaseModel):
     show_sexuality: PrivacySetting = Field(default=PrivacySetting.NO_ONE, example=PrivacySetting.MEMBERS_ONLY)
     show_relationship_style: PrivacySetting = Field(default=PrivacySetting.NO_ONE, example=PrivacySetting.MEMBERS_ONLY)
     show_relationship_status: PrivacySetting = Field(default=PrivacySetting.NO_ONE, example=PrivacySetting.MEMBERS_ONLY)
-    show_social_flags: PrivacySetting = Field(default=PrivacySetting.MEMBERS_ONLY, example=PrivacySetting.MEMBERS_ONLY)
+    show_social_vibes: PrivacySetting = Field(default=PrivacySetting.MEMBERS_ONLY, example=PrivacySetting.MEMBERS_ONLY)
 
     @field_validator("show_location", mode="before")
     @classmethod
@@ -179,7 +179,7 @@ class User(BaseModel):
     sexuality: Optional[str] = Field(None, example="straight")
     relationship_style: Optional[str] = Field(None, example="monogamous")
     relationship_status: Optional[str] = Field(None, example="has_partner")
-    social_flags: List[str] = Field(default_factory=list, example=[])
+    social_vibes: List[str] = Field(default_factory=list, example=[])
 
 
 class UserUpdate(BaseModel):
@@ -198,4 +198,4 @@ class UserUpdate(BaseModel):
     sexuality: Optional[str] = Field(None, example="straight")
     relationship_style: Optional[str] = Field(None, example="monogamous")
     relationship_status: Optional[str] = Field(None, example="has_partner")
-    social_flags: Optional[List[str]] = Field(None, example=[])
+    social_vibes: Optional[List[str]] = Field(None, example=[])

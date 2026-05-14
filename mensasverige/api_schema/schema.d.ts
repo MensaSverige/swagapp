@@ -1047,7 +1047,7 @@ export interface components {
              * Social Flags
              * @example []
              */
-            social_flags?: string[];
+            social_vibes?: string[];
         };
         /**
          * UserInterest
@@ -1147,7 +1147,7 @@ export interface components {
              * @default MEMBERS_ONLY
              * @example MEMBERS_ONLY
              */
-            show_social_flags: components["schemas"]["PrivacySetting"];
+            show_social_vibes: components["schemas"]["PrivacySetting"];
         };
         /** UserUpdate */
         UserUpdate: {
@@ -1203,7 +1203,7 @@ export interface components {
              * Social Flags
              * @example []
              */
-            social_flags?: string[] | null;
+            social_vibes?: string[] | null;
         };
         /** ValidationError */
         ValidationError: {

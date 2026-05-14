@@ -39,13 +39,16 @@ PROFILE_OPTION_CATEGORIES: List[ProfileOptionCategory] = [
         ProfileOptionItem(value='single',         label='Singel',               icon='favorite-border'),
         ProfileOptionItem(value='has_partner',         label='Har partner',       icon='favorite'),
     ]),
-    # ProfileOptionCategory(key='social_flags', label='Socialt', multi=True, items=[
-    #     ProfileOptionItem(value='ask_if_new',     label='Fråga mig om du är ny',            icon='live-help'),
-    #     ProfileOptionItem(value='no_hugs',        label='Krama mig inte',                   icon='do-not-touch'),
-    #     ProfileOptionItem(value='personal_space', label='Respektera mitt personliga space', icon='security'),
-    #     ProfileOptionItem(value='talk_to_me',     label='Prata med mig',                    icon='chat'),
-    #     ProfileOptionItem(value='no_interact',    label='Interagera inte med mig',          icon='do-not-disturb-on'),
-    # ]),
+    ProfileOptionCategory(key='social_vibes', label='Socialt', multi=True, items=[
+        ProfileOptionItem(value='come_say_hi', label='Säg gärna hej', icon='waving-hand'),
+        ProfileOptionItem(value='include_me', label='Inkludera mig gärna', icon='group-add'),
+        ProfileOptionItem(value='new_here', label='Jag är ny här', icon='explore'),
+        ProfileOptionItem(value='slow_warmup', label='Tar lite tid att komma igång', icon='hourglass-top'),
+        ProfileOptionItem(value='prefer_small_groups', label='Föredrar små grupper', icon='groups-2'),
+        ProfileOptionItem(value='mostly_listening', label='Lyssnar mest idag', icon='hearing'),
+        ProfileOptionItem(value='no_touch', label='Ingen fysisk kontakt tack', icon='do-not-touch'),
+        ProfileOptionItem(value='taking_break', label='Tar en social paus', icon='pause-circle'),
+    ])
 ]
 
 
