@@ -66,7 +66,7 @@ const UserList: React.FC<UserListProps> = ({
     <View style={styles.hostsSection}>
       <View style={styles.userListHeaderRow}>
         <ThemedText type='subtitle'>
-          {users.length > 0 ? `${title} (${users.length})` : title}
+          {users.length > 0 && hasOverflow ? `${title} (${users.length})` : title}
         </ThemedText>
         {hasOverflow && (
           <Pressable onPress={() => setShowAll(v => !v)} hitSlop={8} style={styles.viewAllButton}>
