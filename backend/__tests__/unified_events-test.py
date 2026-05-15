@@ -112,3 +112,170 @@ def test_filter_event_attendees_also_filters_attendee_names(monkeypatch):
     assert [a.userId for a in result.attendees] == [11]
     assert result.extras["attendeeNames"] == ["Visible User"]
 
+
+# ── ExternalBookings CRUD tests ─────────────────────────────────────────────
+
+def test_get_bookings_by_event_ids_groups_correctly(monkeypatch):
+    """get_bookings_by_event_ids groups results by eventId."""
+    from v1.db import external_bookings as eb
+
+    class FakeCol:
+        def find(self, query):
+            return [
+                {"userId": 1, "eventId": 10},
+                {"userId": 2, "eventId": 10},
+                {"userId": 3, "eventId": 20},
+            ]
+
+    monkeypatch.setattr(eb, "external_event_bookings_collection", FakeCol())
+
+    result = eb.get_bookings_by_event_ids([10, 20])
+    assert set(result[10]) == {1, 2}
+    assert set(result[20]) == {3}
+
+
+def test_get_bookings_by_event_ids_empty_returns_empty(monkeypatch):
+    from v1.db import external_bookings as eb
+    # When called with empty list, return empty dict without hitting DB
+    result = eb.get_bookings_by_event_ids([])
+    assert result == {}
+
+
+def test_delete_user_bookings(monkeypatch):
+    from v1.db import external_bookings as eb
+
+    deleted_filter = []
+
+    class FakeCol:
+        def delete_many(self, f):
+            deleted_filter.append(f)
+
+    monkeypatch.setattr(eb, "external_event_bookings_collection", FakeCol())
+    eb.delete_user_bookings(userId=5)
+    assert deleted_filter == [{"userId": 5}]
+
+
+def test_delete_booking(monkeypatch):
+    from v1.db import external_bookings as eb
+
+    deleted = []
+
+    class FakeCol:
+        def delete_one(self, f):
+            deleted.append(f)
+
+    monkeypatch.setattr(eb, "external_event_bookings_collection", FakeCol())
+    eb.delete_booking(userId=5, eventId=99)
+    assert deleted == [{"userId": 5, "eventId": 99}]
+
+
+# ── map_external_event attendee tests ────────────────────────────────────────
+
+def test_map_external_event_with_attendee_ids():
+    ext = make_external_event(200, booked=2)
+    mapped = map_external_event(ext, current_user_id=1, booked_ids={200}, attendee_user_ids={1, 7})
+    assert {a.userId for a in mapped.attendees} == {1, 7}
+
+
+def test_map_external_event_no_attendee_ids_gives_empty():
+    ext = make_external_event(201)
+    mapped = map_external_event(ext, current_user_id=1, booked_ids=set(), attendee_user_ids=None)
+    assert mapped.attendees == []
+
+
+def test_map_external_event_empty_set_gives_empty():
+    ext = make_external_event(202)
+    mapped = map_external_event(ext, current_user_id=1, booked_ids=set(), attendee_user_ids=set())
+    assert mapped.attendees == []
+
+
+# ── list_unified_events attendee propagation ─────────────────────────────────
+
+def test_list_unified_events_populates_attendees_when_show_booked(monkeypatch):
+    import v1.events.events_service as svc
+
+    ext = make_external_event(300, booked=1)
+    ext.showBooked = True
+
+    monkeypatch.setattr(svc, "get_booked_external_events", lambda uid: [])
+    monkeypatch.setattr(svc, "get_all_stored_external_event_details", lambda: [ext])
+    monkeypatch.setattr(svc, "get_safe_user_events_since", lambda since: [])
+    monkeypatch.setattr(svc, "get_users_by_ids", lambda ids: [])
+    monkeypatch.setattr(svc, "get_bookings_by_event_ids", lambda ids: {300: {42}})
+
+    current_user = {"userId": 1, "isMember": True, "settings": {}}
+    events = svc.list_unified_events(current_user)
+    ext_events = [e for e in events if e.id == "ext300"]
+    assert len(ext_events) == 1
+    assert {a.userId for a in ext_events[0].attendees} == {42}
+
+
+def test_list_unified_events_no_attendees_when_show_booked_false_and_not_admin(monkeypatch):
+    import v1.events.events_service as svc
+
+    ext = make_external_event(301, booked=5)
+    ext.showBooked = False
+    ext.admins = None
+
+    monkeypatch.setattr(svc, "get_booked_external_events", lambda uid: [])
+    monkeypatch.setattr(svc, "get_all_stored_external_event_details", lambda: [ext])
+    monkeypatch.setattr(svc, "get_safe_user_events_since", lambda since: [])
+    monkeypatch.setattr(svc, "get_users_by_ids", lambda ids: [])
+    monkeypatch.setattr(svc, "get_bookings_by_event_ids", lambda ids: {301: {42}})
+
+    current_user = {"userId": 1, "isMember": True, "settings": {}}
+    events = svc.list_unified_events(current_user)
+    ext_events = [e for e in events if e.id == "ext301"]
+    assert len(ext_events) == 1
+    assert ext_events[0].attendees == []
+
+
+def test_list_unified_events_admin_sees_attendees_even_if_show_booked_false(monkeypatch):
+    import v1.events.events_service as svc
+
+    ext = make_external_event(302, booked=2)
+    ext.showBooked = False
+    ext.admins = ["99"]  # userId 99 is admin
+
+    monkeypatch.setattr(svc, "get_booked_external_events", lambda uid: [])
+    monkeypatch.setattr(svc, "get_all_stored_external_event_details", lambda: [ext])
+    monkeypatch.setattr(svc, "get_safe_user_events_since", lambda since: [])
+    monkeypatch.setattr(svc, "get_users_by_ids", lambda ids: [])
+    monkeypatch.setattr(svc, "get_bookings_by_event_ids", lambda ids: {302: {7, 8}})
+
+    current_user = {"userId": 99, "isMember": True, "settings": {}}
+    events = svc.list_unified_events(current_user)
+    ext_events = [e for e in events if e.id == "ext302"]
+    assert len(ext_events) == 1
+    assert {a.userId for a in ext_events[0].attendees} == {7, 8}
+
+
+# ── book/unbook booking sync tests ──────────────────────────────────────────
+
+def test_attend_external_event_syncs_booking(monkeypatch):
+    import v1.events.events_service as svc
+
+    ext = make_external_event(400)
+    added = []
+
+    monkeypatch.setattr(svc, "book_external_event", lambda uid, eid: {"status": "OK"})
+    monkeypatch.setattr(svc, "get_all_stored_external_event_details", lambda: [ext])
+    monkeypatch.setattr(svc, "get_booked_external_events", lambda uid: [])
+    monkeypatch.setattr(svc, "add_booking", lambda userId, eventId: added.append((userId, eventId)))
+
+    current_user = {"userId": 5, "settings": {}, "isMember": True}
+    svc._attend_external_event("ext400", current_user)
+    assert (5, 400) in added
+
+
+def test_unattend_external_event_syncs_booking(monkeypatch):
+    import v1.events.events_service as svc
+
+    deleted = []
+    monkeypatch.setattr(svc, "unbook_external_event", lambda uid, eid: {"status": "OK"})
+    monkeypatch.setattr(svc, "delete_booking", lambda userId, eventId: deleted.append((userId, eventId)))
+
+    current_user = {"userId": 5, "settings": {}, "isMember": True}
+    svc._unattend_external_event("ext400", current_user)
+    assert (5, 400) in deleted
+

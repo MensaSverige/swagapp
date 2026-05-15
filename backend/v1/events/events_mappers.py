@@ -58,7 +58,12 @@ def _utc_now() -> datetime:
     return get_current_time().replace(tzinfo=None)
 
 
-def map_external_event(details: ExternalEventDetails, current_user_id: int, booked_ids: Set[int]) -> Optional[Event]:
+def map_external_event(
+    details: ExternalEventDetails,
+    current_user_id: int,
+    booked_ids: Set[int],
+    attendee_user_ids: Optional[Set[int]] = None,
+) -> Optional[Event]:
     # eventDate already combined in event_api.get_external_event_details
     if not details.eventDate:
         logging.warning(f"External event missing eventDate: {details.eventId}")
@@ -134,7 +139,11 @@ def map_external_event(details: ExternalEventDetails, current_user_id: int, book
             bookingStart=booking_start,
             bookingEnd=booking_end,
             showAttendees=ShowAttendees.all if details.showBooked else ShowAttendees.none,
-            attendees=[],  # hardcoded empty — external API does not expose attendee list
+            attendees=(
+                [EventAttendee(userId=uid) for uid in attendee_user_ids]
+                if attendee_user_ids is not None
+                else []
+            ),
             queue=[],
             maxAttendees=(details.booked + details.stock) if details.isLimited else None,
             price=float(details.price) if not details.isFree else 0.0,

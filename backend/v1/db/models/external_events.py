@@ -50,3 +50,7 @@ class ExternalEvent(BaseModel):
     eventId: int
     date: date
     time: time
+
+class ExternalEventBooking(BaseModel):
+    userId: int
+    eventId: int
