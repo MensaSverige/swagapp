@@ -79,15 +79,13 @@ def test_initialize_db_retries_on_failure():
     import v1.db.database as db_mod
 
     call_count = {"n": 0}
-    original = db_mod.Base.metadata.create_all
 
-    def flaky_create_all(bind):
+    def flaky_run_migrations():
         call_count["n"] += 1
         if call_count["n"] < 3:
             raise Exception("Connection refused")
-        original(bind=bind)
 
-    with patch.object(db_mod.Base.metadata, "create_all", side_effect=flaky_create_all):
+    with patch.object(db_mod, "run_alembic_migrations", side_effect=flaky_run_migrations):
         with patch("v1.db.database.time.sleep"):  # don't actually sleep
             db_mod.initialize_db(max_retries=5, retry_delay=0)
 
@@ -97,7 +95,7 @@ def test_initialize_db_retries_on_failure():
 def test_initialize_db_raises_after_max_retries():
     import v1.db.database as db_mod
 
-    with patch.object(db_mod.Base.metadata, "create_all", side_effect=Exception("always fails")):
+    with patch.object(db_mod, "run_alembic_migrations", side_effect=Exception("always fails")):
         with patch("v1.db.database.time.sleep"):
             try:
                 db_mod.initialize_db(max_retries=3, retry_delay=0)

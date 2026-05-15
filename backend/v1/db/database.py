@@ -2,7 +2,8 @@ import os
 import time
 import logging
 from contextlib import contextmanager
-from sqlalchemy import create_engine
+from pathlib import Path
+from sqlalchemy import create_engine, inspect
 from sqlalchemy.orm import sessionmaker, DeclarativeBase
 
 logging.basicConfig(level=logging.INFO)
@@ -36,8 +37,44 @@ def get_db():
         yield db
 
 
+def run_alembic_migrations():
+    """Apply all pending Alembic migrations to the live database.
+
+    Bootstrap handling: if the database already has tables but no
+    alembic_version table (i.e. it was created by the old create_all()
+    approach), stamp it at head so Alembic knows it is already up to date
+    without re-running the initial migration.
+    """
+    from alembic import command
+    from alembic.config import Config
+
+    # alembic.ini lives two levels above this file:
+    #   v1/db/database.py  →  ../../alembic.ini  →  backend/alembic.ini
+    alembic_ini = Path(__file__).resolve().parent.parent.parent / "alembic.ini"
+
+    alembic_cfg = Config(str(alembic_ini))
+
+    with engine.connect() as conn:
+        inspector = inspect(conn)
+        existing_tables = set(inspector.get_table_names())
+        has_alembic_version = "alembic_version" in existing_tables
+        has_app_tables = bool(existing_tables - {"alembic_version"})
+
+    if has_app_tables and not has_alembic_version:
+        # Pre-Alembic database — stamp as already at head so Alembic
+        # knows the initial migration has already been applied.
+        logging.info(
+            "Detected pre-Alembic database (tables exist, no alembic_version). "
+            "Stamping at head."
+        )
+        command.stamp(alembic_cfg, "head")
+
+    command.upgrade(alembic_cfg, "head")
+    logging.info("Alembic migrations applied (or already up to date).")
+
+
 def initialize_db(max_retries: int = 5, retry_delay: float = 2.0):
-    """Create all tables, retrying on connection failure."""
+    """Run Alembic migrations, retrying on connection failure."""
     from v1.db.tables import UserTable  # noqa: F401
     from v1.db.tables import TokenStorageTable  # noqa: F401
     from v1.db.tables import UserEventTable, EventHostTable, EventSuggestedHostTable, EventAttendeeTable, EventReportTable  # noqa: F401
@@ -48,8 +85,7 @@ def initialize_db(max_retries: int = 5, retry_delay: float = 2.0):
 
     for attempt in range(1, max_retries + 1):
         try:
-            Base.metadata.create_all(bind=engine)
-            logging.info("All database tables created.")
+            run_alembic_migrations()
             _seed_review_users()
             return
         except Exception as e:

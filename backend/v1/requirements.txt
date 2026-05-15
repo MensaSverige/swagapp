@@ -10,6 +10,7 @@ fastapi-health # Health checks for FastAPI
 python-multipart # Multipart form data
 uvicorn # ASGI server for FastAPI
 sqlalchemy # ORM for databases
+alembic # Database migrations
 faker # Fake data generator
 googlemaps # Google Maps API
 apscheduler # Scheduling periodic tasks
