@@ -168,3 +168,23 @@ def test_delete_booking(monkeypatch):
     eb.delete_booking(userId=5, eventId=99)
     assert deleted == [{"userId": 5, "eventId": 99}]
 
+
+# ── map_external_event attendee tests ────────────────────────────────────────
+
+def test_map_external_event_with_attendee_ids():
+    ext = make_external_event(200, booked=2)
+    mapped = map_external_event(ext, current_user_id=1, booked_ids={200}, attendee_user_ids={1, 7})
+    assert {a.userId for a in mapped.attendees} == {1, 7}
+
+
+def test_map_external_event_no_attendee_ids_gives_empty():
+    ext = make_external_event(201)
+    mapped = map_external_event(ext, current_user_id=1, booked_ids=set(), attendee_user_ids=None)
+    assert mapped.attendees == []
+
+
+def test_map_external_event_empty_set_gives_empty():
+    ext = make_external_event(202)
+    mapped = map_external_event(ext, current_user_id=1, booked_ids=set(), attendee_user_ids=set())
+    assert mapped.attendees == []
+
