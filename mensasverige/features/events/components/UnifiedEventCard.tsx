@@ -203,7 +203,6 @@ const UnifiedEventCard: React.FC<{
         <UserList
           users={attendeeUsers}
           title="Deltagare"
-          expandable
         />
 
       {user && (
