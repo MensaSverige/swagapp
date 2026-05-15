@@ -474,57 +474,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v1/dev/clear_user_events": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Clear User Events */
-        get: operations["clear_user_events_v1_dev_clear_user_events_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/dev/create_dummy_user_event": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Dummy User Event */
-        get: operations["get_dummy_user_event_v1_dev_create_dummy_user_event_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/dev/create_my_dummy_event": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Create My Dummy Event */
-        get: operations["create_my_dummy_event_v1_dev_create_my_dummy_event_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1079,11 +1028,6 @@ export interface components {
          * @enum {string}
          */
         ShowAttendees: "none" | "all" | "toAttending";
-        /** StatusResponseWithMessage */
-        StatusResponseWithMessage: {
-            /** Message */
-            message: string;
-        };
         /** Tag */
         Tag: {
             /** Code */
@@ -1300,6 +1244,11 @@ export interface components {
              * @example MEMBERS_ONLY
              */
             show_pronomen: components["schemas"]["PrivacySetting"];
+            /**
+             * @description Who can see this user in event attendee lists. None means inherit from show_profile.
+             * @example MEMBERS_ONLY
+             */
+            show_attendance?: components["schemas"]["PrivacySetting"] | null;
         };
         /** UserUpdate */
         UserUpdate: {
@@ -2302,66 +2251,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    clear_user_events_v1_dev_clear_user_events_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["StatusResponseWithMessage"];
-                };
-            };
-        };
-    };
-    get_dummy_user_event_v1_dev_create_dummy_user_event_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ExtendedUserEvent"];
-                };
-            };
-        };
-    };
-    create_my_dummy_event_v1_dev_create_my_dummy_event_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ExtendedUserEvent"];
                 };
             };
         };

@@ -4,30 +4,11 @@ import os
 from typing import List
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from v1.utilities import convert_to_tz_aware, get_current_time
-from v1.db.models.user import User, UserLocation, UserUpdate, PrivacySetting
+from v1.db.models.user import User, UserLocation, UserUpdate, PrivacySetting, viewer_can_see, effective_setting
 from v1.request_filter import validate_request
 from v1.db.users import get_users as db_get_users, get_user, get_users_showing_location, update_user
 
 users_v1 = APIRouter(prefix="/v1")
-
-
-def _viewer_can_see(target_setting: str, viewer: dict | None, setting_key: str) -> bool:
-    viewer_is_member = viewer is not None and viewer.get("isMember", False)
-    viewer_own = (viewer or {}).get("settings", {}).get(setting_key, PrivacySetting.NO_ONE.value)
-    viewer_is_mutual = viewer_own != PrivacySetting.NO_ONE.value
-    viewer_is_everyone_mutual = viewer_own in [PrivacySetting.EVERYONE_MUTUAL.value, PrivacySetting.EVERYONE.value]
-
-    if target_setting == PrivacySetting.NO_ONE.value:
-        return False
-    elif target_setting == PrivacySetting.EVERYONE.value:
-        return True
-    elif target_setting == PrivacySetting.EVERYONE_MUTUAL.value:
-        return viewer_is_everyone_mutual
-    elif target_setting == PrivacySetting.MEMBERS_ONLY.value:
-        return viewer_is_member
-    elif target_setting == PrivacySetting.MEMBERS_MUTUAL.value:
-        return viewer_is_member and viewer_is_mutual
-    return viewer_is_member
 
 
 @users_v1.get("/users", response_model=List[User])
@@ -47,41 +28,41 @@ async def get_users(show_location: bool = None,
         settings = user.get("settings", {})
         # ensure contact_info dict exists
         contact = user.get("contact_info") or {}
-        if not _viewer_can_see(settings.get("show_email", PrivacySetting.NO_ONE.value), current_user, "show_email"):
+        if not viewer_can_see(settings.get("show_email", PrivacySetting.NO_ONE.value), current_user, "show_email"):
             contact["email"] = None
-        if not _viewer_can_see(settings.get("show_phone", PrivacySetting.NO_ONE.value), current_user, "show_phone"):
+        if not viewer_can_see(settings.get("show_phone", PrivacySetting.NO_ONE.value), current_user, "show_phone"):
             contact["phone"] = None
         user["contact_info"] = contact
-        if user.get("userId") != current_user.get("userId") and not _viewer_can_see(
+        if user.get("userId") != current_user.get("userId") and not viewer_can_see(
                 settings.get("show_location", PrivacySetting.NO_ONE.value), current_user, "show_location"):
             user["location"] = None
-        if not _viewer_can_see(settings.get("show_interests", PrivacySetting.MEMBERS_ONLY.value), current_user, "show_interests") and user.get("userId") != current_user.get("userId"):
+        if not viewer_can_see(settings.get("show_interests", PrivacySetting.MEMBERS_ONLY.value), current_user, "show_interests") and user.get("userId") != current_user.get("userId"):
             user["interests"] = []
-        if user.get("userId") != current_user.get("userId") and not _viewer_can_see(
+        if user.get("userId") != current_user.get("userId") and not viewer_can_see(
                 settings.get("show_hometown", PrivacySetting.MEMBERS_ONLY.value), current_user, "show_hometown"):
             user["hometown"] = None
-        if user.get("userId") != current_user.get("userId") and not _viewer_can_see(
+        if user.get("userId") != current_user.get("userId") and not viewer_can_see(
                 settings.get("show_birthdate", PrivacySetting.MEMBERS_ONLY.value), current_user, "show_birthdate"):
             user["birthdate"] = None
-        if user.get("userId") != current_user.get("userId") and not _viewer_can_see(
+        if user.get("userId") != current_user.get("userId") and not viewer_can_see(
                 settings.get("show_gender", PrivacySetting.NO_ONE.value), current_user, "show_gender"):
             user["gender"] = None
-        if user.get("userId") != current_user.get("userId") and not _viewer_can_see(
+        if user.get("userId") != current_user.get("userId") and not viewer_can_see(
                 settings.get("show_sexuality", PrivacySetting.NO_ONE.value), current_user, "show_sexuality"):
             user["sexuality"] = None
-        if user.get("userId") != current_user.get("userId") and not _viewer_can_see(
+        if user.get("userId") != current_user.get("userId") and not viewer_can_see(
                 settings.get("show_relationship_style", PrivacySetting.NO_ONE.value), current_user, "show_relationship_style"):
             user["relationship_style"] = None
-        if user.get("userId") != current_user.get("userId") and not _viewer_can_see(
+        if user.get("userId") != current_user.get("userId") and not viewer_can_see(
                 settings.get("show_relationship_status", PrivacySetting.NO_ONE.value), current_user, "show_relationship_status"):
             user["relationship_status"] = None
-        if user.get("userId") != current_user.get("userId") and not _viewer_can_see(
+        if user.get("userId") != current_user.get("userId") and not viewer_can_see(
                 settings.get("show_social_vibes", PrivacySetting.MEMBERS_ONLY.value), current_user, "show_social_vibes"):
             user["social_vibes"] = []
-        if user.get("userId") != current_user.get("userId") and not _viewer_can_see(
+        if user.get("userId") != current_user.get("userId") and not viewer_can_see(
                 settings.get("show_pronomen", PrivacySetting.NO_ONE.value), current_user, "show_pronomen"):
             user["pronomen"] = None
-        if user.get("userId") == current_user.get("userId") or _viewer_can_see(
+        if user.get("userId") == current_user.get("userId") or viewer_can_see(
                 settings.get("show_profile", PrivacySetting.MEMBERS_ONLY.value), current_user, "show_profile"):
             result.append(user)
     return result
@@ -95,49 +76,49 @@ async def get_user_by_id(user_id: int,
         raise HTTPException(status_code=404, detail="User not found")
 
     settings = user.get("settings", {})
-    if user.get("userId") != current_user.get("userId") and not _viewer_can_see(
+    if user.get("userId") != current_user.get("userId") and not viewer_can_see(
             settings.get("show_profile", PrivacySetting.MEMBERS_ONLY.value), current_user, "show_profile"):
         raise HTTPException(status_code=403, detail="Profile not visible")
 
     # Enforce privacy: hide email/phone based on viewer's access
     contact = user.get("contact_info") or {}
-    if not _viewer_can_see(settings.get("show_email", PrivacySetting.NO_ONE.value), current_user, "show_email"):
+    if not viewer_can_see(settings.get("show_email", PrivacySetting.NO_ONE.value), current_user, "show_email"):
         contact["email"] = None
-    if not _viewer_can_see(settings.get("show_phone", PrivacySetting.NO_ONE.value), current_user, "show_phone"):
+    if not viewer_can_see(settings.get("show_phone", PrivacySetting.NO_ONE.value), current_user, "show_phone"):
         contact["phone"] = None
     user["contact_info"] = contact
 
     # Hide location if user doesn't want to show it
-    if user.get("userId") != current_user.get("userId") and not _viewer_can_see(
+    if user.get("userId") != current_user.get("userId") and not viewer_can_see(
             settings.get("show_location", PrivacySetting.NO_ONE.value), current_user, "show_location"):
         user["location"] = None
 
-    if user.get("userId") != current_user.get("userId") and not _viewer_can_see(
+    if user.get("userId") != current_user.get("userId") and not viewer_can_see(
             settings.get("show_interests", PrivacySetting.MEMBERS_ONLY.value), current_user, "show_interests"):
         user["interests"] = []
 
-    if user.get("userId") != current_user.get("userId") and not _viewer_can_see(
+    if user.get("userId") != current_user.get("userId") and not viewer_can_see(
             settings.get("show_hometown", PrivacySetting.MEMBERS_ONLY.value), current_user, "show_hometown"):
         user["hometown"] = None
-    if user.get("userId") != current_user.get("userId") and not _viewer_can_see(
+    if user.get("userId") != current_user.get("userId") and not viewer_can_see(
             settings.get("show_birthdate", PrivacySetting.MEMBERS_ONLY.value), current_user, "show_birthdate"):
         user["birthdate"] = None
-    if user.get("userId") != current_user.get("userId") and not _viewer_can_see(
+    if user.get("userId") != current_user.get("userId") and not viewer_can_see(
             settings.get("show_gender", PrivacySetting.NO_ONE.value), current_user, "show_gender"):
         user["gender"] = None
-    if user.get("userId") != current_user.get("userId") and not _viewer_can_see(
+    if user.get("userId") != current_user.get("userId") and not viewer_can_see(
             settings.get("show_sexuality", PrivacySetting.NO_ONE.value), current_user, "show_sexuality"):
         user["sexuality"] = None
-    if user.get("userId") != current_user.get("userId") and not _viewer_can_see(
+    if user.get("userId") != current_user.get("userId") and not viewer_can_see(
             settings.get("show_relationship_style", PrivacySetting.NO_ONE.value), current_user, "show_relationship_style"):
         user["relationship_style"] = None
-    if user.get("userId") != current_user.get("userId") and not _viewer_can_see(
+    if user.get("userId") != current_user.get("userId") and not viewer_can_see(
             settings.get("show_relationship_status", PrivacySetting.NO_ONE.value), current_user, "show_relationship_status"):
         user["relationship_status"] = None
-    if user.get("userId") != current_user.get("userId") and not _viewer_can_see(
+    if user.get("userId") != current_user.get("userId") and not viewer_can_see(
             settings.get("show_social_vibes", PrivacySetting.MEMBERS_ONLY.value), current_user, "show_social_vibes"):
         user["social_vibes"] = []
-    if user.get("userId") != current_user.get("userId") and not _viewer_can_see(
+    if user.get("userId") != current_user.get("userId") and not viewer_can_see(
             settings.get("show_pronomen", PrivacySetting.NO_ONE.value), current_user, "show_pronomen"):
         user["pronomen"] = None
 

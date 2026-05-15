@@ -19,11 +19,42 @@ from v1.user_events.user_events_db import (
 )
 from v1.user_events.user_events_model import UserEvent, Host as UEHost, Attendee as UEAttendee, Location as UELocation
 from v1.utilities import get_current_time
+from v1.db.users import get_users_by_ids
+from v1.db.models.user import PrivacySetting, viewer_can_see, effective_setting
 from fastapi import HTTPException
 
 
+def _filter_event_attendees(event: Event, current_user: dict) -> Event:
+    """Remove attendees whose show_attendance setting hides them from this viewer."""
+    if not event.attendees:
+        return event
+    current_user_id = current_user.get("userId")
+    other_ids = [a.userId for a in event.attendees if a.userId != current_user_id]
+    if not other_ids:
+        return event
+    user_docs = {u["userId"]: u for u in get_users_by_ids(other_ids)}
+    viewer_settings = current_user.get("settings", {})
+    resolved_viewer = {
+        **current_user,
+        "settings": {
+            **viewer_settings,
+            "show_attendance": effective_setting(viewer_settings, "show_attendance"),
+        },
+    }
+    filtered_attendees = [
+        a for a in event.attendees
+        if a.userId == current_user_id
+        or viewer_can_see(
+            effective_setting(user_docs.get(a.userId, {}).get("settings", {}), "show_attendance"),
+            resolved_viewer,
+            "show_attendance",
+        )
+    ]
+    return event.model_copy(update={"attendees": filtered_attendees})
+
+
 def list_unified_events(
-    current_user_id: int,
+    current_user: dict,
     attending: Optional[bool] = None,
     bookable: Optional[bool] = None,
     official: Optional[bool] = None,
@@ -32,6 +63,8 @@ def list_unified_events(
 
     Filters follow semantics: if param is None -> include both states; else match exact state.
     """
+    current_user_id = current_user["userId"]
+
     # External events
     try:
         booked_external = get_booked_external_events(current_user_id)
@@ -51,7 +84,7 @@ def list_unified_events(
     for d in external_events_details:
         mapped = map_external_event(d, current_user_id, booked_ids)
         if mapped:
-            external_events.append(mapped)
+            external_events.append(_filter_event_attendees(mapped, current_user))
 
     # User events (already filtered to future via db function)
     try:
@@ -61,7 +94,10 @@ def list_unified_events(
     except Exception as e:
         logging.error(f"Failed to fetch user events since range: {e}")
         user_events = []
-    user_events_mapped = [map_user_event(u, current_user_id) for u in user_events]
+    user_events_mapped = [
+        _filter_event_attendees(map_user_event(u, current_user_id), current_user)
+        for u in user_events
+    ]
 
     merged = external_events + user_events_mapped
 

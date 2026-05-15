@@ -56,6 +56,10 @@ def get_users(show_location: Optional[bool] = None) -> list[User]:
     return list(user_collection.find(query))
 
 
+def get_users_by_ids(user_ids: list[int]) -> list[dict]:
+    return list(user_collection.find({"userId": {"$in": user_ids}}))
+
+
 def get_users_showing_location() -> list[User]:
     """
     Retrieves all user documents from the MongoDB database where ShowLocation is not no_one.

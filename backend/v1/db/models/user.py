@@ -111,8 +111,8 @@ _LEGACY_LOCATION_RENAMES = {
 class UserSettings(BaseModel):
     show_location: PrivacySetting = Field(default=PrivacySetting.NO_ONE,
                                           example=PrivacySetting.EVERYONE)
-    show_profile: PrivacySetting = Field(default=PrivacySetting.MEMBERS_ONLY,
-                                         example=PrivacySetting.MEMBERS_ONLY)
+    show_profile: PrivacySetting = Field(default=PrivacySetting.MEMBERS_MUTUAL,
+                                         example=PrivacySetting.MEMBERS_MUTUAL)
     show_email: PrivacySetting = Field(default=PrivacySetting.NO_ONE, example=PrivacySetting.MEMBERS_ONLY)
     show_phone: PrivacySetting = Field(default=PrivacySetting.NO_ONE, example=PrivacySetting.MEMBERS_ONLY)
 
@@ -120,15 +120,20 @@ class UserSettings(BaseModel):
     events_refresh_interval_seconds: int = Field(default=60, example=60, description="Events refresh interval in seconds")
 
     background_location_updates: bool = Field(default=False, example=True, description="Allow location updates when app is in background")
-    show_interests: PrivacySetting = Field(default=PrivacySetting.MEMBERS_ONLY, example=PrivacySetting.MEMBERS_ONLY)
-    show_hometown: PrivacySetting = Field(default=PrivacySetting.MEMBERS_ONLY, example=PrivacySetting.MEMBERS_ONLY)
-    show_birthdate: PrivacySetting = Field(default=PrivacySetting.MEMBERS_ONLY, example=PrivacySetting.MEMBERS_ONLY)
+    show_interests: PrivacySetting = Field(default=PrivacySetting.MEMBERS_MUTUAL, example=PrivacySetting.MEMBERS_ONLY)
+    show_hometown: PrivacySetting = Field(default=PrivacySetting.MEMBERS_MUTUAL, example=PrivacySetting.MEMBERS_ONLY)
+    show_birthdate: PrivacySetting = Field(default=PrivacySetting.MEMBERS_MUTUAL, example=PrivacySetting.MEMBERS_ONLY)
     show_gender: PrivacySetting = Field(default=PrivacySetting.NO_ONE, example=PrivacySetting.MEMBERS_ONLY)
     show_sexuality: PrivacySetting = Field(default=PrivacySetting.NO_ONE, example=PrivacySetting.MEMBERS_ONLY)
     show_relationship_style: PrivacySetting = Field(default=PrivacySetting.NO_ONE, example=PrivacySetting.MEMBERS_ONLY)
     show_relationship_status: PrivacySetting = Field(default=PrivacySetting.NO_ONE, example=PrivacySetting.MEMBERS_ONLY)
-    show_social_vibes: PrivacySetting = Field(default=PrivacySetting.MEMBERS_ONLY, example=PrivacySetting.MEMBERS_ONLY)
+    show_social_vibes: PrivacySetting = Field(default=PrivacySetting.MEMBERS_MUTUAL, example=PrivacySetting.MEMBERS_ONLY)
     show_pronomen: PrivacySetting = Field(default=PrivacySetting.NO_ONE, example=PrivacySetting.MEMBERS_ONLY)
+    show_attendance: Optional[PrivacySetting] = Field(
+        default=PrivacySetting.MEMBERS_MUTUAL,
+        example=PrivacySetting.MEMBERS_MUTUAL,
+        description="Who can see this user in event attendee lists. None means inherit from show_profile.",
+    )
 
     @field_validator("show_location", mode="before")
     @classmethod
@@ -143,6 +148,38 @@ class UserSettings(BaseModel):
         if isinstance(v, bool):
             return "MEMBERS_ONLY" if v else "NO_ONE"
         return v
+
+
+_PRIVACY_FALLBACKS: dict[str, str] = {"show_attendance": "show_profile"}
+
+
+def effective_setting(settings: dict, key: str, default: str = PrivacySetting.MEMBERS_ONLY.value) -> str:
+    """Return the effective privacy value for `key`, falling back via _PRIVACY_FALLBACKS when the stored value is None."""
+    val = settings.get(key)
+    if val is None:
+        fallback = _PRIVACY_FALLBACKS.get(key)
+        val = settings.get(fallback) if fallback else None
+    return val or default
+
+
+def viewer_can_see(target_setting: str, viewer: dict | None, setting_key: str) -> bool:
+    """Return True if `viewer` is allowed to see data gated by `target_setting`."""
+    viewer_is_member = viewer is not None and viewer.get("isMember", False)
+    viewer_own = (viewer or {}).get("settings", {}).get(setting_key, PrivacySetting.NO_ONE.value)
+    viewer_is_mutual = viewer_own != PrivacySetting.NO_ONE.value
+    viewer_is_everyone_mutual = viewer_own in [PrivacySetting.EVERYONE_MUTUAL.value, PrivacySetting.EVERYONE.value]
+
+    if target_setting == PrivacySetting.NO_ONE.value:
+        return False
+    elif target_setting == PrivacySetting.EVERYONE.value:
+        return True
+    elif target_setting == PrivacySetting.EVERYONE_MUTUAL.value:
+        return viewer_is_everyone_mutual
+    elif target_setting == PrivacySetting.MEMBERS_ONLY.value:
+        return viewer_is_member
+    elif target_setting == PrivacySetting.MEMBERS_MUTUAL.value:
+        return viewer_is_member and viewer_is_mutual
+    return viewer_is_member
 
 
 class ContactInfo(BaseModel):

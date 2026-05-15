@@ -14,6 +14,7 @@ type PrivacyForm = {
     show_email: PrivacySetting;
     show_phone: PrivacySetting;
     show_profile: PrivacySetting;
+    show_attendance: PrivacySetting;
     show_location: PrivacySetting;
     show_interests: PrivacySetting;
     show_hometown: PrivacySetting;
@@ -39,6 +40,7 @@ const PrivacySettings: React.FC = () => {
         show_email: user?.settings?.show_email || 'NO_ONE',
         show_phone: user?.settings?.show_phone || 'NO_ONE',
         show_profile: user?.settings?.show_profile || DEFAULT_SETTINGS.SHOW_PROFILE,
+        show_attendance: user?.settings?.show_attendance || user?.settings?.show_profile || DEFAULT_SETTINGS.SHOW_PROFILE,
         show_location: user?.settings?.show_location || 'NO_ONE',
         show_interests: user?.settings?.show_interests || 'MEMBERS_ONLY',
         show_hometown: user?.settings?.show_hometown || 'MEMBERS_ONLY',
@@ -149,6 +151,13 @@ const PrivacySettings: React.FC = () => {
                     options={profileOptions}
                     value={form.show_profile}
                     onChange={v => setForm(f => ({ ...f, show_profile: v }))}
+                />
+                <PrivacyCard
+                    title="Deltagande på evenemang"
+                    description="Vem kan se att du deltar i evenemang?"
+                    options={profileOptions}
+                    value={form.show_attendance}
+                    onChange={v => setForm(f => ({ ...f, show_attendance: v }))}
                 />
                 <PrivacyCard
                     title="Platsuppgifter"

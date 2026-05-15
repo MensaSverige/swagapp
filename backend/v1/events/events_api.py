@@ -27,7 +27,7 @@ async def get_events(
     current_user: dict = Depends(validate_request),
 ):
     return list_unified_events(
-        current_user_id=current_user["userId"],
+        current_user=current_user,
         attending=attending,
         bookable=bookable,
         official=official,
@@ -51,17 +51,17 @@ async def delete_event_proxy(event_id: str, current_user: dict = Depends(validat
 
 @unified_events_v1.get("/events/attending", response_model=List[Event])
 async def get_events_attending(current_user: dict = Depends(validate_request)):
-    return list_unified_events(current_user_id=current_user["userId"], attending=True)
+    return list_unified_events(current_user=current_user, attending=True)
 
 
 @unified_events_v1.get("/events/official", response_model=List[Event])
 async def get_events_official(current_user: dict = Depends(validate_request)):
-    return list_unified_events(current_user_id=current_user["userId"], official=True)
+    return list_unified_events(current_user=current_user, official=True)
 
 
 @unified_events_v1.get("/events/unofficial", response_model=List[Event])
 async def get_events_unofficial(current_user: dict = Depends(validate_request)):
-    return list_unified_events(current_user_id=current_user["userId"], official=False)
+    return list_unified_events(current_user=current_user, official=False)
 
 
 @unified_events_v1.post("/events/{event_id}/attend", response_model=Event)
