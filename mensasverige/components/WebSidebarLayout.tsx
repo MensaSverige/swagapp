@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
 import { Slot, usePathname, useRouter } from 'expo-router';
 import { Image } from 'expo-image';
 import { IconSymbol } from '@/components/ui/IconSymbol';
@@ -10,6 +10,8 @@ import useStore from '@/features/common/store/store';
 import { getFullUrl } from '@/features/common/functions/GetFullUrl';
 
 const SIDEBAR_WIDTH = 220;
+const CONTENT_MAX_WIDTH = 900;
+const FULL_BLEED_PATHS = ['/map'];
 
 type NavItem = {
   label: string;
@@ -52,6 +54,8 @@ export function WebSidebarLayout() {
   const pathname = usePathname();
   const user = useStore((state) => state.user);
   const tint = Colors[isDark ? 'dark' : 'light'].tint;
+
+  const isFullBleed = FULL_BLEED_PATHS.some(p => pathname.startsWith(p));
 
   const sidebarBg = isDark ? '#0f172a' : '#1e293b';
   const sidebarBorder = isDark ? '#1e293b' : '#334155';
@@ -127,7 +131,18 @@ export function WebSidebarLayout() {
 
       {/* Content */}
       <View style={[styles.content, { backgroundColor: contentBg }]}>
-        <Slot />
+        {isFullBleed ? (
+          <Slot />
+        ) : (
+          <ScrollView
+            style={styles.scrollView}
+            contentContainerStyle={styles.scrollContent}
+          >
+            <View style={styles.centeredContent}>
+              <Slot />
+            </View>
+          </ScrollView>
+        )}
       </View>
     </View>
   );
@@ -204,6 +219,18 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   content: {
+    flex: 1,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    alignItems: 'center',
+  },
+  centeredContent: {
+    width: '100%',
+    maxWidth: CONTENT_MAX_WIDTH,
     flex: 1,
   },
 });
