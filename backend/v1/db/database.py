@@ -10,7 +10,12 @@ logging.basicConfig(level=logging.INFO)
 
 DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://swag:swag@postgres:5432/swag")
 
-engine = create_engine(DATABASE_URL, echo=False)
+engine = create_engine(
+    DATABASE_URL,
+    echo=False,
+    pool_pre_ping=True,
+    pool_recycle=300,
+)
 SessionLocal = sessionmaker(bind=engine)
 
 
@@ -61,13 +66,24 @@ def run_alembic_migrations():
         has_app_tables = bool(existing_tables - {"alembic_version"})
 
     if has_app_tables and not has_alembic_version:
-        # Pre-Alembic database — stamp as already at head so Alembic
-        # knows the initial migration has already been applied.
-        logging.info(
-            "Detected pre-Alembic database (tables exist, no alembic_version). "
-            "Stamping at head."
-        )
-        command.stamp(alembic_cfg, "head")
+        # Only stamp when ALL expected tables are present. A partially-migrated
+        # DB (crash mid-upgrade before alembic_version was written) should NOT
+        # be stamped — let upgrade run and fail loudly so the gap is visible.
+        from v1.db.tables import Base as _Base
+        expected = set(_Base.metadata.tables.keys())
+        missing = expected - existing_tables
+        if missing:
+            logging.warning(
+                "Pre-Alembic DB detected but %d expected tables are missing (%s). "
+                "Will let alembic upgrade run rather than stamp.",
+                len(missing), ", ".join(sorted(missing)),
+            )
+        else:
+            logging.info(
+                "Detected pre-Alembic database with all %d tables present. "
+                "Stamping at head.", len(expected),
+            )
+            command.stamp(alembic_cfg, "head")
 
     command.upgrade(alembic_cfg, "head")
     logging.info("Alembic migrations applied (or already up to date).")

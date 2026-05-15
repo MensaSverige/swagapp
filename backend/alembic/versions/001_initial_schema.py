@@ -15,6 +15,7 @@ from typing import Sequence, Union
 
 import sqlalchemy as sa
 from alembic import op
+from sqlalchemy.dialects import postgresql
 
 revision: str = "001"
 down_revision: Union[str, None] = None
@@ -56,14 +57,14 @@ def upgrade() -> None:
         sa.Column("avatar_url", sa.String(), nullable=True),
         sa.Column("firstName", sa.String(), nullable=True),
         sa.Column("lastName", sa.String(), nullable=True),
-        sa.Column("interests", sa.JSON(), nullable=True),
+        sa.Column("interests", postgresql.JSONB(), nullable=True),
         sa.Column("hometown", sa.String(), nullable=True),
         sa.Column("birthdate", sa.String(), nullable=True),
         sa.Column("gender", sa.String(), nullable=True),
         sa.Column("sexuality", sa.String(), nullable=True),
         sa.Column("relationship_style", sa.String(), nullable=True),
         sa.Column("relationship_status", sa.String(), nullable=True),
-        sa.Column("social_vibes", sa.JSON(), nullable=True),
+        sa.Column("social_vibes", postgresql.JSONB(), nullable=True),
         sa.Column("pronomen", sa.String(), nullable=True),
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
         sa.Column("updated_at", sa.DateTime(timezone=True), nullable=False),

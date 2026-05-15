@@ -1,6 +1,8 @@
-from datetime import datetime, timedelta
+import logging
+from datetime import datetime, timedelta, timezone
 from typing import List
 from sqlalchemy import or_, and_
+from sqlalchemy.exc import IntegrityError
 from v1.user_events.user_events_model import ExtendedUserEvent, UserEvent
 from v1.db.database import get_session
 from v1.db.tables import (
@@ -8,6 +10,8 @@ from v1.db.tables import (
     EventAttendeeTable, EventReportTable, UserTable,
 )
 from v1.utilities import get_current_time
+
+log = logging.getLogger(__name__)
 
 
 def create_user_event(user_event) -> int:
@@ -119,20 +123,26 @@ def update_user_event(event_id: str, user_event: UserEvent) -> bool:
             row.location_latitude = None
             row.location_longitude = None
 
-        # Replace child rows
+        # Replace child rows. Flush deletes before inserts to avoid unique-
+        # constraint violations when the same userId appears in both the old
+        # and new child sets (e.g. a host removed and re-added in one update).
         row.hosts.clear()
+        session.flush()
         for h in data.get("hosts") or []:
             row.hosts.append(EventHostTable(event_id=row.id, userId=h["userId"]))
 
         row.suggested_hosts.clear()
+        session.flush()
         for h in data.get("suggested_hosts") or []:
             row.suggested_hosts.append(EventSuggestedHostTable(event_id=row.id, userId=h["userId"]))
 
         row.attendees.clear()
+        session.flush()
         for a in data.get("attendees") or []:
             row.attendees.append(EventAttendeeTable(event_id=row.id, userId=a["userId"]))
 
         row.reports.clear()
+        session.flush()
         for r in data.get("reports") or []:
             row.reports.append(EventReportTable(event_id=row.id, userId=r["userId"], text=r["text"]))
 
@@ -153,7 +163,9 @@ def delete_user_event(event_id: str) -> bool:
 
 def get_unsafe_future_user_events() -> list[UserEvent]:
     """Retrieves all future user events."""
-    current_time = get_current_time().replace(tzinfo=None)
+    current_time = get_current_time()
+    if current_time.tzinfo is None:
+        current_time = current_time.replace(tzinfo=timezone.utc)
     with get_session() as session:
         rows = session.query(UserEventTable).filter(
             or_(
@@ -234,7 +246,9 @@ def add_attendee_to_user_event(event_id: str, user_id: int) -> bool:
 
     Uses SELECT FOR UPDATE to serialize concurrent requests so that capacity
     and duplicate checks are evaluated against a consistent locked snapshot.
-    The UniqueConstraint on event_attendees acts as a DB-level safety net.
+    The UniqueConstraint on event_attendees acts as a DB-level safety net:
+    a race that bypasses the Python-level check results in IntegrityError
+    which is caught here and treated as "already attending" (returns True).
     """
     try:
         with get_session() as session:
@@ -248,8 +262,11 @@ def add_attendee_to_user_event(event_id: str, user_id: int) -> bool:
             session.add(EventAttendeeTable(event_id=row.id, userId=user_id))
             session.commit()
             return True
-    except Exception:
-        return False
+    except IntegrityError:
+        # Unique constraint fired — the row was inserted by a concurrent request.
+        # The attendee is present, so the operation logically succeeded.
+        log.debug("Duplicate attendee insert blocked by constraint: event=%s user=%s", event_id, user_id)
+        return True
 
 
 def remove_attendee_from_user_event(event_id: str, user_id: int) -> bool:
@@ -411,15 +428,3 @@ def remove_secrets_from_user_events(events: list[UserEvent]) -> list[UserEvent]:
     return [make_user_event_safe(event) for event in events]
 
 
-def restore_secret_fields_on_user_event(event: UserEvent, event_id: str = None) -> UserEvent | None:
-    """Restore secret fields to their original values."""
-    lookup_id = event_id or event.id
-    if not lookup_id:
-        return None
-
-    original_event = get_unsafe_user_event(lookup_id)
-    if not original_event:
-        return None
-
-    event.reports = original_event.reports
-    return event

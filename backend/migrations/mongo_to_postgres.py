@@ -22,6 +22,7 @@ FeedbackVoteTable and FeedbackUserIndexTable have no MongoDB counterpart
 (they are Postgres-only) and are skipped.
 """
 
+import json
 import logging
 import os
 import sys
@@ -175,8 +176,8 @@ def migrate_users(session):
                 :location_latitude, :location_longitude, :location_timestamp, :location_accuracy,
                 :contact_email, :contact_phone,
                 :age, :slogan, :avatar_url, :firstName, :lastName,
-                :interests::jsonb, :hometown, :birthdate, :gender, :sexuality,
-                :relationship_style, :relationship_status, :social_vibes::jsonb, :pronomen,
+                :interests, :hometown, :birthdate, :gender, :sexuality,
+                :relationship_style, :relationship_status, :social_vibes, :pronomen,
                 :created_at, :updated_at
             )
             ON CONFLICT ("userId") DO UPDATE SET
@@ -219,8 +220,8 @@ def migrate_users(session):
                 social_vibes                        = EXCLUDED.social_vibes,
                 pronomen                            = EXCLUDED.pronomen,
                 updated_at                          = EXCLUDED.updated_at
-        """), {**row, "interests": __import__("json").dumps(row["interests"]),
-                      "social_vibes": __import__("json").dumps(row["social_vibes"])})
+        """), {**row, "interests": json.dumps(row["interests"]),
+                      "social_vibes": json.dumps(row["social_vibes"])})
 
         inserted += 1
 
@@ -263,15 +264,34 @@ def migrate_token_storage(session):
 
 # ── User events ───────────────────────────────────────────────────────────────
 
+def _ensure_migration_tracking(session):
+    """Create a migration-tracking table if it doesn't already exist.
+
+    _mongo_migration_log maps (collection, mongo_id) → postgres id so that
+    re-runs of the migration can detect already-migrated documents without
+    relying on non-existent unique constraints on the target tables.
+    """
+    session.execute(text("""
+        CREATE TABLE IF NOT EXISTS _mongo_migration_log (
+            collection  VARCHAR NOT NULL,
+            mongo_id    VARCHAR NOT NULL,
+            pg_id       INTEGER NOT NULL,
+            PRIMARY KEY (collection, mongo_id)
+        )
+    """))
+    session.commit()
+
+
 def migrate_user_events(session):
-    import json
+    _ensure_migration_tracking(session)
     coll = mongo_db["userevent"]
     total = coll.count_documents({})
     log.info("userevent: %d documents in Mongo", total)
 
-    inserted = 0
+    processed = skipped = 0
     for doc in coll.find():
         mongo_id = doc.get("_id")  # ObjectId
+        mongo_id_str = str(mongo_id)
         uid = doc.get("userId")
         if uid is None:
             log.warning("userevent missing userId, skipping %s", mongo_id)
@@ -279,58 +299,57 @@ def migrate_user_events(session):
 
         loc = doc.get("location") or {}
 
-        # Upsert the parent event row.
-        # We use the Mongo ObjectId hex as a stable external key to detect
-        # re-runs. Postgres auto-generates the integer id; we look it up after.
-        external_id = str(mongo_id)
-        result = session.execute(text("""
-            INSERT INTO user_events (
-                "userId", name, start, "end", description, "maxAttendees",
-                location_description, location_address, location_marker,
-                location_latitude, location_longitude,
-                created_at, updated_at
-            )
-            VALUES (
-                :userId, :name, :start, :end, :description, :maxAttendees,
-                :loc_desc, :loc_addr, :loc_marker,
-                :loc_lat, :loc_lon,
-                :created_at, :updated_at
-            )
-            ON CONFLICT DO NOTHING
-            RETURNING id
-        """), {
-            "userId": uid,
-            "name": _str(doc.get("name"), "Unnamed"),
-            "start": _tz(doc.get("start")),
-            "end": _tz(doc.get("end")),
-            "description": doc.get("description"),
-            "maxAttendees": doc.get("maxAttendees"),
-            "loc_desc": loc.get("description"),
-            "loc_addr": loc.get("address"),
-            "loc_marker": loc.get("marker"),
-            "loc_lat": loc.get("latitude"),
-            "loc_lon": loc.get("longitude"),
-            "created_at": _tz(doc.get("createdAt")) or datetime.now(timezone.utc),
-            "updated_at": _tz(doc.get("updatedAt")) or datetime.now(timezone.utc),
-        })
+        # Check if this Mongo document was already migrated (idempotency key).
+        existing_map = session.execute(text("""
+            SELECT pg_id FROM _mongo_migration_log
+            WHERE collection = 'userevent' AND mongo_id = :mid
+        """), {"mid": mongo_id_str}).fetchone()
 
-        row = result.fetchone()
-        if row is None:
-            # Row already existed (ON CONFLICT DO NOTHING): look it up by natural key
-            existing = session.execute(text("""
-                SELECT id FROM user_events
-                WHERE "userId" = :uid AND name = :name AND start = :start
-                LIMIT 1
-            """), {"uid": uid, "name": _str(doc.get("name"), "Unnamed"),
-                   "start": _tz(doc.get("start"))}).fetchone()
-            if existing is None:
-                log.warning("Could not find pg id for userevent %s, skipping children", mongo_id)
-                continue
-            event_pg_id = existing[0]
+        if existing_map is not None:
+            event_pg_id = existing_map[0]
+            skipped += 1
         else:
-            event_pg_id = row[0]
+            result = session.execute(text("""
+                INSERT INTO user_events (
+                    "userId", name, start, "end", description, "maxAttendees",
+                    location_description, location_address, location_marker,
+                    location_latitude, location_longitude,
+                    created_at, updated_at
+                )
+                VALUES (
+                    :userId, :name, :start, :end, :description, :maxAttendees,
+                    :loc_desc, :loc_addr, :loc_marker,
+                    :loc_lat, :loc_lon,
+                    :created_at, :updated_at
+                )
+                RETURNING id
+            """), {
+                "userId": uid,
+                "name": _str(doc.get("name"), "Unnamed"),
+                "start": _tz(doc.get("start")),
+                "end": _tz(doc.get("end")),
+                "description": doc.get("description"),
+                "maxAttendees": doc.get("maxAttendees"),
+                "loc_desc": loc.get("description"),
+                "loc_addr": loc.get("address"),
+                "loc_marker": loc.get("marker"),
+                "loc_lat": loc.get("latitude"),
+                "loc_lon": loc.get("longitude"),
+                "created_at": _tz(doc.get("createdAt")) or datetime.now(timezone.utc),
+                "updated_at": _tz(doc.get("updatedAt")) or datetime.now(timezone.utc),
+            })
+            event_pg_id = result.fetchone()[0]
 
-        # Child rows — idempotent via ON CONFLICT DO NOTHING
+            # Record the mapping so re-runs skip this document.
+            session.execute(text("""
+                INSERT INTO _mongo_migration_log (collection, mongo_id, pg_id)
+                VALUES ('userevent', :mid, :pid)
+                ON CONFLICT DO NOTHING
+            """), {"mid": mongo_id_str, "pid": event_pg_id})
+
+            processed += 1
+
+        # Child rows — idempotent via named unique constraints.
         for h in doc.get("hosts") or []:
             huid = h.get("userId")
             if huid is not None:
@@ -368,11 +387,9 @@ def migrate_user_events(session):
                     ON CONFLICT DO NOTHING
                 """), {"eid": event_pg_id, "uid": ruid, "text": rtext})
 
-        inserted += 1
-
     session.commit()
-    log.info("userevent: %d processed", inserted)
-    return total, inserted
+    log.info("userevent: %d inserted, %d already migrated (skipped)", processed, skipped)
+    return total, processed
 
 
 # ── External event details ────────────────────────────────────────────────────
@@ -493,6 +510,9 @@ def migrate_external_root(session):
         log.info("externalroot: nothing to migrate")
         return 0, 0
 
+    if total > 1:
+        log.warning("externalroot: %d documents found in Mongo (expected 1); using first", total)
+
     doc = coll.find_one()
     now = datetime.now(timezone.utc)
 
@@ -582,7 +602,7 @@ def validate(session):
     for pg_table, mongo_coll, _note in checks:
         mongo_count = mongo_db[mongo_coll].count_documents({})
         pg_count = session.execute(text(f'SELECT COUNT(*) FROM "{pg_table}"')).scalar()
-        status = "OK" if pg_count >= mongo_count else "MISMATCH"
+        status = "OK" if pg_count == mongo_count else "MISMATCH"
         if status != "OK":
             all_ok = False
         log.info(
