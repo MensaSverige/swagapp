@@ -108,10 +108,30 @@ export const createEventCardStyles = (colorScheme: string) => {
   },
 
   // UserList styles
+  userListHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  viewAllButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  viewAllText: {
+    fontSize: 12,
+    fontWeight: '600',
+    opacity: 0.55,
+  },
   userListContainer: {
-    //flexDirection: 'row',
-    //flexWrap: 'wrap',
-    gap: 10,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+  },
+  userListGridItem: {
+    width: '50%',
+    paddingBottom: 8,
+    paddingRight: 8,
   },
   userListItem: {
     flexDirection: 'row',
