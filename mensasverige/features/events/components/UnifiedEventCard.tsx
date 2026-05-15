@@ -44,7 +44,7 @@ const UnifiedEventCard: React.FC<{
     return storeEvent || event; // Fallback to prop if not found in store
   }, [allEvents, event]);
 
-  const { adminUsers, attendeeUsers, canSeeAttendees } = useEventUsers(currentEvent);
+  const { adminUsers, attendeeUsers } = useEventUsers(currentEvent);
   const showBookedCount = currentEvent.showAttendees !== 'none';
 
   // Helper function to get current attendee count
@@ -105,7 +105,7 @@ const UnifiedEventCard: React.FC<{
             <PlacesLeftBadge placesLeft={placesLeft} maxAttendees={currentEvent.maxAttendees} />
           )}
 
-          {!currentEvent.bookable && showBookedCount && getCurrentAttendeeCount() > 0 && (
+          {showBookedCount && getCurrentAttendeeCount() > 0 && (
             <AttendeeCountBadge attendeeCount={getCurrentAttendeeCount()} />
           )}
         </View>
@@ -203,11 +203,6 @@ const UnifiedEventCard: React.FC<{
         <UserList
           users={attendeeUsers}
           title="Deltagare"
-          fallbackData={
-            canSeeAttendees && attendeeUsers.length === 0 && typeof currentEvent.extras?.bookedCount === 'number' && currentEvent.extras.bookedCount > 0
-              ? [{ userId: 0, fullName: `${currentEvent.extras.bookedCount} anmälda` }]
-              : []
-          }
           expandable
         />
 
