@@ -1164,8 +1164,8 @@ export interface components {
              */
             show_location: components["schemas"]["PrivacySetting"];
             /**
-             * @default MEMBERS_ONLY
-             * @example MEMBERS_ONLY
+             * @default MEMBERS_MUTUAL
+             * @example MEMBERS_MUTUAL
              */
             show_profile: components["schemas"]["PrivacySetting"];
             /**
@@ -1200,17 +1200,17 @@ export interface components {
              */
             background_location_updates: boolean;
             /**
-             * @default MEMBERS_ONLY
+             * @default MEMBERS_MUTUAL
              * @example MEMBERS_ONLY
              */
             show_interests: components["schemas"]["PrivacySetting"];
             /**
-             * @default MEMBERS_ONLY
+             * @default MEMBERS_MUTUAL
              * @example MEMBERS_ONLY
              */
             show_hometown: components["schemas"]["PrivacySetting"];
             /**
-             * @default MEMBERS_ONLY
+             * @default MEMBERS_MUTUAL
              * @example MEMBERS_ONLY
              */
             show_birthdate: components["schemas"]["PrivacySetting"];
@@ -1235,7 +1235,7 @@ export interface components {
              */
             show_relationship_status: components["schemas"]["PrivacySetting"];
             /**
-             * @default MEMBERS_ONLY
+             * @default MEMBERS_MUTUAL
              * @example MEMBERS_ONLY
              */
             show_social_vibes: components["schemas"]["PrivacySetting"];
@@ -1246,9 +1246,10 @@ export interface components {
             show_pronomen: components["schemas"]["PrivacySetting"];
             /**
              * @description Who can see this user in event attendee lists. None means inherit from show_profile.
-             * @example MEMBERS_ONLY
+             * @default MEMBERS_MUTUAL
+             * @example MEMBERS_MUTUAL
              */
-            show_attendance?: components["schemas"]["PrivacySetting"] | null;
+            show_attendance: components["schemas"]["PrivacySetting"] | null;
         };
         /** UserUpdate */
         UserUpdate: {
