@@ -10,9 +10,11 @@ services:
     ports:
       - "${BACKEND_PORT:-5000}:5000"
     depends_on:
-      - mongo
+      postgres:
+        condition: service_healthy
     restart: unless-stopped
     environment:
+      DATABASE_URL: postgresql://swag:swag@postgres:5432/swag
       GIT_COMMIT_INFO: 'Commit messages are not available locally'
       GIT_COMMIT_HASH: ''
       LOGINM_SEED: ${LOGINM_SEED}
@@ -34,23 +36,43 @@ services:
       GITHUB_APP_PRIVATE_KEY: ${GITHUB_APP_PRIVATE_KEY:-}
       PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-http://100.104.188.36:8043}
 
-  mongo:
-    image: mongo:latest
+  # One-time Mongo → Postgres data migration.
+  # Run with: docker compose --profile migrate up migrate
+  # It exits 0 on success; re-running is safe (idempotent).
+  migrate:
+    image: python:3.11
     volumes:
-      - mongodata:/data/db
-
-  mongo-express:
-    image: mongo-express:latest
-    ports:
-      - "8082:8081"
+      - ./backend:/app
+    working_dir: /app
+    command: >
+      bash -c "pip install -r v1/requirements.txt pymongo --quiet &&
+               python -m migrations.mongo_to_postgres"
     depends_on:
-      - mongo
-    restart: unless-stopped
+      postgres:
+        condition: service_healthy
     environment:
-      ME_CONFIG_MONGODB_SERVER: mongo
-      ME_CONFIG_MONGODB_PORT: 27017
-      ME_CONFIG_BASICAUTH_USERNAME: admin
-      ME_CONFIG_BASICAUTH_PASSWORD: admin
+      MONGO_URL: ${MONGO_URL:-mongodb://mongo:27017}
+      DATABASE_URL: postgresql://swag:swag@postgres:5432/swag
+    restart: "no"
+    profiles:
+      - migrate
+
+  postgres:
+    image: postgres:16
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: swag
+      POSTGRES_PASSWORD: swag
+      POSTGRES_DB: swag
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U swag -d swag"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
 
 volumes:
-  mongodata:
+  pgdata:

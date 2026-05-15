@@ -7,8 +7,9 @@ from v1.external.event_api import (
     get_external_event_details,
     get_booked_external_events,
 )
-from v1.db.external_bookings import upsert_user_bookings, delete_user_bookings
-from v1.db.mongo import tokenstorage_collection
+from v1.db.external_bookings import upsert_user_bookings
+from v1.db.database import get_session
+from v1.db.tables import TokenStorageTable
 import logging
 
 def refresh_external_events():
@@ -43,7 +44,8 @@ def refresh_external_events():
 def refresh_external_bookings():
     """Refresh the external_event_bookings collection for all users with stored tokens."""
     try:
-        user_ids = [doc["userId"] for doc in tokenstorage_collection.find({}, {"userId": 1})]
+        with get_session() as session:
+            user_ids = [row.userId for row in session.query(TokenStorageTable.userId).all()]
     except Exception as e:
         logging.error(f"[refresh_external_bookings] Failed to fetch token holders: {e}")
         return
@@ -52,7 +54,8 @@ def refresh_external_bookings():
     for user_id in user_ids:
         try:
             booked = get_booked_external_events(user_id)
-            event_ids = [e.eventId for e in booked]
-            upsert_user_bookings(userId=user_id, event_ids=event_ids)
         except Exception as e:
             logging.warning(f"[refresh_external_bookings] Skipping userId={user_id}: {e}")
+            continue
+        event_ids = [e.eventId for e in booked]
+        upsert_user_bookings(userId=user_id, event_ids=event_ids)

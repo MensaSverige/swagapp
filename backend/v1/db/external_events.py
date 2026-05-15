@@ -1,117 +1,177 @@
 import logging
 from typing import List
+from sqlalchemy import or_
 from v1.db.models.external_events import ExternalEventDetails, ExternalRoot
-from v1.db.mongo import external_event_collection, external_root_collection
+from v1.db.database import get_session
+from v1.db.tables import (
+    ExternalEventDetailsTable, ExternalEventAdminTable, ExternalEventCategoryTable,
+    ExternalRootTable, ExternalRootDateTable,
+)
 
 
 def store_external_root(root: ExternalRoot):
-    """
-    Stores the external root details in the MongoDB database.
-
-    :param root: The external root details.
-    """
+    """Stores or replaces the external root details."""
     try:
         root_dict = root.model_dump()
-        external_root_collection.update_one(
-            {},  # empty filter to match all documents
-            {'$set': root_dict},  # update
-            upsert=True  # insert if doesn't exist
-        )
+        with get_session() as session:
+            existing = session.query(ExternalRootTable).first()
+            if existing:
+                for key in ("version", "loginUrl", "restUrl", "siteUrl", "header1", "header2", "city", "streetAddress", "mapUrl"):
+                    setattr(existing, key, root_dict[key])
+                existing.dates.clear()
+                for d in root_dict.get("dates", []):
+                    existing.dates.append(ExternalRootDateTable(root_id=existing.id, date_value=d))
+            else:
+                row = ExternalRootTable(
+                    version=root_dict["version"],
+                    loginUrl=root_dict["loginUrl"],
+                    restUrl=root_dict["restUrl"],
+                    siteUrl=root_dict["siteUrl"],
+                    header1=root_dict["header1"],
+                    header2=root_dict["header2"],
+                    city=root_dict["city"],
+                    streetAddress=root_dict["streetAddress"],
+                    mapUrl=root_dict["mapUrl"],
+                )
+                session.add(row)
+                session.flush()
+                for d in root_dict.get("dates", []):
+                    session.add(ExternalRootDateTable(root_id=row.id, date_value=d))
+            session.commit()
         logging.info("Successfully stored external root details.")
     except Exception as e:
         logging.error(f"Failed to store external root details: {e}")
 
-def get_stored_external_root() -> ExternalRoot:
-    """
-    Retrieves the stored external root details from the MongoDB database.
 
-    :return: The external root details.
-    """
+def get_stored_external_root() -> ExternalRoot | None:
+    """Retrieves the stored external root details."""
     try:
-        root_data = external_root_collection.find_one({})
-        if root_data:
-            return ExternalRoot(**root_data)
-        else:
-            logging.info("No external root data found.")
-            return None
+        with get_session() as session:
+            row = session.query(ExternalRootTable).first()
+            if row:
+                return ExternalRoot(**row.to_dict())
+            else:
+                logging.info("No external root data found.")
+                return None
     except Exception as e:
         logging.error(f"Failed to retrieve external root details: {e}")
         return None
 
 
 def store_external_event_details(events: List[ExternalEventDetails]):
-    """
-    Stores external event details in the MongoDB database.
+    """Stores external event details (upsert), one transaction per event."""
+    for event in events:
+        event_dict = event.model_dump()
+        logging.info(f"Storing event: {event_dict['titel']}")
+        try:
+            with get_session() as session:
+                existing = session.query(ExternalEventDetailsTable).filter_by(
+                    eventId=event_dict["eventId"]
+                ).first()
 
-    :param event: The external event details.
-    """
-    # not yet sure if i want to update or not so thats why this is still here.
-    # try:
-    #     external_event_collection.insert_many(event.model_dump() for event in events)
-    # except Exception as e:
-    #     logging.error(f"Failed to insert events: {e}")
+                if existing:
+                    for key in ("eventDate", "startTime", "endTime", "titel", "description",
+                                "speaker", "location", "locationInfo", "mapUrl",
+                                "isFree", "price", "isLimited", "stock", "showBooked",
+                                "booked", "dateBookingStart", "dateBookingEnd",
+                                "imageUrl150", "imageUrl300", "eventUrl"):
+                        setattr(existing, key, event_dict.get(key))
 
-    ## Update the existing event if it exists, otherwise insert a new event
-    try:
-        for event in events:
-            event_dict = event.model_dump()
-            # Print the title
-            logging.info(f"Storing event: {event_dict['titel']}")
-            external_event_collection.update_one(
-                {'eventId': event_dict['eventId']},  # filter
-                {'$set': event_dict},  # update
-                upsert=True  # insert if doesn't exist
-            )
-    except Exception as e:
-        logging.error(f"Failed to insert/update events: {e}")
+                    existing.admins.clear()
+                    for admin_id in event_dict.get("admins") or []:
+                        existing.admins.append(ExternalEventAdminTable(eventId=existing.eventId, admin_id=admin_id))
+
+                    existing.categories.clear()
+                    for cat in event_dict.get("categories") or []:
+                        existing.categories.append(ExternalEventCategoryTable(
+                            eventId=existing.eventId, **cat
+                        ))
+                else:
+                    row = ExternalEventDetailsTable(
+                        eventId=event_dict["eventId"],
+                        eventDate=event_dict.get("eventDate"),
+                        startTime=event_dict["startTime"],
+                        endTime=event_dict["endTime"],
+                        titel=event_dict.get("titel"),
+                        description=event_dict["description"],
+                        speaker=event_dict["speaker"],
+                        location=event_dict["location"],
+                        locationInfo=event_dict.get("locationInfo"),
+                        mapUrl=event_dict.get("mapUrl"),
+                        isFree=event_dict["isFree"],
+                        price=event_dict["price"],
+                        isLimited=event_dict["isLimited"],
+                        stock=event_dict["stock"],
+                        showBooked=event_dict["showBooked"],
+                        booked=event_dict["booked"],
+                        dateBookingStart=event_dict.get("dateBookingStart"),
+                        dateBookingEnd=event_dict.get("dateBookingEnd"),
+                        imageUrl150=event_dict.get("imageUrl150"),
+                        imageUrl300=event_dict.get("imageUrl300"),
+                        eventUrl=event_dict["eventUrl"],
+                    )
+                    session.add(row)
+                    session.flush()
+
+                    for admin_id in event_dict.get("admins") or []:
+                        session.add(ExternalEventAdminTable(eventId=row.eventId, admin_id=admin_id))
+
+                    for cat in event_dict.get("categories") or []:
+                        session.add(ExternalEventCategoryTable(eventId=row.eventId, **cat))
+
+                session.commit()
+        except Exception as e:
+            logging.error(f"Failed to insert/update event {event_dict.get('eventId')}: {e}")
 
 
 def get_stored_external_event_details(
         event_ids: List[int],
         host_id: int = None,
     ) -> List[ExternalEventDetails]:
-    """
-    Retrieves external event details from the MongoDB database.
-
-    :param event_ids: The external event IDs.
-    :return: The external event details.
-    """
+    """Retrieves external event details by event IDs or admin host ID."""
     try:
-        return [
-            ExternalEventDetails(**event) for event in
-            external_event_collection.find({
-                "$or": [
-                    {"eventId": {"$in": event_ids}},
-                    {"admins": f"{host_id}"}
+        with get_session() as session:
+            conditions = [ExternalEventDetailsTable.eventId.in_(event_ids)]
+            if host_id is not None:
+                # Find events where host_id is an admin
+                admin_event_ids = [
+                    row.eventId for row in
+                    session.query(ExternalEventAdminTable.eventId).filter(
+                        ExternalEventAdminTable.admin_id == str(host_id)
+                    ).all()
                 ]
-            })
-        ]
+                if admin_event_ids:
+                    conditions.append(ExternalEventDetailsTable.eventId.in_(admin_event_ids))
+
+            rows = session.query(ExternalEventDetailsTable).filter(
+                or_(*conditions)
+            ).all()
+            return [ExternalEventDetails(**row.to_dict()) for row in rows]
     except Exception as e:
         logging.error(f"Failed to retrieve events: {e}")
         return []
 
 
 def get_all_stored_external_event_details() -> List[ExternalEventDetails]:
-    """Return all stored external events from MongoDB."""
+    """Return all stored external events."""
     try:
-        return [ExternalEventDetails(**event) for event in external_event_collection.find({})]
+        with get_session() as session:
+            rows = session.query(ExternalEventDetailsTable).all()
+            return [ExternalEventDetails(**row.to_dict()) for row in rows]
     except Exception as e:
         logging.error(f"Failed to retrieve all external events: {e}")
         return []
 
-def clean_external_events(keeping: List[ExternalEventDetails]):
-    """
-    Cleans the external events in the MongoDB database.
 
-    :param keeping: The external event details to keep.
-    """
+def clean_external_events(keeping: List[ExternalEventDetails]):
+    """Deletes external events not in the keeping list."""
     try:
-        # Get all event IDs to keep
         keeping_ids = [event.eventId for event in keeping]
-        # Delete all events that are not in the keeping list
-        external_event_collection.delete_many({
-            "eventId": {"$nin": keeping_ids}
-        })
+        with get_session() as session:
+            session.query(ExternalEventDetailsTable).filter(
+                ~ExternalEventDetailsTable.eventId.in_(keeping_ids)
+            ).delete(synchronize_session="fetch")
+            session.commit()
         logging.info("Successfully cleaned external events.")
     except Exception as e:
         logging.error(f"Failed to clean external events: {e}")
