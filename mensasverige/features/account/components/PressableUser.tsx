@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 import UserListItem from './UserListItem';
 import { OnlineStatus } from '@/features/map/types/userWithLocation';
 
-type AvatarSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl';
+export type AvatarSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl';
 
 type PressableUserProps = {
   userId?: number | null;
