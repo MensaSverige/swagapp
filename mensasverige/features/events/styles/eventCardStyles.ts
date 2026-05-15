@@ -160,7 +160,7 @@ export const createEventCardStyles = (colorScheme: string) => {
     alignItems: 'center',
   },
   compactOverflowText: {
-    fontSize: 11,
+    fontSize: 16,
     fontWeight: '600' as const,
   },
 

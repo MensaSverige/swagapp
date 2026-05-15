@@ -77,7 +77,7 @@ const UserList: React.FC<UserListProps> = ({
               { backgroundColor: isDark ? colors.coolGray700 : colors.coolGray200 },
             ]}
           >
-            <ThemedText style={styles.compactOverflowText}>+{overflowCount}</ThemedText>
+            <ThemedText style={styles.compactOverflowText}>+ {overflowCount}</ThemedText>
           </View>
         </View>
       )}
