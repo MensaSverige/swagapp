@@ -20,7 +20,7 @@ from v1.user_events.user_events_db import (
 from v1.user_events.user_events_model import UserEvent, Host as UEHost, Attendee as UEAttendee, Location as UELocation
 from v1.utilities import get_current_time
 from v1.db.users import get_users_by_ids
-from v1.db.external_bookings import get_bookings_by_event_ids
+from v1.db.external_bookings import get_bookings_by_event_ids, add_booking, delete_booking
 from v1.db.models.user import PrivacySetting, viewer_can_see, effective_setting
 from fastapi import HTTPException
 
@@ -276,7 +276,12 @@ def _attend_external_event(unified_event_id: str, current_user: dict) -> Event:
         # For external events, "attending" means booking
         result = book_external_event(current_user["userId"], event_id)
         logging.info(f"Successfully booked external event {event_id} for user {current_user['userId']}")
-        
+        # Sync booking to local cache
+        try:
+            add_booking(userId=current_user["userId"], eventId=event_id)
+        except Exception as e:
+            logging.error(f"Failed to sync booking to cache for userId={current_user['userId']} eventId={event_id}: {e}")
+
         # Try to find the event in our stored external events to return proper data
         try:
             external_events_details = get_all_stored_external_event_details()
@@ -364,6 +369,11 @@ def _unattend_external_event(unified_event_id: str, current_user: dict) -> dict:
         # For external events, "unattending" means unbooking
         result = unbook_external_event(current_user["userId"], event_id)
         logging.info(f"Successfully unbooked external event {event_id} for user {current_user['userId']}")
+        # Sync booking removal to local cache
+        try:
+            delete_booking(userId=current_user["userId"], eventId=event_id)
+        except Exception as e:
+            logging.error(f"Failed to sync booking removal for userId={current_user['userId']} eventId={event_id}: {e}")
         return {"message": "Successfully unattended event", "result": result}
     except HTTPException:
         raise
