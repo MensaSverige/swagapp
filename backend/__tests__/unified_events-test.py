@@ -188,3 +188,64 @@ def test_map_external_event_empty_set_gives_empty():
     mapped = map_external_event(ext, current_user_id=1, booked_ids=set(), attendee_user_ids=set())
     assert mapped.attendees == []
 
+
+# ── list_unified_events attendee propagation ─────────────────────────────────
+
+def test_list_unified_events_populates_attendees_when_show_booked(monkeypatch):
+    import v1.events.events_service as svc
+
+    ext = make_external_event(300, booked=1)
+    ext.showBooked = True
+
+    monkeypatch.setattr(svc, "get_booked_external_events", lambda uid: [])
+    monkeypatch.setattr(svc, "get_all_stored_external_event_details", lambda: [ext])
+    monkeypatch.setattr(svc, "get_safe_user_events_since", lambda since: [])
+    monkeypatch.setattr(svc, "get_users_by_ids", lambda ids: [])
+    monkeypatch.setattr(svc, "get_bookings_by_event_ids", lambda ids: {300: {42}})
+
+    current_user = {"userId": 1, "isMember": True, "settings": {}}
+    events = svc.list_unified_events(current_user)
+    ext_events = [e for e in events if e.id == "ext300"]
+    assert len(ext_events) == 1
+    assert {a.userId for a in ext_events[0].attendees} == {42}
+
+
+def test_list_unified_events_no_attendees_when_show_booked_false_and_not_admin(monkeypatch):
+    import v1.events.events_service as svc
+
+    ext = make_external_event(301, booked=5)
+    ext.showBooked = False
+    ext.admins = None
+
+    monkeypatch.setattr(svc, "get_booked_external_events", lambda uid: [])
+    monkeypatch.setattr(svc, "get_all_stored_external_event_details", lambda: [ext])
+    monkeypatch.setattr(svc, "get_safe_user_events_since", lambda since: [])
+    monkeypatch.setattr(svc, "get_users_by_ids", lambda ids: [])
+    monkeypatch.setattr(svc, "get_bookings_by_event_ids", lambda ids: {301: {42}})
+
+    current_user = {"userId": 1, "isMember": True, "settings": {}}
+    events = svc.list_unified_events(current_user)
+    ext_events = [e for e in events if e.id == "ext301"]
+    assert len(ext_events) == 1
+    assert ext_events[0].attendees == []
+
+
+def test_list_unified_events_admin_sees_attendees_even_if_show_booked_false(monkeypatch):
+    import v1.events.events_service as svc
+
+    ext = make_external_event(302, booked=2)
+    ext.showBooked = False
+    ext.admins = ["99"]  # userId 99 is admin
+
+    monkeypatch.setattr(svc, "get_booked_external_events", lambda uid: [])
+    monkeypatch.setattr(svc, "get_all_stored_external_event_details", lambda: [ext])
+    monkeypatch.setattr(svc, "get_safe_user_events_since", lambda since: [])
+    monkeypatch.setattr(svc, "get_users_by_ids", lambda ids: [])
+    monkeypatch.setattr(svc, "get_bookings_by_event_ids", lambda ids: {302: {7, 8}})
+
+    current_user = {"userId": 99, "isMember": True, "settings": {}}
+    events = svc.list_unified_events(current_user)
+    ext_events = [e for e in events if e.id == "ext302"]
+    assert len(ext_events) == 1
+    assert {a.userId for a in ext_events[0].attendees} == {7, 8}
+

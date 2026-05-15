@@ -20,6 +20,7 @@ from v1.user_events.user_events_db import (
 from v1.user_events.user_events_model import UserEvent, Host as UEHost, Attendee as UEAttendee, Location as UELocation
 from v1.utilities import get_current_time
 from v1.db.users import get_users_by_ids
+from v1.db.external_bookings import get_bookings_by_event_ids
 from v1.db.models.user import PrivacySetting, viewer_can_see, effective_setting
 from fastapi import HTTPException
 
@@ -87,9 +88,30 @@ def list_unified_events(
         logging.error(f"Failed to fetch all external events: {e}")
         external_events_details = []
 
+    # Bulk-fetch attendee user IDs for all external events in one DB query
+    try:
+        all_event_ids = [d.eventId for d in external_events_details]
+        bookings_by_event = get_bookings_by_event_ids(all_event_ids)
+    except Exception as e:
+        logging.error(f"Failed to fetch external event bookings: {e}")
+        bookings_by_event = {}
+
     external_events: List[Event] = []
     for d in external_events_details:
-        mapped = map_external_event(d, current_user_id, booked_ids)
+        # Determine if attendees should be exposed for this event
+        admin_ids: List[int] = []
+        if d.admins:
+            for a in d.admins:
+                try:
+                    admin_ids.append(int(a))
+                except (ValueError, TypeError):
+                    pass
+        user_is_admin = current_user_id in admin_ids
+        should_show_attendees = d.showBooked or user_is_admin
+
+        attendee_user_ids = bookings_by_event.get(d.eventId) if should_show_attendees else None
+
+        mapped = map_external_event(d, current_user_id, booked_ids, attendee_user_ids)
         if mapped:
             external_events.append(_filter_event_attendees(mapped, current_user))
 
