@@ -50,7 +50,14 @@ def _filter_event_attendees(event: Event, current_user: dict) -> Event:
             "show_attendance",
         )
     ]
-    return event.model_copy(update={"attendees": filtered_attendees})
+    # attendeeNames[i] corresponds to attendees[i]; rebuild to match filtered list.
+    filtered_ids = {a.userId for a in filtered_attendees}
+    original_names = (event.extras or {}).get("attendeeNames", [])
+    filtered_names = [
+        name for a, name in zip(event.attendees, original_names) if a.userId in filtered_ids
+    ]
+    new_extras = {**(event.extras or {}), "attendeeNames": filtered_names}
+    return event.model_copy(update={"attendees": filtered_attendees, "extras": new_extras})
 
 
 def list_unified_events(
