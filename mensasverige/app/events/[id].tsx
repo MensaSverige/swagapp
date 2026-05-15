@@ -9,7 +9,7 @@ import { useEvents } from '@/features/events/hooks/useEvents';
 import { canUserEditEvent } from '@/features/events/utils/eventPermissions';
 import useStore from '@/features/common/store/store';
 import { useThemeColor } from '@/hooks/useThemeColor';
-import { useBottomTabOverflow } from '@/components/ui/TabBarBackground';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '@/constants/Colors';
 
 export default function EventDetailScreen() {
@@ -17,7 +17,7 @@ export default function EventDetailScreen() {
     const { user } = useStore();
     const { allEvents } = useEvents();
     const iconColor = useThemeColor({}, 'icon');
-    const bottom = useBottomTabOverflow();
+    const { bottom } = useSafeAreaInsets();
     const router = useRouter();
 
     const event = useMemo(
