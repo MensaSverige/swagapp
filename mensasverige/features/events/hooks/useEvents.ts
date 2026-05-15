@@ -48,6 +48,8 @@ interface UseEventsReturn {
   unattendEventById: (eventId: string) => Promise<boolean>;
 }
 
+const USER_PREFETCH_CHUNK_SIZE = 8;
+
 // Module-level guard: prevents concurrent fetches across multiple useEvents instances
 let isFetching = false;
 
@@ -142,28 +144,31 @@ export const useEvents = (options: UseEventsOptions = {}): UseEventsReturn => {
       }
 
       // Pre-load user profiles for all event attendees/admins into the store cache.
-      // Only fetch IDs not already cached to avoid redundant requests on every refresh.
       const allIds = new Set<number>();
       for (const event of processedEvents) {
         event.admin?.forEach((id) => allIds.add(id));
         event.attendees?.forEach((a) => allIds.add(a.userId));
       }
-      console.log('[useEvents] attendee/admin IDs across all events:', [...allIds]);
-      const cached = useStore.getState().usersById;
-      const newIds = [...allIds].filter((id) => !cached[id]);
-      console.log('[useEvents] already cached IDs:', Object.keys(cached).map(Number));
-      console.log('[useEvents] new IDs to fetch:', newIds);
-      if (newIds.length > 0) {
-        getUsersByIds(newIds.map(String))
-          .then((users) => {
-            console.log('[useEvents] fetched users:', users.map((u) => u.userId));
-            setUsers(users);
-          })
-          .catch((err) => {
-            console.error('[useEvents] getUsersByIds failed:', err);
-          });
-      } else {
-        console.log('[useEvents] no new IDs to fetch (all cached or empty)');
+
+      // Defer until after any active navigation animation, then chunk-fetch to avoid
+      // a burst that blocks the JS thread and causes a frame drop.
+      // Cache is re-read inside the callback so IDs fetched by a concurrent refresh are skipped.
+      if (allIds.size > 0) {
+        setTimeout(() => {
+          const newIds = [...allIds].filter((id) => !useStore.getState().usersById[id]);
+          if (newIds.length === 0) return;
+          (async () => {
+            for (let i = 0; i < newIds.length; i += USER_PREFETCH_CHUNK_SIZE) {
+              const chunk = newIds.slice(i, i + USER_PREFETCH_CHUNK_SIZE);
+              try {
+                const users = await getUsersByIds(chunk.map(String));
+                setUsers(users);
+              } catch (err) {
+                console.error('[useEvents] getUsersByIds chunk failed:', err);
+              }
+            }
+          })().catch((err) => console.error('[useEvents] user prefetch failed:', err));
+        }, 0);
       }
 
     } catch (err) {
