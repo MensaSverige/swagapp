@@ -133,8 +133,8 @@ def map_external_event(details: ExternalEventDetails, current_user_id: int, book
             description=details.description,
             bookingStart=booking_start,
             bookingEnd=booking_end,
-            showAttendees=ShowAttendees.none,
-            attendees=[],
+            showAttendees=ShowAttendees.all if details.showBooked else ShowAttendees.none,
+            attendees=[],  # hardcoded empty — external API does not expose attendee list
             queue=[],
             maxAttendees=(details.booked + details.stock) if details.isLimited else None,
             price=float(details.price) if not details.isFree else 0.0,
@@ -147,7 +147,6 @@ def map_external_event(details: ExternalEventDetails, current_user_id: int, book
                 "eventUrl": details.eventUrl,
                 "adminsRaw": details.admins or [],
                 "mapUrl": details.mapUrl,
-                "showBooked": details.showBooked,
                 "bookedCount": details.booked,
             }
         )
