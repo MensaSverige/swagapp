@@ -54,7 +54,8 @@ def refresh_external_bookings():
     for user_id in user_ids:
         try:
             booked = get_booked_external_events(user_id)
-            event_ids = [e.eventId for e in booked]
-            upsert_user_bookings(userId=user_id, event_ids=event_ids)
         except Exception as e:
             logging.warning(f"[refresh_external_bookings] Skipping userId={user_id}: {e}")
+            continue
+        event_ids = [e.eventId for e in booked]
+        upsert_user_bookings(userId=user_id, event_ids=event_ids)

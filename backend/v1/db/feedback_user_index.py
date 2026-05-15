@@ -1,58 +1,49 @@
-"""Persisted map from the public feedback `user_hash` to the actual user.
-
-The hash is intentionally one-way (HMAC) so it can sit publicly on GitHub
-without leaking PII. But admins legitimately need to look up *who* posted
-a given issue or comment — to contact someone, follow up on a bug
-report, or moderate abuse. This collection holds that mapping so the
-admin can paste a hash from a GitHub issue and recover the user_id /
-member_number.
-
-Stored fields are deliberately minimal: no message bodies, just identity
-and timestamps. Treat as a moderation tool, not analytics.
-"""
+"""Persisted map from public feedback user_hash to actual user (moderation tool)."""
 import datetime
 import logging
 
-from pymongo import ASCENDING
-
-from v1.db.mongo import db
+from v1.db.database import get_session
+from v1.db.tables import FeedbackUserIndexTable
 
 logger = logging.getLogger(__name__)
-
-feedback_user_index_collection = db["feedback_user_index"]
-
-
-def initialize_indexes() -> None:
-    feedback_user_index_collection.create_index(
-        [("user_hash", ASCENDING)], unique=True
-    )
-    feedback_user_index_collection.create_index([("user_id", ASCENDING)])
 
 
 def register_user(user: dict, user_hash: str) -> None:
     """Upsert (user_hash → user_id) and bump last_seen on every feedback action."""
-    now = datetime.datetime.utcnow()
-    update = {
-        "$setOnInsert": {
-            "user_hash": user_hash,
-            "first_seen": now,
-        },
-        "$set": {
-            "user_id": user.get("userId"),
-            "member_number": user.get("memberNumber") or user.get("member_number"),
-            "is_member": user.get("isMember", False),
-            "last_seen": now,
-        },
-    }
+    now = datetime.datetime.now(datetime.timezone.utc)
     try:
-        feedback_user_index_collection.update_one(
-            {"user_hash": user_hash}, update, upsert=True
-        )
+        with get_session() as session:
+            row = session.query(FeedbackUserIndexTable).filter_by(user_hash=user_hash).first()
+            if row:
+                row.user_id = user.get("userId")
+                row.member_number = user.get("memberNumber") or user.get("member_number")
+                row.is_member = user.get("isMember", False)
+                row.last_seen = now
+            else:
+                row = FeedbackUserIndexTable(
+                    user_hash=user_hash,
+                    user_id=user.get("userId"),
+                    member_number=user.get("memberNumber") or user.get("member_number"),
+                    is_member=user.get("isMember", False),
+                    first_seen=now,
+                    last_seen=now,
+                )
+                session.add(row)
+            session.commit()
     except Exception:
         logger.exception("Failed to upsert feedback_user_index entry")
 
 
 def lookup(user_hash: str) -> dict | None:
-    return feedback_user_index_collection.find_one(
-        {"user_hash": user_hash}, {"_id": 0}
-    )
+    with get_session() as session:
+        row = session.query(FeedbackUserIndexTable).filter_by(user_hash=user_hash).first()
+        if not row:
+            return None
+        return {
+            "user_hash": row.user_hash,
+            "user_id": row.user_id,
+            "member_number": row.member_number,
+            "is_member": row.is_member,
+            "first_seen": row.first_seen,
+            "last_seen": row.last_seen,
+        }

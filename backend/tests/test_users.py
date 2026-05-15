@@ -1,6 +1,9 @@
 """Tests for user DB operations."""
 
-from v1.db.users import create_user, get_user, update_user, get_users, get_users_showing_location
+from v1.db.users import (
+    create_user, get_user, update_user, get_users,
+    get_users_showing_location, update_user_from_authresponse,
+)
 
 
 def _make_auth_response(**overrides):
@@ -35,21 +38,19 @@ def test_get_nonexistent_user():
 
 def test_update_user_profile():
     create_user(_make_auth_response())
-    fetched = get_user(1001)
-    assert fetched["slogan"] is None
+    assert get_user(1001)["slogan"] is None
 
     update_user(1001, {"slogan": "Hello world"})
-    fetched = get_user(1001)
-    assert fetched["slogan"] == "Hello world"
+    assert get_user(1001)["slogan"] == "Hello world"
 
 
-def test_update_user_settings():
+def test_update_user_settings_privacy():
     create_user(_make_auth_response())
     update_user(1001, {
         "settings": {
             "show_location": "EVERYONE",
-            "show_email": True,
-            "show_phone": False,
+            "show_email": "MEMBERS_ONLY",
+            "show_phone": "NO_ONE",
             "location_update_interval_seconds": 30,
             "events_refresh_interval_seconds": 30,
             "background_location_updates": True,
@@ -57,8 +58,17 @@ def test_update_user_settings():
     })
     fetched = get_user(1001)
     assert fetched["settings"]["show_location"] == "EVERYONE"
-    assert fetched["settings"]["show_email"] is True
+    assert fetched["settings"]["show_email"] == "MEMBERS_ONLY"
+    assert fetched["settings"]["show_phone"] == "NO_ONE"
     assert fetched["settings"]["location_update_interval_seconds"] == 30
+
+
+def test_privacy_setting_round_trip_all_values():
+    """All PrivacySetting values survive a write/read round-trip."""
+    create_user(_make_auth_response())
+    for value in ("NO_ONE", "MEMBERS_ONLY", "MEMBERS_MUTUAL", "EVERYONE_MUTUAL", "EVERYONE"):
+        update_user(1001, {"settings": {"show_email": value}})
+        assert get_user(1001)["settings"]["show_email"] == value
 
 
 def test_update_user_location():
@@ -75,10 +85,8 @@ def test_update_user_location():
     assert fetched["location"] is not None
     assert fetched["location"]["latitude"] == 59.33
 
-    # Clear location
     update_user(1001, {"location": None})
-    fetched = get_user(1001)
-    assert fetched["location"] is None
+    assert get_user(1001)["location"] is None
 
 
 def test_update_user_contact_info():
@@ -91,27 +99,74 @@ def test_update_user_contact_info():
     assert fetched["contact_info"]["phone"] == "+46701234567"
 
 
+def test_update_user_profile_fields():
+    """interests, hometown, birthdate and other profile fields persist."""
+    create_user(_make_auth_response())
+    update_user(1001, {
+        "interests": ["Böcker och litteratur"],
+        "hometown": "Stockholm",
+        "birthdate": "1989-11-15",
+        "gender": "male",
+        "sexuality": "straight",
+        "relationship_style": "monogamous",
+        "relationship_status": "has_partner",
+        "social_vibes": ["social"],
+        "pronomen": "hen",
+    })
+    fetched = get_user(1001)
+    assert fetched["hometown"] == "Stockholm"
+    assert fetched["birthdate"] == "1989-11-15"
+    assert fetched["gender"] == "male"
+    assert fetched["pronomen"] == "hen"
+    assert fetched["interests"] == ["Böcker och litteratur"]
+    assert fetched["social_vibes"] == ["social"]
+
+
 def test_get_users_all():
     create_user(_make_auth_response(memberId=1001))
     create_user(_make_auth_response(memberId=1002, firstName="Other"))
-    users = get_users()
-    assert len(users) == 2
+    assert len(get_users()) == 2
 
 
 def test_get_users_showing_location():
     create_user(_make_auth_response(memberId=1001))
     create_user(_make_auth_response(memberId=1002))
 
-    # Default is NO_ONE, so no one should show
     assert len(get_users_showing_location()) == 0
 
-    # Update one to share location
     update_user(1001, {"settings": {
         "show_location": "EVERYONE",
-        "show_email": False,
-        "show_phone": False,
+        "show_email": "NO_ONE",
+        "show_phone": "NO_ONE",
         "location_update_interval_seconds": 60,
         "events_refresh_interval_seconds": 60,
         "background_location_updates": False,
     }})
     assert len(get_users_showing_location()) == 1
+
+
+def test_update_user_from_authresponse_updates_fields():
+    create_user(_make_auth_response())
+    update_user_from_authresponse(1001, {
+        "firstName": "Updated",
+        "lastName": "Name",
+        "email": "updated@example.com",
+        "type": "M",
+    })
+    fetched = get_user(1001)
+    assert fetched["firstName"] == "Updated"
+    assert fetched["isMember"] is True
+
+
+def test_update_user_from_authresponse_absent_type_does_not_demote():
+    """Missing 'type' key must not change isMember."""
+    create_user(_make_auth_response())
+    assert get_user(1001)["isMember"] is True
+
+    update_user_from_authresponse(1001, {"firstName": "NoType"})
+    assert get_user(1001)["isMember"] is True
+
+
+def test_update_user_from_authresponse_nonexistent_user():
+    # Should not raise
+    update_user_from_authresponse(9999, {"firstName": "Ghost", "type": "M"})

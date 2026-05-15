@@ -1,4 +1,4 @@
-"""Test configuration — swap PostgreSQL for in-memory SQLite."""
+"""Test configuration — swap PostgreSQL for in-memory SQLite with StaticPool."""
 
 import os
 
@@ -15,6 +15,7 @@ os.environ["DATABASE_URL"] = "sqlite:///:memory:"
 import pytest
 from sqlalchemy import create_engine, event
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import StaticPool
 from v1.db import database
 from v1.db.database import Base
 
@@ -24,8 +25,17 @@ import v1.db.tables  # noqa: F401
 
 @pytest.fixture(autouse=True)
 def fresh_db():
-    """Create a fresh in-memory SQLite database for every test."""
-    test_engine = create_engine("sqlite:///:memory:", echo=False)
+    """Create a fresh in-memory SQLite database for every test.
+
+    StaticPool ensures all get_session() calls share one connection, so writes
+    from one call are visible to subsequent reads within the same test.
+    """
+    test_engine = create_engine(
+        "sqlite:///:memory:",
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+        echo=False,
+    )
 
     # Enable foreign key support in SQLite
     @event.listens_for(test_engine, "connect")

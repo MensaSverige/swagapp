@@ -1,5 +1,7 @@
 import os
+import time
 import logging
+from contextlib import contextmanager
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, DeclarativeBase
 
@@ -15,32 +17,48 @@ class Base(DeclarativeBase):
     pass
 
 
+@contextmanager
 def get_session():
-    """Return a new database session. Always call this instead of SessionLocal() directly."""
-    return SessionLocal()
+    """Context manager yielding a session with auto-rollback on exception."""
+    session = SessionLocal()
+    try:
+        yield session
+    except Exception:
+        session.rollback()
+        raise
+    finally:
+        session.close()
 
 
 def get_db():
     """Yield a database session, closing it when done."""
-    db = get_session()
-    try:
+    with get_session() as db:
         yield db
-    finally:
-        db.close()
 
 
-def initialize_db():
-    """Create all tables and seed review users."""
-    from v1.db.tables import UserTable  # noqa: F401 — ensure all models are imported
+def initialize_db(max_retries: int = 5, retry_delay: float = 2.0):
+    """Create all tables, retrying on connection failure."""
+    from v1.db.tables import UserTable  # noqa: F401
     from v1.db.tables import TokenStorageTable  # noqa: F401
     from v1.db.tables import UserEventTable, EventHostTable, EventSuggestedHostTable, EventAttendeeTable, EventReportTable  # noqa: F401
     from v1.db.tables import ExternalEventDetailsTable, ExternalEventCategoryTable, ExternalEventAdminTable  # noqa: F401
     from v1.db.tables import ExternalRootTable, ExternalRootDateTable  # noqa: F401
+    from v1.db.tables import ExternalEventBookingTable  # noqa: F401
+    from v1.db.tables import FeedbackVoteTable, FeedbackUserIndexTable  # noqa: F401
 
-    Base.metadata.create_all(bind=engine)
-    logging.info("All database tables created.")
-
-    _seed_review_users()
+    for attempt in range(1, max_retries + 1):
+        try:
+            Base.metadata.create_all(bind=engine)
+            logging.info("All database tables created.")
+            _seed_review_users()
+            return
+        except Exception as e:
+            if attempt == max_retries:
+                logging.error(f"initialize_db failed after {max_retries} attempts: {e}")
+                raise
+            wait = retry_delay * (2 ** (attempt - 1))
+            logging.warning(f"initialize_db attempt {attempt} failed ({e}), retrying in {wait:.1f}s…")
+            time.sleep(wait)
 
 
 def _seed_review_users():

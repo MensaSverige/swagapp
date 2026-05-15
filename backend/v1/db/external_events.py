@@ -59,13 +59,12 @@ def get_stored_external_root() -> ExternalRoot | None:
 
 
 def store_external_event_details(events: List[ExternalEventDetails]):
-    """Stores external event details (upsert)."""
-    try:
-        with get_session() as session:
-            for event in events:
-                event_dict = event.model_dump()
-                logging.info(f"Storing event: {event_dict['titel']}")
-
+    """Stores external event details (upsert), one transaction per event."""
+    for event in events:
+        event_dict = event.model_dump()
+        logging.info(f"Storing event: {event_dict['titel']}")
+        try:
+            with get_session() as session:
                 existing = session.query(ExternalEventDetailsTable).filter_by(
                     eventId=event_dict["eventId"]
                 ).first()
@@ -120,9 +119,9 @@ def store_external_event_details(events: List[ExternalEventDetails]):
                     for cat in event_dict.get("categories") or []:
                         session.add(ExternalEventCategoryTable(eventId=row.eventId, **cat))
 
-            session.commit()
-    except Exception as e:
-        logging.error(f"Failed to insert/update events: {e}")
+                session.commit()
+        except Exception as e:
+            logging.error(f"Failed to insert/update event {event_dict.get('eventId')}: {e}")
 
 
 def get_stored_external_event_details(

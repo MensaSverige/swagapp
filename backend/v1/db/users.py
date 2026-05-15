@@ -1,58 +1,52 @@
 import json
 from typing import Optional
 from pydantic import ValidationError
-from v1.db.models.user import ContactInfo, ShowLocation, User, UserSettings
+from v1.db.models.user import ContactInfo, PrivacySetting, User, UserSettings
 from v1.db.database import get_session
 from v1.db.tables import UserTable
 
 
 def get_user(user_id: int) -> dict | None:
-    """
-    Retrieves a user from the database.
-
-    :param user_id: The user ID.
-    :return: The user dict or None.
-    """
     with get_session() as session:
         row = session.query(UserTable).filter_by(userId=user_id).first()
         return row.to_dict() if row else None
 
 
 def update_user(user_id: int, user: dict) -> dict:
-    """
-    Updates a user in the database.
-
-    :param user_id: The user ID.
-    :param user: The user data as a dict.
-    :return: The user data.
-    """
     with get_session() as session:
         row = session.query(UserTable).filter_by(userId=user_id).first()
         if not row:
             return user
 
-        # Flatten nested dicts for column assignment
-        if isinstance(user, dict):
-            data = user
-        else:
-            data = user if isinstance(user, dict) else dict(user)
+        data = user if isinstance(user, dict) else dict(user)
 
-        # Top-level fields
-        for key in ("isMember", "age", "slogan", "avatar_url", "firstName", "lastName"):
+        for key in ("isMember", "age", "slogan", "avatar_url", "firstName", "lastName",
+                    "interests", "hometown", "birthdate", "gender", "sexuality",
+                    "relationship_style", "relationship_status", "social_vibes", "pronomen"):
             if key in data:
-                setattr(row, key, data[key])
+                val = data[key]
+                if key == "interests" and val is not None:
+                    val = [i.value if hasattr(i, "value") else i for i in val]
+                setattr(row, key, val)
 
-        # Settings
         settings = data.get("settings")
         if settings:
-            row.show_location = settings.get("show_location", row.show_location)
-            row.show_email = settings.get("show_email", row.show_email)
-            row.show_phone = settings.get("show_phone", row.show_phone)
-            row.location_update_interval_seconds = settings.get("location_update_interval_seconds", row.location_update_interval_seconds)
-            row.events_refresh_interval_seconds = settings.get("events_refresh_interval_seconds", row.events_refresh_interval_seconds)
-            row.background_location_updates = settings.get("background_location_updates", row.background_location_updates)
+            _bool_privacy_fields = {"show_email", "show_phone"}
+            for field in ("show_location", "show_profile", "show_email", "show_phone",
+                          "show_interests", "show_hometown", "show_birthdate", "show_gender",
+                          "show_sexuality", "show_relationship_style", "show_relationship_status",
+                          "show_social_vibes", "show_pronomen", "show_attendance",
+                          "location_update_interval_seconds", "events_refresh_interval_seconds",
+                          "background_location_updates"):
+                if field in settings:
+                    val = settings[field]
+                    if hasattr(val, "value"):
+                        val = val.value
+                    # Coerce legacy boolean values for privacy fields
+                    if field in _bool_privacy_fields and isinstance(val, bool):
+                        val = "MEMBERS_ONLY" if val else "NO_ONE"
+                    setattr(row, field, val)
 
-        # Location
         location = data.get("location")
         if location is not None:
             row.location_latitude = location.get("latitude")
@@ -65,7 +59,6 @@ def update_user(user_id: int, user: dict) -> dict:
             row.location_timestamp = None
             row.location_accuracy = None
 
-        # Contact info
         contact = data.get("contact_info")
         if contact is not None:
             row.contact_email = contact.get("email")
@@ -76,12 +69,6 @@ def update_user(user_id: int, user: dict) -> dict:
 
 
 def create_user(response_json: dict) -> dict | None:
-    """
-    Creates a new user in the database.
-
-    :param response_json: The auth response JSON.
-    :return: The user dict.
-    """
     newuser = map_authresponse_to_user(response_json)
     if newuser is None:
         return None
@@ -95,16 +82,10 @@ def create_user(response_json: dict) -> dict | None:
 
 
 def get_users(show_location: Optional[bool] = None) -> list[dict]:
-    """
-    Retrieves all users from the database.
-
-    :param show_location: If True, filter to users who share their location.
-    :return: List of user dicts.
-    """
     with get_session() as session:
         query = session.query(UserTable)
         if show_location is not None:
-            query = query.filter(UserTable.show_location != ShowLocation.NO_ONE.value)
+            query = query.filter(UserTable.show_location != PrivacySetting.NO_ONE.value)
         rows = query.all()
         return [row.to_dict() for row in rows]
 
@@ -118,14 +99,9 @@ def get_users_by_ids(user_ids: list[int]) -> list[dict]:
 
 
 def get_users_showing_location() -> list[dict]:
-    """
-    Retrieves all users who share their location.
-
-    :return: List of user dicts.
-    """
     with get_session() as session:
         rows = session.query(UserTable).filter(
-            UserTable.show_location != ShowLocation.NO_ONE.value
+            UserTable.show_location != PrivacySetting.NO_ONE.value
         ).all()
         return [row.to_dict() for row in rows]
 
@@ -138,21 +114,22 @@ def update_user_from_authresponse(user_id: int, response_json: dict) -> None:
         row.firstName = response_json.get("firstName", row.firstName)
         row.lastName = response_json.get("lastName", row.lastName)
         row.contact_email = response_json.get("email", row.contact_email)
-        row.isMember = response_json.get("type") == "M"
+        # Only set isMember if 'type' key is present; absent key must not demote
+        if "type" in response_json:
+            row.isMember = response_json["type"] == "M"
         session.commit()
 
 
 def map_authresponse_to_user(response_json: dict) -> dict | None:
     user = User(
         userId=response_json["memberId"],
-        isMember=response_json["type"] == "M",
-        settings=UserSettings(),  # Default values
+        isMember=response_json.get("type") == "M",
+        settings=UserSettings(),
     )
 
     user.firstName = response_json.get("firstName", None)
     user.lastName = response_json.get("lastName", None)
-    user.contact_info = ContactInfo(email=response_json.get("email", None),
-                                    phone=None)  # Update email
+    user.contact_info = ContactInfo(email=response_json.get("email", None), phone=None)
 
     try:
         user_json = json.dumps(user.model_dump())

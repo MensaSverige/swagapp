@@ -1,6 +1,6 @@
 """Tests for external event and token storage DB operations."""
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from v1.db.external_events import (
     store_external_root,
     get_stored_external_root,
@@ -170,7 +170,7 @@ def test_get_events_by_host_id():
 # ── Token Storage ─────────────────────────────────────────────────────────────
 
 def test_save_and_get_token():
-    expires = datetime.now() + timedelta(hours=1)
+    expires = datetime.now(timezone.utc) + timedelta(hours=1)
     save_external_token(100, "token-abc", expires)
 
     token = get_external_token(100)
@@ -182,7 +182,7 @@ def test_get_nonexistent_token():
 
 
 def test_token_upsert():
-    expires = datetime.now() + timedelta(hours=1)
+    expires = datetime.now(timezone.utc) + timedelta(hours=1)
     save_external_token(100, "token-1", expires)
     save_external_token(100, "token-2", expires)
 
@@ -191,7 +191,7 @@ def test_token_upsert():
 
 
 def test_expired_token_returns_none():
-    expires = datetime.now() - timedelta(hours=1)
+    expires = datetime.now(timezone.utc) - timedelta(hours=1)
     save_external_token(100, "expired-token", expires)
 
     assert get_external_token(100) is None
