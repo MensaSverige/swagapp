@@ -22,9 +22,6 @@ FROM nginx:alpine
 # Copy the Expo web app output from the builder stage
 COPY --from=builder /app/mensasverige/dist /usr/share/nginx/html
 
-# Copy the privacy.html file for static access
-COPY ./website/privacy.html /usr/share/nginx/html/privacy.html
-
 # Copy the custom Nginx configuration file
 COPY ./website.nginx.conf /etc/nginx/conf.d/default.conf
 
