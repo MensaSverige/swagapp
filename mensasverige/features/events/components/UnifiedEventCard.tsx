@@ -179,6 +179,8 @@ const UnifiedEventCard: React.FC<{
           users={adminUsers}
           title={currentEvent.admin.length === 1 ? 'Värd' : 'Värdar'}
           fallbackData={currentEvent.hosts}
+          alwaysExpanded
+          gridAvatarSize="md"
         />
       )}
 

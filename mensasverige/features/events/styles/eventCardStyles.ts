@@ -143,6 +143,26 @@ export const createEventCardStyles = (colorScheme: string) => {
   userListAvatar: {
     marginLeft: 6,
   },
+  compactAvatarRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 4,
+  },
+  compactAvatarRing: {
+    padding: 2,
+    borderRadius: 999,
+  },
+  compactOverflowBadge: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  compactOverflowText: {
+    fontSize: 11,
+    fontWeight: '600' as const,
+  },
 
   // Admin styles
   adminRow: {
