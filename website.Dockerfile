@@ -1,8 +1,29 @@
-# Use the official Nginx image as a parent image
+# Stage 1: Build the Expo web app
+FROM node:20-alpine AS builder
+
+WORKDIR /app
+
+# Copy the entire project
+COPY . .
+
+# Set environment variables for the build
+ENV EXPO_PUBLIC_API_URL=/api
+ENV NODE_ENV=production
+ENV APP_VARIANT=production
+
+# Install dependencies and build the Expo web app
+WORKDIR /app/mensasverige
+RUN yarn install --frozen-lockfile
+RUN npx expo export --platform web
+
+# Stage 2: Serve with Nginx
 FROM nginx:alpine
 
-# Copy the content of the 'website' directory to the Nginx web directory
-COPY ./website /usr/share/nginx/html
+# Copy the Expo web app output from the builder stage
+COPY --from=builder /app/mensasverige/dist /usr/share/nginx/html
+
+# Copy the privacy.html file for static access
+COPY ./website/privacy.html /usr/share/nginx/html/privacy.html
 
 # Copy the custom Nginx configuration file
 COPY ./website.nginx.conf /etc/nginx/conf.d/default.conf

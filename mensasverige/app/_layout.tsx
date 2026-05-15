@@ -81,6 +81,7 @@ export default function RootLayout() {
           <Stack.Protected guard={!isLoggedIn}>
             <Stack.Screen name="login" options={{ headerShown: false }} />
           </Stack.Protected>
+          <Stack.Screen name="privacy" options={{ title: 'Integritetspolicy', headerBackTitle: 'Tillbaka' }} />
           <Stack.Screen name="+not-found" />
         </Stack>
         <StatusBar style="auto" />
