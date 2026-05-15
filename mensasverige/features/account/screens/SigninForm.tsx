@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import {
   Alert,
+  ScrollView,
   StyleSheet,
   TouchableOpacity,
   View,
@@ -130,9 +131,12 @@ export const SigninForm = () => {
     else handleMemberLogin();
   };
 
-  return (
+  const webStyle = Platform.OS === 'web'
+    ? { maxWidth: 480, alignSelf: 'center' as const, width: '100%' as const }
+    : {};
 
-    <ThemedView style={{ flex: 1, padding: 20, gap: 16, paddingTop: 60 }}>
+  const formContent = (
+    <ThemedView style={[{ flex: 1, padding: 20, gap: 16, paddingTop: 60 }, webStyle]}>
       <View style={styles.logoContainer}>
         <Image
           source={require('@/assets/images/icon.png')}
@@ -251,6 +255,19 @@ export const SigninForm = () => {
       )}
     </ThemedView>
   );
+
+  if (Platform.OS === 'web') {
+    return (
+      <ScrollView
+        contentContainerStyle={{ flexGrow: 1, alignItems: 'center' }}
+        keyboardShouldPersistTaps="handled"
+      >
+        {formContent}
+      </ScrollView>
+    );
+  }
+
+  return formContent;
 };
 
 
