@@ -305,3 +305,134 @@ def test_event_with_location():
     assert event.location is not None
     assert event.location.description == "Conference room"
     assert event.location.latitude == 59.33
+
+
+# ── Concurrency: unique constraints + SELECT FOR UPDATE (swagapp-l68d1) ───────
+
+def test_add_same_attendee_twice_is_idempotent_and_no_duplicate_row():
+    """UniqueConstraint prevents duplicate attendee rows even on rapid re-add."""
+    _seed_users()
+    event_id = create_user_event(_make_event())
+
+    r1 = add_attendee_to_user_event(str(event_id), 200)
+    r2 = add_attendee_to_user_event(str(event_id), 200)
+
+    assert r1 is True
+    assert r2 is True  # idempotent
+    event = get_unsafe_user_event(str(event_id))
+    assert len(event.attendees) == 1
+
+
+def test_capacity_enforced_under_rapid_sequential_calls():
+    """Two different users adding to a 1-slot event: exactly one succeeds."""
+    _seed_users()
+    event_id = create_user_event(_make_event(maxAttendees=1))
+
+    results = [
+        add_attendee_to_user_event(str(event_id), 200),
+        add_attendee_to_user_event(str(event_id), 300),
+    ]
+
+    event = get_unsafe_user_event(str(event_id))
+    assert len(event.attendees) == 1
+    assert results.count(True) == 1
+    assert results.count(False) == 1
+
+
+def test_unique_constraint_rejects_duplicate_attendee_at_db_level():
+    """The UniqueConstraint on event_attendees catches races that bypass Python checks.
+
+    Simulates what would happen if two concurrent requests both passed the
+    duplicate check (e.g. pre-lock race): the second DB insert must be rejected.
+    add_attendee_to_user_event handles the IntegrityError gracefully (returns False).
+    """
+    from sqlalchemy.exc import IntegrityError
+    from v1.db.database import get_session
+    from v1.db.tables import EventAttendeeTable
+
+    _seed_users()
+    event_id = create_user_event(_make_event())
+
+    # First insert succeeds
+    with get_session() as session:
+        session.add(EventAttendeeTable(event_id=event_id, userId=200))
+        session.commit()
+
+    # Second insert of the same (event_id, userId) must raise IntegrityError
+    raised = False
+    try:
+        with get_session() as session:
+            session.add(EventAttendeeTable(event_id=event_id, userId=200))
+            session.commit()
+    except IntegrityError:
+        raised = True
+
+    assert raised, "UniqueConstraint must reject duplicate (event_id, userId)"
+
+    event = get_unsafe_user_event(str(event_id))
+    assert len(event.attendees) == 1
+
+
+def test_add_host_twice_is_idempotent():
+    """UniqueConstraint on event_hosts prevents duplicate host rows."""
+    _seed_users()
+    event_id = create_user_event(_make_event())
+
+    add_user_as_host_to_user_event(str(event_id), 200)
+    add_user_as_host_to_user_event(str(event_id), 200)
+
+    event = get_unsafe_user_event(str(event_id))
+    assert len(event.hosts) == 1
+
+
+# ── TOCTOU race fix: single-session update (swagapp-ll0s9) ────────────────────
+
+def test_update_preserves_reports_from_sanitized_event():
+    """update_user_event with a sanitized (no-report) event must not wipe reports.
+
+    This is the key invariant the single-session TOCTOU fix ensures:
+    reports are restored from the locked DB row, not from the caller's event.
+    """
+    _seed_users()
+    event_id = create_user_event(_make_event(reports=[{"userId": 200, "text": "Reported!"}]))
+
+    # Simulate what the API layer does: fetch safe (reports stripped), then update
+    safe = get_safe_user_event(str(event_id))
+    assert len(safe.reports) == 0  # reports hidden from safe view
+
+    # Construct a UserEvent from the safe view (reports = [])
+    safe_as_user_event = UserEvent(**{
+        **safe.model_dump(),
+        "reports": [],  # caller doesn't know about reports
+    })
+
+    result = update_user_event(str(event_id), safe_as_user_event)
+    assert result is True
+
+    updated = get_unsafe_user_event(str(event_id))
+    assert len(updated.reports) == 1, "Report must survive update with sanitized event"
+    assert updated.reports[0].text == "Reported!"
+
+
+def test_update_applies_all_fields_in_single_session():
+    """update_user_event correctly persists field changes without a session gap."""
+    _seed_users()
+    event_id = create_user_event(_make_event(name="Original", maxAttendees=5))
+
+    event = get_unsafe_user_event(str(event_id))
+    event.name = "Renamed"
+    event.maxAttendees = 10
+
+    assert update_user_event(str(event_id), event) is True
+
+    updated = get_unsafe_user_event(str(event_id))
+    assert updated.name == "Renamed"
+    assert updated.maxAttendees == 10
+
+
+def test_update_nonexistent_event_returns_false():
+    """update_user_event returns False when the event does not exist."""
+    _seed_users()
+    dummy = _make_event()
+    dummy.id = None
+    assert update_user_event("99999", dummy) is False

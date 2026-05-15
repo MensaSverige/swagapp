@@ -84,17 +84,19 @@ def get_safe_user_event(event_id: str) -> ExtendedUserEvent | None:
 def update_user_event(event_id: str, user_event: UserEvent) -> bool:
     """
     Updates a user event in the database.
-    """
-    # Restore secret fields from DB before updating
-    event = restore_secret_fields_on_user_event(user_event, event_id)
-    if not event:
-        return False
 
-    data = event.model_dump()
+    Uses a single locked session to atomically restore secret fields and apply
+    the update, eliminating the two-session TOCTOU race in the old implementation.
+    """
+    data = user_event.model_dump()
     with get_session() as session:
-        row = _load_event(session, event_id)
+        row = session.query(UserEventTable).with_for_update().filter_by(id=int(event_id)).first()
         if not row:
             return False
+
+        # Restore secret fields (reports) from the locked row so callers that
+        # received a sanitized event cannot accidentally clear them.
+        data["reports"] = [{"userId": r.userId, "text": r.text} for r in row.reports]
 
         row.userId = data["userId"]
         row.name = data["name"]
@@ -228,15 +230,19 @@ def get_safe_user_events_user_is_attending(userId: int) -> list[ExtendedUserEven
 
 
 def add_attendee_to_user_event(event_id: str, user_id: int) -> bool:
-    """Adds a user to the attendees list of an event, ensuring no duplicates."""
+    """Adds a user to the attendees list of an event, ensuring no duplicates.
+
+    Uses SELECT FOR UPDATE to serialize concurrent requests so that capacity
+    and duplicate checks are evaluated against a consistent locked snapshot.
+    The UniqueConstraint on event_attendees acts as a DB-level safety net.
+    """
     try:
         with get_session() as session:
-            row = _load_event(session, event_id)
+            row = session.query(UserEventTable).with_for_update().filter_by(id=int(event_id)).first()
             if not row:
                 return False
             if row.maxAttendees is not None and len(row.attendees) >= row.maxAttendees:
                 return False
-            # Check for duplicate
             if any(a.userId == user_id for a in row.attendees):
                 return True
             session.add(EventAttendeeTable(event_id=row.id, userId=user_id))

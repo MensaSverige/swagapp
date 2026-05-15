@@ -250,6 +250,10 @@ class EventHostTable(Base):
 
     event = relationship("UserEventTable", back_populates="hosts")
 
+    __table_args__ = (
+        UniqueConstraint("event_id", "userId", name="uq_event_host"),
+    )
+
 
 class EventSuggestedHostTable(Base):
     __tablename__ = "event_suggested_hosts"
@@ -259,6 +263,10 @@ class EventSuggestedHostTable(Base):
     userId = Column(Integer, nullable=False)
 
     event = relationship("UserEventTable", back_populates="suggested_hosts")
+
+    __table_args__ = (
+        UniqueConstraint("event_id", "userId", name="uq_event_suggested_host"),
+    )
 
 
 class EventAttendeeTable(Base):
