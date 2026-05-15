@@ -5,8 +5,7 @@ Usage:
     MONGO_URL=mongodb://mongo:27017  DATABASE_URL=postgresql://swag:swag@postgres:5432/swag \
         python -m migrations.mongo_to_postgres
 
-Idempotent: safe to run multiple times — uses INSERT … ON CONFLICT DO NOTHING (or DO UPDATE)
-so rows already present in Postgres are not duplicated or overwritten.
+Idempotent: safe to run multiple times.
 
 Migrates:
     user          → users
@@ -19,7 +18,15 @@ Migrates:
     externaleventbooking → external_event_bookings
 
 FeedbackVoteTable and FeedbackUserIndexTable have no MongoDB counterpart
-(they are Postgres-only) and are skipped.
+(Postgres-only) and are skipped.
+
+Design notes:
+  - Every migrate_* function accepts an optional mongo_source parameter.
+    Pass a FakeMongo in tests; omit it in production (lazy real connection).
+  - ON CONFLICT clauses use explicit column lists, not named constraints,
+    so the SQL runs identically on SQLite (tests) and PostgreSQL (production).
+  - user_events idempotency uses _mongo_migration_log (a tracking table
+    keyed on Mongo ObjectId) because user_events has no natural unique key.
 """
 
 import json
@@ -31,7 +38,6 @@ from datetime import datetime, timezone
 # Allow running as: python -m migrations.mongo_to_postgres from backend/
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from pymongo import MongoClient
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 
@@ -39,16 +45,23 @@ logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 log = logging.getLogger(__name__)
 
 
-# ── Connection setup ──────────────────────────────────────────────────────────
+# ── Connection setup (lazy — does NOT connect on import) ──────────────────────
 
 MONGO_URL = os.environ.get("MONGO_URL", "mongodb://mongo:27017")
 DATABASE_URL = os.environ.get("DATABASE_URL", "postgresql://swag:swag@postgres:5432/swag")
 
-mongo_client = MongoClient(MONGO_URL)
-mongo_db = mongo_client["swag"]
+_mongo_client = None
+_mongo_db = None
 
-pg_engine = create_engine(DATABASE_URL, echo=False)
-Session = sessionmaker(bind=pg_engine)
+
+def _get_live_mongo():
+    """Connect to Mongo on first call. Never called in tests."""
+    global _mongo_client, _mongo_db
+    if _mongo_db is None:
+        from pymongo import MongoClient
+        _mongo_client = MongoClient(MONGO_URL)
+        _mongo_db = _mongo_client["swag"]
+    return _mongo_db
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -84,14 +97,35 @@ def _bool(v, default=False):
     return bool(v)
 
 
+def _privacy(v, default="NO_ONE"):
+    """Coerce a privacy field to a valid PrivacySetting string.
+
+    Old Mongo documents stored show_email / show_phone as booleans before
+    the PrivacySetting enum was introduced:
+        True  → "MEMBERS_ONLY"
+        False → "NO_ONE"
+    Newer documents already store the string enum value.
+    Using _str() here would silently produce "True"/"False" — invalid values
+    that break PrivacySetting parsing in the application layer.
+    """
+    if v is None:
+        return default
+    if v is True:
+        return "MEMBERS_ONLY"
+    if v is False:
+        return "NO_ONE"
+    return str(v)
+
+
 # ── Users ─────────────────────────────────────────────────────────────────────
 
-def migrate_users(session):
-    coll = mongo_db["user"]
+def migrate_users(session, mongo_source=None):
+    source = mongo_source if mongo_source is not None else _get_live_mongo()
+    coll = source["user"]
     total = coll.count_documents({})
     log.info("users: %d documents in Mongo", total)
 
-    inserted = skipped = 0
+    upserted = 0
     for doc in coll.find():
         uid = doc.get("userId")
         if uid is None:
@@ -101,27 +135,27 @@ def migrate_users(session):
         s = doc.get("settings") or {}
         loc = doc.get("location") or {}
         ci = doc.get("contact_info") or {}
-
         interests = doc.get("interests") or []
         social_vibes = doc.get("social_vibes") or []
 
         row = {
             "userId": uid,
             "isMember": _bool(doc.get("isMember")),
-            "show_location": _str(s.get("show_location"), "NO_ONE"),
-            "show_profile": _str(s.get("show_profile"), "MEMBERS_MUTUAL"),
-            "show_email": _str(s.get("show_email"), "NO_ONE"),
-            "show_phone": _str(s.get("show_phone"), "NO_ONE"),
-            "show_interests": _str(s.get("show_interests"), "MEMBERS_MUTUAL"),
-            "show_hometown": _str(s.get("show_hometown"), "MEMBERS_MUTUAL"),
-            "show_birthdate": _str(s.get("show_birthdate"), "MEMBERS_MUTUAL"),
-            "show_gender": _str(s.get("show_gender"), "NO_ONE"),
-            "show_sexuality": _str(s.get("show_sexuality"), "NO_ONE"),
-            "show_relationship_style": _str(s.get("show_relationship_style"), "NO_ONE"),
-            "show_relationship_status": _str(s.get("show_relationship_status"), "NO_ONE"),
-            "show_social_vibes": _str(s.get("show_social_vibes"), "MEMBERS_MUTUAL"),
-            "show_pronomen": _str(s.get("show_pronomen"), "NO_ONE"),
-            "show_attendance": _str(s.get("show_attendance"), "MEMBERS_MUTUAL"),
+            "show_location": _privacy(s.get("show_location"), "NO_ONE"),
+            "show_profile": _privacy(s.get("show_profile"), "MEMBERS_MUTUAL"),
+            # show_email / show_phone were historically stored as booleans.
+            "show_email": _privacy(s.get("show_email"), "NO_ONE"),
+            "show_phone": _privacy(s.get("show_phone"), "NO_ONE"),
+            "show_interests": _privacy(s.get("show_interests"), "MEMBERS_MUTUAL"),
+            "show_hometown": _privacy(s.get("show_hometown"), "MEMBERS_MUTUAL"),
+            "show_birthdate": _privacy(s.get("show_birthdate"), "MEMBERS_MUTUAL"),
+            "show_gender": _privacy(s.get("show_gender"), "NO_ONE"),
+            "show_sexuality": _privacy(s.get("show_sexuality"), "NO_ONE"),
+            "show_relationship_style": _privacy(s.get("show_relationship_style"), "NO_ONE"),
+            "show_relationship_status": _privacy(s.get("show_relationship_status"), "NO_ONE"),
+            "show_social_vibes": _privacy(s.get("show_social_vibes"), "MEMBERS_MUTUAL"),
+            "show_pronomen": _privacy(s.get("show_pronomen"), "NO_ONE"),
+            "show_attendance": _privacy(s.get("show_attendance"), "MEMBERS_MUTUAL"),
             "location_update_interval_seconds": _int(s.get("location_update_interval_seconds"), 60),
             "events_refresh_interval_seconds": _int(s.get("events_refresh_interval_seconds"), 60),
             "background_location_updates": _bool(s.get("background_location_updates")),
@@ -149,7 +183,7 @@ def migrate_users(session):
             "updated_at": _tz(doc.get("updated_at")) or datetime.now(timezone.utc),
         }
 
-        result = session.execute(text("""
+        session.execute(text("""
             INSERT INTO users (
                 "userId", "isMember",
                 show_location, show_profile, show_email, show_phone,
@@ -222,25 +256,26 @@ def migrate_users(session):
                 updated_at                          = EXCLUDED.updated_at
         """), {**row, "interests": json.dumps(row["interests"]),
                       "social_vibes": json.dumps(row["social_vibes"])})
-
-        inserted += 1
+        upserted += 1
 
     session.commit()
-    log.info("users: %d upserted", inserted)
-    return total, inserted
+    log.info("users: %d upserted", upserted)
+    return total, upserted
 
 
 # ── Token storage ─────────────────────────────────────────────────────────────
 
-def migrate_token_storage(session):
-    coll = mongo_db["tokenstorage"]
+def migrate_token_storage(session, mongo_source=None):
+    source = mongo_source if mongo_source is not None else _get_live_mongo()
+    coll = source["tokenstorage"]
     total = coll.count_documents({})
     log.info("tokenstorage: %d documents in Mongo", total)
 
-    inserted = 0
+    upserted = 0
     for doc in coll.find():
         uid = doc.get("userId")
         if uid is None:
+            log.warning("tokenstorage doc missing userId, skipping")
             continue
         session.execute(text("""
             INSERT INTO token_storage ("userId", "externalAccessToken", "createdAt", "expiresAt")
@@ -255,22 +290,17 @@ def migrate_token_storage(session):
             "createdAt": _tz(doc.get("createdAt")) or datetime.now(timezone.utc),
             "expiresAt": _tz(doc.get("expiresAt")) or datetime.now(timezone.utc),
         })
-        inserted += 1
+        upserted += 1
 
     session.commit()
-    log.info("tokenstorage: %d upserted", inserted)
-    return total, inserted
+    log.info("tokenstorage: %d upserted", upserted)
+    return total, upserted
 
 
 # ── User events ───────────────────────────────────────────────────────────────
 
 def _ensure_migration_tracking(session):
-    """Create a migration-tracking table if it doesn't already exist.
-
-    _mongo_migration_log maps (collection, mongo_id) → postgres id so that
-    re-runs of the migration can detect already-migrated documents without
-    relying on non-existent unique constraints on the target tables.
-    """
+    """Create the idempotency-tracking table if it doesn't already exist."""
     session.execute(text("""
         CREATE TABLE IF NOT EXISTS _mongo_migration_log (
             collection  VARCHAR NOT NULL,
@@ -282,15 +312,26 @@ def _ensure_migration_tracking(session):
     session.commit()
 
 
-def migrate_user_events(session):
+def migrate_user_events(session, mongo_source=None):
+    """Migrate user events and all child rows.
+
+    Idempotency: user_events has no natural unique key, so we track each
+    migrated Mongo document by ObjectId in _mongo_migration_log. Re-runs
+    skip already-logged documents entirely — child rows are therefore also
+    never re-inserted.
+
+    ON CONFLICT clauses use explicit column lists (not named constraints)
+    so the SQL runs on both SQLite (tests) and PostgreSQL (production).
+    """
     _ensure_migration_tracking(session)
-    coll = mongo_db["userevent"]
+    source = mongo_source if mongo_source is not None else _get_live_mongo()
+    coll = source["userevent"]
     total = coll.count_documents({})
     log.info("userevent: %d documents in Mongo", total)
 
-    processed = skipped = 0
+    inserted = skipped = 0
     for doc in coll.find():
-        mongo_id = doc.get("_id")  # ObjectId
+        mongo_id = doc.get("_id")
         mongo_id_str = str(mongo_id)
         uid = doc.get("userId")
         if uid is None:
@@ -299,17 +340,16 @@ def migrate_user_events(session):
 
         loc = doc.get("location") or {}
 
-        # Check if this Mongo document was already migrated (idempotency key).
-        existing_map = session.execute(text("""
+        existing = session.execute(text("""
             SELECT pg_id FROM _mongo_migration_log
             WHERE collection = 'userevent' AND mongo_id = :mid
         """), {"mid": mongo_id_str}).fetchone()
 
-        if existing_map is not None:
-            event_pg_id = existing_map[0]
+        if existing is not None:
+            event_pg_id = existing[0]
             skipped += 1
         else:
-            result = session.execute(text("""
+            row = session.execute(text("""
                 INSERT INTO user_events (
                     "userId", name, start, "end", description, "maxAttendees",
                     location_description, location_address, location_marker,
@@ -318,8 +358,7 @@ def migrate_user_events(session):
                 )
                 VALUES (
                     :userId, :name, :start, :end, :description, :maxAttendees,
-                    :loc_desc, :loc_addr, :loc_marker,
-                    :loc_lat, :loc_lon,
+                    :loc_desc, :loc_addr, :loc_marker, :loc_lat, :loc_lon,
                     :created_at, :updated_at
                 )
                 RETURNING id
@@ -337,26 +376,24 @@ def migrate_user_events(session):
                 "loc_lon": loc.get("longitude"),
                 "created_at": _tz(doc.get("createdAt")) or datetime.now(timezone.utc),
                 "updated_at": _tz(doc.get("updatedAt")) or datetime.now(timezone.utc),
-            })
-            event_pg_id = result.fetchone()[0]
+            }).fetchone()
+            event_pg_id = row[0]
 
-            # Record the mapping so re-runs skip this document.
             session.execute(text("""
                 INSERT INTO _mongo_migration_log (collection, mongo_id, pg_id)
                 VALUES ('userevent', :mid, :pid)
                 ON CONFLICT DO NOTHING
             """), {"mid": mongo_id_str, "pid": event_pg_id})
+            inserted += 1
 
-            processed += 1
-
-        # Child rows — idempotent via named unique constraints.
+        # Child rows. ON CONFLICT uses explicit columns (works on SQLite + Postgres).
         for h in doc.get("hosts") or []:
             huid = h.get("userId")
             if huid is not None:
                 session.execute(text("""
                     INSERT INTO event_hosts (event_id, "userId")
                     VALUES (:eid, :uid)
-                    ON CONFLICT ON CONSTRAINT uq_event_host DO NOTHING
+                    ON CONFLICT (event_id, "userId") DO NOTHING
                 """), {"eid": event_pg_id, "uid": huid})
 
         for h in doc.get("suggested_hosts") or []:
@@ -365,7 +402,7 @@ def migrate_user_events(session):
                 session.execute(text("""
                     INSERT INTO event_suggested_hosts (event_id, "userId")
                     VALUES (:eid, :uid)
-                    ON CONFLICT ON CONSTRAINT uq_event_suggested_host DO NOTHING
+                    ON CONFLICT (event_id, "userId") DO NOTHING
                 """), {"eid": event_pg_id, "uid": huid})
 
         for a in doc.get("attendees") or []:
@@ -374,9 +411,10 @@ def migrate_user_events(session):
                 session.execute(text("""
                     INSERT INTO event_attendees (event_id, "userId")
                     VALUES (:eid, :uid)
-                    ON CONFLICT ON CONSTRAINT uq_event_attendee DO NOTHING
+                    ON CONFLICT (event_id, "userId") DO NOTHING
                 """), {"eid": event_pg_id, "uid": auid})
 
+        # Reports have no unique constraint; tracking table prevents re-insertion.
         for r in doc.get("reports") or []:
             ruid = r.get("userId")
             rtext = r.get("text", "")
@@ -384,22 +422,22 @@ def migrate_user_events(session):
                 session.execute(text("""
                     INSERT INTO event_reports (event_id, "userId", text)
                     VALUES (:eid, :uid, :text)
-                    ON CONFLICT DO NOTHING
                 """), {"eid": event_pg_id, "uid": ruid, "text": rtext})
 
     session.commit()
-    log.info("userevent: %d inserted, %d already migrated (skipped)", processed, skipped)
-    return total, processed
+    log.info("userevent: %d inserted, %d skipped (already migrated)", inserted, skipped)
+    return total, inserted
 
 
 # ── External event details ────────────────────────────────────────────────────
 
-def migrate_external_events(session):
-    coll = mongo_db["externaleventdetails"]
+def migrate_external_events(session, mongo_source=None):
+    source = mongo_source if mongo_source is not None else _get_live_mongo()
+    coll = source["externaleventdetails"]
     total = coll.count_documents({})
     log.info("externaleventdetails: %d documents in Mongo", total)
 
-    inserted = 0
+    upserted = 0
     for doc in coll.find():
         eid = doc.get("eventId")
         if eid is None:
@@ -470,19 +508,19 @@ def migrate_external_events(session):
             "updated_at": _tz(doc.get("updated_at")) or datetime.now(timezone.utc),
         })
 
-        # Admins — delete and re-insert for idempotency
+        # Delete-then-reinsert: correct for idempotency since these child tables
+        # have no meaningful unique key beyond (eventId, value).
         session.execute(text('DELETE FROM external_event_admins WHERE "eventId" = :eid'), {"eid": eid})
         for admin_id in doc.get("admins") or []:
             session.execute(text("""
-                INSERT INTO external_event_admins ("eventId", admin_id)
-                VALUES (:eid, :aid)
+                INSERT INTO external_event_admins ("eventId", admin_id) VALUES (:eid, :aid)
             """), {"eid": eid, "aid": str(admin_id)})
 
-        # Categories — delete and re-insert for idempotency
         session.execute(text('DELETE FROM external_event_categories WHERE "eventId" = :eid'), {"eid": eid})
         for cat in doc.get("categories") or []:
             session.execute(text("""
-                INSERT INTO external_event_categories ("eventId", code, text, "colorText", "colorBackground")
+                INSERT INTO external_event_categories
+                    ("eventId", code, text, "colorText", "colorBackground")
                 VALUES (:eid, :code, :text, :ct, :cb)
             """), {
                 "eid": eid,
@@ -491,18 +529,18 @@ def migrate_external_events(session):
                 "ct": _str(cat.get("colorText")),
                 "cb": _str(cat.get("colorBackground")),
             })
-
-        inserted += 1
+        upserted += 1
 
     session.commit()
-    log.info("externaleventdetails: %d upserted", inserted)
-    return total, inserted
+    log.info("externaleventdetails: %d upserted", upserted)
+    return total, upserted
 
 
 # ── External root ─────────────────────────────────────────────────────────────
 
-def migrate_external_root(session):
-    coll = mongo_db["externalroot"]
+def migrate_external_root(session, mongo_source=None):
+    source = mongo_source if mongo_source is not None else _get_live_mongo()
+    coll = source["externalroot"]
     total = coll.count_documents({})
     log.info("externalroot: %d documents in Mongo", total)
 
@@ -511,29 +549,27 @@ def migrate_external_root(session):
         return 0, 0
 
     if total > 1:
-        log.warning("externalroot: %d documents found in Mongo (expected 1); using first", total)
+        log.warning("externalroot: %d documents in Mongo (expected 1); using first", total)
 
     doc = coll.find_one()
     now = datetime.now(timezone.utc)
 
     session.execute(text("""
         INSERT INTO external_root (id, version, "loginUrl", "restUrl", "siteUrl",
-            header1, header2, city, "streetAddress", "mapUrl",
-            created_at, updated_at)
+            header1, header2, city, "streetAddress", "mapUrl", created_at, updated_at)
         VALUES (1, :version, :loginUrl, :restUrl, :siteUrl,
-            :header1, :header2, :city, :streetAddress, :mapUrl,
-            :created_at, :updated_at)
+            :header1, :header2, :city, :streetAddress, :mapUrl, :created_at, :updated_at)
         ON CONFLICT (id) DO UPDATE SET
-            version        = EXCLUDED.version,
-            "loginUrl"     = EXCLUDED."loginUrl",
-            "restUrl"      = EXCLUDED."restUrl",
-            "siteUrl"      = EXCLUDED."siteUrl",
-            header1        = EXCLUDED.header1,
-            header2        = EXCLUDED.header2,
-            city           = EXCLUDED.city,
-            "streetAddress"= EXCLUDED."streetAddress",
-            "mapUrl"       = EXCLUDED."mapUrl",
-            updated_at     = EXCLUDED.updated_at
+            version         = EXCLUDED.version,
+            "loginUrl"      = EXCLUDED."loginUrl",
+            "restUrl"       = EXCLUDED."restUrl",
+            "siteUrl"       = EXCLUDED."siteUrl",
+            header1         = EXCLUDED.header1,
+            header2         = EXCLUDED.header2,
+            city            = EXCLUDED.city,
+            "streetAddress" = EXCLUDED."streetAddress",
+            "mapUrl"        = EXCLUDED."mapUrl",
+            updated_at      = EXCLUDED.updated_at
     """), {
         "version": _int(doc.get("version")),
         "loginUrl": _str(doc.get("loginUrl")),
@@ -548,13 +584,11 @@ def migrate_external_root(session):
         "updated_at": now,
     })
 
-    # Dates — replace for idempotency
     session.execute(text("DELETE FROM external_root_dates WHERE root_id = 1"))
     for date_str in doc.get("dates") or []:
         session.execute(text("""
-            INSERT INTO external_root_dates (root_id, date_value)
-            VALUES (1, :date_value)
-        """), {"date_value": str(date_str)})
+            INSERT INTO external_root_dates (root_id, date_value) VALUES (1, :dv)
+        """), {"dv": str(date_str)})
 
     session.commit()
     log.info("externalroot: 1 upserted")
@@ -563,12 +597,13 @@ def migrate_external_root(session):
 
 # ── External event bookings ───────────────────────────────────────────────────
 
-def migrate_external_event_bookings(session):
-    coll = mongo_db["externaleventbooking"]
+def migrate_external_event_bookings(session, mongo_source=None):
+    source = mongo_source if mongo_source is not None else _get_live_mongo()
+    coll = source["externaleventbooking"]
     total = coll.count_documents({})
     log.info("externaleventbooking: %d documents in Mongo", total)
 
-    inserted = 0
+    upserted = 0
     for doc in coll.find():
         uid = doc.get("userId")
         eid = doc.get("eventId")
@@ -577,38 +612,41 @@ def migrate_external_event_bookings(session):
         session.execute(text("""
             INSERT INTO external_event_bookings ("userId", "eventId")
             VALUES (:uid, :eid)
-            ON CONFLICT ON CONSTRAINT uq_external_event_booking DO NOTHING
+            ON CONFLICT ("userId", "eventId") DO NOTHING
         """), {"uid": uid, "eid": eid})
-        inserted += 1
+        upserted += 1
 
     session.commit()
-    log.info("externaleventbooking: %d upserted", inserted)
-    return total, inserted
+    log.info("externaleventbooking: %d upserted", upserted)
+    return total, upserted
 
 
 # ── Validation ────────────────────────────────────────────────────────────────
 
-def validate(session):
-    """Compare Mongo document counts against Postgres row counts."""
+def validate(session, mongo_source=None):
+    """Compare Mongo document counts against Postgres row counts.
+
+    Uses == not >= so that double-insertion bugs (Postgres has MORE rows than
+    Mongo) are detected, not silently accepted.
+    """
+    source = mongo_source if mongo_source is not None else _get_live_mongo()
     checks = [
-        ("users",                   "user",                    None),
-        ("token_storage",           "tokenstorage",            None),
-        ("user_events",             "userevent",               None),
-        ("external_event_details",  "externaleventdetails",    None),
-        ("external_event_bookings", "externaleventbooking",    None),
+        ("users",                   "user"),
+        ("token_storage",           "tokenstorage"),
+        ("user_events",             "userevent"),
+        ("external_event_details",  "externaleventdetails"),
+        ("external_event_bookings", "externaleventbooking"),
     ]
 
     all_ok = True
-    for pg_table, mongo_coll, _note in checks:
-        mongo_count = mongo_db[mongo_coll].count_documents({})
+    for pg_table, mongo_coll in checks:
+        mongo_count = source[mongo_coll].count_documents({})
         pg_count = session.execute(text(f'SELECT COUNT(*) FROM "{pg_table}"')).scalar()
         status = "OK" if pg_count == mongo_count else "MISMATCH"
         if status != "OK":
             all_ok = False
-        log.info(
-            "VALIDATE %-30s  Mongo=%4d  Postgres=%4d  %s",
-            pg_table, mongo_count, pg_count, status,
-        )
+        log.info("VALIDATE %-30s  Mongo=%4d  Postgres=%4d  %s",
+                 pg_table, mongo_count, pg_count, status)
 
     return all_ok
 
@@ -618,7 +656,12 @@ def validate(session):
 def main():
     log.info("Starting Mongo → Postgres migration")
     log.info("Mongo:    %s", MONGO_URL)
-    log.info("Postgres: %s", DATABASE_URL.split("@")[-1])  # hide credentials
+    import urllib.parse
+    parsed = urllib.parse.urlparse(DATABASE_URL)
+    log.info("Postgres: %s@%s%s", parsed.username, parsed.hostname, parsed.path)
+
+    pg_engine = create_engine(DATABASE_URL, echo=False)
+    Session = sessionmaker(bind=pg_engine)
 
     with Session() as session:
         migrate_users(session)
