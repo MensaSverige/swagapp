@@ -8,7 +8,7 @@ from v1.external.event_api import (
     get_booked_external_events,
 )
 from v1.db.external_bookings import upsert_user_bookings
-from v1.db.database import SessionLocal
+from v1.db.database import get_session
 from v1.db.tables import TokenStorageTable
 import logging
 
@@ -44,7 +44,7 @@ def refresh_external_events():
 def refresh_external_bookings():
     """Refresh the external_event_bookings collection for all users with stored tokens."""
     try:
-        with SessionLocal() as session:
+        with get_session() as session:
             user_ids = [row.userId for row in session.query(TokenStorageTable.userId).all()]
     except Exception as e:
         logging.error(f"[refresh_external_bookings] Failed to fetch token holders: {e}")

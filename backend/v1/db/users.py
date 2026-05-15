@@ -112,7 +112,7 @@ def get_users(show_location: Optional[bool] = None) -> list[dict]:
 def get_users_by_ids(user_ids: list[int]) -> list[dict]:
     if not user_ids:
         return []
-    with SessionLocal() as session:
+    with get_session() as session:
         rows = session.query(UserTable).filter(UserTable.userId.in_(user_ids)).all()
         return [row.to_dict() for row in rows]
 
@@ -131,7 +131,7 @@ def get_users_showing_location() -> list[dict]:
 
 
 def update_user_from_authresponse(user_id: int, response_json: dict) -> None:
-    with SessionLocal() as session:
+    with get_session() as session:
         row = session.query(UserTable).filter_by(userId=user_id).first()
         if not row:
             return
