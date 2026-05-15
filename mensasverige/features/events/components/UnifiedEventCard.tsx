@@ -1,15 +1,12 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import {
   View,
   Image,
   TouchableOpacity,
   Linking,
   useColorScheme,
-  Text,
 } from 'react-native';
-import { Event, User } from '../../../api_schema/types';
 import { ThemedText } from '@/components/ThemedText';
-import UserAvatar from '@/features/map/components/UserAvatar';
 import { filterHtml } from '@/features/common/functions/filterHtml';
 import { extractLinks } from '@/features/common/functions/extractLinks';
 import { AddressLinkAndIcon } from '@/features/map/components/AddressLinkAndIcon';
@@ -22,10 +19,10 @@ import EventDateTimeDisplay from './EventDateTimeDisplay';
 import AttendingComponent from './AttendingComponent';
 import useStore from '@/features/common/store/store';
 import { useEvents } from '../hooks/useEvents';
+import { useEventUsers } from '../hooks/useEventUsers';
 import CategoryBadge from './badges/CategoryBadge';
 import { createEventCardStyles } from '../styles/eventCardStyles';
 import { ExtendedEvent } from '../types/eventUtilTypes';
-import { getUsersByIds } from '../../account/services/userService';
 import UserList from './UserList';
 
 
@@ -36,8 +33,6 @@ const handleLinkPress = (url: string) => {
 const UnifiedEventCard: React.FC<{
   event: ExtendedEvent;
 }> = ({ event }) => {
-  const [adminUsers, setAdminUsers] = useState<User[]>([]);
-  const [attendeeUsers, setAttendeeUsers] = useState<User[]>([]);
   const colorScheme = useColorScheme();
   const eventCardStyles = createEventCardStyles(colorScheme ?? 'light');
   const user = useStore(state => state.user);
@@ -49,55 +44,8 @@ const UnifiedEventCard: React.FC<{
     return storeEvent || event; // Fallback to prop if not found in store
   }, [allEvents, event]);
 
-  // Fetch admin users when admin IDs change
-  useEffect(() => {
-    const fetchAdminUsers = async () => {
-      if (currentEvent.admin && currentEvent.admin.length > 0) {
-        try {
-          // Convert number IDs to strings for the getUsersByIds function
-          const adminIdStrings = currentEvent.admin.map(id => id.toString());
-          const adminUsers = await getUsersByIds(adminIdStrings);
-          // Handle the case where getUsersByIds returns undefined in catch block
-          setAdminUsers(adminUsers || []);
-        } catch (error) {
-          console.error('Error fetching admin users:', error);
-          setAdminUsers([]);
-        }
-      } else {
-        setAdminUsers([]);
-      }
-    };
-
-    fetchAdminUsers();
-  }, [currentEvent.admin]);
-
-  // Fetch attendee users when attendees change
-  useEffect(() => {
-    const fetchAttendeeUsers = async () => {
-      if (currentEvent.attendees && currentEvent.attendees.length > 0) {
-        try {
-          // Convert attendee IDs to strings for the getUsersByIds function
-          const attendeeIdStrings = currentEvent.attendees.map(attendee => attendee.userId.toString());
-          const attendeeUsers = await getUsersByIds(attendeeIdStrings);
-          // Handle the case where getUsersByIds returns undefined in catch block
-          setAttendeeUsers(attendeeUsers || []);
-        } catch (error) {
-          console.error('Error fetching attendee users:', error);
-          setAttendeeUsers([]);
-        }
-      } else {
-        setAttendeeUsers([]);
-      }
-    };
-
-    fetchAttendeeUsers();
-  }, [currentEvent.attendees]);
-
-  // Force re-render when attendance changes
-  const [refreshKey, setRefreshKey] = useState(0);
-  const handleAttendanceChange = useCallback(() => {
-    setRefreshKey(prev => prev + 1);
-  }, []);
+  const { adminUsers, attendeeUsers, canSeeAttendees } = useEventUsers(currentEvent);
+  const showBookedCount = currentEvent.showAttendees !== 'none';
 
   // Helper function to get current attendee count
   const getCurrentAttendeeCount = useCallback(() => {
@@ -149,15 +97,15 @@ const UnifiedEventCard: React.FC<{
         <View style={eventCardStyles.badgeContainer}>
           {currentEvent.attending && <AttendingBadge />}
 
-          {!currentEvent.bookable && placesLeft !== null && placesLeft <= 0 && (
+          {!currentEvent.bookable && showBookedCount && placesLeft !== null && placesLeft <= 0 && (
             <FullyBookedBadge />
           )}
 
-          {currentEvent.bookable && placesLeft !== null && placesLeft > 0 && currentEvent.maxAttendees && (
+          {currentEvent.bookable && showBookedCount && placesLeft !== null && placesLeft > 0 && currentEvent.maxAttendees && (
             <PlacesLeftBadge placesLeft={placesLeft} maxAttendees={currentEvent.maxAttendees} />
           )}
 
-          {!currentEvent.bookable && getCurrentAttendeeCount() > 0 && (
+          {!currentEvent.bookable && showBookedCount && getCurrentAttendeeCount() > 0 && (
             <AttendeeCountBadge attendeeCount={getCurrentAttendeeCount()} />
           )}
         </View>
@@ -251,33 +199,21 @@ const UnifiedEventCard: React.FC<{
       </View>
 
 
-      {/* Attendees (if allowed to show) */}
-      {/* {(() => {
-        const currentCount = getCurrentAttendeeCount();
-        const hasAttendees = currentCount > 0;
-
-        if (!hasAttendees || currentEvent.showAttendees === 'none') return null;
-
-        if (currentEvent.showAttendees === 'all' && currentEvent.attendees) {
-          return (
-            <UserList
-              users={attendeeUsers}
-              title="Deltagare"
-              fallbackData={currentEvent.attendees.map(attendee => ({
-                userId: attendee.userId,
-                fullName: `${attendee.userId}`
-              }))}
-            />
-          );
-        }
-
-        return null;
-      })()} */}
+      {/* Attendees */}
+        <UserList
+          users={attendeeUsers}
+          title="Deltagare"
+          fallbackData={
+            canSeeAttendees && attendeeUsers.length === 0 && typeof currentEvent.extras?.bookedCount === 'number' && currentEvent.extras.bookedCount > 0
+              ? [{ userId: 0, fullName: `${currentEvent.extras.bookedCount} anmälda` }]
+              : []
+          }
+          expandable
+        />
 
       {user && (
         <AttendingComponent
           event={currentEvent}
-          onAttendanceChange={handleAttendanceChange}
         />
       )}
 

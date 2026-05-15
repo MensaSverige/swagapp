@@ -2,6 +2,7 @@ import { useEffect, useCallback } from 'react';
 import { GroupedEvents, ExtendedEvent } from '../types/eventUtilTypes';
 import { createExtendedEvent } from '../utils/eventUtils';
 import { fetchEvents, attendEvent, unattendEvent } from '../services/eventService';
+import { getUsersByIds } from '../../account/services/userService';
 import useStore from '../../common/store/store';
 import { EventFilterOptions } from '../store/EventsSlice';
 
@@ -101,7 +102,8 @@ export const useEvents = (options: UseEventsOptions = {}): UseEventsReturn => {
     topCategories,
     lastMinuteEvents,
     user,
-    getEventsRefreshInterval
+    getEventsRefreshInterval,
+    setUsers,
   } = useStore();
 
   const refetch = useCallback(async (): Promise<void> => {
@@ -132,6 +134,37 @@ export const useEvents = (options: UseEventsOptions = {}): UseEventsReturn => {
       setEvents(processedEvents);
       setEventsLastFetched(new Date());
       setEventsInitialized(true);
+
+      // Seed the current user's own profile synchronously so it's always available
+      // in the cache (e.g. when they're the admin of a user-created event).
+      if (user) {
+        setUsers([user]);
+      }
+
+      // Pre-load user profiles for all event attendees/admins into the store cache.
+      // Only fetch IDs not already cached to avoid redundant requests on every refresh.
+      const allIds = new Set<number>();
+      for (const event of processedEvents) {
+        event.admin?.forEach((id) => allIds.add(id));
+        event.attendees?.forEach((a) => allIds.add(a.userId));
+      }
+      console.log('[useEvents] attendee/admin IDs across all events:', [...allIds]);
+      const cached = useStore.getState().usersById;
+      const newIds = [...allIds].filter((id) => !cached[id]);
+      console.log('[useEvents] already cached IDs:', Object.keys(cached).map(Number));
+      console.log('[useEvents] new IDs to fetch:', newIds);
+      if (newIds.length > 0) {
+        getUsersByIds(newIds.map(String))
+          .then((users) => {
+            console.log('[useEvents] fetched users:', users.map((u) => u.userId));
+            setUsers(users);
+          })
+          .catch((err) => {
+            console.error('[useEvents] getUsersByIds failed:', err);
+          });
+      } else {
+        console.log('[useEvents] no new IDs to fetch (all cached or empty)');
+      }
 
     } catch (err) {
       const error = err as Error;
