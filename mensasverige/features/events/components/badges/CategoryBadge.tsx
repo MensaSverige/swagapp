@@ -88,6 +88,35 @@ const CategoryBadge: React.FC<CategoryBadgeProps> = ({
     config = CATEGORY_CONFIG[categoryCode as keyof typeof CATEGORY_CONFIG];
   }
 
+  let iconSize: number;
+  let badgeSize: number;
+
+  switch (labelSize) {
+    case 'x-small':
+      badgeSize = 16;
+      iconSize = 10;
+      break;
+    case 'small':
+      badgeSize = 26;
+      iconSize = 13;
+      break;
+    case 'medium':
+    default:
+      badgeSize = 32;
+      iconSize = 16;
+      break;
+  }
+
+  // useMemo must be called unconditionally (Rules of Hooks) — guard inside the callback
+  const badgeCircleStyle = useMemo(() => ({
+    borderRadius: badgeSize / 2,
+    width: badgeSize,
+    height: badgeSize,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+    backgroundColor: (config?.color ?? '#000000') + '20',
+  }), [badgeSize, config?.color]);
+
   if (!config) {
     if (!tagFallback) return null;
     const chip = (
@@ -111,34 +140,6 @@ const CategoryBadge: React.FC<CategoryBadgeProps> = ({
     }
     return chip;
   }
-
-  let iconSize: number;
-  let badgeSize: number;
-
-  switch (labelSize) {
-    case 'x-small':
-      badgeSize = 16;
-      iconSize = 10;
-      break;
-    case 'small':
-      badgeSize = 26;
-      iconSize = 13;
-      break;
-    case 'medium':
-    default:
-      badgeSize = 32;
-      iconSize = 16;
-      break;
-  }
-
-  const badgeCircleStyle = useMemo(() => ({
-    borderRadius: badgeSize / 2,
-    width: badgeSize,
-    height: badgeSize,
-    alignItems: 'center' as const,
-    justifyContent: 'center' as const,
-    backgroundColor: config.color + '20',
-  }), [badgeSize, config.color]);
 
   const icon = isEventType && config.icon === 'official'
     ? <OfficialEventIcon size={iconSize} color={config.color} />
