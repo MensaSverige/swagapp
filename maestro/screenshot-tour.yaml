@@ -1,0 +1,27 @@
+appId: se.mensasverige.dev
+---
+- launchApp:
+    appId: se.mensasverige.dev
+    stopApp: true
+- extendedWaitUntil:
+    visible: "Information, tab, 1 of 4"
+    timeout: 30000
+- waitForAnimationToEnd:
+    timeout: 5000
+- takeScreenshot: /tmp/swag-shots/ios-01-home
+
+- tapOn: "Aktiviteter, tab, 2 of 4"
+- waitForAnimationToEnd:
+    timeout: 8000
+- takeScreenshot: /tmp/swag-shots/ios-02-events
+
+- tapOn: "Karta, tab, 3 of 4"
+- waitForAnimationToEnd:
+    timeout: 10000
+- takeScreenshot: /tmp/swag-shots/ios-03-map
+
+- tapOn: "Profil, tab, 4 of 4"
+- waitForAnimationToEnd:
+    timeout: 8000
+- takeScreenshot: /tmp/swag-shots/ios-04-profile
+

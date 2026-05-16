@@ -26,6 +26,7 @@ import { Platform } from 'react-native';
 
 const apiClient = axios.create({
   baseURL: `${process.env.EXPO_PUBLIC_API_URL}/${process.env.EXPO_PUBLIC_API_VERSION}`,
+  withCredentials: Platform.OS === 'web',
 });
 
 apiClient.interceptors.request.use(
