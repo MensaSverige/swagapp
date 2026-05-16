@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import {
   View,
+  Text,
   StyleSheet,
   TouchableOpacity,
 } from 'react-native';
@@ -16,6 +17,7 @@ export interface CategoryBadgeProps {
   showLabel?: boolean;
   size?: 'x-small' | 'small' | 'medium';
   onPress?: () => void;
+  tagFallback?: { text: string; colorText: string; colorBackground: string };
 }
 
 // Category definitions with colors and icons
@@ -72,7 +74,8 @@ const CategoryBadge: React.FC<CategoryBadgeProps> = ({
   label,
   showLabel = true,
   size: labelSize = 'medium',
-  onPress
+  onPress,
+  tagFallback,
 }) => {
   // Determine if this is a category or event type badge
   let config: BadgeConfig | null = null;
@@ -86,7 +89,27 @@ const CategoryBadge: React.FC<CategoryBadgeProps> = ({
   }
 
   if (!config) {
-    return null;
+    if (!tagFallback) return null;
+    const chip = (
+      <View
+        style={{
+          borderWidth: 1.5,
+          borderRadius: 16,
+          paddingHorizontal: 10,
+          paddingVertical: 4,
+          backgroundColor: tagFallback.colorBackground + '20',
+          borderColor: tagFallback.colorBackground,
+        }}
+      >
+        <Text style={{ fontSize: 12, fontWeight: '500', color: tagFallback.colorBackground }}>
+          {tagFallback.text}
+        </Text>
+      </View>
+    );
+    if (onPress) {
+      return <TouchableOpacity onPress={onPress} activeOpacity={0.7}>{chip}</TouchableOpacity>;
+    }
+    return chip;
   }
 
   let iconSize: number;
