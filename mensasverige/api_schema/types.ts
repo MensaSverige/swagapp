@@ -25,3 +25,4 @@ export type UserUpdate = components["schemas"]["UserUpdate"];
 export type ValidationError = components["schemas"]["ValidationError"];
 export type ProfileOptionItem = components["schemas"]["ProfileOptionItem"];
 export type ProfileOptionCategory = components["schemas"]["ProfileOptionCategory"];
+export type Tag = components["schemas"]["Tag"];

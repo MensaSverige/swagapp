@@ -144,6 +144,7 @@ const UnifiedEventCard: React.FC<{
                 categoryCode={category.code || ''}
                 showLabel={true}
                 size="medium"
+                tagFallback={{ text: category.text, colorText: category.colorText, colorBackground: category.colorBackground }}
               />
             ))}
           </View>
