@@ -28,10 +28,14 @@
 
 import { AuthRequest, AuthResponse, HTTPValidationError, ValidationError } from '../../../api_schema/types';
 import axios from 'axios';
+import { Platform } from 'react-native';
 import * as SecureStore from './secureStorage';
 
 const authClient = axios.create({
     baseURL: `${process.env.EXPO_PUBLIC_API_URL}/${process.env.EXPO_PUBLIC_API_VERSION}`,
+    // Send cookies on web so the httpOnly refresh-token cookie is included.
+    // On native this is a no-op — native HTTP clients don't use browser cookies.
+    withCredentials: Platform.OS === 'web',
 });
 
 export const authenticate = async (username: string, password: string, testMode: boolean, member: boolean): Promise<AuthResponse> => {
@@ -106,7 +110,10 @@ export const getOrRefreshAccessToken = async (): Promise<string> => {
 }
 
 export const refreshAccessToken = async (refreshToken: string): Promise<string> => {
-    const response = await authClient.post('/refresh_token', { refresh_token: refreshToken });
+    // On web the refresh token travels as an httpOnly cookie — don't put it in
+    // the body. On native the body field is required (no cookie support).
+    const body = Platform.OS === 'web' ? {} : { refresh_token: refreshToken };
+    const response = await authClient.post('/refresh_token', body);
     if (response.status === 200) {
         const data: AuthResponse = response.data;
         await storeAndValidateAuthResponse(data);

@@ -1,6 +1,7 @@
 from datetime import datetime
 import logging
-from fastapi import APIRouter, HTTPException
+from typing import Optional
+from fastapi import APIRouter, HTTPException, Request, Response
 from pydantic import BaseModel
 import logging
 from v1.db.review_users import check_review_user_creds
@@ -10,6 +11,21 @@ from v1.db.external_token_storage import save_external_token
 from v1.token_handler import create_access_token, create_refresh_token, get_token_expiry, verify_refresh_token
 from v1.db.models.user import User
 from v1.db.users import create_user, get_user, update_user_from_authresponse
+
+REFRESH_TOKEN_COOKIE = "swag_refresh_token"
+REFRESH_TOKEN_MAX_AGE = 60 * 60 * 24  # 24 h — matches token_handler.py
+
+
+def _set_refresh_cookie(response: Response, refresh_token: str) -> None:
+    response.set_cookie(
+        key=REFRESH_TOKEN_COOKIE,
+        value=refresh_token,
+        httponly=True,
+        secure=True,
+        samesite="lax",
+        max_age=REFRESH_TOKEN_MAX_AGE,
+        path="/",
+    )
 
 auth_v1 = APIRouter(prefix="/v1")
 
@@ -27,7 +43,7 @@ class AuthResponse(BaseModel):
 
 
 @auth_v1.post("/authm")
-def authm(request: AuthRequest) -> AuthResponse:
+def authm(request: AuthRequest, http_response: Response) -> AuthResponse:
     response = check_review_user_creds(request.username, request.password)
 
     if response is not None:
@@ -52,17 +68,19 @@ def authm(request: AuthRequest) -> AuthResponse:
     save_external_token(user["userId"], response["token"],
                         convert_string_to_datetime(response["validThrough"]))
     accesstoken = create_access_token(user["userId"])
+    refresh = create_refresh_token(user["userId"])
+    _set_refresh_cookie(http_response, refresh)
 
     authresponse = AuthResponse(
         accessToken=accesstoken,
-        refreshToken=create_refresh_token(user["userId"]),
+        refreshToken=refresh,
         accessTokenExpiry=get_token_expiry(accesstoken),
         user=user)
     return authresponse
 
 
 @auth_v1.post("/authb")
-def authb(request: AuthRequest) -> AuthResponse:
+def authb(request: AuthRequest, http_response: Response) -> AuthResponse:
     response = loginb(request.username, request.password)
 
     logging.info(f"Non member login, response_json: {response}")
@@ -81,33 +99,45 @@ def authb(request: AuthRequest) -> AuthResponse:
     save_external_token(user["userId"], response["token"],
                         convert_string_to_datetime(response["validThrough"]))
     accesstoken = create_access_token(user["userId"])
+    refresh = create_refresh_token(user["userId"])
+    _set_refresh_cookie(http_response, refresh)
 
     authresponse = AuthResponse(
         accessToken=accesstoken,
-        refreshToken=create_refresh_token(user["userId"]),
+        refreshToken=refresh,
         accessTokenExpiry=get_token_expiry(accesstoken),
         user=user)
     return authresponse
 
 
 class RefreshTokenRequest(BaseModel):
-    refresh_token: str
+    # Optional — native clients send this in the body; web clients rely on
+    # the httpOnly cookie set at login instead. Both paths are supported.
+    refresh_token: Optional[str] = None
+
 
 @auth_v1.post("/refresh_token")
-def refresh_token(req: RefreshTokenRequest) -> AuthResponse:
+def refresh_token(req: RefreshTokenRequest, http_request: Request, http_response: Response) -> AuthResponse:
     try:
-        valid, payload = verify_refresh_token(req.refresh_token)
+        token = req.refresh_token or http_request.cookies.get(REFRESH_TOKEN_COOKIE)
+        if not token:
+            raise HTTPException(status_code=401, detail="Unauthorized")
+        valid, payload = verify_refresh_token(token)
         if not valid:
             raise HTTPException(status_code=401, detail="Unauthorized")
         user = get_user(int(payload.get("sub")))
         if not user:
             raise HTTPException(status_code=401, detail="Unauthorized")
         accesstoken = create_access_token(user["userId"])
+        refresh = create_refresh_token(user["userId"])
+        _set_refresh_cookie(http_response, refresh)
         authresponse = AuthResponse(
             accessToken=accesstoken,
-            refreshToken=create_refresh_token(user["userId"]),
+            refreshToken=refresh,
             accessTokenExpiry=get_token_expiry(accesstoken),
             user=user)
         return authresponse
-    except:
+    except HTTPException:
+        raise
+    except Exception:
         raise HTTPException(status_code=401, detail="Unauthorized")
