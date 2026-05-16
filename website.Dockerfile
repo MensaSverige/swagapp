@@ -8,6 +8,7 @@ COPY . .
 
 # Set environment variables for the build
 ENV EXPO_PUBLIC_API_URL=/api
+ENV EXPO_PUBLIC_API_VERSION=v1
 ENV NODE_ENV=production
 ENV APP_VARIANT=production
 
