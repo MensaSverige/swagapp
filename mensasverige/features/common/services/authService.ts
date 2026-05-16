@@ -86,13 +86,17 @@ export const authenticate = async (username: string, password: string, testMode:
 export const getOrRefreshAccessToken = async (): Promise<string> => {
     const accessToken = await SecureStore.getItem('accessToken');
     const accessTokenExpiry = await SecureStore.getItem('accessTokenExpiry');
-    const refreshToken = await SecureStore.getItem('refreshToken');
+    // On web the refresh token lives in an httpOnly cookie — not in storage.
+    const refreshToken = Platform.OS === 'web' ? null : await SecureStore.getItem('refreshToken');
 
-    if (accessToken && accessTokenExpiry && refreshToken) {
-        const tokenExpiryDate = new Date(accessTokenExpiry);
-        if (new Date() > new Date(tokenExpiryDate.getTime() - 60 * 1000)) { // refresh 60 seconds before expiry
+    const hasValidSession = accessToken && accessTokenExpiry &&
+        (Platform.OS === 'web' || !!refreshToken);
+
+    if (hasValidSession) {
+        const tokenExpiryDate = new Date(accessTokenExpiry!);
+        if (new Date() > new Date(tokenExpiryDate.getTime() - 60 * 1000)) {
             try {
-                const newAccessToken = await refreshAccessToken(refreshToken);
+                const newAccessToken = await refreshAccessToken(refreshToken ?? '');
                 console.log('Refreshed access token');
                 return newAccessToken;
             } catch (error) {
@@ -103,7 +107,7 @@ export const getOrRefreshAccessToken = async (): Promise<string> => {
                 }
             }
         } else {
-            return accessToken;
+            return accessToken!;
         }
     }
     return Promise.reject('No access token');

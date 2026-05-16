@@ -1,5 +1,6 @@
 from datetime import datetime
 import logging
+import os
 from typing import Optional
 from fastapi import APIRouter, HTTPException, Request, Response
 from pydantic import BaseModel
@@ -15,14 +16,17 @@ from v1.db.users import create_user, get_user, update_user_from_authresponse
 REFRESH_TOKEN_COOKIE = "swag_refresh_token"
 REFRESH_TOKEN_MAX_AGE = 60 * 60 * 24  # 24 h — matches token_handler.py
 
+# COOKIE_SECURE=false in local dev (HTTP). Always true in production.
+_COOKIE_SECURE = os.getenv("COOKIE_SECURE", "true").lower() != "false"
+
 
 def _set_refresh_cookie(response: Response, refresh_token: str) -> None:
     response.set_cookie(
         key=REFRESH_TOKEN_COOKIE,
         value=refresh_token,
         httponly=True,
-        secure=True,
-        samesite="lax",
+        secure=_COOKIE_SECURE,
+        samesite="none" if not _COOKIE_SECURE else "lax",
         max_age=REFRESH_TOKEN_MAX_AGE,
         path="/",
     )
