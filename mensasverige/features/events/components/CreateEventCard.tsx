@@ -21,6 +21,8 @@ import { createEventCardStyles } from '../styles/eventCardStyles';
 import { createEditableFieldStyles } from '@/features/common/styles/editableFieldStyles';
 import { ExtendedEvent } from '../types/eventUtilTypes';
 import { createExtendedEvent } from '../utils/eventUtils';
+import { Tag } from '../../../api_schema/types';
+import TagPicker from './TagPicker';
 
 interface CreateEventCardProps {
   onEventCreated?: (event: ExtendedEvent) => void;
@@ -39,6 +41,7 @@ const CreateEventCard: React.FC<CreateEventCardProps> = ({
 }) => {
   const { user } = useStore();
   const colorScheme = useColorScheme();
+  const [selectedTags, setSelectedTags] = useState<Tag[]>(existingEvent?.tags ?? []);
   const eventCardStyles = createEventCardStyles(colorScheme ?? 'light');
   const editableFieldStyles = createEditableFieldStyles(colorScheme ?? 'light');
   const [editingField, setEditingField] = useState<string | null>(null);
@@ -125,6 +128,7 @@ const CreateEventCard: React.FC<CreateEventCardProps> = ({
           maxAttendees: eventData.maxAttendees || null,
           latitude: eventData.latitude,
           longitude: eventData.longitude,
+          tags: selectedTags,
         };
         console.log('Updating event:', eventToUpdate);
 
@@ -156,7 +160,7 @@ const CreateEventCard: React.FC<CreateEventCardProps> = ({
           parentEvent: null,
           admin: user ? [user.userId] : [],
           hosts: [],
-          tags: [],
+          tags: selectedTags,
           attendees: user ? [{ userId: user.userId }] : [],
           queue: [],
           extras: {},
@@ -289,6 +293,13 @@ const CreateEventCard: React.FC<CreateEventCardProps> = ({
           }}
           onValueChange={(value) => setEventData(prev => ({ ...prev, description: value }))}
           multiline
+        />
+
+        <View style={eventCardStyles.divider} />
+        <TagPicker
+          selectedTags={selectedTags}
+          userInterests={(user?.interests ?? []) as string[]}
+          onChange={setSelectedTags}
         />
 
         {!hideButtons && (
