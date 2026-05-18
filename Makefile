@@ -25,7 +25,7 @@ docs/backend: python-deps
 		)
 
 python-deps: .venv
-	@.venv/bin/pip install -r ./backend/requirements.txt
+	@.venv/bin/pip install -r ./backend/v1/requirements.txt
 
 .venv:
 	@echo "Ensuring virtualenv"

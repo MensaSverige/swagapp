@@ -10,7 +10,7 @@ class DummyExtendedUserEvent(ExtendedUserEvent):
 
 
 def make_user_event(event_id: str, owner_id: int, start_offset_hours: int = 2, attendees=None, max_attendees=None):
-    start = datetime.datetime.utcnow() + datetime.timedelta(hours=start_offset_hours)
+    start = datetime.datetime.now() + datetime.timedelta(hours=start_offset_hours)
     ue = DummyExtendedUserEvent(
         _id=event_id,
         userId=owner_id,
