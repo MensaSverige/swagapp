@@ -33,7 +33,7 @@ services:
       GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET:-}
       GITHUB_APP_PRIVATE_KEY: ${GITHUB_APP_PRIVATE_KEY:-}
       PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-http://localhost:8043}
-      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:8081,https://app.events.mensa.se}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:8081}
       COOKIE_SECURE: "false"
 
   mongo:
