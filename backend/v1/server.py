@@ -44,12 +44,6 @@ app = FastAPI()
 # Origin headers so they are unaffected by this setting.
 _raw_origins = os.getenv("ALLOWED_ORIGINS", "https://app.events.mensa.se")
 allowed_origins = [o.strip() for o in _raw_origins.split(",") if o.strip()]
-if os.getenv("ENVIRONMENT", "production") != "production":
-    allowed_origins += [
-        "http://localhost:8081",
-        "http://localhost:19006",
-        "http://localhost:3000",
-    ]
 
 app.add_middleware(
     CORSMiddleware,
