@@ -80,7 +80,7 @@ export default function PrivacyScreen() {
           <ThemedText style={styles.sectionText}>
             Som användare av Mensa Sverige har du rätt att få tillgång till och radera dina
             personuppgifter. För att begära detta, vänligen kontakta app-ansvarig på
-            app@mensa.se. Vi kommer att skyndsamt hantera din begäran och radera alla spår av
+            app-ansvarig@mensa.se. Vi kommer att skyndsamt hantera din begäran och radera alla spår av
             dina uppgifter från vår databas.
           </ThemedText>
         </View>
