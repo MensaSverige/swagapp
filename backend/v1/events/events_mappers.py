@@ -89,7 +89,7 @@ def map_external_event(
         capacity_ok = True
         if details.isLimited:
             capacity_ok = details.stock > 0
-        bookable = within_window and capacity_ok and start_dt >= now
+        bookable = within_window and capacity_ok and start_dt >= now and not attending
 
         image_url = details.imageUrl300 or details.imageUrl150
 

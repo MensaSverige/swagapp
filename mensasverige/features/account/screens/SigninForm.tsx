@@ -1,13 +1,16 @@
 import React, { useEffect, useState } from "react";
 import {
   Alert,
+  ScrollView,
   StyleSheet,
   TouchableOpacity,
   View,
   Image,
   Linking,
+  Platform,
 } from "react-native";
-import * as SecureStore from "expo-secure-store";
+import * as SecureStore from "@/features/common/services/secureStorage";
+import { useRouter } from "expo-router";
 import useStore from "../../common/store/store";
 //import { TEST_MODE } from "@env";
 import { authenticate } from "../../common/services/authService";
@@ -21,6 +24,7 @@ import { SaveCredentialsCheckBox } from "@/features/common/components/SaveCreden
 
 export const SigninForm = () => {
   // const colorMode = useColorMode();
+  const router = useRouter();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [passwordVisible, setPasswordVisible] = useState(false);
@@ -65,7 +69,7 @@ export const SigninForm = () => {
     console.log(`Saving credentials username and password for ${key}`);
     if (!saveCredentials) return;
     try {
-      await SecureStore.setItemAsync(
+      await SecureStore.setItem(
         key,
         JSON.stringify({ username, password })
       );
@@ -127,9 +131,12 @@ export const SigninForm = () => {
     else handleMemberLogin();
   };
 
-  return (
+  const webStyle = Platform.OS === 'web'
+    ? { maxWidth: 480, alignSelf: 'center' as const, width: '100%' as const }
+    : {};
 
-    <ThemedView style={{ flex: 1, padding: 20, gap: 16, paddingTop: 60 }}>
+  const formContent = (
+    <ThemedView style={[{ flex: 1, padding: 20, gap: 16, paddingTop: 60 }, webStyle]}>
       <View style={styles.logoContainer}>
         <Image
           source={require('@/assets/images/icon.png')}
@@ -212,8 +219,55 @@ export const SigninForm = () => {
         </View>
 
       )}
+
+      {Platform.OS === 'web' && (
+        <View style={styles.webLinksContainer}>
+          <ThemedText type="subtitle" style={styles.downloadTitle}>
+            Ladda ner appen
+          </ThemedText>
+          <View style={styles.downloadLinksRow}>
+            <TouchableOpacity
+              onPress={() => Linking.openURL('https://apps.apple.com/se/app/mensa-sverige/id6755419896')}
+              style={styles.downloadLink}
+            >
+              <ThemedText type="link" style={styles.downloadLinkText}>
+                App Store
+              </ThemedText>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => Linking.openURL('https://play.google.com/store/apps/details?id=se.mensasverige')}
+              style={styles.downloadLink}
+            >
+              <ThemedText type="link" style={styles.downloadLinkText}>
+                Google Play
+              </ThemedText>
+            </TouchableOpacity>
+          </View>
+          <TouchableOpacity
+            onPress={() => router.push('/privacy')}
+            style={styles.privacyLinkContainer}
+          >
+            <ThemedText type="link" style={styles.privacyLink}>
+              Integritetspolicy
+            </ThemedText>
+          </TouchableOpacity>
+        </View>
+      )}
     </ThemedView>
   );
+
+  if (Platform.OS === 'web') {
+    return (
+      <ScrollView
+        contentContainerStyle={{ flexGrow: 1, alignItems: 'center' }}
+        keyboardShouldPersistTaps="handled"
+      >
+        {formContent}
+      </ScrollView>
+    );
+  }
+
+  return formContent;
 };
 
 
@@ -249,5 +303,39 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flex: 1,
     justifyContent: 'center',
+  },
+  webLinksContainer: {
+    marginTop: 32,
+    paddingTop: 24,
+    borderTopWidth: 1,
+    borderTopColor: '#e0e0e0',
+    gap: 16,
+  },
+  downloadTitle: {
+    textAlign: 'center',
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 8,
+  },
+  downloadLinksRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 16,
+  },
+  downloadLink: {
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+  },
+  downloadLinkText: {
+    textAlign: 'center',
+    fontSize: 14,
+  },
+  privacyLinkContainer: {
+    alignItems: 'center',
+    paddingVertical: 8,
+  },
+  privacyLink: {
+    textAlign: 'center',
+    fontSize: 14,
   },
 });

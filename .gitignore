@@ -83,3 +83,10 @@ yarn-error.log
 !/docs/source/index.rst
 
 .grit-cache
+.grit/
+.claude/
+.mcp.json
+.playwright-mcp/
+.vscode/extensions/
+.vscode/user-data/
+shots/

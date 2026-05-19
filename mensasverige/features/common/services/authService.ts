@@ -28,10 +28,14 @@
 
 import { AuthRequest, AuthResponse, HTTPValidationError, ValidationError } from '../../../api_schema/types';
 import axios from 'axios';
-import * as SecureStore from "expo-secure-store";
+import { Platform } from 'react-native';
+import * as SecureStore from './secureStorage';
 
 const authClient = axios.create({
     baseURL: `${process.env.EXPO_PUBLIC_API_URL}/${process.env.EXPO_PUBLIC_API_VERSION}`,
+    // Send cookies on web so the httpOnly refresh-token cookie is included.
+    // On native this is a no-op — native HTTP clients don't use browser cookies.
+    withCredentials: Platform.OS === 'web',
 });
 
 export const authenticate = async (username: string, password: string, testMode: boolean, member: boolean): Promise<AuthResponse> => {
@@ -80,15 +84,19 @@ export const authenticate = async (username: string, password: string, testMode:
 }
 
 export const getOrRefreshAccessToken = async (): Promise<string> => {
-    const accessToken = await SecureStore.getItemAsync('accessToken');
-    const accessTokenExpiry = await SecureStore.getItemAsync('accessTokenExpiry');
-    const refreshToken = await SecureStore.getItemAsync('refreshToken');
+    const accessToken = await SecureStore.getItem('accessToken');
+    const accessTokenExpiry = await SecureStore.getItem('accessTokenExpiry');
+    // On web the refresh token lives in an httpOnly cookie — not in storage.
+    const refreshToken = Platform.OS === 'web' ? null : await SecureStore.getItem('refreshToken');
 
-    if (accessToken && accessTokenExpiry && refreshToken) {
-        const tokenExpiryDate = new Date(accessTokenExpiry);
-        if (new Date() > new Date(tokenExpiryDate.getTime() - 60 * 1000)) { // refresh 60 seconds before expiry
+    const hasValidSession = accessToken && accessTokenExpiry &&
+        (Platform.OS === 'web' || !!refreshToken);
+
+    if (hasValidSession) {
+        const tokenExpiryDate = new Date(accessTokenExpiry!);
+        if (new Date() > new Date(tokenExpiryDate.getTime() - 60 * 1000)) {
             try {
-                const newAccessToken = await refreshAccessToken(refreshToken);
+                const newAccessToken = await refreshAccessToken(refreshToken ?? '');
                 console.log('Refreshed access token');
                 return newAccessToken;
             } catch (error) {
@@ -99,14 +107,17 @@ export const getOrRefreshAccessToken = async (): Promise<string> => {
                 }
             }
         } else {
-            return accessToken;
+            return accessToken!;
         }
     }
     return Promise.reject('No access token');
 }
 
 export const refreshAccessToken = async (refreshToken: string): Promise<string> => {
-    const response = await authClient.post('/refresh_token', { refresh_token: refreshToken });
+    // On web the refresh token travels as an httpOnly cookie — don't put it in
+    // the body. On native the body field is required (no cookie support).
+    const body = Platform.OS === 'web' ? {} : { refresh_token: refreshToken };
+    const response = await authClient.post('/refresh_token', body);
     if (response.status === 200) {
         const data: AuthResponse = response.data;
         await storeAndValidateAuthResponse(data);
@@ -117,7 +128,7 @@ export const refreshAccessToken = async (refreshToken: string): Promise<string> 
 
 export const attemptLoginWithStoredCredentials = async (): Promise<AuthResponse> => {
     // First try to login with stored credentials for member users
-    const memberCredentials = await SecureStore.getItemAsync('credentials');
+    const memberCredentials = await SecureStore.getItem('credentials');
     if (memberCredentials) {
         try {
             const credentials = JSON.parse(memberCredentials);
@@ -125,13 +136,13 @@ export const attemptLoginWithStoredCredentials = async (): Promise<AuthResponse>
         } catch (error: any) {
             // If that login fails, reset member user credentials storage.
             console.error('Login with stored credentials failed', error);
-            await SecureStore.deleteItemAsync('credentials');
+            await SecureStore.deleteItem('credentials');
             return Promise.reject('Login failed');
         }
     }
     
     // If no stored credentials are found, try to login with stored credentials for non-member users
-    const nonMemberCredentials = await SecureStore.getItemAsync('non-member-credentials');
+    const nonMemberCredentials = await SecureStore.getItem('non-member-credentials');
     if (nonMemberCredentials) {
         try {
             const credentials = JSON.parse(nonMemberCredentials);
@@ -139,7 +150,7 @@ export const attemptLoginWithStoredCredentials = async (): Promise<AuthResponse>
         } catch (error: any) {
             // If that login fails, reset non-member user credentials storage.
             console.error('Login with stored credentials failed', error);
-            await SecureStore.deleteItemAsync('non-member-credentials');
+            await SecureStore.deleteItem('non-member-credentials');
             return Promise.reject('Login failed');
         }
     }
@@ -149,20 +160,20 @@ export const attemptLoginWithStoredCredentials = async (): Promise<AuthResponse>
 
 export const resetUserCredentials = async (): Promise<boolean> => {
     return Promise.all([
-        SecureStore.deleteItemAsync('accessToken'),
-        SecureStore.deleteItemAsync('accessTokenExpiry'),
-        SecureStore.deleteItemAsync('credentials'),
-        SecureStore.deleteItemAsync('non-member-credentials'),
-        SecureStore.deleteItemAsync('refreshToken'),
+        SecureStore.deleteItem('accessToken'),
+        SecureStore.deleteItem('accessTokenExpiry'),
+        SecureStore.deleteItem('credentials'),
+        SecureStore.deleteItem('non-member-credentials'),
+        SecureStore.deleteItem('refreshToken'),
     ])
     .then(() => true)
 }
 
 export const storeAndValidateAuthResponse = async (authresponse: AuthResponse): Promise<AuthResponse> => {
     if (authresponse.accessToken && authresponse.refreshToken && authresponse.accessTokenExpiry && authresponse.user) {
-        await SecureStore.setItemAsync('accessToken', authresponse.accessToken);
-        await SecureStore.setItemAsync('accessTokenExpiry', authresponse.accessTokenExpiry.toString());
-        await SecureStore.setItemAsync('refreshToken', authresponse.refreshToken);
+        await SecureStore.setItem('accessToken', authresponse.accessToken);
+        await SecureStore.setItem('accessTokenExpiry', authresponse.accessTokenExpiry.toString());
+        await SecureStore.setItem('refreshToken', authresponse.refreshToken);
 
         if (authresponse.user !== null && authresponse.user !== undefined) {
             return authresponse;
