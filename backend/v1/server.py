@@ -38,9 +38,24 @@ logging.info(f"Server started at {get_current_time_formatted()}")
 ENCODERS_BY_TYPE[ObjectId] = str
 
 app = FastAPI()
+
+# ALLOWED_ORIGINS: comma-separated list of browser origins permitted to send
+# credentialed requests (withCredentials / cookies). Native apps don't send
+# Origin headers so they are unaffected by this setting.
+_raw_origins = os.getenv("ALLOWED_ORIGINS", "https://app.events.mensa.se")
+allowed_origins = [o.strip() for o in _raw_origins.split(",") if o.strip()]
+if os.getenv("ENABLE_DEV_ENDPOINTS", "").lower() == "true":
+    _localhost_origins = [
+        "http://localhost:8081",
+        "http://localhost:19006",
+        "http://localhost:3000",
+        "http://127.0.0.1:8081",
+    ]
+    allowed_origins = list(set(allowed_origins) | set(_localhost_origins))
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

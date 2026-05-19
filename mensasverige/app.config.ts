@@ -51,6 +51,8 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       bundler: "metro",
       output: "static",
       favicon: "./assets/images/favicon.png",
+      themeColor: "#0077E6",
+      backgroundColor: "#000711",
     },
     plugins: [
       "expo-router",
