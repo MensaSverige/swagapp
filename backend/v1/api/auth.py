@@ -46,72 +46,45 @@ class AuthResponse(BaseModel):
     user: User
 
 
-@auth_v1.post("/authm")
-def authm(request: AuthRequest, http_response: Response) -> AuthResponse:
-    response = check_review_user_creds(request.username, request.password)
-
-    if response is not None:
-        # Important, so we can look at the logs to see when the app is being reviewed ;)
-        logging.info(f"Review user logged in! {request.username}")
-    else:
-        response = loginm(request.username, request.password)
-
-    logging.info(f"response_json: {response}")
+def _do_login(login_response: dict, http_response: Response) -> AuthResponse:
     try:
-        memberId = int(response["memberId"])
+        memberId = int(login_response["memberId"])
         user = get_user(memberId)
         if not user:
-            user = create_user(response)
+            user = create_user(login_response)
         else:
-            update_user_from_authresponse(memberId, response)
+            update_user_from_authresponse(memberId, login_response)
             user = get_user(memberId)
-    except KeyError as e:
-        print("memberId not found in response")
+    except KeyError:
         raise HTTPException(status_code=400, detail="Invalid credentials")
 
-    save_external_token(user["userId"], response["token"],
-                        convert_string_to_datetime(response["validThrough"]))
+    save_external_token(user["userId"], login_response["token"],
+                        convert_string_to_datetime(login_response["validThrough"]))
     accesstoken = create_access_token(user["userId"])
     refresh = create_refresh_token(user["userId"])
     _set_refresh_cookie(http_response, refresh)
 
-    authresponse = AuthResponse(
+    return AuthResponse(
         accessToken=accesstoken,
         refreshToken=refresh,
         accessTokenExpiry=get_token_expiry(accesstoken),
         user=user)
-    return authresponse
+
+
+@auth_v1.post("/authm")
+def authm(request: AuthRequest, http_response: Response) -> AuthResponse:
+    response = check_review_user_creds(request.username, request.password)
+    if response is not None:
+        logging.info("Review user logged in: %s", request.username)
+    else:
+        response = loginm(request.username, request.password)
+    return _do_login(response, http_response)
 
 
 @auth_v1.post("/authb")
 def authb(request: AuthRequest, http_response: Response) -> AuthResponse:
     response = loginb(request.username, request.password)
-
-    logging.info(f"Non member login, response_json: {response}")
-    try:
-        memberId = int(response["memberId"])
-        user = get_user(memberId)
-        if not user:
-            user = create_user(response)
-        else:
-            update_user_from_authresponse(memberId, response)
-            user = get_user(memberId)
-    except KeyError as e:
-        print("memberId not found in response")
-        raise HTTPException(status_code=400, detail="Invalid credentials")
-
-    save_external_token(user["userId"], response["token"],
-                        convert_string_to_datetime(response["validThrough"]))
-    accesstoken = create_access_token(user["userId"])
-    refresh = create_refresh_token(user["userId"])
-    _set_refresh_cookie(http_response, refresh)
-
-    authresponse = AuthResponse(
-        accessToken=accesstoken,
-        refreshToken=refresh,
-        accessTokenExpiry=get_token_expiry(accesstoken),
-        user=user)
-    return authresponse
+    return _do_login(response, http_response)
 
 
 class RefreshTokenRequest(BaseModel):
