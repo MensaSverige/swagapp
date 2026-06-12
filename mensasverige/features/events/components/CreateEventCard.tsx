@@ -170,9 +170,22 @@ const CreateEventCard: React.FC<CreateEventCardProps> = ({
         const createdEvent = await createEvent(eventToCreate);
         onEventCreated?.(createExtendedEvent(createdEvent, user?.userId));
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving event:', error);
-      Alert.alert('Error', `Failed to ${existingEvent ? 'update' : 'create'} event. Please try again.`);
+      const status = error?.response?.status;
+      let message: string;
+      if (!error?.response && error?.message?.includes('Network Error')) {
+        message = 'Det går inte att nå servern just nu. Kontrollera din anslutning.';
+      } else if (status === 403) {
+        message = 'Du har inte behörighet att ändra det här evenemanget.';
+      } else if (status === 409) {
+        message = 'Evenemanget kunde inte sparas – det finns redan ett likadant.';
+      } else if (status === 404) {
+        message = 'Evenemanget hittades inte.';
+      } else {
+        message = `Det gick inte att ${existingEvent ? 'uppdatera' : 'skapa'} evenemanget. Försök igen.`;
+      }
+      Alert.alert('Fel', message);
     } finally {
       setIsCreating(false);
     }
