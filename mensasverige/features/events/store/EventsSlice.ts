@@ -1,10 +1,8 @@
-import {StateCreator} from 'zustand';
-import { GroupedEvents, ExtendedEvent } from '../types/eventUtilTypes';
-import { groupEventsByDate } from '../utils/eventUtils';
+import { StateCreator } from 'zustand';
+import { ExtendedEvent } from '../types/eventUtilTypes';
 import { ExternalRoot, Tag } from '../../../api_schema/types';
 import { INTEREST_TAGS } from '../utils/interestTags';
 
-// Import EventFilterOptions type
 export interface EventFilterOptions {
   attendingOrHost?: boolean | null;
   bookable?: boolean | null;
@@ -15,66 +13,36 @@ export interface EventFilterOptions {
 }
 
 export interface EventsSlice {
-  // Raw events data
+  // Raw events
   events: ExtendedEvent[];
   eventsRefreshing: boolean;
   eventsLastFetched: Date | null;
   eventsInitialized: boolean;
   interestTags: Tag[];
-  setInterestTags: (tags: Tag[]) => void;
 
   // Parent event info
   eventInfo: ExternalRoot | null;
   eventInfoLoading: boolean;
 
-  // Dashboard events (attending + upcoming with limit)
-  dashboardGroupedEvents: GroupedEvents;
-  dashboardHasMore: boolean;
-  dashboardLoading: boolean;
-  dashboardError: Error | null;
-
-  // Filtered events (for screens with active filters)
-  filteredGroupedEvents: GroupedEvents;
-  filteredTotalCount: number;
-  filteredCount: number;
-
-  // Event filters
+  // Active filter (source of truth — derivations live in useEvents useMemo)
   currentEventFilter: EventFilterOptions;
 
-  // Derived analytics
-  categoryEventCounts: Record<string, number>;
-  topCategories: string[];
-  lastMinuteEvents: ExtendedEvent[];
-
   setEvents: (events: ExtendedEvent[]) => void;
-  setEventsRefreshing: (eventsRefreshing: boolean) => void;
-  setEventsLastFetched: (eventsLastFetched: Date | null) => void;
-  setEventsInitialized: (initialized: boolean) => void;
+  setEventsRefreshing: (v: boolean) => void;
+  setEventsLastFetched: (v: Date | null) => void;
+  setEventsInitialized: (v: boolean) => void;
+  setInterestTags: (tags: Tag[]) => void;
 
-  // Event info actions
-  setEventInfo: (eventInfo: ExternalRoot | null) => void;
-  setEventInfoLoading: (loading: boolean) => void;
+  setEventInfo: (v: ExternalRoot | null) => void;
+  setEventInfoLoading: (v: boolean) => void;
 
-  // Dashboard events actions
-  setDashboardGroupedEvents: (groupedEvents: GroupedEvents) => void;
-  setDashboardHasMore: (hasMore: boolean) => void;
-  setDashboardLoading: (loading: boolean) => void;
-  setDashboardError: (error: Error | null) => void;
-
-  // Filtered events actions
-  setFilteredGroupedEvents: (groupedEvents: GroupedEvents) => void;
-  setFilteredCounts: (total: number, filtered: number) => void;
-
-  // Filter actions
   setCurrentEventFilter: (filter: EventFilterOptions) => void;
   resetFilters: () => void;
-  updateFilteredEvents: (eventsToFilter?: ExtendedEvent[]) => void;
-  
-  // Action to add or update a single event
+
   addOrUpdateEvent: (event: ExtendedEvent) => void;
 }
 
-const defaultEventFilter: EventFilterOptions = {
+export const defaultEventFilter: EventFilterOptions = {
   attendingOrHost: null,
   bookable: null,
   official: null,
@@ -83,209 +51,37 @@ const defaultEventFilter: EventFilterOptions = {
   dateTo: null,
 };
 
-// Helper function to apply client-side filtering
-const filterEvents = (events: ExtendedEvent[], eventFilter: EventFilterOptions): ExtendedEvent[] => {
-  const now = new Date();
-  const fromDate = eventFilter.dateFrom ? new Date(eventFilter.dateFrom) : now;
-  const toDate = eventFilter.dateTo ? new Date(eventFilter.dateTo) : null;
-  const categorySet = eventFilter.categories && eventFilter.categories.length > 0
-    ? new Set(eventFilter.categories)
-    : null;
-
-  return events.filter(event => {
-    if (eventFilter.attendingOrHost !== null && eventFilter.attendingOrHost !== undefined) {
-      if (event.attendingOrHost !== eventFilter.attendingOrHost) return false;
-    }
-
-    if (eventFilter.bookable !== null && eventFilter.bookable !== undefined) {
-      if (event.bookable !== eventFilter.bookable) return false;
-    }
-
-    if (eventFilter.official !== null && eventFilter.official !== undefined) {
-      if (event.official !== eventFilter.official) return false;
-    }
-
-    if (categorySet) {
-      if (!event.tags || !event.tags.some(tag => categorySet.has(tag.code))) return false;
-    }
-
-    if (!event.start) return false;
-    const eventStartDate = new Date(event.start);
-
-    if (event.end) {
-      const eventEndDate = new Date(event.end);
-      if (eventStartDate <= now && eventEndDate >= now) return true; // ongoing
-    }
-
-    if (eventStartDate < fromDate) return false;
-    if (toDate && eventStartDate > toDate) return false;
-
-    return true;
-  });
-};
-
-// Helper function to calculate category event counts
-const calculateCategoryEventCounts = (events: ExtendedEvent[]): Record<string, number> => {
-  const categoryEventCounts: Record<string, number> = {};
-  
-  events
-    .filter(event => event.bookable) // Only count bookable events
-    .forEach(event => {
-      event.tags?.forEach(tag => {
-        if (tag.code) {
-          categoryEventCounts[tag.code] = (categoryEventCounts[tag.code] || 0) + 1;
-        }
-      });
-    });
-  
-  return categoryEventCounts;
-};
-
-// Helper function to get top categories by event count
-const getTopCategories = (categoryEventCounts: Record<string, number>, limit: number = 5): string[] => {
-  return Object.entries(categoryEventCounts)
-    .sort(([, countA], [, countB]) => countB - countA)
-    .slice(0, limit)
-    .map(([code]) => code);
-};
-
 export const createEventsSlice: StateCreator<EventsSlice> = (set, get) => ({
-  // Raw events data
   events: [],
   eventsRefreshing: false,
   eventsLastFetched: null,
   eventsInitialized: false,
   interestTags: INTEREST_TAGS,
 
-  // Parent event info
   eventInfo: null,
   eventInfoLoading: false,
-  eventInfoError: null,
 
-  // Dashboard events
-  dashboardGroupedEvents: {},
-  dashboardHasMore: false,
-  dashboardLoading: false,
-  dashboardError: null,
-
-  // Filtered events
-  filteredGroupedEvents: {},
-  filteredTotalCount: 0,
-  filteredCount: 0,
-
-  // Event filters
   currentEventFilter: defaultEventFilter,
 
-  // Derived analytics
-  categoryEventCounts: {},
-  topCategories: [],
-  lastMinuteEvents: [],
+  setEvents: (events) => set({ events }),
+  setEventsRefreshing: (eventsRefreshing) => set({ eventsRefreshing }),
+  setEventsLastFetched: (eventsLastFetched) => set({ eventsLastFetched }),
+  setEventsInitialized: (eventsInitialized) => set({ eventsInitialized }),
+  setInterestTags: (interestTags) => set({ interestTags }),
 
-  setEvents: (events: ExtendedEvent[]) => {
-    set(() => ({events: events}));
-    
-    // Auto-update derived event lists when main events are set
-    const state = get();
-    
-    try {
-      // Update dashboard events (attending events only)
-      const dashboardFilter: EventFilterOptions = { 
-        attendingOrHost: true, 
-        bookable: null, 
-        official: null, 
-        categories: [], 
-        dateFrom: new Date(), 
-        dateTo: null };
-      const dashboardEvents = filterEvents(events, dashboardFilter);
+  setEventInfo: (eventInfo) => set({ eventInfo }),
+  setEventInfoLoading: (eventInfoLoading) => set({ eventInfoLoading }),
 
-      const dashboardGroupedEvents = groupEventsByDate(dashboardEvents.slice(0, 3));
-      
-      // Calculate derived analytics
-      const categoryEventCounts = calculateCategoryEventCounts(events);
-      const topCategories = getTopCategories(categoryEventCounts);
-      const lastMinuteEventsData = filterEvents(events, { 
-        attendingOrHost: null, 
-        bookable: true,
-        official: null,
-        categories: [],
-        dateFrom: new Date(),
-        dateTo: new Date(new Date().getTime() + 2 * 60 * 60 * 1000) // next 2 hours
-      });
+  setCurrentEventFilter: (currentEventFilter) => set({ currentEventFilter }),
+  resetFilters: () => set({ currentEventFilter: defaultEventFilter }),
 
-      set({
-        dashboardGroupedEvents,
-        dashboardHasMore: dashboardEvents.length > 3,
-        categoryEventCounts,
-        topCategories,
-        lastMinuteEvents: lastMinuteEventsData
-      });
-
-      // Update filtered events using the new helper method
-      get().updateFilteredEvents(events);
-
-    } catch (error) {
-      console.error('Error updating derived event lists:', error);
-      set({
-        dashboardError: error as Error,
-      });
-    }
-  },
-  setEventsRefreshing: (eventsRefreshing: boolean) => set({eventsRefreshing}),
-  setEventsLastFetched: (eventsLastFetched: Date | null) => set({eventsLastFetched}),
-  setEventsInitialized: (eventsInitialized: boolean) => set({eventsInitialized}),
-  setInterestTags: (interestTags: Tag[]) => set({interestTags}),
-
-  // Event info actions
-  setEventInfo: (eventInfo: ExternalRoot | null) => set({eventInfo}),
-  setEventInfoLoading: (eventInfoLoading: boolean) => set({eventInfoLoading}),
-
-  // Dashboard events actions
-  setDashboardGroupedEvents: (groupedEvents: GroupedEvents) => set({dashboardGroupedEvents: groupedEvents}),
-  setDashboardHasMore: (hasMore: boolean) => set({dashboardHasMore: hasMore}),
-  setDashboardLoading: (loading: boolean) => set({dashboardLoading: loading}),
-  setDashboardError: (error: Error | null) => set({dashboardError: error}),
-
-  // Filtered events actions
-  setFilteredGroupedEvents: (groupedEvents: GroupedEvents) => set({filteredGroupedEvents: groupedEvents}),
-  setFilteredCounts: (total: number, filtered: number) => set({filteredTotalCount: total, filteredCount: filtered}),
-
-  // Filter actions
-  updateFilteredEvents: (eventsToFilter?: ExtendedEvent[]) => {
-    const state = get();
-    const events = eventsToFilter || state.events;
-    const filteredEvents = filterEvents(events, state.currentEventFilter);
-    const filteredGroupedEvents = groupEventsByDate(filteredEvents);
-    const nonPastEvents = filterEvents(events, { attendingOrHost: null, bookable: null, official: null, categories: [], dateFrom: new Date(), dateTo: null });
-    set({ filteredGroupedEvents, filteredCount: filteredEvents.length, filteredTotalCount: nonPastEvents.length });
-  },
-  setCurrentEventFilter: (filter: EventFilterOptions) => {
-    set({currentEventFilter: filter});
-    get().updateFilteredEvents();
-  },
-  resetFilters: () => {
-    set({
-      currentEventFilter: defaultEventFilter
-    });
-    get().updateFilteredEvents();
-  },
-
-
-  // Add or update a single event
-  addOrUpdateEvent: (event: ExtendedEvent) => {
-    const state = get();
-    const existingEventIndex = state.events.findIndex(e => e.id === event.id);
-    
-    let updatedEvents: ExtendedEvent[];
-    if (existingEventIndex >= 0) {
-      // Update existing event
-      updatedEvents = [...state.events];
-      updatedEvents[existingEventIndex] = event;
-    } else {
-      // Add new event
-      updatedEvents = [...state.events, event];
-    }
-    
-    // Use setEvents to trigger all the automatic updates
-    state.setEvents(updatedEvents);
+  addOrUpdateEvent: (event) => {
+    const { events } = get();
+    const idx = events.findIndex(e => e.id === event.id);
+    const updated =
+      idx >= 0
+        ? [...events.slice(0, idx), event, ...events.slice(idx + 1)]
+        : [...events, event];
+    set({ events: updated });
   },
 });

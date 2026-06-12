@@ -1,6 +1,12 @@
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useMemo, useState } from 'react';
 import { GroupedEvents, ExtendedEvent } from '../types/eventUtilTypes';
-import { createExtendedEvent } from '../utils/eventUtils';
+import {
+  createExtendedEvent,
+  groupEventsByDate,
+  filterByOptions,
+  calcCategoryCounts,
+  getTopCategories,
+} from '../utils/eventUtils';
 import { fetchEvents, attendEvent, unattendEvent, fetchInterestTags } from '../services/eventService';
 import { getUsersByIds } from '../../account/services/userService';
 import useStore from '../../common/store/store';
@@ -11,64 +17,51 @@ interface UseEventsOptions {
 }
 
 interface UseEventsReturn {
-  // All events data (extended events only)
   allEvents: ExtendedEvent[];
-  // Dashboard events (attending + upcoming with limit)
   dashboardGroupedEvents: GroupedEvents;
   dashboardHasMoreEvents: boolean;
 
-  // Filtered events (based on current filters in store)
   filteredGroupedEvents: GroupedEvents;
   filteredTotalCount: number;
   filteredCount: number;
 
-  // loading: true only during the initial fetch (before first success)
-  // refreshing: true during any active fetch (initial or manual pull-to-refresh)
   loading: boolean;
   error: Error | null;
   refreshing: boolean;
   lastFetched: Date | null;
 
-  // Filter state and actions
   currentEventFilter: EventFilterOptions;
   setCurrentEventFilter: (filter: EventFilterOptions) => void;
   resetFilters: () => void;
 
-  // Derived analytics
   categoryEventCounts: Record<string, number>;
   topCategories: string[];
   lastMinuteEvents: ExtendedEvent[];
 
-  // Actions
   refetch: () => Promise<void>;
   addOrUpdateEvent: (event: ExtendedEvent) => void;
 
-  // Event attendance actions
   attendEventById: (eventId: string) => Promise<boolean>;
   unattendEventById: (eventId: string) => Promise<boolean>;
 }
 
 const USER_PREFETCH_CHUNK_SIZE = 8;
 
-// Module-level guard: prevents concurrent fetches across multiple useEvents instances
 let isFetching = false;
-
-// Module-level auto-refresh singleton: only one interval runs regardless of how many
-// components call useEvents({ enableAutoRefresh: true })
 let globalInterval: ReturnType<typeof setInterval> | null = null;
 let intervalSubscribers = 0;
-
-// Always points to the most recently rendered refetch, so the singleton interval
-// never holds a stale closure when user or other dependencies change.
 let latestRefetch: (() => Promise<void>) | null = null;
 
+const DASHBOARD_MAX = 3;
+const LAST_MINUTE_HOURS = 2;
+
 export const useEvents = (options: UseEventsOptions = {}): UseEventsReturn => {
-  const {
-    enableAutoRefresh = true
-  } = options;
+  const { enableAutoRefresh = true } = options;
+
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
 
   const {
-    // Raw events
     events,
     eventsRefreshing,
     eventsLastFetched,
@@ -78,43 +71,87 @@ export const useEvents = (options: UseEventsOptions = {}): UseEventsReturn => {
     setEventsLastFetched,
     setEventsInitialized,
     setInterestTags,
-
-    // Dashboard events (attending + upcoming with limit)
-    dashboardGroupedEvents,
-    dashboardHasMore,
-    dashboardLoading,
-    dashboardError,
-    setDashboardLoading,
-    setDashboardError,
-
-    // Filters
     currentEventFilter,
     setCurrentEventFilter,
     resetFilters,
-
-    // Filtered events
-    filteredGroupedEvents,
-    filteredTotalCount,
-    filteredCount,
-
-    // Event management actions
     addOrUpdateEvent,
-
-    // Derived analytics
-    categoryEventCounts,
-    topCategories,
-    lastMinuteEvents,
     user,
     getEventsRefreshInterval,
     setUsers,
   } = useStore();
+
+  // ── Derivations (all pure, run only when events / filter change) ──────────
+
+  const now = useMemo(() => new Date(), []); // stable reference per render
+
+  const dashboardEvents = useMemo(() => {
+    const attending = events.filter(e => e.attendingOrHost);
+    // sort ascending by start
+    attending.sort((a, b) =>
+      (a.start ? new Date(a.start).getTime() : 0) -
+      (b.start ? new Date(b.start).getTime() : 0)
+    );
+    return attending;
+  }, [events]);
+
+  const dashboardGroupedEvents = useMemo(
+    () => groupEventsByDate(dashboardEvents.slice(0, DASHBOARD_MAX)),
+    [dashboardEvents]
+  );
+
+  const dashboardHasMore = useMemo(
+    () => dashboardEvents.length > DASHBOARD_MAX,
+    [dashboardEvents]
+  );
+
+  const lastMinuteEvents = useMemo(() => {
+    const cutoff = new Date(Date.now() + LAST_MINUTE_HOURS * 3600_000);
+    return events.filter(e => {
+      if (!e.bookable || !e.start) return false;
+      const start = new Date(e.start);
+      return start >= now && start <= cutoff;
+    });
+  }, [events, now]);
+
+  const categoryEventCounts = useMemo(() => calcCategoryCounts(events), [events]);
+
+  const topCategories = useMemo(
+    () => getTopCategories(categoryEventCounts),
+    [categoryEventCounts]
+  );
+
+  const filteredEvents = useMemo(
+    () => filterByOptions(events, currentEventFilter),
+    [events, currentEventFilter]
+  );
+
+  const filteredGroupedEvents = useMemo(
+    () => groupEventsByDate(filteredEvents),
+    [filteredEvents]
+  );
+
+  const filteredTotalCount = useMemo(() => {
+    // "total" = all non-past events (no additional filter)
+    const fromDate = new Date();
+    return events.filter(e => {
+      if (!e.start) return false;
+      const start = new Date(e.start);
+      if (e.end) {
+        const end = new Date(e.end);
+        if (start <= fromDate && end >= fromDate) return true;
+      }
+      return start >= fromDate;
+    }).length;
+  }, [events]);
+
+  // ── Fetch ─────────────────────────────────────────────────────────────────
 
   const refetch = useCallback(async (): Promise<void> => {
     if (isFetching) return;
     isFetching = true;
     try {
       setEventsRefreshing(true);
-      setDashboardLoading(true);
+      setLoading(true);
 
       const allEvents = await fetchEvents();
 
@@ -127,8 +164,8 @@ export const useEvents = (options: UseEventsOptions = {}): UseEventsReturn => {
         .map(event => {
           try {
             return createExtendedEvent(event, user?.userId);
-          } catch (error) {
-            console.error('Error processing event:', event, error);
+          } catch (err) {
+            console.error('Error processing event:', event, err);
             return null;
           }
         })
@@ -137,26 +174,19 @@ export const useEvents = (options: UseEventsOptions = {}): UseEventsReturn => {
       setEvents(processedEvents);
       setEventsLastFetched(new Date());
       setEventsInitialized(true);
+      setError(null);
 
-      // Seed the current user's own profile synchronously so it's always available
-      // in the cache (e.g. when they're the admin of a user-created event).
-      if (user) {
-        setUsers([user]);
-      }
+      if (user) setUsers([user]);
 
-      // Pre-load user profiles for all event attendees/admins into the store cache.
       const allIds = new Set<number>();
       for (const event of processedEvents) {
-        event.admin?.forEach((id) => allIds.add(id));
-        event.attendees?.forEach((a) => allIds.add(a.userId));
+        event.admin?.forEach(id => allIds.add(id));
+        event.attendees?.forEach(a => allIds.add(a.userId));
       }
 
-      // Defer until after any active navigation animation, then chunk-fetch to avoid
-      // a burst that blocks the JS thread and causes a frame drop.
-      // Cache is re-read inside the callback so IDs fetched by a concurrent refresh are skipped.
       if (allIds.size > 0) {
         setTimeout(() => {
-          const newIds = [...allIds].filter((id) => !useStore.getState().usersById[id]);
+          const newIds = [...allIds].filter(id => !useStore.getState().usersById[id]);
           if (newIds.length === 0) return;
           (async () => {
             for (let i = 0; i < newIds.length; i += USER_PREFETCH_CHUNK_SIZE) {
@@ -168,67 +198,48 @@ export const useEvents = (options: UseEventsOptions = {}): UseEventsReturn => {
                 console.error('[useEvents] getUsersByIds chunk failed:', err);
               }
             }
-          })().catch((err) => console.error('[useEvents] user prefetch failed:', err));
+          })().catch(err => console.error('[useEvents] user prefetch failed:', err));
         }, 0);
       }
-
     } catch (err) {
-      const error = err as Error;
-      setDashboardError(error);
+      const e = err as Error;
+      setError(e);
       console.error('Error fetching events:', err);
     } finally {
       isFetching = false;
       setEventsRefreshing(false);
-      setDashboardLoading(false);
+      setLoading(false);
     }
-  }, [
-    setEvents,
-    setEventsRefreshing,
-    setEventsLastFetched,
-    setEventsInitialized,
-    setDashboardLoading,
-    setDashboardError,
-    user
-  ]);
+  }, [setEvents, setEventsRefreshing, setEventsLastFetched, setEventsInitialized, user]);
 
-  // Keep the module-level pointer fresh so the singleton interval never uses a stale closure
   latestRefetch = refetch;
 
-  // Reset initialized flag on logout so the next login triggers a fresh fetch
   useEffect(() => {
-    if (!user) {
-      setEventsInitialized(false);
-    }
+    if (!user) setEventsInitialized(false);
   }, [user, setEventsInitialized]);
 
-  // Initial load: only fetch if not yet initialized and nothing is in flight
   useEffect(() => {
     if (!eventsInitialized) {
-      refetch().catch(error => console.error('Error in initial loadEvents:', error));
+      refetch().catch(err => console.error('Error in initial loadEvents:', err));
     }
   }, [eventsInitialized, refetch]);
 
-  // Fetch the interest tag catalog from the backend once on first mount.
-  // Falls back to the static list (already in the store) on error.
   useEffect(() => {
     fetchInterestTags().then(tags => {
       if (tags.length > 0) setInterestTags(tags);
     });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Auto-refresh singleton: multiple consumers share one interval
   useEffect(() => {
     if (!enableAutoRefresh) return;
-
     intervalSubscribers++;
     if (!globalInterval) {
       const ms = getEventsRefreshInterval();
       globalInterval = setInterval(() => {
-        latestRefetch?.().catch(error => console.error('Auto-refresh failed:', error));
+        latestRefetch?.().catch(err => console.error('Auto-refresh failed:', err));
       }, ms);
     }
-
     return () => {
       intervalSubscribers--;
       if (intervalSubscribers === 0 && globalInterval) {
@@ -238,72 +249,59 @@ export const useEvents = (options: UseEventsOptions = {}): UseEventsReturn => {
     };
   }, [enableAutoRefresh, refetch, getEventsRefreshInterval]);
 
-  // Event attendance functions
+  // ── Attendance actions ────────────────────────────────────────────────────
+
   const attendEventById = useCallback(
     async (eventId: string): Promise<boolean> => {
       try {
-        const updatedEvent = await attendEvent(eventId);
-        const updatedEvents = events.map(event =>
-          event.id === eventId ? createExtendedEvent(updatedEvent, user?.userId) : event
-        );
-        setEvents(updatedEvents);
+        const updated = await attendEvent(eventId);
+        addOrUpdateEvent(createExtendedEvent(updated, user?.userId));
         return true;
-      } catch (error) {
-        console.error('Error attending event:', error);
-        throw error;
+      } catch (err) {
+        console.error('Error attending event:', err);
+        throw err;
       }
     },
-    [events, setEvents, user?.userId]
+    [addOrUpdateEvent, user?.userId]
   );
 
   const unattendEventById = useCallback(
     async (eventId: string): Promise<boolean> => {
       try {
         await unattendEvent(eventId);
-        const updatedEvents = events.map(event =>
-          event.id === eventId
-            ? createExtendedEvent({ ...event, attending: false }, user?.userId)
-            : event
-        );
-        setEvents(updatedEvents);
+        const existing = events.find(e => e.id === eventId);
+        if (existing) {
+          addOrUpdateEvent(createExtendedEvent({ ...existing, attending: false }, user?.userId));
+        }
         return true;
-      } catch (error) {
-        console.error('Error unattending event:', error);
-        throw error;
+      } catch (err) {
+        console.error('Error unattending event:', err);
+        throw err;
       }
     },
-    [events, setEvents, user?.userId]
+    [events, addOrUpdateEvent, user?.userId]
   );
 
   return {
     allEvents: events,
-
     dashboardGroupedEvents,
     dashboardHasMoreEvents: dashboardHasMore,
-
     filteredGroupedEvents,
     filteredTotalCount,
-    filteredCount,
-
-    // loading is true only before the first successful fetch
-    loading: !eventsInitialized && dashboardLoading,
-    error: dashboardError,
-    // refreshing is true during any active fetch
+    filteredCount: filteredEvents.length,
+    loading: !eventsInitialized && loading,
+    error,
     refreshing: eventsRefreshing,
     lastFetched: eventsLastFetched,
-
     currentEventFilter,
     setCurrentEventFilter,
     resetFilters,
-
     categoryEventCounts,
     topCategories,
     lastMinuteEvents,
-
     refetch,
     addOrUpdateEvent,
-
     attendEventById,
-    unattendEventById
+    unattendEventById,
   };
 };
