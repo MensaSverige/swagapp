@@ -19,7 +19,7 @@
  */
 import axios, {AxiosResponse} from 'axios';
 import useStore from '../store/store';
-import {getOrRefreshAccessToken} from './authService';
+import {getOrRefreshAccessToken, forceRefreshToken} from './authService';
 import { UpdateCheckResponseInterceptor, UpdateCheckErrorInterceptor } from '@/features/updateCheck/services/UpdateCheckResponseInterceptor';
 import * as Application from 'expo-application';
 import { Platform } from 'react-native';
@@ -61,7 +61,7 @@ apiClient.interceptors.response.use(
     store.setBackendConnection(true);
     return response;
   },
-  (error: any) => {
+  async (error: any) => {
     const isNetworkError = error.message.includes('Network Error');
     if (isNetworkError) {
       const store = useStore.getState();
@@ -71,11 +71,20 @@ apiClient.interceptors.response.use(
     const originalRequest = error.config;
     if (
       error.response?.status === 401 &&
+      originalRequest &&
       !originalRequest._retry &&
-      !originalRequest.url.includes('/authm') &&
-      !originalRequest.url.includes('/authb')
+      !originalRequest.url?.includes('/authm') &&
+      !originalRequest.url?.includes('/authb') &&
+      !originalRequest.url?.includes('/refresh_token')
     ) {
       originalRequest._retry = true;
+      try {
+        const newToken = await forceRefreshToken();
+        originalRequest.headers.Authorization = `Bearer ${newToken}`;
+        return apiClient(originalRequest);
+      } catch {
+        useStore.getState().setUser(null);
+      }
     }
     return Promise.reject(error);
   },
