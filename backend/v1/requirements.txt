@@ -3,6 +3,9 @@ requests # HTTP requests
 PyJWT # JWT tokens
 pytest # Testing
 requests-mock # Mocking HTTP requests
+mongomock # In-memory MongoDB for tests
+httpx # Async HTTP client (used by TestClient)
+pytest-asyncio # Async test support
 cryptography # For Fernet encryption
 pytz # Timezone support
 fastapi # FastAPI framework
