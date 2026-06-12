@@ -1,5 +1,6 @@
 import { Event } from '../../../api_schema/types';
 import { EventFilter, ExtendedEvent, GroupedEvents } from '../types/eventUtilTypes';
+import { EventFilterOptions } from '../store/EventsSlice';
 
 /**
  * Check if user is effectively attending an event (including admin/host status)
@@ -119,5 +120,63 @@ export const groupEventsByDate = (events: ExtendedEvent[]): GroupedEvents => {
     return grouped;
   }, {} as GroupedEvents);
 };
+
+/**
+ * Apply the rich EventFilterOptions filter used on the events list screen.
+ * Pure function — no side effects, safe to call in useMemo.
+ */
+export const filterByOptions = (events: ExtendedEvent[], eventFilter: EventFilterOptions): ExtendedEvent[] => {
+  const now = new Date();
+  const fromDate = eventFilter.dateFrom ? new Date(eventFilter.dateFrom) : now;
+  const toDate = eventFilter.dateTo ? new Date(eventFilter.dateTo) : null;
+  const categorySet =
+    eventFilter.categories && eventFilter.categories.length > 0
+      ? new Set(eventFilter.categories)
+      : null;
+
+  return events.filter(event => {
+    if (eventFilter.attendingOrHost !== null && eventFilter.attendingOrHost !== undefined) {
+      if (event.attendingOrHost !== eventFilter.attendingOrHost) return false;
+    }
+    if (eventFilter.bookable !== null && eventFilter.bookable !== undefined) {
+      if (event.bookable !== eventFilter.bookable) return false;
+    }
+    if (eventFilter.official !== null && eventFilter.official !== undefined) {
+      if (event.official !== eventFilter.official) return false;
+    }
+    if (categorySet) {
+      if (!event.tags || !event.tags.some(tag => categorySet.has(tag.code))) return false;
+    }
+    if (!event.start) return false;
+    const eventStartDate = new Date(event.start);
+    if (event.end) {
+      const eventEndDate = new Date(event.end);
+      if (eventStartDate <= now && eventEndDate >= now) return true; // ongoing event
+    }
+    if (eventStartDate < fromDate) return false;
+    if (toDate && eventStartDate > toDate) return false;
+    return true;
+  });
+};
+
+/** Count bookable events per tag code. */
+export const calcCategoryCounts = (events: ExtendedEvent[]): Record<string, number> => {
+  const counts: Record<string, number> = {};
+  events
+    .filter(e => e.bookable)
+    .forEach(e => {
+      e.tags?.forEach(tag => {
+        if (tag.code) counts[tag.code] = (counts[tag.code] || 0) + 1;
+      });
+    });
+  return counts;
+};
+
+/** Return top N category codes sorted by event count. */
+export const getTopCategories = (counts: Record<string, number>, limit = 5): string[] =>
+  Object.entries(counts)
+    .sort(([, a], [, b]) => b - a)
+    .slice(0, limit)
+    .map(([code]) => code);
 
 
