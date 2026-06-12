@@ -180,7 +180,7 @@ def map_user_event(ue: ExtendedUserEvent, current_user_id: int) -> Event:
         admin=[ue.userId],
         hosts=[EventHost(userId=h.userId, fullName="") for h in (ue.hosts or [])],
         name=ue.name,
-        tags=[],
+        tags=list(ue.tags) if ue.tags else [],
         locationDescription=ue.location.description if ue.location else None,
         address=ue.location.address if ue.location else None,
         locationMarker=ue.location.marker if ue.location else None,
@@ -242,5 +242,6 @@ def map_event_to_user_event(event: Event, owner_id: int, existing: UserEvent | N
         reports=(existing.reports if existing else []),
         attendees=[Attendee(userId=a.userId) for a in (existing.attendees if existing else [])],
         maxAttendees=event.maxAttendees,
+        tags=list(event.tags) if event.tags else [],
     )
     return ue

@@ -1,9 +1,9 @@
 import datetime
-from v1.events.events_mappers import map_external_event, map_user_event
+from v1.events.events_mappers import map_external_event, map_user_event, map_event_to_user_event
 from v1.events.events_service import list_unified_events
 from v1.db.models.external_events import ExternalEventDetails, Category
 from v1.user_events.user_events_model import ExtendedUserEvent, UserEvent, Attendee, Host, Location
-from v1.events.events_model import Event, EventAttendee
+from v1.events.events_model import Event, EventAttendee, Tag
 
 class DummyExtendedUserEvent(ExtendedUserEvent):
     pass
@@ -278,4 +278,89 @@ def test_unattend_external_event_syncs_booking(monkeypatch):
     current_user = {"userId": 5, "settings": {}, "isMember": True}
     svc._unattend_external_event("ext400", current_user)
     assert (5, 400) in deleted
+
+
+# ── event-tags round-trip tests ──────────────────────────────────────────────
+
+def _make_event_with_tags(tags: list[Tag]) -> Event:
+    start = datetime.datetime.now() + datetime.timedelta(hours=2)
+    return Event(
+        id="usr123",
+        parentEvent=None,
+        admin=[42],
+        hosts=[],
+        name="Tagged Event",
+        tags=tags,
+        locationDescription="Somewhere",
+        address=None,
+        locationMarker=None,
+        latitude=None,
+        longitude=None,
+        start=start,
+        end=start + datetime.timedelta(hours=1),
+        cancelled=None,
+        imageUrl=None,
+        description="An event with tags",
+        bookingStart=None,
+        bookingEnd=start,
+        showAttendees="all",
+        attendees=[],
+        queue=[],
+        maxAttendees=None,
+        price=0.0,
+        official=False,
+        attending=False,
+        bookable=True,
+        extras={},
+    )
+
+
+def test_map_event_to_user_event_preserves_tags():
+    tags = [
+        Tag(code="logic", text="Logik", colorText="#fff", colorBackground="#333"),
+        Tag(code="chess", text="Schack", colorText="#000", colorBackground="#eee"),
+    ]
+    event = _make_event_with_tags(tags)
+    ue = map_event_to_user_event(event, owner_id=42)
+    assert len(ue.tags) == 2
+    assert ue.tags[0].code == "logic"
+    assert ue.tags[1].code == "chess"
+
+
+def test_map_user_event_returns_stored_tags():
+    tags = [Tag(code="math", text="Matematik", colorText="#fff", colorBackground="#111")]
+    ue = make_user_event("abc", owner_id=7)
+    ue.tags = tags
+    event = map_user_event(ue, current_user_id=7)
+    assert len(event.tags) == 1
+    assert event.tags[0].code == "math"
+
+
+def test_tags_round_trip():
+    tags = [Tag(code="art", text="Konst", colorText="#fff", colorBackground="#abc")]
+    event = _make_event_with_tags(tags)
+    ue = map_event_to_user_event(event, owner_id=42)
+    # Simulate read-back via extended user event
+    extended = DummyExtendedUserEvent(
+        _id="123",
+        userId=42,
+        hosts=[],
+        suggested_hosts=[],
+        name=ue.name,
+        location=None,
+        start=ue.start,
+        end=ue.end,
+        description=ue.description,
+        reports=[],
+        attendees=[],
+        maxAttendees=ue.maxAttendees,
+        tags=ue.tags,
+        ownerName="Test Owner",
+        hostNames=[],
+        attendeeNames=[],
+    )
+    result = map_user_event(extended, current_user_id=42)
+    assert len(result.tags) == 1
+    assert result.tags[0].code == "art"
+    assert result.tags[0].text == "Konst"
 
