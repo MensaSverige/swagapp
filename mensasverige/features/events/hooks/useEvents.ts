@@ -1,7 +1,7 @@
 import { useEffect, useCallback } from 'react';
 import { GroupedEvents, ExtendedEvent } from '../types/eventUtilTypes';
 import { createExtendedEvent } from '../utils/eventUtils';
-import { fetchEvents, attendEvent, unattendEvent } from '../services/eventService';
+import { fetchEvents, attendEvent, unattendEvent, fetchInterestTags } from '../services/eventService';
 import { getUsersByIds } from '../../account/services/userService';
 import useStore from '../../common/store/store';
 import { EventFilterOptions } from '../store/EventsSlice';
@@ -77,6 +77,7 @@ export const useEvents = (options: UseEventsOptions = {}): UseEventsReturn => {
     setEventsRefreshing,
     setEventsLastFetched,
     setEventsInitialized,
+    setInterestTags,
 
     // Dashboard events (attending + upcoming with limit)
     dashboardGroupedEvents,
@@ -206,6 +207,15 @@ export const useEvents = (options: UseEventsOptions = {}): UseEventsReturn => {
       refetch().catch(error => console.error('Error in initial loadEvents:', error));
     }
   }, [eventsInitialized, refetch]);
+
+  // Fetch the interest tag catalog from the backend once on first mount.
+  // Falls back to the static list (already in the store) on error.
+  useEffect(() => {
+    fetchInterestTags().then(tags => {
+      if (tags.length > 0) setInterestTags(tags);
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Auto-refresh singleton: multiple consumers share one interval
   useEffect(() => {

@@ -1,5 +1,5 @@
 import apiClient from '../../common/services/apiClient';
-import {ExternalRoot, Event} from '../../../api_schema/types';
+import {ExternalRoot, Event, Tag} from '../../../api_schema/types';
 
 export const fetchExternalRoot = async (): Promise<ExternalRoot> => {
   return apiClient
@@ -124,5 +124,15 @@ export const unattendEvent = async (eventId: string): Promise<boolean> => {
     .catch(error => {
       console.error('Error unattending event:', error);
       throw error;
+    });
+};
+
+export const fetchInterestTags = async (): Promise<Tag[]> => {
+  return apiClient
+    .get('/tags')
+    .then(response => response.data as Tag[])
+    .catch(error => {
+      console.warn('Failed to fetch interest tags from backend, using static fallback:', error.message);
+      return [];
     });
 };

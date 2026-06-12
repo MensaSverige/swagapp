@@ -1,7 +1,8 @@
 import React, { useMemo } from 'react';
 import { View, Text, Pressable, StyleSheet, useColorScheme } from 'react-native';
 import { Tag } from '../../../api_schema/types';
-import { INTEREST_TAGS, sortByUserInterests } from '../utils/interestTags';
+import { sortByUserInterests } from '../utils/interestTags';
+import useStore from '../../common/store/store';
 
 interface TagPickerProps {
   selectedTags: Tag[];
@@ -12,10 +13,11 @@ interface TagPickerProps {
 const TagPicker: React.FC<TagPickerProps> = ({ selectedTags, userInterests, onChange }) => {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
+  const interestTags = useStore(s => s.interestTags);
 
   const sorted = useMemo(
-    () => sortByUserInterests(INTEREST_TAGS, userInterests),
-    [userInterests]
+    () => sortByUserInterests(interestTags, userInterests),
+    [interestTags, userInterests]
   );
 
   const selectedCodes = useMemo(
