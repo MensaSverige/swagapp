@@ -9,6 +9,7 @@
     "ios": "expo run:ios",
     "web": "expo start --web",
     "lint": "expo lint",
+    "generate-types": "npx openapi-typescript http://localhost:5000/openapi.json -o api_schema/schema.d.ts",
     "test": "jest"
   },
   "jest": {
