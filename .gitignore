@@ -91,3 +91,4 @@ yarn-error.log
 .vscode/user-data/
 shots/
 .claude/settings.local.json
+.grit-attachments/
