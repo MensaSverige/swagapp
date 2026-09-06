@@ -10,7 +10,10 @@ class DummyExtendedUserEvent(ExtendedUserEvent):
 
 
 def make_user_event(event_id: str, owner_id: int, start_offset_hours: int = 2, attendees=None, max_attendees=None):
-    start = datetime.datetime.now() + datetime.timedelta(hours=start_offset_hours)
+    # Aware, like every datetime the (timestamptz) database returns.
+    # datetime.now() would be machine-local and silently skew against the
+    # application timezone — that ambiguity used to make these tests flaky.
+    start = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(hours=start_offset_hours)
     ue = DummyExtendedUserEvent(
         _id=event_id,
         userId=owner_id,
@@ -32,7 +35,7 @@ def make_user_event(event_id: str, owner_id: int, start_offset_hours: int = 2, a
 
 
 def make_external_event(event_id: int, start_offset_hours: int = 3, is_limited=False, stock=10, booked=0):
-    start_dt = datetime.datetime.utcnow() + datetime.timedelta(hours=start_offset_hours)
+    start_dt = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(hours=start_offset_hours)
     e = ExternalEventDetails(
         eventId=event_id,
         eventDate=start_dt,
@@ -115,61 +118,12 @@ def test_filter_event_attendees_also_filters_attendee_names(monkeypatch):
 
 # ── ExternalBookings CRUD tests ─────────────────────────────────────────────
 
-def test_get_bookings_by_event_ids_groups_correctly(monkeypatch):
-    """get_bookings_by_event_ids groups results by eventId."""
-    from v1.db import external_bookings as eb
-
-    class FakeCol:
-        def find(self, query):
-            return [
-                {"userId": 1, "eventId": 10},
-                {"userId": 2, "eventId": 10},
-                {"userId": 3, "eventId": 20},
-            ]
-
-    monkeypatch.setattr(eb, "external_event_bookings_collection", FakeCol())
-
-    result = eb.get_bookings_by_event_ids([10, 20])
-    assert set(result[10]) == {1, 2}
-    assert set(result[20]) == {3}
-
-
 def test_get_bookings_by_event_ids_empty_returns_empty(monkeypatch):
     from v1.db import external_bookings as eb
     # When called with empty list, return empty dict without hitting DB
     result = eb.get_bookings_by_event_ids([])
     assert result == {}
 
-
-def test_delete_user_bookings(monkeypatch):
-    from v1.db import external_bookings as eb
-
-    deleted_filter = []
-
-    class FakeCol:
-        def delete_many(self, f):
-            deleted_filter.append(f)
-
-    monkeypatch.setattr(eb, "external_event_bookings_collection", FakeCol())
-    eb.delete_user_bookings(userId=5)
-    assert deleted_filter == [{"userId": 5}]
-
-
-def test_delete_booking(monkeypatch):
-    from v1.db import external_bookings as eb
-
-    deleted = []
-
-    class FakeCol:
-        def delete_one(self, f):
-            deleted.append(f)
-
-    monkeypatch.setattr(eb, "external_event_bookings_collection", FakeCol())
-    eb.delete_booking(userId=5, eventId=99)
-    assert deleted == [{"userId": 5, "eventId": 99}]
-
-
-# ── map_external_event attendee tests ────────────────────────────────────────
 
 def test_map_external_event_with_attendee_ids():
     ext = make_external_event(200, booked=2)

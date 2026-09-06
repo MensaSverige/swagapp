@@ -4,7 +4,7 @@ import logging
 from typing import List
 import requests
 from fastapi import HTTPException
-from v1.utilities import convert_string_to_datetime
+from v1.utilities import convert_string_to_datetime, ensure_aware
 from v1.db.external_events import store_external_event_details, store_external_root
 from v1.db.models.external_events import ExternalRoot, ExternalEvent, ExternalEventDetails
 from v1.db.external_token_storage import get_external_token
@@ -185,8 +185,11 @@ def get_external_event_details(url: str, date: str) -> List[ExternalEventDetails
                 start_time = datetime.strptime(validated.startTime,
                                                '%H:%M').time()
 
-                # Combine eventDate and startTime
-                validated.eventDate = datetime.combine(eventdate, start_time)
+                # Combine eventDate and startTime. The Mensa API reports
+                # Swedish local times with no offset; localize before storing
+                # so the timestamptz column records the correct instant.
+                validated.eventDate = ensure_aware(
+                    datetime.combine(eventdate, start_time))
 
                 validated_events.append(validated)
 

@@ -68,7 +68,7 @@ export default function PrivacyScreen() {
             4. Lagring och Säkerhet
           </ThemedText>
           <ThemedText style={styles.sectionText}>
-            Dina personuppgifter lagras säkert i en MongoDB-databas på en Ubuntu-server. För att skydda
+            Dina personuppgifter lagras säkert i en PostgreSQL-databas på en Ubuntu-server. För att skydda
             dina uppgifter kräver vi tvåfaktorsautentisering för all åtkomst till databasen.
           </ThemedText>
         </View>
