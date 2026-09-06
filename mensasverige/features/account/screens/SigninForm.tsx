@@ -37,6 +37,18 @@ export const SigninForm = () => {
   const { testMode, backendConnection, user, setUser, setIsTryingToLogin } =
     useStore();
 
+  // authenticate() already classifies the failure and throws a Swedish,
+  // user-facing message (wrong credentials, test mode, unreachable server).
+  // Both handlers used to discard it and show one generic line, which is why
+  // a wrong password read as "something went wrong".
+  const loginErrorMessage = (error: any): string => {
+    console.error("Login error", error?.message || error);
+    if (error?.message?.includes("Network Error")) {
+      return `Det går inte att nå servern just nu. ${isTryingStoredCredentials ? "Försöker igen automatiskt" : "Försök igen om en stund."}`;
+    }
+    return error?.message || "Något gick fel. Försök igen senare.";
+  };
+
   const showLoginError = (errorText: string) => {
     Alert.alert(
       "Fel vid inloggning",
@@ -90,14 +102,7 @@ export const SigninForm = () => {
         if (response !== undefined) setUser(response.user);
       })
       .catch((error) => {
-        console.error("Login error", error.message || error);
-        if (error.message.includes("Network Error")) {
-          showLoginError(
-            `Det går inte att nå servern just nu. ${isTryingStoredCredentials ? "Försöker igen automatiskt" : "Försök igen om en stund."}`,
-          );
-        } else {
-          showLoginError("Något gick fel. Försök igen senare.");
-        }
+        showLoginError(loginErrorMessage(error));
       })
       .finally(() => {
         setIsLoading(false);
@@ -112,14 +117,7 @@ export const SigninForm = () => {
         if (response !== undefined) setUser(response.user);
       })
       .catch((error) => {
-        console.error("Login error", error.message || error);
-        if (error.message.includes("Network Error")) {
-          showLoginError(
-            `Det går inte att nå servern just nu. ${isTryingStoredCredentials ? "Försöker igen automatiskt" : "Försök igen om en stund."}`,
-          );
-        } else {
-          showLoginError("Något gick fel. Försök igen senare.");
-        }
+        showLoginError(loginErrorMessage(error));
       })
       .finally(() => {
         setIsLoading(false);

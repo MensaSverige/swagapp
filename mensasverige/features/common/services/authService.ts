@@ -67,9 +67,10 @@ export const authenticate = async (username: string, password: string, testMode:
             if (error.message?.includes('Network Error')) {
                 throw new Error('Det går inte att nå servern just nu. Försök igen om en stund.');
             }
-            if (error.message) {
-                throw error;
-            }
+            // Never re-throw the raw Axios error: its message is English
+            // ("Request failed with status code 500") and callers show it to
+            // the user. Log the detail, surface something readable.
+            console.error('Login failed', error.message || error);
             throw new Error('Något gick fel. Försök igen senare.');
         });
 }
