@@ -180,3 +180,41 @@ export const getTopCategories = (counts: Record<string, number>, limit = 5): str
     .map(([code]) => code);
 
 
+/**
+ * Attending/hosting events that have not already finished, soonest first.
+ *
+ * The dashboard shows the first few of these. Sorting ascending and slicing
+ * off an unfiltered list surfaces the *oldest* events, so past ones must be
+ * excluded here rather than by the caller. An event that has started but not
+ * ended still counts — it is happening now.
+ */
+export const selectDashboardEvents = (
+  events: ExtendedEvent[],
+  now: number = Date.now(),
+): ExtendedEvent[] =>
+  events
+    .filter(e => {
+      if (!e.attendingOrHost || !e.start) return false;
+      if (new Date(e.start).getTime() >= now) return true;
+      return e.end ? new Date(e.end).getTime() >= now : false;
+    })
+    .sort(
+      (a, b) =>
+        (a.start ? new Date(a.start).getTime() : 0) -
+        (b.start ? new Date(b.start).getTime() : 0),
+    );
+
+/** Bookable events starting within the next `hours`. */
+export const selectLastMinuteEvents = (
+  events: ExtendedEvent[],
+  hours: number,
+  now: number = Date.now(),
+): ExtendedEvent[] => {
+  const until = now + hours * 3600_000;
+  return events.filter(e => {
+    if (!e.bookable || !e.start) return false;
+    const start = new Date(e.start).getTime();
+    return start >= now && start <= until;
+  });
+};
+

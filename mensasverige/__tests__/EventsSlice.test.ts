@@ -8,6 +8,8 @@ import {
   calcCategoryCounts,
   getTopCategories,
   groupEventsByDate,
+  selectDashboardEvents,
+  selectLastMinuteEvents,
 } from '../features/events/utils/eventUtils';
 import { ExtendedEvent } from '../features/events/types/eventUtilTypes';
 import { createStore } from 'zustand';
@@ -168,3 +170,82 @@ describe('groupEventsByDate', () => {
     expect(grouped[key]).toHaveLength(2);
   });
 });
+
+
+// ── dashboard / last-minute selection ────────────────────────────────────────
+// Moving these derivations out of the store dropped the date filtering the
+// store used to apply. Sorting ascending and slicing the first N off an
+// unfiltered list yields the *oldest* attending events, so after the event
+// weekend the dashboard would show nothing but past ones.
+
+const HOUR = 60 * 60 * 1000;
+const NOW = new Date('2026-06-01T12:00:00Z').getTime();
+
+const at = (offsetHours: number, overrides: Partial<ExtendedEvent> = {}) =>
+  makeEvent({
+    start: new Date(NOW + offsetHours * HOUR).toISOString(),
+    end: new Date(NOW + (offsetHours + 1) * HOUR).toISOString(),
+    attendingOrHost: true,
+    ...overrides,
+  });
+
+describe('selectDashboardEvents', () => {
+  test('excludes events that have already finished', () => {
+    const result = selectDashboardEvents([at(-48), at(-24), at(2)], NOW);
+    expect(result).toHaveLength(1);
+    expect(result[0].start).toBe(new Date(NOW + 2 * HOUR).toISOString());
+  });
+
+  test('keeps an event that has started but not ended', () => {
+    // Happening right now — the dashboard is exactly where this belongs.
+    const ongoing = at(-0.5);
+    expect(selectDashboardEvents([ongoing], NOW)).toHaveLength(1);
+  });
+
+  test('drops a started event once its end has passed', () => {
+    expect(selectDashboardEvents([at(-5)], NOW)).toHaveLength(0);
+  });
+
+  test('keeps an open-ended future event but not an open-ended past one', () => {
+    expect(selectDashboardEvents([at(3, { end: null } as any)], NOW)).toHaveLength(1);
+    expect(selectDashboardEvents([at(-3, { end: null } as any)], NOW)).toHaveLength(0);
+  });
+
+  test('ignores events the user is not attending or hosting', () => {
+    expect(selectDashboardEvents([at(2, { attendingOrHost: false })], NOW)).toHaveLength(0);
+  });
+
+  test('returns soonest first, so slicing takes the next events not the oldest', () => {
+    const result = selectDashboardEvents([at(10), at(2), at(6)], NOW);
+    expect(result.map(e => e.start)).toEqual([
+      new Date(NOW + 2 * HOUR).toISOString(),
+      new Date(NOW + 6 * HOUR).toISOString(),
+      new Date(NOW + 10 * HOUR).toISOString(),
+    ]);
+  });
+});
+
+describe('selectLastMinuteEvents', () => {
+  test('includes bookable events inside the window', () => {
+    const result = selectLastMinuteEvents([at(1, { bookable: true })], 2, NOW);
+    expect(result).toHaveLength(1);
+  });
+
+  test('excludes events past the window and events already started', () => {
+    expect(selectLastMinuteEvents([at(5, { bookable: true })], 2, NOW)).toHaveLength(0);
+    expect(selectLastMinuteEvents([at(-1, { bookable: true })], 2, NOW)).toHaveLength(0);
+  });
+
+  test('excludes non-bookable events inside the window', () => {
+    expect(selectLastMinuteEvents([at(1, { bookable: false })], 2, NOW)).toHaveLength(0);
+  });
+
+  test('the window moves with the clock rather than staying where it started', () => {
+    // `now` used to be frozen at first render while the cutoff kept moving,
+    // so the window silently widened for the whole session.
+    const event = at(3, { bookable: true });
+    expect(selectLastMinuteEvents([event], 2, NOW)).toHaveLength(0);
+    expect(selectLastMinuteEvents([event], 2, NOW + 2 * HOUR)).toHaveLength(1);
+  });
+});
+

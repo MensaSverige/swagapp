@@ -16,6 +16,10 @@ export interface EventsSlice {
   // Raw events
   events: ExtendedEvent[];
   eventsRefreshing: boolean;
+  // Shared status, not a derivation: a module-level guard makes only the first
+  // useEvents() caller actually fetch, so per-hook state leaves every other
+  // consumer showing an empty list instead of a spinner or an error.
+  eventsError: Error | null;
   eventsLastFetched: Date | null;
   eventsInitialized: boolean;
   interestTags: Tag[];
@@ -29,6 +33,7 @@ export interface EventsSlice {
 
   setEvents: (events: ExtendedEvent[]) => void;
   setEventsRefreshing: (v: boolean) => void;
+  setEventsError: (v: Error | null) => void;
   setEventsLastFetched: (v: Date | null) => void;
   setEventsInitialized: (v: boolean) => void;
   setInterestTags: (tags: Tag[]) => void;
@@ -54,6 +59,7 @@ export const defaultEventFilter: EventFilterOptions = {
 export const createEventsSlice: StateCreator<EventsSlice> = (set, get) => ({
   events: [],
   eventsRefreshing: false,
+  eventsError: null,
   eventsLastFetched: null,
   eventsInitialized: false,
   interestTags: INTEREST_TAGS,
@@ -65,6 +71,7 @@ export const createEventsSlice: StateCreator<EventsSlice> = (set, get) => ({
 
   setEvents: (events) => set({ events }),
   setEventsRefreshing: (eventsRefreshing) => set({ eventsRefreshing }),
+  setEventsError: (eventsError) => set({ eventsError }),
   setEventsLastFetched: (eventsLastFetched) => set({ eventsLastFetched }),
   setEventsInitialized: (eventsInitialized) => set({ eventsInitialized }),
   setInterestTags: (interestTags) => set({ interestTags }),

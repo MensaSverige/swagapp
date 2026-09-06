@@ -1,4 +1,4 @@
-import { useEffect, useCallback, useMemo, useState } from 'react';
+import { useEffect, useCallback, useMemo } from 'react';
 import { GroupedEvents, ExtendedEvent } from '../types/eventUtilTypes';
 import {
   createExtendedEvent,
@@ -6,6 +6,8 @@ import {
   filterByOptions,
   calcCategoryCounts,
   getTopCategories,
+  selectDashboardEvents,
+  selectLastMinuteEvents,
 } from '../utils/eventUtils';
 import { fetchEvents, attendEvent, unattendEvent, fetchInterestTags } from '../services/eventService';
 import { getUsersByIds } from '../../account/services/userService';
@@ -58,16 +60,15 @@ const LAST_MINUTE_HOURS = 2;
 export const useEvents = (options: UseEventsOptions = {}): UseEventsReturn => {
   const { enableAutoRefresh = true } = options;
 
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
-
   const {
     events,
     eventsRefreshing,
+    eventsError,
     eventsLastFetched,
     eventsInitialized,
     setEvents,
     setEventsRefreshing,
+    setEventsError,
     setEventsLastFetched,
     setEventsInitialized,
     setInterestTags,
@@ -82,17 +83,7 @@ export const useEvents = (options: UseEventsOptions = {}): UseEventsReturn => {
 
   // ── Derivations (all pure, run only when events / filter change) ──────────
 
-  const now = useMemo(() => new Date(), []); // stable reference per render
-
-  const dashboardEvents = useMemo(() => {
-    const attending = events.filter(e => e.attendingOrHost);
-    // sort ascending by start
-    attending.sort((a, b) =>
-      (a.start ? new Date(a.start).getTime() : 0) -
-      (b.start ? new Date(b.start).getTime() : 0)
-    );
-    return attending;
-  }, [events]);
+  const dashboardEvents = useMemo(() => selectDashboardEvents(events), [events]);
 
   const dashboardGroupedEvents = useMemo(
     () => groupEventsByDate(dashboardEvents.slice(0, DASHBOARD_MAX)),
@@ -104,14 +95,12 @@ export const useEvents = (options: UseEventsOptions = {}): UseEventsReturn => {
     [dashboardEvents]
   );
 
-  const lastMinuteEvents = useMemo(() => {
-    const cutoff = new Date(Date.now() + LAST_MINUTE_HOURS * 3600_000);
-    return events.filter(e => {
-      if (!e.bookable || !e.start) return false;
-      const start = new Date(e.start);
-      return start >= now && start <= cutoff;
-    });
-  }, [events, now]);
+  // Reads the clock on each recomputation. A `now` frozen at first render
+  // drifts against the cutoff, widening the window for the whole session.
+  const lastMinuteEvents = useMemo(
+    () => selectLastMinuteEvents(events, LAST_MINUTE_HOURS),
+    [events]
+  );
 
   const categoryEventCounts = useMemo(() => calcCategoryCounts(events), [events]);
 
@@ -151,7 +140,6 @@ export const useEvents = (options: UseEventsOptions = {}): UseEventsReturn => {
     isFetching = true;
     try {
       setEventsRefreshing(true);
-      setLoading(true);
 
       const allEvents = await fetchEvents();
 
@@ -174,7 +162,7 @@ export const useEvents = (options: UseEventsOptions = {}): UseEventsReturn => {
       setEvents(processedEvents);
       setEventsLastFetched(new Date());
       setEventsInitialized(true);
-      setError(null);
+      setEventsError(null);
 
       if (user) setUsers([user]);
 
@@ -202,15 +190,13 @@ export const useEvents = (options: UseEventsOptions = {}): UseEventsReturn => {
         }, 0);
       }
     } catch (err) {
-      const e = err as Error;
-      setError(e);
+      setEventsError(err as Error);
       console.error('Error fetching events:', err);
     } finally {
       isFetching = false;
       setEventsRefreshing(false);
-      setLoading(false);
     }
-  }, [setEvents, setEventsRefreshing, setEventsLastFetched, setEventsInitialized, user]);
+  }, [setEvents, setEventsRefreshing, setEventsError, setEventsLastFetched, setEventsInitialized, user]);
 
   latestRefetch = refetch;
 
@@ -289,8 +275,11 @@ export const useEvents = (options: UseEventsOptions = {}): UseEventsReturn => {
     filteredGroupedEvents,
     filteredTotalCount,
     filteredCount: filteredEvents.length,
-    loading: !eventsInitialized && loading,
-    error,
+    // Both come from the store: with the module-level isFetching guard, only
+    // the first caller runs a fetch, so per-instance state would leave the
+    // second consumer rendering an empty list instead of a spinner.
+    loading: !eventsInitialized && eventsRefreshing,
+    error: eventsError,
     refreshing: eventsRefreshing,
     lastFetched: eventsLastFetched,
     currentEventFilter,
