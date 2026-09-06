@@ -437,6 +437,31 @@ def test_event_idempotent_no_duplicate_children(session):
     assert _count(session, "event_hosts") == 1
 
 
+def test_event_idempotent_no_duplicate_reports(session):
+    """Reports specifically — the one child table with no unique constraint.
+
+    Critique: the test above claims to cover children but checks only attendees
+    and hosts, both of which carry a UniqueConstraint and so absorb a duplicate
+    insert silently. event_reports has none, so it was the only table that could
+    actually show the bug, and it was the one not asserted. Re-running the
+    migration duplicated every report until the already-migrated branch stopped
+    falling through into the child loops.
+    """
+    mongo = FakeMongo(userevent=[{
+        "_id": "e3",
+        "userId": 1,
+        "name": "Reported",
+        "start": _NOW,
+        "reports": [{"userId": 9, "text": "spam"}],
+    }])
+
+    migrate_user_events(session, mongo_source=mongo)
+    migrate_user_events(session, mongo_source=mongo)
+    migrate_user_events(session, mongo_source=mongo)
+
+    assert _count(session, "event_reports") == 1
+
+
 def test_event_tracking_table_is_populated(session):
     """The _mongo_migration_log must record the mapping after migration.
 
@@ -660,51 +685,66 @@ def test_validate_detects_postgres_has_fewer_rows(session):
     assert result is False
 
 
-def test_validate_detects_postgres_has_more_rows(session):
-    """Validation returns False when Postgres has MORE rows than Mongo.
+def test_validate_tolerates_rows_the_migration_did_not_create(session):
+    """Extra rows in users must NOT fail validation.
 
-    This is the double-insertion bug case. Old code used >= instead of ==,
-    which would silently pass this scenario and hide the bug.
+    _seed_review_users() runs on every backend startup, so by the time anyone
+    runs this migration the users table already holds rows Mongo never had.
+    Comparing raw counts therefore reports MISMATCH on a perfectly good
+    migration — worse than not checking, because it teaches whoever runs the
+    cutover to ignore the result.
 
-    Critique: this is the most important validation test. The == vs >= choice
-    exists precisely to catch this. Without this test, reverting to >= would
-    go unnoticed.
+    Validation compares migratable documents by key instead: every Mongo user
+    must be present, and anything else in the table is none of its business.
     """
-
-    # Simulate two rows in Postgres for one row in Mongo.
-    for uid in (1, 2):
-        session.execute(text("""
-            INSERT INTO users ("userId", "isMember",
-                show_location, show_profile, show_email, show_phone,
-                show_interests, show_hometown, show_birthdate, show_gender,
-                show_sexuality, show_relationship_style, show_relationship_status,
-                show_social_vibes, show_pronomen, show_attendance,
-                location_update_interval_seconds, events_refresh_interval_seconds,
-                background_location_updates, created_at, updated_at)
-            VALUES (:uid, 0, 'NO_ONE','MEMBERS_MUTUAL','NO_ONE','NO_ONE',
-                    'MEMBERS_MUTUAL','MEMBERS_MUTUAL','MEMBERS_MUTUAL','NO_ONE',
-                    'NO_ONE','NO_ONE','NO_ONE','MEMBERS_MUTUAL','NO_ONE','MEMBERS_MUTUAL',
-                    60, 60, 0, '2024-01-01', '2024-01-01')
-        """), {"uid": uid})
-    session.commit()
-
-    # Mongo has only ONE user document.
     mongo = FakeMongo(
         user=[{"userId": 1, "isMember": False, "settings": {}}],
         tokenstorage=[], userevent=[], externaleventdetails=[], externaleventbooking=[],
     )
+    migrate_users(session, mongo_source=mongo)
 
-    result = validate(session, mongo_source=mongo)
-    assert result is False, (
-        "Validation must return False when Postgres has MORE rows than Mongo. "
-        "This catches double-insertion bugs that >= would silently accept."
+    session.execute(text("""
+        INSERT INTO users ("userId", "isMember",
+            show_location, show_profile, show_email, show_phone,
+            show_interests, show_hometown, show_birthdate, show_gender,
+            show_sexuality, show_relationship_style, show_relationship_status,
+            show_social_vibes, show_pronomen, show_attendance,
+            location_update_interval_seconds, events_refresh_interval_seconds,
+            background_location_updates, created_at, updated_at)
+        VALUES (999, 0, 'NO_ONE','MEMBERS_MUTUAL','NO_ONE','NO_ONE',
+                'MEMBERS_MUTUAL','MEMBERS_MUTUAL','MEMBERS_MUTUAL','NO_ONE',
+                'NO_ONE','NO_ONE','NO_ONE','MEMBERS_MUTUAL','NO_ONE','MEMBERS_MUTUAL',
+                60, 60, 0, '2024-01-01', '2024-01-01')
+    """))
+    session.commit()
+
+    assert validate(session, mongo_source=mongo) is True
+
+
+def test_validate_detects_duplicated_reports(session):
+    """The double-insertion case, checked where it can actually happen.
+
+    Dropping the raw count comparison would otherwise lose the ability to spot
+    a migration that ran twice. event_reports is the only child table with no
+    unique constraint, so it is where duplication actually shows.
+    """
+    mongo = FakeMongo(
+        user=[], tokenstorage=[],
+        userevent=[{"_id": "e1", "userId": 1, "name": "E", "start": _NOW,
+                    "reports": [{"userId": 9, "text": "spam"}]}],
+        externaleventdetails=[], externaleventbooking=[],
     )
+    migrate_user_events(session, mongo_source=mongo)
+    assert validate(session, mongo_source=mongo) is True
 
+    session.execute(text(
+        'INSERT INTO event_reports (event_id, "userId", text) '
+        'SELECT event_id, "userId", text FROM event_reports'
+    ))
+    session.commit()
 
-# ── naive datetimes out of Mongo ─────────────────────────────────────────────
-# A weaker version of these would only ever pass aware datetimes (as every
-# other test here does) and would never notice that naive values — which is
-# what production Mongo actually holds — were being labelled UTC.
+    assert validate(session, mongo_source=mongo) is False
+
 
 def test_tz_localizes_naive_mongo_datetime_as_swedish_local():
     """Mongo stores bare Stockholm wall-clock digits, not UTC."""
