@@ -2,6 +2,7 @@ from datetime import datetime
 from pydantic import BaseModel, Field, field_validator
 from v1.shared.model_with_id import ModelWithId
 from typing import List, Optional
+from v1.events.events_model import Tag
 
 
 class Attendee(BaseModel):
@@ -45,6 +46,7 @@ class UserEvent(ModelWithId):
                                   }])
     attendees: List[Attendee] = Field([], example=[{"userId": 123}])
     maxAttendees: Optional[int] = Field(None, example=10)
+    tags: List[Tag] = Field([], example=[])
 
     @field_validator('start', 'end', mode='before')
     @classmethod

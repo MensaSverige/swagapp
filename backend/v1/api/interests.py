@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from typing import List
 from v1.db.models.user import UserInterest
+from v1.events.events_model import Tag
 from v1.request_filter import validate_request
 
 interests_v1 = APIRouter(prefix="/v1")
@@ -75,3 +76,30 @@ INTEREST_CATEGORIES: List[InterestCategory] = [
 @interests_v1.get("/interests", response_model=List[InterestCategory])
 async def get_interest_categories(current_user: dict = Depends(validate_request)):
     return INTEREST_CATEGORIES
+
+
+_PALETTE = [
+    ('#7c3aed', '#ffffff'),  # purple
+    ('#0d9488', '#ffffff'),  # teal
+    ('#ea580c', '#ffffff'),  # orange
+    ('#e11d48', '#ffffff'),  # rose
+    ('#0284c7', '#ffffff'),  # sky
+    ('#65a30d', '#ffffff'),  # lime
+    ('#d97706', '#ffffff'),  # amber
+    ('#475569', '#ffffff'),  # slate
+]
+
+_INTEREST_TAGS: List[Tag] = [
+    Tag(
+        code=interest.name.lower(),
+        text=interest.value,
+        colorBackground=_PALETTE[i % len(_PALETTE)][0],
+        colorText=_PALETTE[i % len(_PALETTE)][1],
+    )
+    for i, interest in enumerate(UserInterest)
+]
+
+
+@interests_v1.get("/tags", response_model=List[Tag])
+async def get_interest_tags():
+    return _INTEREST_TAGS

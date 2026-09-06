@@ -1,7 +1,8 @@
 import {StateCreator} from 'zustand';
 import { GroupedEvents, ExtendedEvent } from '../types/eventUtilTypes';
 import { groupEventsByDate } from '../utils/eventUtils';
-import { ExternalRoot } from '../../../api_schema/types';
+import { ExternalRoot, Tag } from '../../../api_schema/types';
+import { INTEREST_TAGS } from '../utils/interestTags';
 
 // Import EventFilterOptions type
 export interface EventFilterOptions {
@@ -19,6 +20,8 @@ export interface EventsSlice {
   eventsRefreshing: boolean;
   eventsLastFetched: Date | null;
   eventsInitialized: boolean;
+  interestTags: Tag[];
+  setInterestTags: (tags: Tag[]) => void;
 
   // Parent event info
   eventInfo: ExternalRoot | null;
@@ -152,6 +155,7 @@ export const createEventsSlice: StateCreator<EventsSlice> = (set, get) => ({
   eventsRefreshing: false,
   eventsLastFetched: null,
   eventsInitialized: false,
+  interestTags: INTEREST_TAGS,
 
   // Parent event info
   eventInfo: null,
@@ -229,6 +233,7 @@ export const createEventsSlice: StateCreator<EventsSlice> = (set, get) => ({
   setEventsRefreshing: (eventsRefreshing: boolean) => set({eventsRefreshing}),
   setEventsLastFetched: (eventsLastFetched: Date | null) => set({eventsLastFetched}),
   setEventsInitialized: (eventsInitialized: boolean) => set({eventsInitialized}),
+  setInterestTags: (interestTags: Tag[]) => set({interestTags}),
 
   // Event info actions
   setEventInfo: (eventInfo: ExternalRoot | null) => set({eventInfo}),
