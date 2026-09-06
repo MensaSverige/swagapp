@@ -15,13 +15,16 @@ async def validate_request(
         try:
             valid, payload = verify_access_token(bearer.credentials)
             if not valid:
-                logger.error("Invalid token: ", bearer.credentials)
+                logger.warning("Token validation failed: %s", payload)
                 raise HTTPException(status_code=401, detail="Unauthorized")
             user = get_user(int(payload.get("sub")))
+            if not user:
+                raise HTTPException(status_code=401, detail="Unauthorized")
             return user
-        except Exception as e:
-            logging.error("Error validating token: ", bearer.credentials)
-            logging.error(e)
+        except HTTPException:
+            raise
+        except (ValueError, TypeError) as e:
+            logger.warning("Token subject parse error: %s", type(e).__name__)
             raise HTTPException(status_code=401, detail="Unauthorized")
     else:
         logging.error("No token provided")

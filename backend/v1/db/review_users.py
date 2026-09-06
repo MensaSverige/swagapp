@@ -26,9 +26,7 @@ review_users: List[User] = [
 
 
 def check_review_user_creds(username: str, password: str) -> dict:
-    logging.info(
-        f"Checking if user creds: {username}, matches review user creds: {APPLE_REVIEW_USER}, {REVIEW_PASSWORD} or {GOOGLE_REVIEW_USER}, {REVIEW_PASSWORD}"
-    )
+    logging.info("Checking review user credentials")
     date = get_current_time().replace(tzinfo=None)
     delta = timedelta(hours=12)
     date += delta
