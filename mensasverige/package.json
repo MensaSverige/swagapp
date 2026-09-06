@@ -78,6 +78,7 @@
   "devDependencies": {
     "@babel/core": "^7.25.2",
     "@testing-library/react-native": "^14.0.0",
+    "@types/jest": "^30.0.0",
     "@types/leaflet": "^1.9.14",
     "@types/react": "~19.2.10",
     "axios-mock-adapter": "^2.1.0",
