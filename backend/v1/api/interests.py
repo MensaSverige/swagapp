@@ -101,5 +101,5 @@ _INTEREST_TAGS: List[Tag] = [
 
 
 @interests_v1.get("/tags", response_model=List[Tag])
-async def get_interest_tags():
+async def get_interest_tags(current_user: dict = Depends(validate_request)):
     return _INTEREST_TAGS
