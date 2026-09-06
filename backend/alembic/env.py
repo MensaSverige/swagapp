@@ -44,7 +44,12 @@ config = context.config
 
 # Interpret the config file for Python logging.
 if config.config_file_name is not None:
-    fileConfig(config.config_file_name)
+    # Only when Alembic owns the process (the CLI). initialize_db() runs
+    # migrations inside the running API, where fileConfig() would apply
+    # alembic.ini's [logger_root] level = WARN to the whole application and
+    # silently kill every logging.info() call in the backend.
+    if config.attributes.get("configure_logger", True):
+        fileConfig(config.config_file_name)
 
 # Set the SQLAlchemy URL from the environment, overriding the placeholder
 # in alembic.ini.

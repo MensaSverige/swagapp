@@ -58,6 +58,9 @@ def run_alembic_migrations():
     alembic_ini = Path(__file__).resolve().parent.parent.parent / "alembic.ini"
 
     alembic_cfg = Config(str(alembic_ini))
+    # We are embedded in the running API, not the Alembic CLI: leave the
+    # application's logging configuration alone. See alembic/env.py.
+    alembic_cfg.attributes["configure_logger"] = False
 
     with engine.connect() as conn:
         inspector = inspect(conn)
