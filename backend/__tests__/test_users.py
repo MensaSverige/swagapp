@@ -170,3 +170,94 @@ def test_update_user_from_authresponse_absent_type_does_not_demote():
 def test_update_user_from_authresponse_nonexistent_user():
     # Should not raise
     update_user_from_authresponse(9999, {"firstName": "Ghost", "type": "M"})
+
+
+# ── partial locations ─────────────────────────────────────────────────────────
+# UserLocation.accuracy used to be a required float while the column is
+# nullable, and mongo_to_postgres passes `loc.get("accuracy")` straight
+# through. One migrated row without it raised
+#
+#   ValidationError: user.location.accuracy — Input should be a valid number
+#
+# on that user's own login *and* on /v1/users for every member, because the
+# list builds List[User] and one bad row fails the whole response. These pin
+# the shapes the database can actually produce.
+
+def _user_with_location(**loc_overrides):
+    create_user(_make_auth_response())
+    loc = {"latitude": 59.33, "longitude": 18.07, "timestamp": None, "accuracy": 5.0}
+    loc.update(loc_overrides)
+    update_user(1001, {"location": loc})
+    return get_user(1001)
+
+
+def test_location_without_accuracy_is_readable():
+    """What the Mongo migration produces for a document that never had it."""
+    from v1.db.database import get_session
+    from v1.db.tables import UserTable
+
+    _user_with_location()
+    with get_session() as session:
+        session.query(UserTable).filter_by(userId=1001).update({"location_accuracy": None})
+        session.commit()
+
+    fetched = get_user(1001)
+    assert fetched["location"] is not None
+    assert fetched["location"]["accuracy"] is None
+    assert fetched["location"]["latitude"] == 59.33
+
+
+def test_user_model_validates_location_without_accuracy():
+    """The response models must accept it — this is where the 500 came from."""
+    from v1.db.models.user import User
+
+    from v1.db.database import get_session
+    from v1.db.tables import UserTable
+
+    _user_with_location()
+    with get_session() as session:
+        session.query(UserTable).filter_by(userId=1001).update({"location_accuracy": None})
+        session.commit()
+
+    User(**get_user(1001))  # must not raise
+
+
+def test_half_written_location_is_not_returned():
+    """Latitude without longitude cannot satisfy UserLocation, so omit it.
+
+    Emitting it would fail validation for every consumer of that row rather
+    than just degrading one field.
+    """
+    from v1.db.database import get_session
+    from v1.db.tables import UserTable
+
+    _user_with_location()
+    with get_session() as session:
+        session.query(UserTable).filter_by(userId=1001).update({"location_longitude": None})
+        session.commit()
+
+    assert get_user(1001)["location"] is None
+
+
+def test_one_unreadable_location_does_not_break_the_user_list():
+    """get_users_showing_location builds a list; one bad row used to fail it all."""
+    from v1.db.database import get_session
+    from v1.db.tables import UserTable
+    from v1.db.models.user import User
+
+    create_user(_make_auth_response(memberId=2002, email="other@example.com"))
+    update_user(2002, {"settings": {"show_location": "EVERYONE"}})
+    update_user(2002, {"location": {"latitude": 57.7, "longitude": 11.9,
+                                    "timestamp": None, "accuracy": 3.0}})
+
+    _user_with_location()
+    update_user(1001, {"settings": {"show_location": "EVERYONE"}})
+    with get_session() as session:
+        session.query(UserTable).filter_by(userId=1001).update({"location_accuracy": None})
+        session.commit()
+
+    users = get_users_showing_location()
+    for u in users:
+        User(**u)  # every row must validate
+    assert len(users) >= 2
+

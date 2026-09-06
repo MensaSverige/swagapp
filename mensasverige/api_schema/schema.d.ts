@@ -394,8 +394,8 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get Events */
-        get: operations["get_events_v1_user_events_get"];
+        /** Outdated App Notice */
+        get: operations["outdated_app_notice_v1_user_events_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1230,7 +1230,7 @@ export interface components {
             /** Timestamp */
             timestamp: string | null;
             /** Accuracy */
-            accuracy: number;
+            accuracy?: number | null;
         };
         /** UserSettings */
         UserSettings: {
@@ -2103,7 +2103,7 @@ export interface operations {
             };
         };
     };
-    get_events_v1_user_events_get: {
+    outdated_app_notice_v1_user_events_get: {
         parameters: {
             query?: never;
             header?: never;
@@ -2118,7 +2118,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ExtendedUserEvent"][];
+                    "application/json": unknown;
                 };
             };
         };
