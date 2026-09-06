@@ -436,3 +436,66 @@ def test_update_nonexistent_event_returns_false():
     dummy = _make_event()
     dummy.id = None
     assert update_user_event("99999", dummy) is False
+
+
+# ── interest tags ─────────────────────────────────────────────────────────────
+# The tag picker (#304) added `tags` to the model. Under MongoDB that needed no
+# schema change; the columnar user_events table silently discarded them until
+# revision 002 added the column. A weaker test would assert only that create
+# returns tags — the failure was on *read back*, so every case round-trips.
+
+_TAGS = [
+    {"code": "schack", "text": "Schack", "colorText": "#ffffff", "colorBackground": "#333333"},
+    {"code": "matematik", "text": "Matematik", "colorText": "#ffffff", "colorBackground": "#111111"},
+]
+
+
+def test_create_event_persists_tags():
+    _seed_users()
+    event_id = create_user_event(_make_event(tags=_TAGS))
+
+    stored = get_unsafe_user_event(str(event_id))
+    assert [t.code for t in stored.tags] == ["schack", "matematik"]
+    # The whole tag travels, not just the code — the client renders it directly.
+    assert stored.tags[0].text == "Schack"
+    assert stored.tags[0].colorBackground == "#333333"
+
+
+def test_create_event_without_tags_reads_back_empty():
+    """Absent tags must read back as [], never None — callers iterate it."""
+    _seed_users()
+    event_id = create_user_event(_make_event())
+
+    assert get_unsafe_user_event(str(event_id)).tags == []
+
+
+def test_update_event_replaces_tags():
+    _seed_users()
+    event_id = create_user_event(_make_event(tags=_TAGS))
+
+    updated = _make_event(tags=[
+        {"code": "konst", "text": "Konst", "colorText": "#ffffff", "colorBackground": "#7c3aed"},
+    ])
+    assert update_user_event(str(event_id), updated) is True
+
+    stored = get_unsafe_user_event(str(event_id))
+    assert [t.code for t in stored.tags] == ["konst"]
+
+
+def test_update_event_can_clear_all_tags():
+    """Removing the last tag must clear the column, not leave the old list."""
+    _seed_users()
+    event_id = create_user_event(_make_event(tags=_TAGS))
+
+    assert update_user_event(str(event_id), _make_event(tags=[])) is True
+    assert get_unsafe_user_event(str(event_id)).tags == []
+
+
+def test_tags_survive_the_safe_read_path():
+    """get_safe_user_event strips secrets; it must not strip tags with them."""
+    _seed_users()
+    event_id = create_user_event(_make_event(tags=_TAGS))
+
+    safe = get_safe_user_event(str(event_id))
+    assert [t.code for t in safe.tags] == ["schack", "matematik"]
+

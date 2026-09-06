@@ -198,6 +198,11 @@ class UserEventTable(Base):
     description = Column(Text, nullable=True)
     maxAttendees = Column(Integer, nullable=True)
 
+    # Interest tags, as posted by the client. Stored as JSON rather than a
+    # child table: they are a denormalised snapshot of the /v1/tags catalog
+    # (code, text and both colours travel together), never queried by tag.
+    tags = Column(JSON, nullable=True, default=list)
+
     # Location (flattened)
     location_description = Column(String, nullable=True)
     location_address = Column(String, nullable=True)
@@ -233,6 +238,7 @@ class UserEventTable(Base):
             "end": self.end,
             "description": self.description,
             "maxAttendees": self.maxAttendees,
+            "tags": self.tags or [],
             "location": location,
             "hosts": [{"userId": h.userId} for h in self.hosts],
             "suggested_hosts": [{"userId": h.userId} for h in self.suggested_hosts],
