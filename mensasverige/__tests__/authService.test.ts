@@ -87,14 +87,23 @@ describe('authenticate', () => {
       .rejects.toThrow('Det går inte att nå servern just nu.');
   });
 
-  it('re-throws original error for unexpected 5xx (has error.message)', async () => {
-    // authService re-throws errors that have a .message and aren't 401/400/422/network
+  it('does not leak the raw Axios message for an unexpected 5xx', async () => {
+    // This used to re-throw the original error, whose message is English
+    // ("Request failed with status code 500") and is shown to the user by
+    // SigninForm. Anything not classified gets the Swedish fallback instead.
     const err: any = new Error('Request failed with status code 500');
     err.response = { status: 500 };
     mockPost.mockRejectedValueOnce(err);
 
-    await expect(authenticate('u', 'pass', false, true))
-      .rejects.toThrow('Request failed with status code 500');
+    let thrown: any;
+    try {
+      await authenticate('u', 'pass', false, true);
+    } catch (e) {
+      thrown = e;
+    }
+
+    expect(thrown.message).toBe('Något gick fel. Försök igen senare.');
+    expect(thrown.message).not.toMatch(/status code/);
   });
 
   it('throws generic message when error has no .message', async () => {
