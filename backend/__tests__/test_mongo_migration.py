@@ -699,3 +699,46 @@ def test_validate_detects_postgres_has_more_rows(session):
         "Validation must return False when Postgres has MORE rows than Mongo. "
         "This catches double-insertion bugs that >= would silently accept."
     )
+
+
+# ── naive datetimes out of Mongo ─────────────────────────────────────────────
+# A weaker version of these would only ever pass aware datetimes (as every
+# other test here does) and would never notice that naive values — which is
+# what production Mongo actually holds — were being labelled UTC.
+
+def test_tz_localizes_naive_mongo_datetime_as_swedish_local():
+    """Mongo stores bare Stockholm wall-clock digits, not UTC."""
+    from migrations.mongo_to_postgres import _tz
+
+    # An event the user created for 18:00 Swedish time in December.
+    naive = datetime(2026, 12, 1, 18, 0)
+    localized = _tz(naive)
+
+    assert localized.tzinfo is not None
+    # 18:00 CET is 17:00 UTC. Labelling it UTC would make it 18:00 UTC —
+    # an hour late — and two hours late under CEST.
+    assert localized.astimezone(timezone.utc) == datetime(2026, 12, 1, 17, 0, tzinfo=timezone.utc)
+    # The wall clock the user chose must not move.
+    assert localized.replace(tzinfo=None) == naive
+
+
+def test_tz_localizes_naive_summer_datetime_with_dst_offset():
+    from migrations.mongo_to_postgres import _tz
+
+    localized = _tz(datetime(2026, 7, 1, 18, 0))
+    # CEST: two hours, so 16:00 UTC.
+    assert localized.astimezone(timezone.utc) == datetime(2026, 7, 1, 16, 0, tzinfo=timezone.utc)
+
+
+def test_tz_leaves_aware_datetimes_untouched():
+    from migrations.mongo_to_postgres import _tz
+
+    aware = datetime(2026, 12, 1, 17, 0, tzinfo=timezone.utc)
+    assert _tz(aware) == aware
+
+
+def test_tz_passes_through_none_and_non_datetimes():
+    from migrations.mongo_to_postgres import _tz
+
+    assert _tz(None) is None
+    assert _tz("not a datetime") == "not a datetime"

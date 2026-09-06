@@ -41,6 +41,8 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 
+from v1.utilities import ensure_aware
+
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 log = logging.getLogger(__name__)
 
@@ -67,11 +69,21 @@ def _get_live_mongo():
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
 def _tz(dt):
-    """Ensure a datetime is timezone-aware (UTC)."""
+    """Ensure a datetime is timezone-aware.
+
+    Naive values out of MongoDB are Swedish local wall-clock readings, not UTC.
+    Mongo cannot store an offset, so the application stripped tzinfo after
+    converting to Europe/Stockholm and stored the bare wall clock; PyMongo
+    round-trips those digits unchanged.
+
+    Labelling them UTC here would shift every historical event start, end and
+    external eventDate one hour late in winter and two in summer — the same
+    corruption that naive writes caused on the live path. Localize instead.
+    """
     if dt is None:
         return None
     if isinstance(dt, datetime):
-        return dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)
+        return ensure_aware(dt)
     return dt
 
 
