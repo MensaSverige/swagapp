@@ -4,7 +4,6 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from v1.db.models.user import User
 from v1.request_filter import validate_request, require_member
-from v1.db.mongo import user_collection
 import v1.user_events.user_events_db as db
 from v1.user_events.user_events_model import UserEvent, ExtendedUserEvent
 

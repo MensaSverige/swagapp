@@ -163,11 +163,11 @@ def create_user_event_via_unified(event: Event, current_user: dict) -> Event:
 def update_user_event_via_unified(unified_event_id: str, event: Event, current_user: dict) -> Event:
     if event.official:
         raise HTTPException(status_code=400, detail="Cannot update official events via this endpoint")
-    # Expect unified id like usr<mongoId>
+    # Expect unified id like usr<id>
     if not unified_event_id.startswith("usr"):
         raise HTTPException(status_code=400, detail="Only user events can be updated here")
     event_id = unified_event_id[3:]  # Remove 'usr' prefix
-    
+
     existing = db_get_safe_user_event(event_id)
     if not existing:
         raise HTTPException(status_code=404, detail="Event not found")
@@ -184,7 +184,7 @@ def update_user_event_via_unified(unified_event_id: str, event: Event, current_u
 
 
 def delete_user_event_via_unified(unified_event_id: str, current_user: dict) -> dict:
-    # Expect unified id like usr<mongoId>
+    # Expect unified id like usr<id>
     if not unified_event_id.startswith("usr"):
         raise HTTPException(status_code=400, detail="Only user events can be deleted here")
     event_id = unified_event_id[3:]  # Remove 'usr' prefix
@@ -219,11 +219,6 @@ def _attend_user_event(unified_event_id: str, current_user: dict) -> Event:
     """Attend a user event (internal implementation)."""
     event_id = unified_event_id[3:]  # Remove 'usr' prefix
     logging.info(f"Extracted user event_id: {event_id}, length: {len(event_id)}")
-    
-    # Validate the event ID format
-    if len(event_id) != 24:
-        logging.error(f"Invalid event ID length: {len(event_id)}, expected 24")
-        raise HTTPException(status_code=400, detail=f"Invalid event ID format: expected 24 characters, got {len(event_id)}")
     
     existing = db_get_safe_user_event(event_id)
     if not existing:

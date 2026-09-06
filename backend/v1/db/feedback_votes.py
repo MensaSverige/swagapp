@@ -1,76 +1,46 @@
 from typing import Literal
-from pymongo import ASCENDING
-
-from v1.db.mongo import db
-
-feedback_votes_collection = db["feedback_votes"]
-
-
-def initialize_indexes() -> None:
-    feedback_votes_collection.create_index(
-        [("issue_number", ASCENDING), ("user_hash", ASCENDING)],
-        unique=True,
-    )
-    feedback_votes_collection.create_index([("issue_number", ASCENDING)])
+from v1.db.database import get_session
+from v1.db.tables import FeedbackVoteTable
 
 
 def set_vote(issue_number: int, user_hash: str, value: Literal[-1, 0, 1]) -> None:
-    if value == 0:
-        feedback_votes_collection.delete_one(
-            {"issue_number": issue_number, "user_hash": user_hash}
-        )
-        return
-    feedback_votes_collection.update_one(
-        {"issue_number": issue_number, "user_hash": user_hash},
-        {"$set": {"value": value}},
-        upsert=True,
-    )
+    with get_session() as session:
+        row = session.query(FeedbackVoteTable).filter_by(
+            issue_number=issue_number, user_hash=user_hash
+        ).first()
+        if value == 0:
+            if row:
+                session.delete(row)
+        elif row:
+            row.value = value
+        else:
+            session.add(FeedbackVoteTable(
+                issue_number=issue_number, user_hash=user_hash, value=value
+            ))
+        session.commit()
 
 
 def get_tally(issue_number: int, user_hash: str) -> dict:
-    up = feedback_votes_collection.count_documents(
-        {"issue_number": issue_number, "value": 1}
-    )
-    down = feedback_votes_collection.count_documents(
-        {"issue_number": issue_number, "value": -1}
-    )
-    mine_doc = feedback_votes_collection.find_one(
-        {"issue_number": issue_number, "user_hash": user_hash}
-    )
-    return {
-        "up": up,
-        "down": down,
-        "score": up - down,
-        "my_vote": mine_doc["value"] if mine_doc else 0,
-    }
+    with get_session() as session:
+        rows = session.query(FeedbackVoteTable).filter_by(issue_number=issue_number).all()
+        up = sum(1 for r in rows if r.value == 1)
+        down = sum(1 for r in rows if r.value == -1)
+        mine = next((r.value for r in rows if r.user_hash == user_hash), 0)
+        return {"up": up, "down": down, "score": up - down, "my_vote": mine}
 
 
 def get_tallies(issue_numbers: list[int], user_hash: str) -> dict[int, dict]:
     if not issue_numbers:
         return {}
-    pipeline = [
-        {"$match": {"issue_number": {"$in": issue_numbers}}},
-        {
-            "$group": {
-                "_id": "$issue_number",
-                "up": {"$sum": {"$cond": [{"$eq": ["$value", 1]}, 1, 0]}},
-                "down": {"$sum": {"$cond": [{"$eq": ["$value", -1]}, 1, 0]}},
-            }
-        },
-    ]
-    aggregated = {
-        d["_id"]: {"up": d["up"], "down": d["down"], "score": d["up"] - d["down"]}
-        for d in feedback_votes_collection.aggregate(pipeline)
-    }
-    my_votes = {
-        d["issue_number"]: d["value"]
-        for d in feedback_votes_collection.find(
-            {"issue_number": {"$in": issue_numbers}, "user_hash": user_hash}
-        )
-    }
-    result: dict[int, dict] = {}
-    for n in issue_numbers:
-        t = aggregated.get(n, {"up": 0, "down": 0, "score": 0})
-        t["my_vote"] = my_votes.get(n, 0)
-        result[n] = t
-    return result
+    with get_session() as session:
+        rows = session.query(FeedbackVoteTable).filter(
+            FeedbackVoteTable.issue_number.in_(issue_numbers)
+        ).all()
+        result: dict[int, dict] = {}
+        for n in issue_numbers:
+            group = [r for r in rows if r.issue_number == n]
+            up = sum(1 for r in group if r.value == 1)
+            down = sum(1 for r in group if r.value == -1)
+            mine = next((r.value for r in group if r.user_hash == user_hash), 0)
+            result[n] = {"up": up, "down": down, "score": up - down, "my_vote": mine}
+        return result
