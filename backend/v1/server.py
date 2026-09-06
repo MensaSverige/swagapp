@@ -20,7 +20,7 @@ from v1.events.events_api import unified_events_v1
 from v1.external.event_site_news import get_event_site_news
 from v1.external.event_api import get_external_root, get_external_event_details
 from v1.db.external_events import clean_external_events, get_stored_external_event_details
-from v1.user_events.user_events_api import user_events_v1
+from v1.legacy.outdated_app_notice import legacy_notice_v1
 from v1.db.database import initialize_db
 from v1.dev.exception_handlers import register_exception_handlers
 from v1.update_check_middleware import UpdateCheckMiddleware
@@ -71,7 +71,7 @@ app.include_router(interests_v1)
 app.include_router(profile_options_v1)
 app.include_router(events_v1)
 app.include_router(unified_events_v1)
-app.include_router(user_events_v1)
+app.include_router(legacy_notice_v1)  # legacy: update notice for old app builds
 app.include_router(geolocation_v1)
 app.include_router(feedback_v1)
 app.mount("/static/img", StaticFiles(directory="/static/img"), name="static")
