@@ -49,37 +49,28 @@ export const authenticate = async (username: string, password: string, testMode:
             } as AuthRequest
         )
         .then(async response => {
-            if (response.status === 200) {
-                const authresponse: AuthResponse = response.data;
-                console.log('Auth response', authresponse);
-                return storeAndValidateAuthResponse(authresponse);
-            } else {
-                if (response.status === 401) {
-                    console.error('Invalid credentials');
-                    throw new Error('Fel användarnamn eller lösenord.');
-                } else if (response.status === 422) {
-                    const data: HTTPValidationError = response.data;
-                    const detail = data.detail as ValidationError[];
-                    if (detail.some(item => item.msg === 'Test mode is not enabled')) {
-                        throw new Error('Testläge är inte aktiverat i backend. Appen borde inte köras i testläge.');
-                    } else {
-                        console.error('backend responded with status 400', data);
-                        throw new Error('Något gick fel. Försök igen senare.');
-                    }
-                }
-                else {
-                    console.error('backend responded with status', response.status);
-                    throw new Error('Något gick fel. Försök igen senare.');
-                }
-            }
+            return storeAndValidateAuthResponse(response.data as AuthResponse);
         })
         .catch(error => {
-            console.error('Login error', error.message || error);
-            if (error.message.includes('Network Error')) {
-                throw new Error(`Det går inte att nå servern just nu. Försök igen om en stund.`);
-            } else {
+            const status = error.response?.status;
+            if (status === 401 || status === 400) {
+                throw new Error('Fel användarnamn eller lösenord.');
+            }
+            if (status === 422) {
+                const data: HTTPValidationError = error.response.data;
+                const detail = data.detail as ValidationError[];
+                if (detail?.some(item => item.msg === 'Test mode is not enabled')) {
+                    throw new Error('Testläge är inte aktiverat i backend. Appen borde inte köras i testläge.');
+                }
                 throw new Error('Något gick fel. Försök igen senare.');
             }
+            if (error.message?.includes('Network Error')) {
+                throw new Error('Det går inte att nå servern just nu. Försök igen om en stund.');
+            }
+            if (error.message) {
+                throw error;
+            }
+            throw new Error('Något gick fel. Försök igen senare.');
         });
 }
 
@@ -124,6 +115,14 @@ export const refreshAccessToken = async (refreshToken: string): Promise<string> 
         return data.accessToken;
     }
     throw new Error('Failed to refresh access token');
+}
+
+// Force a token refresh regardless of the cached expiry. Used by the 401
+// response interceptor in apiClient when the server rejects a token we
+// thought was still valid (e.g. clock skew, rotation).
+export const forceRefreshToken = async (): Promise<string> => {
+    const storedRefreshToken = Platform.OS === 'web' ? '' : (await SecureStore.getItem('refreshToken')) ?? '';
+    return refreshAccessToken(storedRefreshToken);
 }
 
 export const attemptLoginWithStoredCredentials = async (): Promise<AuthResponse> => {
