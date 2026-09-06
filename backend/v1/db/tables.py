@@ -153,7 +153,10 @@ class UserTable(Base):
             "social_vibes": self.social_vibes or [],
             "pronomen": self.pronomen,
         }
-        if self.location_latitude is not None:
+        # Both coordinates are required by UserLocation, so a half-written
+        # location must not be emitted at all — one unvalidatable row would
+        # otherwise 500 the whole /v1/users list for every member.
+        if self.location_latitude is not None and self.location_longitude is not None:
             result["location"] = {
                 "latitude": self.location_latitude,
                 "longitude": self.location_longitude,

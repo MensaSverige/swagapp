@@ -8,7 +8,12 @@ class UserLocation(BaseModel):
     latitude: float
     longitude: float
     timestamp: Optional[datetime]
-    accuracy: float  # Accuracy in meters
+    # Accuracy in meters. Optional because the column is nullable and the
+    # Mongo->Postgres migration passes through documents that never had it:
+    # a required float here turns one such row into a 500 on that user's
+    # login and on /v1/users for everyone. The app only ever writes this
+    # field (position.coords.accuracy ?? 0); nothing reads it.
+    accuracy: Optional[float] = None
 
 
 class UserInterest(str, Enum):
