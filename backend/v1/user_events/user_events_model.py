@@ -49,29 +49,31 @@ class UserEvent(ModelWithId):
     @field_validator('start', 'end', mode='before')
     @classmethod
     def parse_datetime(cls, value):
-        """Parse datetime strings into datetime objects, handling ISO format and timezone conversion"""
+        """Parse datetime strings into timezone-aware datetime objects.
+
+        Offsets are preserved. Values arriving without one are Swedish local
+        wall-clock readings and are localized as such. (This used to strip
+        tzinfo instead, because MongoDB could not store an offset; PostgreSQL
+        stores it natively, so the values stay aware from here on.)
+        """
+        from v1.utilities import ensure_aware
+
         if value is None:
             return value
-        
+
         if isinstance(value, str):
-            # Try to parse ISO format datetime strings
             try:
-                # Parse ISO format and handle timezone
                 if value.endswith('Z'):
                     dt = datetime.fromisoformat(value.replace('Z', '+00:00'))
                 else:
                     dt = datetime.fromisoformat(value)
-                
-                # If timezone-aware, convert to naive datetime in application timezone
-                if dt.tzinfo is not None:
-                    from v1.utilities import get_current_time_zone
-                    return dt.astimezone(get_current_time_zone()).replace(tzinfo=None)
-                else:
-                    return dt
             except ValueError:
-                # Fallback to standard ISO parsing
-                return datetime.fromisoformat(value)
-        
+                return value  # let pydantic report the parse failure
+            return ensure_aware(dt)
+
+        if isinstance(value, datetime):
+            return ensure_aware(value)
+
         return value
 
 

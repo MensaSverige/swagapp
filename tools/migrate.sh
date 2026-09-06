@@ -1,7 +1,32 @@
 #!/bin/bash
+#
+# Copy a SWAG deployment's data from one Kubernetes namespace to another
+# (for example production → staging): the PostgreSQL database and the
+# backend's uploaded images under /static/img.
+#
+# DESTRUCTIVE. Everything in the destination database is replaced.
+#
+# The dump is streamed through kubectl rather than staged inside the pod, so
+# nothing is written to the database volume and there is nothing to clean up.
 
-# Exit on any error
-set -e
+set -euo pipefail
+
+# Label selector for the Postgres pod. Override if the chart labels differ:
+#   POSTGRES_SELECTOR=app.kubernetes.io/name=postgresql ./tools/migrate.sh
+POSTGRES_SELECTOR="${POSTGRES_SELECTOR:-app=postgres}"
+BACKEND_SELECTOR="${BACKEND_SELECTOR:-app=backend}"
+
+# Credentials are read from the pod's own environment at exec time, so they
+# never appear in this file, in the process list, or in shell history.
+PG_USER_EXPR='${POSTGRES_USER:-swag}'
+PG_DB_EXPR='${POSTGRES_DB:-swag}'
+
+find_pod() {
+    local namespace=$1 selector=$2
+    kubectl -n "$namespace" get pods -l "$selector" \
+        --field-selector=status.phase=Running \
+        -o jsonpath='{.items[0].metadata.name}' 2>/dev/null
+}
 
 # Function to select namespace
 select_namespace() {
@@ -9,7 +34,7 @@ select_namespace() {
     while true; do
         echo -e "\nAvailable namespaces:"
         echo "--------------------"
-        
+
         # Get namespaces into an array using basic shell commands
         local i=0
         declare -a namespaces
@@ -20,166 +45,132 @@ select_namespace() {
                 i=$((i+1))
             fi
         done < <(kubectl get namespaces -o custom-columns=":metadata.name")
-        
+
         echo -e "\nSelect ${purpose} namespace (or 'q' to quit):"
         read -p "Enter number: " selection
-        
+
         # Check for quit
         if [[ "$selection" == "q" ]]; then
             echo "Operation cancelled by user"
             exit 0
         fi
-        
+
         # Validate input is a number
         if ! [[ "$selection" =~ ^[0-9]+$ ]]; then
             echo "Please enter a valid number"
             continue
         fi
-        
+
         # Adjust for 0-based array indexing
         index=$((selection-1))
-        
+
         # Check if selection is within range
         if [ "$index" -ge 0 ] && [ "$index" -lt "$i" ]; then
             selected_ns="${namespaces[$index]}"
-            
-            # Verify MongoDB pod exists in selected namespace
-            if [ "$purpose" == "source" ] || [ "$purpose" == "destination" ]; then
-                echo -e "\nChecking for MongoDB pod in $selected_ns..."
-                if kubectl -n "$selected_ns" get pods -l app=mongo -o name >/dev/null 2>&1; then
-                    echo "✓ Found MongoDB pod in $selected_ns"
-                    return 0
-                else
-                    echo "✗ No MongoDB pod found in $selected_ns"
-                    echo "Please select a different namespace"
-                    continue
-                fi
+
+            echo -e "\nChecking for PostgreSQL pod in $selected_ns..."
+            if [ -n "$(find_pod "$selected_ns" "$POSTGRES_SELECTOR")" ]; then
+                echo "✓ Found PostgreSQL pod in $selected_ns"
+                return 0
+            else
+                echo "✗ No running PostgreSQL pod ($POSTGRES_SELECTOR) in $selected_ns"
+                echo "Please select a different namespace"
+                continue
             fi
-            
-            return 0
         else
             echo "Invalid selection. Please choose a number between 1 and $i"
         fi
     done
 }
 
-# Function to find MongoDB pod in namespace
-find_mongo_pod() {
-    local namespace=$1
-    local mongo_pod=$(kubectl -n "$namespace" get pods -l app=mongo -o jsonpath='{.items[0].metadata.name}' 2>/dev/null)
-    
-    if [ -z "$mongo_pod" ]; then
-        echo "No MongoDB pod found in namespace $namespace"
-        return 1
+require_pod() {
+    local namespace=$1 selector=$2 label=$3
+    local pod
+    pod=$(find_pod "$namespace" "$selector")
+    if [ -z "$pod" ]; then
+        echo "Error: no running $label pod ($selector) in namespace $namespace" >&2
+        exit 1
     fi
-    
-    echo "Found MongoDB pod: $mongo_pod"
-    return 0
-}
-
-# Function to find backend pod in namespace
-find_backend_pod() {
-    local namespace=$1
-    local backend_pod=$(kubectl -n "$namespace" get pods -l app=backend -o jsonpath='{.items[0].metadata.name}' 2>/dev/null)
-    
-    if [ -z "$backend_pod" ]; then
-        echo "No backend pod found in namespace $namespace"
-        return 1
-    fi
-    
-    echo "Found backend pod: $backend_pod"
-    return 0
+    echo "$pod"
 }
 
 select_namespace "source"
 SOURCE_NS="$selected_ns"
-if ! find_mongo_pod "$SOURCE_NS"; then
-    echo "Error: No MongoDB pod found in source namespace"
-    exit 1
-fi
-SOURCE_MONGO_POD=$(kubectl -n "$SOURCE_NS" get pods -l app=mongo -o jsonpath='{.items[0].metadata.name}')
-
-if ! find_backend_pod "$SOURCE_NS"; then
-    echo "Error: No backend pod found in source namespace"
-    exit 1
-fi
-SOURCE_BACKEND_POD=$(kubectl -n "$SOURCE_NS" get pods -l app=backend -o jsonpath='{.items[0].metadata.name}')
+SOURCE_PG_POD=$(require_pod "$SOURCE_NS" "$POSTGRES_SELECTOR" "PostgreSQL")
+SOURCE_BACKEND_POD=$(require_pod "$SOURCE_NS" "$BACKEND_SELECTOR" "backend")
 
 select_namespace "destination"
 DEST_NS="$selected_ns"
-if ! find_mongo_pod "$DEST_NS"; then
-    echo "Error: No MongoDB pod found in destination namespace"
-    exit 1
-fi
-DEST_MONGO_POD=$(kubectl -n "$DEST_NS" get pods -l app=mongo -o jsonpath='{.items[0].metadata.name}')
+DEST_PG_POD=$(require_pod "$DEST_NS" "$POSTGRES_SELECTOR" "PostgreSQL")
+DEST_BACKEND_POD=$(require_pod "$DEST_NS" "$BACKEND_SELECTOR" "backend")
 
-if ! find_backend_pod "$DEST_NS"; then
-    echo "Error: No backend pod found in destination namespace"
+if [ "$SOURCE_NS" == "$DEST_NS" ]; then
+    echo "Error: source and destination are the same namespace ($SOURCE_NS)" >&2
     exit 1
 fi
-DEST_BACKEND_POD=$(kubectl -n "$DEST_NS" get pods -l app=backend -o jsonpath='{.items[0].metadata.name}')
 
 # Confirm selection
 echo -e "\nMigration Details:"
 echo "-------------------"
-echo "Source Namespace: $SOURCE_NS"
-echo "Source MongoDB Pod: $SOURCE_MONGO_POD"
-echo "Source Backend Pod: $SOURCE_BACKEND_POD"
-echo "Destination Namespace: $DEST_NS"
-echo "Destination MongoDB Pod: $DEST_MONGO_POD"
+echo "Source Namespace:        $SOURCE_NS"
+echo "Source PostgreSQL Pod:   $SOURCE_PG_POD"
+echo "Source Backend Pod:      $SOURCE_BACKEND_POD"
+echo "Destination Namespace:   $DEST_NS"
+echo "Destination PostgreSQL:  $DEST_PG_POD"
 echo "Destination Backend Pod: $DEST_BACKEND_POD"
-read -p "Proceed with migration? (y/n): " confirm
-if [[ ! "$confirm" =~ ^[Yy]$ ]]; then
+echo
+echo "This REPLACES the entire database in '$DEST_NS'. It cannot be undone."
+read -p "Type the destination namespace to confirm: " confirm
+if [[ "$confirm" != "$DEST_NS" ]]; then
     echo "Migration cancelled"
     exit 0
 fi
 
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
-BACKUP_DIR="/tmp/mongo_migration_${TIMESTAMP}"
+BACKUP_DIR="/tmp/swag_migration_${TIMESTAMP}"
 IMAGES_DIR="${BACKUP_DIR}/static_images"
+DUMP_FILE="${BACKUP_DIR}/swag.dump"
 
 echo -e "\nStarting migration..."
 
 # Create backup directories
-mkdir -p "${BACKUP_DIR}"
 mkdir -p "${IMAGES_DIR}"
-echo "Created backup directories: ${BACKUP_DIR} and ${IMAGES_DIR}"
+echo "Created backup directory: ${BACKUP_DIR}"
 
 # Step 1: Copy static images from source backend
 echo "Copying static images from source backend..."
-kubectl -n ${SOURCE_NS} cp ${SOURCE_BACKEND_POD}:/static/img "${IMAGES_DIR}"
+kubectl -n "${SOURCE_NS}" cp "${SOURCE_BACKEND_POD}:/static/img" "${IMAGES_DIR}"
 
-# Step 2: Dump data from source MongoDB
-echo "Dumping data from source MongoDB..."
-kubectl -n ${SOURCE_NS} exec ${SOURCE_MONGO_POD} -- mongodump --out /data/db/backup
-echo "Creating tar archive of the backup..."
-kubectl -n ${SOURCE_NS} exec ${SOURCE_MONGO_POD} -- tar -czf /data/db/backup.tar.gz -C /data/db backup
-echo "Copying backup from source pod..."
-kubectl -n ${SOURCE_NS} cp ${SOURCE_MONGO_POD}:/data/db/backup.tar.gz "${BACKUP_DIR}/backup.tar.gz"
+# Step 2: Dump the source database.
+# -Fc is the custom format: compressed, and restorable with --clean.
+echo "Dumping source database..."
+kubectl -n "${SOURCE_NS}" exec "${SOURCE_PG_POD}" -- \
+    sh -c "pg_dump -U ${PG_USER_EXPR} -d ${PG_DB_EXPR} -Fc --no-owner --no-privileges" \
+    > "${DUMP_FILE}"
 
-# Step 3: Copy backup to destination pod and extract
-echo "Copying backup to destination MongoDB pod..."
-kubectl -n ${DEST_NS} cp "${BACKUP_DIR}/backup.tar.gz" ${DEST_MONGO_POD}:/data/db/backup.tar.gz
+if [ ! -s "${DUMP_FILE}" ]; then
+    echo "Error: dump is empty — aborting before touching the destination" >&2
+    rm -rf "${BACKUP_DIR}"
+    exit 1
+fi
+echo "Dump written: $(du -h "${DUMP_FILE}" | cut -f1)"
 
-echo "Extracting backup on destination pod..."
-kubectl -n ${DEST_NS} exec ${DEST_MONGO_POD} -- tar -xzf /data/db/backup.tar.gz -C /data/db
+# Step 3: Restore into the destination.
+# --clean --if-exists drops each object before recreating it, so this replaces
+# the previous contents without needing to drop the database itself (which
+# would fail anyway while the backend holds connections open).
+echo "Restoring into destination database..."
+kubectl -n "${DEST_NS}" exec -i "${DEST_PG_POD}" -- \
+    sh -c "pg_restore -U ${PG_USER_EXPR} -d ${PG_DB_EXPR} --clean --if-exists --no-owner --no-privileges" \
+    < "${DUMP_FILE}"
 
-# Step 4: Drop existing database and restore backup
-echo "Dropping existing database in destination..."
-kubectl -n ${DEST_NS} exec ${DEST_MONGO_POD} -- mongosh --eval 'db.getMongo().getDB("swag").dropDatabase()'
-
-echo "Restoring MongoDB backup..."
-kubectl -n ${DEST_NS} exec ${DEST_MONGO_POD} -- mongorestore /data/db/backup
-
-# Step 5: Copy static images to destination backend
+# Step 4: Copy static images to destination backend
 echo "Copying static images to destination backend pod..."
-kubectl -n ${DEST_NS} cp "${IMAGES_DIR}" ${DEST_BACKEND_POD}:/static/img
+kubectl -n "${DEST_NS}" cp "${IMAGES_DIR}" "${DEST_BACKEND_POD}:/static/img"
 
-# Step 6: Cleanup
+# Step 5: Cleanup
 echo "Cleaning up temporary files..."
-kubectl -n ${DEST_NS} exec ${DEST_MONGO_POD} -- rm -rf /data/db/backup /data/db/backup.tar.gz
-kubectl -n ${SOURCE_NS} exec ${SOURCE_MONGO_POD} -- rm -rf /data/db/backup /data/db/backup.tar.gz
 rm -rf "${BACKUP_DIR}"
 
 echo "Migration completed successfully!"
-echo "Please verify the data and images in the new deployment."
+echo "Restart the backend in ${DEST_NS} so it reconnects, then verify the data and images."

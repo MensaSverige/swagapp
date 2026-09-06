@@ -9,7 +9,7 @@ from v1.db.tables import (
     UserEventTable, EventHostTable, EventSuggestedHostTable,
     EventAttendeeTable, EventReportTable, UserTable,
 )
-from v1.utilities import get_current_time
+from v1.utilities import get_current_time, ensure_aware
 
 log = logging.getLogger(__name__)
 
@@ -163,9 +163,11 @@ def delete_user_event(event_id: str) -> bool:
 
 def get_unsafe_future_user_events() -> list[UserEvent]:
     """Retrieves all future user events."""
-    current_time = get_current_time()
-    if current_time.tzinfo is None:
-        current_time = current_time.replace(tzinfo=timezone.utc)
+    # Compare in UTC. The value is aware either way, but normalising here keeps
+    # the comparison backend-independent: SQLite (used by the tests) drops the
+    # offset on write and would otherwise compare a UTC wall clock against a
+    # Stockholm one.
+    current_time = ensure_aware(get_current_time()).astimezone(timezone.utc)
     with get_session() as session:
         rows = session.query(UserEventTable).filter(
             or_(

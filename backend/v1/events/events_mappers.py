@@ -6,7 +6,8 @@ import logging
 from v1.db.models.external_events import ExternalEventDetails
 from v1.user_events.user_events_model import ExtendedUserEvent, UserEvent, Location, Host, Attendee
 from v1.events.events_model import Event, EventAttendee, EventHost, ShowAttendees, Tag
-from v1.utilities import get_current_time, convert_to_tz_aware, get_current_time_zone
+from v1.utilities import (get_current_time, convert_to_tz_aware,
+                          get_current_time_zone, ensure_aware as _as_aware)
 
 
 ISO_VARIANTS = [
@@ -23,31 +24,17 @@ def _parse_dt(value: Optional[str]) -> Optional[datetime]:
     if not value:
         return None
     
-    # Try parsing with various formats
+    # Try parsing with various formats. Offsets in the string are preserved;
+    # a string without one is a Swedish local wall-clock reading.
     for fmt in ISO_VARIANTS:
         try:
-            dt = datetime.strptime(value, fmt)
-            # If no timezone info, assume it's in the application's timezone
-            if dt.tzinfo is None:
-                # Convert to timezone-aware using your utility, then to naive for database storage
-                tz_aware = dt.replace(tzinfo=get_current_time_zone())
-                return tz_aware.astimezone(get_current_time_zone()).replace(tzinfo=None)
-            else:
-                # Convert timezone-aware datetime to application timezone, then naive
-                return dt.astimezone(get_current_time_zone()).replace(tzinfo=None)
+            return _as_aware(datetime.strptime(value, fmt))
         except ValueError:
             continue
-    
+
     # Try using fromisoformat for more flexible parsing
     try:
-        dt = datetime.fromisoformat(value.replace('Z', '+00:00'))
-        # Convert to application timezone if it has timezone info
-        if dt.tzinfo is not None:
-            return dt.astimezone(get_current_time_zone()).replace(tzinfo=None)
-        else:
-            # Assume application timezone if no timezone info
-            tz_aware = dt.replace(tzinfo=get_current_time_zone())
-            return tz_aware.replace(tzinfo=None)
+        return _as_aware(datetime.fromisoformat(value.replace('Z', '+00:00')))
     except Exception:
         logging.warning(f"Failed to parse datetime string: {value}")
         return None
@@ -55,7 +42,7 @@ def _parse_dt(value: Optional[str]) -> Optional[datetime]:
 
 def _utc_now() -> datetime:
     """Get current time using the application's timezone utilities."""
-    return get_current_time().replace(tzinfo=None)
+    return get_current_time()
 
 
 def map_external_event(
@@ -69,17 +56,17 @@ def map_external_event(
         logging.warning(f"External event missing eventDate: {details.eventId}")
         return None
     try:
-        start_dt = details.eventDate
+        start_dt = _as_aware(details.eventDate)
         end_dt = None
         if details.endTime:
             try:
                 end_time_obj = datetime.strptime(details.endTime, "%H:%M").time()
-                end_dt = datetime.combine(start_dt.date(), end_time_obj)
+                end_dt = _as_aware(datetime.combine(start_dt.date(), end_time_obj))
             except Exception:
                 pass
 
-        booking_start = _parse_dt(details.dateBookingStart)
-        booking_end = _parse_dt(details.dateBookingEnd) or start_dt
+        booking_start = _as_aware(_parse_dt(details.dateBookingStart))
+        booking_end = _as_aware(_parse_dt(details.dateBookingEnd)) or start_dt
 
         attending = details.eventId in booked_ids
 
@@ -167,12 +154,14 @@ def map_external_event(
 
 def map_user_event(ue: ExtendedUserEvent, current_user_id: int) -> Event:
     now = _utc_now()
+    start_dt = _as_aware(ue.start)
+    end_dt = _as_aware(ue.end)
     attending = any(a.userId == current_user_id for a in ue.attendees)
     max_att = ue.maxAttendees
     capacity_ok = True
     if max_att is not None:
         capacity_ok = len(ue.attendees) < max_att
-    bookable = capacity_ok and not attending and ue.start >= now
+    bookable = capacity_ok and not attending and start_dt >= now
 
     return Event(
         id=f"usr{ue.id}",
@@ -186,13 +175,13 @@ def map_user_event(ue: ExtendedUserEvent, current_user_id: int) -> Event:
         locationMarker=ue.location.marker if ue.location else None,
         latitude=ue.location.latitude if ue.location else None,
         longitude=ue.location.longitude if ue.location else None,
-        start=ue.start,
-        end=ue.end,
+        start=start_dt,
+        end=end_dt,
         cancelled=None,
         imageUrl=None,
         description=ue.description,
         bookingStart=None,
-        bookingEnd=ue.start,
+        bookingEnd=start_dt,
         showAttendees=ShowAttendees.all,
         attendees=[EventAttendee(userId=a.userId) for a in ue.attendees],
         queue=[],

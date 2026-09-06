@@ -1,6 +1,6 @@
 """Tests for user event DB operations."""
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from v1.db.users import create_user
 from v1.user_events.user_events_model import UserEvent
 from v1.user_events.user_events_db import (
@@ -33,7 +33,7 @@ def _seed_users():
 
 
 def _make_event(**overrides) -> UserEvent:
-    now = datetime.now()
+    now = datetime.now(timezone.utc)
     base = dict(
         userId=100,
         name="Test Event",
@@ -107,7 +107,7 @@ def test_delete_nonexistent_event():
 
 def test_get_future_events():
     _seed_users()
-    now = datetime.now()
+    now = datetime.now(timezone.utc)
 
     # Future event (should appear)
     create_user_event(_make_event(
@@ -130,7 +130,7 @@ def test_get_future_events():
 def test_get_future_events_no_end():
     """Events with no end time should appear if start is recent."""
     _seed_users()
-    now = datetime.now()
+    now = datetime.now(timezone.utc)
     create_user_event(_make_event(
         name="No End",
         start=now - timedelta(minutes=30),
