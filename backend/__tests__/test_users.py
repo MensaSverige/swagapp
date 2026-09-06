@@ -261,3 +261,66 @@ def test_one_unreadable_location_does_not_break_the_user_list():
         User(**u)  # every row must validate
     assert len(users) >= 2
 
+
+# ── tolerating what MongoDB actually stored ───────────────────────────────────
+# These fields are strict enums in the response model but were never constrained
+# in Mongo, so migrated rows carry legacy and retired values. A single such row
+# used to fail validation for the *whole* /v1/users response — hiding every
+# member from the map. Found by dry-running the migration against seeded data.
+
+def test_legacy_privacy_values_are_renamed_on_every_field():
+    """The rename was only applied to show_location, not the other ten."""
+    from v1.db.models.user import UserSettings
+
+    s = UserSettings(
+        show_location="ALL_MEMBERS_WHO_SHARE_THEIR_OWN_LOCATION",
+        show_profile="ALL_MEMBERS",
+    )
+    assert s.show_location.value == "MEMBERS_MUTUAL"
+    assert s.show_profile.value == "MEMBERS_ONLY"
+
+
+def test_unknown_privacy_value_falls_back_to_the_most_restrictive():
+    """An unrecognised setting must not fail the response — nor leak.
+
+    Guessing wrong in the permissive direction would expose a profile the
+    member may have chosen to hide, so the fallback is NO_ONE rather than the
+    field's default.
+    """
+    from v1.db.models.user import UserSettings
+
+    s = UserSettings(show_gender="SOMETHING_WE_RETIRED")
+    assert s.show_gender.value == "NO_ONE"
+
+
+def test_boolean_privacy_values_still_coerce():
+    """Pre-enum data stored show_email/show_phone as booleans."""
+    from v1.db.models.user import UserSettings
+
+    s = UserSettings(show_email=True, show_phone=False)
+    assert s.show_email.value == "MEMBERS_ONLY"
+    assert s.show_phone.value == "NO_ONE"
+
+
+def test_retired_interests_are_dropped_not_fatal():
+    """interests is List[UserInterest]; Mongo holds whatever was valid then."""
+    from v1.db.models.user import User
+
+    u = User(userId=1, isMember=True, settings={},
+             interests=["Konst", "Schack", "Matematik"])
+    # "Schack" is not in the enum; the two that are must survive.
+    assert [i.value for i in u.interests] == ["Konst", "Matematik"]
+
+
+def test_one_bad_row_does_not_fail_the_whole_user_list():
+    """The failure mode that matters: a list response is all-or-nothing."""
+    from v1.db.models.user import User
+
+    rows = [
+        {"userId": 1, "isMember": True, "settings": {}, "interests": ["Konst"]},
+        {"userId": 2, "isMember": True, "interests": ["Schack"],
+         "settings": {"show_profile": "ALL_MEMBERS"}},
+        {"userId": 3, "isMember": True, "settings": {}},
+    ]
+    assert len([User(**r) for r in rows]) == 3
+

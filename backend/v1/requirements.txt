@@ -1,4 +1,6 @@
 psycopg2-binary # PostgreSQL driver
+pymongo # Only for the one-time Mongo->Postgres cutover (migrations/mongo_to_postgres.py).
+        # Nothing in v1/ imports it. Remove once the cutover is done — see docs/postgres-cutover.md
 requests # HTTP requests
 PyJWT # JWT tokens
 pytest # Testing

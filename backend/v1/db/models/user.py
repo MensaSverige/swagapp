@@ -140,11 +140,31 @@ class UserSettings(BaseModel):
         description="Who can see this user in event attendee lists. None means inherit from show_profile.",
     )
 
-    @field_validator("show_location", mode="before")
+    @field_validator(
+        "show_location", "show_profile", "show_interests", "show_hometown",
+        "show_birthdate", "show_gender", "show_sexuality", "show_relationship_style",
+        "show_relationship_status", "show_social_vibes", "show_pronomen",
+        "show_attendance",
+        mode="before",
+    )
     @classmethod
-    def _coerce_show_location(cls, v):
-        if isinstance(v, str):
-            return _LEGACY_LOCATION_RENAMES.get(v, v)
+    def _coerce_privacy_setting(cls, v):
+        """Accept legacy and unrecognised values instead of failing the response.
+
+        These fields hold whatever the app wrote at the time, and MongoDB never
+        constrained them. A value this enum no longer knows would otherwise fail
+        validation for the whole /v1/users response — one stale row hiding every
+        member from the map, which is how a data problem becomes an outage.
+
+        Unknown values fall back to NO_ONE rather than the field default: if we
+        cannot tell what someone chose, the safe reading of a privacy setting is
+        the most restrictive one.
+        """
+        if v is None or not isinstance(v, str):
+            return v
+        v = _LEGACY_LOCATION_RENAMES.get(v, v)
+        if v not in PrivacySetting.__members__.values() and v not in {p.value for p in PrivacySetting}:
+            return PrivacySetting.NO_ONE.value
         return v
 
     @field_validator("show_email", "show_phone", mode="before")
@@ -225,6 +245,22 @@ class User(BaseModel):
     social_vibes: List[str] = Field(default_factory=list, example=[])
     pronomen: Optional[str] = Field(None, example="hen")
 
+    @field_validator("interests", mode="before")
+    @classmethod
+    def _drop_unknown_interests(cls, v):
+        """Drop interests this enum no longer knows rather than failing.
+
+        The list has changed over time and MongoDB stored whatever was current
+        then, so a migrated profile can carry values that no longer exist. As a
+        strict List[UserInterest] a single stale entry fails validation for the
+        entire /v1/users response, hiding every member from the map.
+
+        Dropping loses that one value; the alternative loses the endpoint.
+        """
+        if not isinstance(v, list):
+            return v
+        known = {i.value for i in UserInterest}
+        return [i for i in v if not isinstance(i, str) or i in known]
 
 class UserUpdate(BaseModel):
     settings: UserSettings
