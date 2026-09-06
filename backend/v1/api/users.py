@@ -6,62 +6,55 @@ from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from v1.utilities import convert_to_tz_aware, get_current_time
 from v1.db.models.user import User, UserLocation, UserUpdate, PrivacySetting, viewer_can_see, effective_setting
 from v1.request_filter import validate_request
-from v1.db.users import get_users as db_get_users, get_user, get_users_showing_location, update_user
+from v1.db.users import get_user, get_users_showing_location, update_user
 
 users_v1 = APIRouter(prefix="/v1")
+
+# (setting_key, field_name, default_privacy, hidden_value)
+_PRIVACY_FIELDS = [
+    ("show_location",            "location",            PrivacySetting.NO_ONE,       None),
+    ("show_interests",           "interests",           PrivacySetting.MEMBERS_ONLY, []),
+    ("show_hometown",            "hometown",            PrivacySetting.MEMBERS_ONLY, None),
+    ("show_birthdate",           "birthdate",           PrivacySetting.MEMBERS_ONLY, None),
+    ("show_gender",              "gender",              PrivacySetting.NO_ONE,       None),
+    ("show_sexuality",           "sexuality",           PrivacySetting.NO_ONE,       None),
+    ("show_relationship_style",  "relationship_style",  PrivacySetting.NO_ONE,       None),
+    ("show_relationship_status", "relationship_status", PrivacySetting.NO_ONE,       None),
+    ("show_social_vibes",        "social_vibes",        PrivacySetting.MEMBERS_ONLY, []),
+    ("show_pronomen",            "pronomen",            PrivacySetting.NO_ONE,       None),
+]
+
+
+def _apply_privacy_filter(user: dict, viewer: dict) -> dict:
+    settings = user.get("settings", {})
+    contact = user.get("contact_info") or {}
+    if not viewer_can_see(settings.get("show_email", PrivacySetting.NO_ONE.value), viewer, "show_email"):
+        contact["email"] = None
+    if not viewer_can_see(settings.get("show_phone", PrivacySetting.NO_ONE.value), viewer, "show_phone"):
+        contact["phone"] = None
+    user["contact_info"] = contact
+
+    if user.get("userId") != viewer.get("userId"):
+        for setting_key, field, default, hidden_val in _PRIVACY_FIELDS:
+            if not viewer_can_see(settings.get(setting_key, default.value), viewer, setting_key):
+                user[field] = hidden_val
+
+    return user
 
 
 @users_v1.get("/users", response_model=List[User])
 async def get_users(show_location: bool = None,
                     current_user: dict = Depends(validate_request)):
-    if show_location:
-        users_list = get_users_showing_location()
-    else:
+    if not show_location:
         raise HTTPException(
             status_code=400,
             detail="show_location parameter must be set to True to retrieve users."
         )
-        users_list = db_get_users()
-    # Enforce privacy: hide email/phone/location if disabled, filter by profile visibility
+    users_list = get_users_showing_location()
     result = []
     for user in users_list:
+        _apply_privacy_filter(user, current_user)
         settings = user.get("settings", {})
-        # ensure contact_info dict exists
-        contact = user.get("contact_info") or {}
-        if not viewer_can_see(settings.get("show_email", PrivacySetting.NO_ONE.value), current_user, "show_email"):
-            contact["email"] = None
-        if not viewer_can_see(settings.get("show_phone", PrivacySetting.NO_ONE.value), current_user, "show_phone"):
-            contact["phone"] = None
-        user["contact_info"] = contact
-        if user.get("userId") != current_user.get("userId") and not viewer_can_see(
-                settings.get("show_location", PrivacySetting.NO_ONE.value), current_user, "show_location"):
-            user["location"] = None
-        if not viewer_can_see(settings.get("show_interests", PrivacySetting.MEMBERS_ONLY.value), current_user, "show_interests") and user.get("userId") != current_user.get("userId"):
-            user["interests"] = []
-        if user.get("userId") != current_user.get("userId") and not viewer_can_see(
-                settings.get("show_hometown", PrivacySetting.MEMBERS_ONLY.value), current_user, "show_hometown"):
-            user["hometown"] = None
-        if user.get("userId") != current_user.get("userId") and not viewer_can_see(
-                settings.get("show_birthdate", PrivacySetting.MEMBERS_ONLY.value), current_user, "show_birthdate"):
-            user["birthdate"] = None
-        if user.get("userId") != current_user.get("userId") and not viewer_can_see(
-                settings.get("show_gender", PrivacySetting.NO_ONE.value), current_user, "show_gender"):
-            user["gender"] = None
-        if user.get("userId") != current_user.get("userId") and not viewer_can_see(
-                settings.get("show_sexuality", PrivacySetting.NO_ONE.value), current_user, "show_sexuality"):
-            user["sexuality"] = None
-        if user.get("userId") != current_user.get("userId") and not viewer_can_see(
-                settings.get("show_relationship_style", PrivacySetting.NO_ONE.value), current_user, "show_relationship_style"):
-            user["relationship_style"] = None
-        if user.get("userId") != current_user.get("userId") and not viewer_can_see(
-                settings.get("show_relationship_status", PrivacySetting.NO_ONE.value), current_user, "show_relationship_status"):
-            user["relationship_status"] = None
-        if user.get("userId") != current_user.get("userId") and not viewer_can_see(
-                settings.get("show_social_vibes", PrivacySetting.MEMBERS_ONLY.value), current_user, "show_social_vibes"):
-            user["social_vibes"] = []
-        if user.get("userId") != current_user.get("userId") and not viewer_can_see(
-                settings.get("show_pronomen", PrivacySetting.NO_ONE.value), current_user, "show_pronomen"):
-            user["pronomen"] = None
         if user.get("userId") == current_user.get("userId") or viewer_can_see(
                 settings.get("show_profile", PrivacySetting.MEMBERS_ONLY.value), current_user, "show_profile"):
             result.append(user)
@@ -80,48 +73,7 @@ async def get_user_by_id(user_id: int,
             settings.get("show_profile", PrivacySetting.MEMBERS_ONLY.value), current_user, "show_profile"):
         raise HTTPException(status_code=403, detail="Profile not visible")
 
-    # Enforce privacy: hide email/phone based on viewer's access
-    contact = user.get("contact_info") or {}
-    if not viewer_can_see(settings.get("show_email", PrivacySetting.NO_ONE.value), current_user, "show_email"):
-        contact["email"] = None
-    if not viewer_can_see(settings.get("show_phone", PrivacySetting.NO_ONE.value), current_user, "show_phone"):
-        contact["phone"] = None
-    user["contact_info"] = contact
-
-    # Hide location if user doesn't want to show it
-    if user.get("userId") != current_user.get("userId") and not viewer_can_see(
-            settings.get("show_location", PrivacySetting.NO_ONE.value), current_user, "show_location"):
-        user["location"] = None
-
-    if user.get("userId") != current_user.get("userId") and not viewer_can_see(
-            settings.get("show_interests", PrivacySetting.MEMBERS_ONLY.value), current_user, "show_interests"):
-        user["interests"] = []
-
-    if user.get("userId") != current_user.get("userId") and not viewer_can_see(
-            settings.get("show_hometown", PrivacySetting.MEMBERS_ONLY.value), current_user, "show_hometown"):
-        user["hometown"] = None
-    if user.get("userId") != current_user.get("userId") and not viewer_can_see(
-            settings.get("show_birthdate", PrivacySetting.MEMBERS_ONLY.value), current_user, "show_birthdate"):
-        user["birthdate"] = None
-    if user.get("userId") != current_user.get("userId") and not viewer_can_see(
-            settings.get("show_gender", PrivacySetting.NO_ONE.value), current_user, "show_gender"):
-        user["gender"] = None
-    if user.get("userId") != current_user.get("userId") and not viewer_can_see(
-            settings.get("show_sexuality", PrivacySetting.NO_ONE.value), current_user, "show_sexuality"):
-        user["sexuality"] = None
-    if user.get("userId") != current_user.get("userId") and not viewer_can_see(
-            settings.get("show_relationship_style", PrivacySetting.NO_ONE.value), current_user, "show_relationship_style"):
-        user["relationship_style"] = None
-    if user.get("userId") != current_user.get("userId") and not viewer_can_see(
-            settings.get("show_relationship_status", PrivacySetting.NO_ONE.value), current_user, "show_relationship_status"):
-        user["relationship_status"] = None
-    if user.get("userId") != current_user.get("userId") and not viewer_can_see(
-            settings.get("show_social_vibes", PrivacySetting.MEMBERS_ONLY.value), current_user, "show_social_vibes"):
-        user["social_vibes"] = []
-    if user.get("userId") != current_user.get("userId") and not viewer_can_see(
-            settings.get("show_pronomen", PrivacySetting.NO_ONE.value), current_user, "show_pronomen"):
-        user["pronomen"] = None
-
+    _apply_privacy_filter(user, current_user)
     return user
 
 

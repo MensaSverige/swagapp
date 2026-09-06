@@ -33,20 +33,6 @@ export default function RootLayout() {
         })()
       : null
   );
-  // const [loaded] = useFonts({
-  //   SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
-  // });
-
-  // if (!loaded) {
-  //   // Async font loading only occurs in development.
-  //   return null;
-  // }
-
-  // useEffect(() => {
-  //   console.log('resetting user state');
-  //   setUser(null);
-  // }, []);
-
   useUserLocation();
   useEffect(() => {
     setIsLoggedIn(!!user);
