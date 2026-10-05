@@ -1,5 +1,11 @@
 """Tests for user DB operations."""
 
+from typing import Optional
+
+import pytest
+from pydantic import ValidationError
+
+from v1.db.models.user import PrivacySetting, UserSettings, UserUpdate
 from v1.db.users import (
     create_user, get_user, update_user, get_users,
     get_users_showing_location, update_user_from_authresponse,
@@ -260,4 +266,131 @@ def test_one_unreadable_location_does_not_break_the_user_list():
     for u in users:
         User(**u)  # every row must validate
     assert len(users) >= 2
+
+
+# ── tolerating what MongoDB actually stored ───────────────────────────────────
+# These fields are strict enums in the response model but were never constrained
+# in Mongo, so migrated rows carry legacy and retired values. A single such row
+# used to fail validation for the *whole* /v1/users response — hiding every
+# member from the map. Found by dry-running the migration against seeded data.
+
+# Derived from the model rather than copied from the validator, so a show_*
+# field added later is covered here whether or not it made it into the list.
+PRIVACY_FIELDS = [
+    name for name, field in UserSettings.model_fields.items()
+    if field.annotation in (PrivacySetting, Optional[PrivacySetting])
+]
+
+
+@pytest.mark.parametrize("field", PRIVACY_FIELDS)
+@pytest.mark.parametrize("legacy, expected", [
+    ("ALL_MEMBERS_WHO_SHARE_THEIR_OWN_LOCATION", "MEMBERS_MUTUAL"),
+    ("ALL_MEMBERS", "MEMBERS_ONLY"),
+    ("EVERYONE_WHO_SHARE_THEIR_OWN_LOCATION", "EVERYONE_MUTUAL"),
+])
+def test_legacy_privacy_values_are_renamed_on_every_field(field, legacy, expected):
+    """The rename was first applied only to show_location, then missed
+    show_email and show_phone because they had their own bool validator."""
+    s = UserSettings(**{field: legacy})
+    assert getattr(s, field).value == expected
+
+
+@pytest.mark.parametrize("field", PRIVACY_FIELDS)
+def test_unknown_privacy_value_falls_back_to_the_most_restrictive(field):
+    """An unrecognised setting must not fail the response — nor leak.
+
+    Guessing wrong in the permissive direction would expose a profile the
+    member may have chosen to hide, so the fallback is NO_ONE rather than the
+    field's default.
+    """
+    s = UserSettings(**{field: "SOMETHING_WE_RETIRED"})
+    assert getattr(s, field).value == "NO_ONE"
+
+
+def test_boolean_privacy_values_still_coerce():
+    """Pre-enum data stored show_email/show_phone as booleans."""
+    from v1.db.models.user import UserSettings
+
+    s = UserSettings(show_email=True, show_phone=False)
+    assert s.show_email.value == "MEMBERS_ONLY"
+    assert s.show_phone.value == "NO_ONE"
+
+
+def test_retired_interests_are_dropped_not_fatal():
+    """interests is List[UserInterest]; Mongo holds whatever was valid then."""
+    from v1.db.models.user import User
+
+    u = User(userId=1, isMember=True, settings={},
+             interests=["Konst", "Schack", "Matematik"])
+    # "Schack" is not in the enum; the two that are must survive.
+    assert [i.value for i in u.interests] == ["Konst", "Matematik"]
+
+
+def test_one_bad_row_does_not_fail_the_whole_user_list():
+    """The failure mode that matters: a list response is all-or-nothing."""
+    from v1.db.models.user import User
+
+    rows = [
+        {"userId": 1, "isMember": True, "settings": {}, "interests": ["Konst"]},
+        {"userId": 2, "isMember": True, "interests": ["Schack"],
+         "settings": {"show_profile": "ALL_MEMBERS"}},
+        {"userId": 3, "isMember": True, "settings": {}},
+        {"userId": 4, "isMember": True, "settings": {"show_email": "ALL_MEMBERS"}},
+    ]
+    assert len([User(**r) for r in rows]) == 4
+
+
+# ── strict on the write path ──────────────────────────────────────────────────
+# UserUpdate is the body of PUT /users/me and embeds the same UserSettings, but
+# the read-side fallback must not apply to it: a typo would return 200 and
+# silently save NO_ONE instead of what the member picked.
+
+BOOL_FIELDS = ["show_email", "show_phone"]
+
+
+@pytest.mark.parametrize("field", PRIVACY_FIELDS)
+@pytest.mark.parametrize("value", ["EVRYONE", "SOMETHING_WE_RETIRED", 1, ["EVERYONE"]])
+def test_update_rejects_privacy_values_outside_the_enum(field, value):
+    with pytest.raises(ValidationError, match="Invalid privacy setting"):
+        UserUpdate(settings={field: value})
+
+
+@pytest.mark.parametrize("field", [f for f in PRIVACY_FIELDS if f not in BOOL_FIELDS])
+def test_update_rejects_booleans_on_fields_that_never_stored_them(field):
+    with pytest.raises(ValidationError, match="Invalid privacy setting"):
+        UserUpdate(settings={field: True})
+
+
+@pytest.mark.parametrize("field", PRIVACY_FIELDS)
+@pytest.mark.parametrize("legacy, expected", [
+    ("ALL_MEMBERS_WHO_SHARE_THEIR_OWN_LOCATION", PrivacySetting.MEMBERS_MUTUAL),
+    ("ALL_MEMBERS", PrivacySetting.MEMBERS_ONLY),
+    ("EVERYONE_WHO_SHARE_THEIR_OWN_LOCATION", PrivacySetting.EVERYONE_MUTUAL),
+])
+def test_update_accepts_legacy_names_as_their_current_value(field, legacy, expected):
+    """App builds from before the enum rename still send these, and production
+    accepted them. Each maps to exactly one value, so nothing is guessed."""
+    assert getattr(UserUpdate(settings={field: legacy}).settings, field) is expected
+
+
+@pytest.mark.parametrize("field", BOOL_FIELDS)
+def test_update_accepts_legacy_booleans_on_email_and_phone(field):
+    assert getattr(UserUpdate(settings={field: True}).settings, field) is PrivacySetting.MEMBERS_ONLY
+    assert getattr(UserUpdate(settings={field: False}).settings, field) is PrivacySetting.NO_ONE
+
+
+@pytest.mark.parametrize("value", list(PrivacySetting))
+def test_update_accepts_every_published_privacy_value(value):
+    u = UserUpdate(settings={field: value.value for field in PRIVACY_FIELDS})
+    assert all(getattr(u.settings, field) is value for field in PRIVACY_FIELDS)
+
+
+def test_update_accepts_partial_settings_and_null_attendance():
+    """PUT /users/me merges settings into the stored ones, so a body may carry
+    only what changed; show_attendance=None means inherit from show_profile."""
+    u = UserUpdate(settings={"show_profile": "EVERYONE", "show_attendance": None})
+    assert u.model_dump(exclude_unset=True)["settings"] == {
+        "show_profile": PrivacySetting.EVERYONE,
+        "show_attendance": None,
+    }
 
