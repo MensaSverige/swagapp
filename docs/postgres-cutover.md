@@ -4,14 +4,16 @@ The backend no longer speaks MongoDB. `main` runs on PostgreSQL, but **no produc
 data has moved yet** — that is a manual, one-time step, and it has to happen before
 the next release reaches users.
 
-**Do not cut a `v*` release tag until this is done.** Tagging is what triggers
+**Do not cut a `v*` release tag until step 1 is done.** Tagging is what triggers
 `on-release-tag.yml` → GHCR → `swagapp-ops`. Merging to `main` deploys nothing, so
-there is no time pressure; but a release without the migration means the backend
-comes up against an empty database and every member sees an empty app.
+there is no time pressure. A release before step 1 is a full outage: the backend
+cannot reach a database, fails at startup, and crash-loops. A release after step 1
+but without step 3 comes up against an empty database, and every member sees an
+empty app.
 
-Written for whoever owns the cluster and `mensasverige/swagapp-ops`. Anything below
-marked **assumed** could not be verified from this repo — please confirm against the
-actual manifests.
+Written for whoever owns the cluster and `mensasverige/swagapp-ops`. Names are from
+`swagapp-ops/deployment/`: namespace `swagapp`, backend Deployment `backend`, Mongo
+Service `mongo` on 27017.
 
 ---
 
@@ -27,8 +29,9 @@ actual manifests.
 The connection detail matters: there was **no env var before**, so `DATABASE_URL` is
 new configuration that must be added to the backend Deployment. Its default is
 `postgresql://swag:swag@postgres:5432/swag` — local dev credentials. If the variable
-is missing in the cluster the backend will not error clearly; it will try to reach a
-host called `postgres` with the password `swag`.
+is missing in the cluster, the backend tries a host called `postgres` and retries for
+about 30 seconds. Then `initialize_db failed after 5 attempts` is logged, the
+server never loads, and the pod crash-loops.
 
 **Schema creation is automatic.** `initialize_db()` runs on every boot and applies
 Alembic migrations. You only need to provide an empty database and a user that can
@@ -38,18 +41,47 @@ create tables — do not hand-create the schema.
 
 ## 1. Provision (before the release)
 
-- [ ] **PostgreSQL 16** with persistent storage. Dev uses the `postgres:16` image; a
-      managed instance is fine.
-- [ ] A database and an owner role. Defaults assume db `swag`, user `swag`, Service
-      `postgres` on 5432 — matching those means less to configure, but **use a real
-      password**, not the dev one.
-- [ ] A Secret holding the full URL, e.g.
+Production PostgreSQL is an in-cluster CloudNativePG `Cluster`, so there is no
+Postgres Deployment, Service, PVC or hand-made Secret to write. The operator creates
+the volumes, the read-write Service `swagapp-db-rw`, and a `swagapp-db-app` Secret
+whose `uri` key is the full connection URL. The backend and the migration Job both
+read `DATABASE_URL` from that key, so the names below have to match exactly.
 
-      kubectl -n <ns> create secret generic swag-postgres \
-        --from-literal=DATABASE_URL='postgresql://swag:<password>@postgres:5432/swag'
+- [ ] **A `postgresql.cnpg.io/v1` `Cluster` named `swagapp-db`** in namespace
+      `swagapp`. Follow the fleet's existing examples:
+      - `instances: 3`, spread one per zone (sto1/sto2/sto3) with a
+        `topologySpreadConstraint` on `topology.kubernetes.io/zone`.
+      - PostgreSQL 16 to match dev, e.g. `imageName: ghcr.io/cloudnative-pg/postgresql:16`.
+      - The annotation `argocd.argoproj.io/sync-options: Prune=false`, so ArgoCD can
+        never prune a live database.
 
-- [ ] Add `DATABASE_URL` to the **backend Deployment** in `swagapp-ops`, from that
-      Secret. This is the one genuinely new piece of configuration.
+      Schema creation is automatic (see above), so the default `bootstrap.initdb`
+      app database and owner are enough.
+- [ ] **Wait until it is healthy and the Secret exists:**
+
+      kubectl -n swagapp get cluster swagapp-db       # STATUS: Cluster in healthy state
+      kubectl -n swagapp get secret swagapp-db-app    # must exist, with a uri key
+
+- [ ] **Backups.** A green `ScheduledBackup` proves nothing on its own. A backup only
+      counts once a `Backup` object reaches phase `completed`.
+- [ ] **Add `DATABASE_URL` to `deployment/backend-deployment.yaml.tpl`** in
+      `swagapp-ops`. Edit the `.tpl`, not the rendered `.yaml`: every release
+      regenerates the `.yaml` from the `.tpl`. ArgoCD only reads the `.yaml`, so this
+      goes live with the release and not before, and older images ignore it.
+
+          - name: DATABASE_URL
+            valueFrom:
+              secretKeyRef:
+                name: swagapp-db-app
+                key: uri
+
+- [ ] **Make sure the `.tpl` files carry the June HA changes.** The `strategy:
+      Recreate`, resources, anti-affinity and tolerations on the backend, and the 2
+      replicas, rolling strategy and spread on the website, were added only to the
+      rendered `.yaml` files. Unless the templates have them, this release silently
+      reverts them all. Without `Recreate`, the backend rollout can stall on its RWO
+      volume. To check, render each template with the current tag and diff it
+      against its `.yaml`; nothing but the image tag should differ.
 - [ ] **Leave MongoDB running.** It is the migration source and the rollback path.
       Do not delete it, its PVC, or its Service until step 5.
 
@@ -82,34 +114,29 @@ transfer** out of a database that is about to be deleted. Wiring it into every r
 would make every future deploy depend on MongoDB still existing, and it would start
 failing the day Mongo is decommissioned.
 
-If you would rather not rely on remembering it, commit the Job to
-`swagapp-ops/deployment/`. **A Job is immutable once created**, so GitOps re-applying
-the manifest does not re-run it — it runs exactly once at the next sync and then sits
-there completed. Delete the Job object by hand after the cutover.
-
-If you do that, note the manifest deliberately leaves `ttlSecondsAfterFinished`
-commented out. With a TTL the Job object disappears after it finishes, and the next
-GitOps sync would recreate and re-run it — harmless for the data, but a red sync once
-Mongo is gone.
+**Apply it by hand, and do not commit the Job to `swagapp-ops/deployment/`.**
+`update-gitops.yml` re-renders every `*.yaml.tpl` in that directory with each
+release's image tag. A committed Job would get a new image on every later release.
+A Job's pod template is immutable, so ArgoCD's sync would fail from then on, on every
+release.
 
 ### Running it
 
-
 The job needs to reach **both** databases at once, so run it while Mongo is still up.
+Use the image the backend is already running. The published tag is
+`<git tag>.<short sha>` (e.g. `v1.4.0.a1b2c3d`), not the bare release tag:
 
-    sed 's/VERSION/<the release tag>/' deploy/k8s/mongo-to-postgres-job.yaml.tpl \
-      | kubectl -n <ns> apply -f -
+    IMAGE=$(kubectl -n swagapp get deploy backend \
+      -o jsonpath='{.spec.template.spec.containers[0].image}')
+    sed "s|ghcr.io/mensasverige/swagapp/backend:VERSION|$IMAGE|" \
+      deploy/k8s/mongo-to-postgres-job.yaml.tpl | kubectl -n swagapp apply -f -
 
-    kubectl -n <ns> logs -f job/swag-mongo-to-postgres
+    kubectl -n swagapp logs -f job/swag-mongo-to-postgres
 
 The manifest is in this repo at [`deploy/k8s/mongo-to-postgres-job.yaml.tpl`](../deploy/k8s/mongo-to-postgres-job.yaml.tpl).
-It uses the same backend image, so no separate build. Check two things in it before
-applying:
-
-- `MONGO_URL` is `mongodb://mongo:27017`, matching the Service the old backend
-  connected to. **Assumed** — confirm the Service name.
-- `DATABASE_URL` comes from a Secret named `swag-postgres`. Adjust to whatever you
-  created in step 1.
+It uses the same backend image, so no separate build, and needs no editing. It reads
+`DATABASE_URL` from `swagapp-db-app`/`uri`, the same Secret as the backend. Its
+`MONGO_URL` (`mongodb://mongo:27017`) matches the Service in `swagapp-ops`.
 
 **Re-running is safe.** All writes are upserts (`ON CONFLICT`), and user events are
 tracked in a `_mongo_migration_log` table keyed by Mongo ObjectId, so a second run
@@ -132,7 +159,10 @@ If the job appears to stall for ~30s and then fails with a server-selection erro
 
 ## 4. Verify
 
-    kubectl -n <ns> exec -it <postgres-pod> -- psql -U swag -d swag
+    DB=$(kubectl -n swagapp get secret swagapp-db-app -o jsonpath='{.data.dbname}' | base64 -d)
+    kubectl -n swagapp exec -it swagapp-db-1 -- psql -d "$DB"
+
+`swagapp-db-1` is the first CNPG instance. Any instance can answer these reads.
 
 - [ ] `SELECT version_num FROM alembic_version;` → **`002`**
 - [ ] `\dt` → **16 tables**: alembic_version, event_attendees, event_hosts,
@@ -150,7 +180,7 @@ Then in the app:
 - [ ] The map shows members who share their location
 - [ ] Create an event, add tags, reopen it — tags persist
 
-That third check is worth doing deliberately. Mongo stored naive timestamps meaning
+The event-times check is worth doing deliberately. Mongo stored naive timestamps meaning
 Swedish local time; PostgreSQL stores real instants. The migration localizes them on
 the way in, so a 19:00 event stays 19:00. If everything is uniformly an hour early or
 late, the migration ran from an outdated image — stop and say so.
@@ -159,8 +189,7 @@ late, the migration ran from an outdated image — stop and say so.
 
 ## 5. After it is confirmed good
 
-- [ ] Delete the Job: `kubectl -n <ns> delete job swag-mongo-to-postgres`
-      (and remove the manifest from `swagapp-ops` if you committed it there)
+- [ ] Delete the Job: `kubectl -n swagapp delete job swag-mongo-to-postgres`
 - [ ] **Keep MongoDB and its PVC for a while.** It is the only rollback path, and it
       costs nothing to leave running.
 - [ ] Once you are confident, retire the Mongo Deployment, Service, and PVC — and
@@ -169,8 +198,10 @@ late, the migration ran from an outdated image — stop and say so.
       there only so the shipped image can run this migration; nothing in `v1/`
       imports it.
 - [ ] `tools/migrate.sh` (namespace-to-namespace copy, e.g. prod → staging) has been
-      ported to `pg_dump`/`pg_restore`. It now looks for a Postgres pod via
-      `app=postgres`; override with `POSTGRES_SELECTOR=` if your labels differ.
+      ported to `pg_dump`/`pg_restore`, but for a plain Postgres pod. It has not been
+      tried against CloudNativePG: it would need
+      `POSTGRES_SELECTOR=cnpg.io/cluster=swagapp-db`, and its `swag`/`swag`
+      user and database defaults will not match. The cutover does not use it.
 
 ---
 
@@ -197,7 +228,8 @@ real `mongodump` — it is the only way to learn what your actual data contains.
     docker cp <dump-dir> dryrun-mongo:/dump && docker exec dryrun-mongo mongorestore /dump
 
     docker compose down -v && docker compose up -d      # empty Postgres
-    docker compose exec backend sh -c       'cd /app && MONGO_URL=mongodb://mongo:27017 python -m migrations.mongo_to_postgres'
+    docker compose exec backend sh -c \
+      'cd /app && MONGO_URL=mongodb://mongo:27017 python -m migrations.mongo_to_postgres'
 
 Then exercise the app against it — especially `GET /v1/users?show_location=true`,
 because that endpoint fails as a whole if any single row is unreadable.
@@ -220,12 +252,21 @@ All four are fixed on `main`; they are listed so you know what the checks are fo
    failure.
 
 3. **Legacy privacy values 500'd the user list.** The rename
-   (`ALL_MEMBERS` → `MEMBERS_ONLY`, etc.) was only applied to `show_location`,
-   not the other ten `show_*` fields. One migrated row with a legacy value in
-   `show_profile` returned 500 for `GET /v1/users` — hiding every member from the
-   map. The coercion now covers all of them, and an unrecognised value falls back
-   to `NO_ONE` rather than failing: if we cannot tell what someone chose, the safe
-   reading of a privacy setting is the most restrictive one.
+   (`ALL_MEMBERS` → `MEMBERS_ONLY`, etc.) was only applied to `show_location`.
+   One migrated row with a legacy value in `show_profile` returned 500 for
+   `GET /v1/users` — hiding every member from the map. The coercion now covers all
+   fourteen privacy fields. Review caught that `show_email` and `show_phone` were
+   still missing, because their own boolean validator did not handle strings.
+   An unrecognised value falls back to `NO_ONE` rather than failing: if we cannot
+   tell what someone chose, the safe reading of a privacy setting is the most
+   restrictive one.
+
+   The `NO_ONE` fallback only applies to reading. `PUT /v1/users/me` rejects an
+   unrecognised value with a 422; otherwise a client typo would return 200 and
+   silently save `NO_ONE` instead of what the member picked. It still accepts the
+   legacy names, and booleans on `show_email`/`show_phone`. Each maps to exactly
+   one current value, production accepts them today, and app builds from before
+   the rename still send them.
 
 4. **Retired interests 500'd it too.** `interests` is a strict enum of 79 values;
    Mongo holds whatever was valid when written. A single retired value failed the
@@ -248,11 +289,10 @@ specifically.
 
 ---
 
-## Questions this repo cannot answer
+## Settled in review
 
-1. What is the Mongo Service actually called in the cluster? The old code hardcoded
-   `mongo:27017`; the Job assumes that still holds.
-2. Is PostgreSQL provisioned in-cluster or managed? Changes the Secret and the
-   networking, not the procedure.
-3. Does `swagapp-ops` need the Job committed as a template, or is a one-off
-   `kubectl apply` acceptable for something that runs once?
+1. **Mongo Service:** `mongo`, port 27017, namespace `swagapp`, as the Job assumes.
+2. **PostgreSQL:** in-cluster, via a CloudNativePG `Cluster` named `swagapp-db`.
+   Step 1 and the Job are written against it.
+3. **Job delivery:** one-off `kubectl apply`, never committed to `swagapp-ops`. See
+   step 3 for why.
