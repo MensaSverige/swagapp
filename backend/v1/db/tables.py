@@ -7,6 +7,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import relationship
 from v1.db.database import Base
+from v1.events.events_model import event_id
 
 
 def _now():
@@ -450,6 +451,111 @@ class ExternalEventBookingTable(Base):
     __table_args__ = (
         UniqueConstraint("userId", "eventId", name="uq_external_event_booking"),
     )
+
+
+# ── Unified Events ───────────────────────────────────────────
+
+class EventTable(Base):
+    """Events from any source, discriminated by `source`.
+
+    This is the PostgreSQL counterpart of the MongoDB `unifiedevents`
+    collection the cutover dropped: one row per event, identified across
+    sources by (source, source_id).
+
+    Only the member calendar writes here today. `user_events` and
+    `external_event_details` still keep their own tables and are mapped into
+    the unified `Event` shape on read -- moving them in is a separate change,
+    which is why the per-viewer fields below are absent.
+
+    Not stored, because they are not properties of the event itself:
+      - `attending` / `bookable` -- derived per viewer at read time
+      - `attendees` / `queue`    -- child tables, added when user events move in
+    """
+    __tablename__ = "events"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+
+    # Which system the event came from (an EventSource value) and its id there.
+    # Unique together: syncs upsert on this pair, so a re-run updates in place
+    # rather than accumulating duplicates.
+    source = Column(String, nullable=False)
+    source_id = Column(String, nullable=False)
+
+    parentEvent = Column(String, nullable=True)
+    name = Column(String, nullable=False)
+    description = Column(Text, nullable=True)
+
+    # Location (flattened, as in UserEventTable)
+    location_description = Column(String, nullable=True)
+    location_address = Column(String, nullable=True)
+    location_marker = Column(String, nullable=True)
+    location_latitude = Column(Float, nullable=True)
+    location_longitude = Column(Float, nullable=True)
+
+    start = Column(DateTime(timezone=True), nullable=False)
+    end = Column(DateTime(timezone=True), nullable=True)
+    cancelled = Column(DateTime(timezone=True), nullable=True)
+
+    imageUrl = Column(String, nullable=True)
+    bookingStart = Column(DateTime(timezone=True), nullable=True)
+    bookingEnd = Column(DateTime(timezone=True), nullable=True)
+    showAttendees = Column(String, nullable=False, default="none")
+    maxAttendees = Column(Integer, nullable=True)
+    price = Column(Float, nullable=False, default=0.0)
+    official = Column(Boolean, nullable=False, default=False)
+
+    # Denormalised snapshots, stored as JSON for the same reason UserEventTable
+    # stores tags that way: they travel whole and are never queried into.
+    admin = Column(JSON, nullable=True, default=list)
+    hosts = Column(JSON, nullable=True, default=list)
+    tags = Column(JSON, nullable=True, default=list)
+    extras = Column(JSON, nullable=True, default=dict)
+
+    # When the source system created/last changed the event, as opposed to when
+    # we last synced it (created_at/updated_at below).
+    source_created_at = Column(DateTime(timezone=True), nullable=True)
+    source_updated_at = Column(DateTime(timezone=True), nullable=True)
+
+    # Audit
+    created_at = Column(DateTime(timezone=True), default=_now, nullable=False)
+    updated_at = Column(DateTime(timezone=True), default=_now, onupdate=_now, nullable=False)
+
+    __table_args__ = (
+        UniqueConstraint("source", "source_id", name="uq_event_source_id"),
+        Index("ix_events_start", "start"),
+        Index("ix_events_source", "source"),
+    )
+
+    def to_dict(self):
+        return {
+            "id": event_id(self.source, self.source_id),
+            "source": self.source,
+            "sourceId": self.source_id,
+            "parentEvent": self.parentEvent,
+            "admin": self.admin or [],
+            "hosts": self.hosts or [],
+            "name": self.name,
+            "tags": self.tags or [],
+            "locationDescription": self.location_description,
+            "address": self.location_address,
+            "locationMarker": self.location_marker,
+            "latitude": self.location_latitude,
+            "longitude": self.location_longitude,
+            "start": self.start,
+            "end": self.end,
+            "cancelled": self.cancelled,
+            "imageUrl": self.imageUrl,
+            "description": self.description,
+            "bookingStart": self.bookingStart,
+            "bookingEnd": self.bookingEnd,
+            "showAttendees": self.showAttendees,
+            "attendees": [],
+            "queue": [],
+            "maxAttendees": self.maxAttendees,
+            "price": self.price,
+            "official": self.official,
+            "extras": self.extras or {},
+        }
 
 
 # ── Feedback ──────────────────────────────────────────────────────────────────

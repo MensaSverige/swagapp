@@ -9,7 +9,21 @@ class EventSource(str, Enum):
     """Source type for events"""
     external = "external"  # Official external events
     user = "user"  # User-created events
-    ical = "ical"  # iCalendar events from subscription
+    calendar = "calendar"  # Member site calendar events
+
+
+# Event ids carry their source as a prefix so they stay unique across all of
+# them: ext12345 (external), usr7 (user), cal42 (member calendar).
+_ID_PREFIX = {
+    EventSource.external: "ext",
+    EventSource.user: "usr",
+    EventSource.calendar: "cal",
+}
+
+
+def event_id(source, source_id) -> str:
+    """The globally unique unified id for one source's event."""
+    return f"{_ID_PREFIX[EventSource(source)]}{source_id}"
 
 
 class ShowAttendees(str, Enum):
@@ -47,7 +61,7 @@ class Event(BaseModel):
 
     Fields mostly follow the sketch in notes.md. Additional convenience & source-specific fields are stored under `extras`.
     """
-    id: str = Field(..., description="Globally unique event id, prefixed with source (ext / usr / ical)")
+    id: str = Field(..., description="Globally unique event id, prefixed with source (ext / usr / cal)")
     sourceId: Optional[str] = Field(None, description="Original ID from the source system")
     source: EventSource = Field(..., description="Source type of the event")
     parentEvent: Optional[str] = Field(None, description="Optional parent event id")

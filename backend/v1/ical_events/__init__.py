@@ -1,1 +1,0 @@
-# iCalendar events module

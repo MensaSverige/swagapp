@@ -3,7 +3,7 @@ from v1.events.events_mappers import map_external_event, map_user_event, map_eve
 from v1.events.events_service import list_unified_events
 from v1.db.models.external_events import ExternalEventDetails, Category
 from v1.user_events.user_events_model import ExtendedUserEvent, UserEvent, Attendee, Host, Location
-from v1.events.events_model import Event, EventAttendee, Tag
+from v1.events.events_model import Event, EventAttendee, EventSource, Tag, event_id
 
 class DummyExtendedUserEvent(ExtendedUserEvent):
     pass
@@ -102,6 +102,7 @@ def test_filter_event_attendees_also_filters_attendee_names(monkeypatch):
 
     event = Event(
         id="usr123",
+        source=EventSource.user,
         name="Test",
         official=False,
         start=datetime.datetime.utcnow() + datetime.timedelta(hours=1),
@@ -240,6 +241,7 @@ def _make_event_with_tags(tags: list[Tag]) -> Event:
     start = datetime.datetime.now() + datetime.timedelta(hours=2)
     return Event(
         id="usr123",
+        source=EventSource.user,
         parentEvent=None,
         admin=[42],
         hosts=[],
@@ -318,3 +320,22 @@ def test_tags_round_trip():
     assert result.tags[0].code == "art"
     assert result.tags[0].text == "Konst"
 
+
+# -- Unified event ids --------------------------------------------------------
+# One helper builds every event id, so a change here silently renames events
+# across all three sources.
+
+def test_event_id_prefixes_by_source():
+    assert event_id(EventSource.external, 12345) == "ext12345"
+    assert event_id(EventSource.user, 7) == "usr7"
+    assert event_id(EventSource.calendar, "42") == "cal42"
+
+
+def test_event_id_accepts_the_raw_source_string():
+    """Rows read back from the database carry `source` as a plain string."""
+    assert event_id("calendar", "42") == event_id(EventSource.calendar, "42")
+
+
+def test_event_ids_are_unique_across_sources():
+    """The same source id in two systems must not collide."""
+    assert event_id(EventSource.user, "1") != event_id(EventSource.calendar, "1")
