@@ -358,8 +358,13 @@ def migrate_user_events(session, mongo_source=None):
         """), {"mid": mongo_id_str}).fetchone()
 
         if existing is not None:
-            event_pg_id = existing[0]
+            # Already migrated: its child rows were written in the same
+            # transaction as the tracking row, so they are present too.
+            # Falling through to the child loops would re-insert event_reports,
+            # which has no unique constraint to absorb the duplicate — the
+            # hosts/attendees tables only survive it because they do.
             skipped += 1
+            continue
         else:
             row = session.execute(text("""
                 INSERT INTO user_events (
@@ -636,29 +641,92 @@ def migrate_external_event_bookings(session, mongo_source=None):
 # ── Validation ────────────────────────────────────────────────────────────────
 
 def validate(session, mongo_source=None):
-    """Compare Mongo document counts against Postgres row counts.
+    """Check that every migratable Mongo document reached PostgreSQL.
 
-    Uses == not >= so that double-insertion bugs (Postgres has MORE rows than
-    Mongo) are detected, not silently accepted.
+    Compares *migratable* documents, not raw collection counts. Raw counts give
+    false failures in two guaranteed ways:
+
+      - documents the migration deliberately skips (no userId / no eventId)
+        make Mongo look bigger than Postgres;
+      - _seed_review_users() runs on every backend startup, so the users table
+        always holds rows this migration never created, making Postgres look
+        bigger than Mongo.
+
+    Both happen on a perfectly good migration. Reporting failure there is worse
+    than not checking: it teaches whoever runs the cutover to ignore the result.
     """
     source = mongo_source if mongo_source is not None else _get_live_mongo()
+
+    # (label, mongo collection, key field, postgres table, postgres key column)
     checks = [
-        ("users",                   "user"),
-        ("token_storage",           "tokenstorage"),
-        ("user_events",             "userevent"),
-        ("external_event_details",  "externaleventdetails"),
-        ("external_event_bookings", "externaleventbooking"),
+        ("users",                  "user",                 "userId",  "users",                   "userId"),
+        ("token_storage",          "tokenstorage",         "userId",  "token_storage",           "userId"),
+        ("external_event_details", "externaleventdetails", "eventId", "external_event_details",  "eventId"),
     ]
 
     all_ok = True
-    for pg_table, mongo_coll in checks:
-        mongo_count = source[mongo_coll].count_documents({})
-        pg_count = session.execute(text(f'SELECT COUNT(*) FROM "{pg_table}"')).scalar()
-        status = "OK" if pg_count == mongo_count else "MISMATCH"
-        if status != "OK":
+    for label, coll, key, table, col in checks:
+        expected = {d[key] for d in source[coll].find() if d.get(key) is not None}
+        skipped = source[coll].count_documents({}) - len(expected)
+        rows = session.execute(text(f'SELECT "{col}" FROM "{table}"')).scalars().all()
+        missing = expected - set(rows)
+
+        status = "OK" if not missing else "MISSING"
+        if missing:
             all_ok = False
-        log.info("VALIDATE %-30s  Mongo=%4d  Postgres=%4d  %s",
-                 pg_table, mongo_count, pg_count, status)
+        log.info("VALIDATE %-24s migratable=%4d  present=%4d  skipped=%d  %s",
+                 label, len(expected), len(expected) - len(missing), skipped, status)
+        if missing:
+            log.error("  %s absent from Postgres: %s", label,
+                      sorted(missing)[:20])
+        if skipped:
+            log.warning("  %s Mongo documents skipped for a missing %s — "
+                        "expected only if the source data is incomplete", skipped, key)
+
+    # User events have no natural key in Postgres (ids are generated), so
+    # compare against the tracking table the migration writes. Exactly one row
+    # per migratable document: fewer means something did not land, more means
+    # it was inserted twice.
+    _ensure_migration_tracking(session)
+    mongo_events = [d for d in source["userevent"].find() if d.get("userId") is not None]
+    migrated = session.execute(text(
+        "SELECT COUNT(*) FROM _mongo_migration_log WHERE collection = 'userevent'"
+    )).scalar()
+    ev_ok = migrated == len(mongo_events)
+    if not ev_ok:
+        all_ok = False
+    log.info("VALIDATE %-24s migratable=%4d  present=%4d  skipped=%d  %s",
+             "user_events", len(mongo_events), migrated,
+             source["userevent"].count_documents({}) - len(mongo_events),
+             "OK" if ev_ok else ("DUPLICATED" if migrated > len(mongo_events) else "MISSING"))
+
+    # event_reports is the one child table without a unique constraint, so it is
+    # the only one a re-run could silently double. Checked explicitly rather than
+    # by comparing table totals, which review-user rows make meaningless.
+    dupes = session.execute(text("""
+        SELECT COUNT(*) FROM (
+            SELECT event_id, "userId", text FROM event_reports
+            GROUP BY event_id, "userId", text HAVING COUNT(*) > 1
+        ) d
+    """)).scalar()
+    if dupes:
+        all_ok = False
+        log.error("VALIDATE %-24s %d duplicated report rows — the migration ran "
+                  "twice over the same events", "event_reports", dupes)
+    else:
+        log.info("VALIDATE %-24s no duplicates", "event_reports")
+
+    # Bookings are a plain (userId, eventId) set.
+    b_expected = {(d.get("userId"), d.get("eventId")) for d in source["externaleventbooking"].find()
+                  if d.get("userId") is not None and d.get("eventId") is not None}
+    b_rows = set(session.execute(text('SELECT "userId", "eventId" FROM external_event_bookings')).all())
+    b_missing = b_expected - b_rows
+    if b_missing:
+        all_ok = False
+    log.info("VALIDATE %-24s migratable=%4d  present=%4d  skipped=%d  %s",
+             "external_event_bookings", len(b_expected), len(b_expected) - len(b_missing),
+             source["externaleventbooking"].count_documents({}) - len(b_expected),
+             "OK" if not b_missing else "MISSING")
 
     return all_ok
 

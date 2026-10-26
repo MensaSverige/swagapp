@@ -106,11 +106,26 @@ class PrivacySetting(str, Enum):
     EVERYONE        = 'EVERYONE'
 
 
+_PRIVACY_VALUES = frozenset(p.value for p in PrivacySetting)
+
 _LEGACY_LOCATION_RENAMES = {
     "ALL_MEMBERS_WHO_SHARE_THEIR_OWN_LOCATION": "MEMBERS_MUTUAL",
     "ALL_MEMBERS": "MEMBERS_ONLY",
     "EVERYONE_WHO_SHARE_THEIR_OWN_LOCATION": "EVERYONE_MUTUAL",
 }
+
+# Every PrivacySetting field on UserSettings. Leaving one out means a legacy
+# value in it still fails the whole /v1/users response, so the tests check this
+# list against the model's fields rather than trusting it.
+_PRIVACY_FIELDS = (
+    "show_location", "show_profile", "show_email", "show_phone",
+    "show_interests", "show_hometown", "show_birthdate", "show_gender",
+    "show_sexuality", "show_relationship_style", "show_relationship_status",
+    "show_social_vibes", "show_pronomen", "show_attendance",
+)
+
+# Fields stored as booleans before the PrivacySetting enum existed.
+_BOOL_PRIVACY_FIELDS = ("show_email", "show_phone")
 
 
 class UserSettings(BaseModel):
@@ -140,14 +155,30 @@ class UserSettings(BaseModel):
         description="Who can see this user in event attendee lists. None means inherit from show_profile.",
     )
 
-    @field_validator("show_location", mode="before")
+    @field_validator(*_PRIVACY_FIELDS, mode="before")
     @classmethod
-    def _coerce_show_location(cls, v):
-        if isinstance(v, str):
-            return _LEGACY_LOCATION_RENAMES.get(v, v)
-        return v
+    def _coerce_privacy_setting(cls, v):
+        """Accept legacy and unrecognised values instead of failing the response.
 
-    @field_validator("show_email", "show_phone", mode="before")
+        These fields hold whatever the app wrote at the time, and MongoDB never
+        constrained them. A value this enum no longer knows would otherwise fail
+        validation for the whole /v1/users response — one stale row hiding every
+        member from the map, which is how a data problem becomes an outage.
+
+        Unknown values fall back to NO_ONE rather than the field default: if we
+        cannot tell what someone chose, the safe reading of a privacy setting is
+        the most restrictive one.
+
+        The NO_ONE fallback is for reading stored data only. UserUpdate rejects
+        unrecognised values before they get here — see
+        _reject_unknown_privacy_values.
+        """
+        if not isinstance(v, str):
+            return v
+        v = _LEGACY_LOCATION_RENAMES.get(v, v)
+        return v if v in _PRIVACY_VALUES else PrivacySetting.NO_ONE.value
+
+    @field_validator(*_BOOL_PRIVACY_FIELDS, mode="before")
     @classmethod
     def _coerce_bool_privacy(cls, v):
         if isinstance(v, bool):
@@ -225,6 +256,22 @@ class User(BaseModel):
     social_vibes: List[str] = Field(default_factory=list, example=[])
     pronomen: Optional[str] = Field(None, example="hen")
 
+    @field_validator("interests", mode="before")
+    @classmethod
+    def _drop_unknown_interests(cls, v):
+        """Drop interests this enum no longer knows rather than failing.
+
+        The list has changed over time and MongoDB stored whatever was current
+        then, so a migrated profile can carry values that no longer exist. As a
+        strict List[UserInterest] a single stale entry fails validation for the
+        entire /v1/users response, hiding every member from the map.
+
+        Dropping loses that one value; the alternative loses the endpoint.
+        """
+        if not isinstance(v, list):
+            return v
+        known = {i.value for i in UserInterest}
+        return [i for i in v if not isinstance(i, str) or i in known]
 
 class UserUpdate(BaseModel):
     settings: UserSettings
@@ -244,3 +291,37 @@ class UserUpdate(BaseModel):
     relationship_status: Optional[str] = Field(None, example="has_partner")
     social_vibes: Optional[List[str]] = Field(None, example=[])
     pronomen: Optional[str] = Field(None, example="hen")
+
+    @field_validator("settings", mode="before")
+    @classmethod
+    def _reject_unknown_privacy_values(cls, v):
+        """Make the write path strict, where UserSettings is deliberately lenient.
+
+        UserSettings maps unknown privacy values to NO_ONE so one stale stored
+        row cannot fail /v1/users. On a request body that same fallback turns a
+        client typo into a 200 that saves something the member did not choose,
+        so an unrecognised value is a 422 here.
+
+        Legacy names and the old show_email/show_phone booleans are still
+        accepted: each maps to exactly one current value, so nothing is
+        guessed, and app builds from before the enum rename still send them.
+        """
+        if not isinstance(v, dict):
+            return v
+
+        def acceptable(field, value):
+            if isinstance(value, bool):
+                return field in _BOOL_PRIVACY_FIELDS
+            return isinstance(value, str) and (
+                value in _PRIVACY_VALUES or value in _LEGACY_LOCATION_RENAMES
+            )
+
+        invalid = {
+            field: v[field] for field in _PRIVACY_FIELDS
+            if v.get(field) is not None and not acceptable(field, v[field])
+        }
+        if invalid:
+            raise ValueError(
+                f"Invalid privacy setting(s) {invalid}; expected one of {sorted(_PRIVACY_VALUES)}"
+            )
+        return v
