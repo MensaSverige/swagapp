@@ -138,7 +138,8 @@ does not duplicate anything. Delete the finished Job before applying it again.
 
 The job migrates, in order: users → token storage → user events (plus hosts,
 attendees, reports) → external events (plus admins, categories) → external root →
-external event bookings. Then it compares row counts against Mongo.
+external event bookings → feedback votes and the feedback user index. Then it
+compares what landed against Mongo.
 
 - **Exit 0**, ending `Migration complete. All row counts match.` → done.
 - **Exit 1**, ending `Migration completed with mismatches` → the counts disagree.
@@ -285,7 +286,7 @@ All four are fixed on `main`; they are listed so you know what the checks are fo
 ### What the run against production data found
 
 The local rehearsal used a seeded dump. Running the Job against the real Mongo, into
-the new CloudNativePG cluster, found three more. All are fixed.
+the new CloudNativePG cluster, found four more. All are fixed.
 
 5. **The image could not load its PostgreSQL driver.** `requirements.txt` did not
    pin SQLAlchemy, so the image installed 2.1. For a `postgresql://` URL, 2.1 loads
@@ -303,6 +304,11 @@ the new CloudNativePG cluster, found three more. All are fixed.
    PostgreSQL's INTEGER column, and it aborted the migration. The migration now
    stores such a value as no limit, and the API refuses anything above
    2,147,483,647 with a 422 rather than a 500 on save.
+
+8. **Feedback votes and the feedback user index were not migrated at all.**
+   Production held 2 votes and 38 index rows. The index is the only link from an
+   anonymous feedback post to the member who wrote it, which moderation needs.
+   Both are migrated and validated now.
 
 Items 3 and 4 are the same failure shape as the `location_accuracy` bug: a list
 response is all-or-nothing, so one unreadable row takes out the endpoint for

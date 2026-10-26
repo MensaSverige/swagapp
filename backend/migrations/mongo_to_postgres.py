@@ -650,6 +650,55 @@ def migrate_external_event_bookings(session, mongo_source=None):
     return total, upserted
 
 
+# ── Feedback ──────────────────────────────────────────────────────────────────
+
+def migrate_feedback(session, mongo_source=None):
+    """Feedback votes, and the index from anonymous user_hash to member.
+
+    The posts themselves live in GitHub issues. These two collections are the
+    only copy of the votes and of who wrote what, which moderation needs.
+    """
+    source = mongo_source if mongo_source is not None else _get_live_mongo()
+
+    votes = 0
+    for doc in source["feedback_votes"].find():
+        if doc.get("issue_number") is None or not doc.get("user_hash"):
+            continue
+        session.execute(text("""
+            INSERT INTO feedback_votes (issue_number, user_hash, value)
+            VALUES (:issue, :hash, :value)
+            ON CONFLICT (issue_number, user_hash) DO UPDATE SET value = EXCLUDED.value
+        """), {"issue": doc["issue_number"], "hash": doc["user_hash"], "value": _int(doc.get("value"))})
+        votes += 1
+
+    users = 0
+    for doc in source["feedback_user_index"].find():
+        if not doc.get("user_hash"):
+            continue
+        session.execute(text("""
+            INSERT INTO feedback_user_index
+                (user_hash, user_id, member_number, is_member, first_seen, last_seen)
+            VALUES (:hash, :uid, :member, :is_member, :first, :last)
+            ON CONFLICT (user_hash) DO UPDATE SET
+                user_id = EXCLUDED.user_id,
+                member_number = EXCLUDED.member_number,
+                is_member = EXCLUDED.is_member,
+                last_seen = EXCLUDED.last_seen
+        """), {
+            "hash": doc["user_hash"],
+            "uid": doc.get("user_id"),
+            "member": doc.get("member_number"),
+            "is_member": _bool(doc.get("is_member")),
+            "first": _tz(doc.get("first_seen")) or datetime.now(timezone.utc),
+            "last": _tz(doc.get("last_seen")) or datetime.now(timezone.utc),
+        })
+        users += 1
+
+    session.commit()
+    log.info("feedback: %d votes, %d user index rows upserted", votes, users)
+    return votes, users
+
+
 # ── Validation ────────────────────────────────────────────────────────────────
 
 def validate(session, mongo_source=None):
@@ -674,6 +723,7 @@ def validate(session, mongo_source=None):
         ("users",                  "user",                 "userId",  "users",                   "userId"),
         ("token_storage",          "tokenstorage",         "userId",  "token_storage",           "userId"),
         ("external_event_details", "externaleventdetails", "eventId", "external_event_details",  "eventId"),
+        ("feedback_user_index",    "feedback_user_index",  "user_hash", "feedback_user_index",   "user_hash"),
     ]
 
     all_ok = True
@@ -740,6 +790,18 @@ def validate(session, mongo_source=None):
              source["externaleventbooking"].count_documents({}) - len(b_expected),
              "OK" if not b_missing else "MISSING")
 
+    # Votes are keyed by (issue_number, user_hash), like bookings.
+    v_expected = {(d.get("issue_number"), d.get("user_hash")) for d in source["feedback_votes"].find()
+                  if d.get("issue_number") is not None and d.get("user_hash")}
+    v_rows = set(session.execute(text("SELECT issue_number, user_hash FROM feedback_votes")).all())
+    v_missing = v_expected - v_rows
+    if v_missing:
+        all_ok = False
+    log.info("VALIDATE %-24s migratable=%4d  present=%4d  skipped=%d  %s",
+             "feedback_votes", len(v_expected), len(v_expected) - len(v_missing),
+             source["feedback_votes"].count_documents({}) - len(v_expected),
+             "OK" if not v_missing else "MISSING")
+
     return all_ok
 
 
@@ -768,6 +830,7 @@ def main():
         migrate_external_events(session)
         migrate_external_root(session)
         migrate_external_event_bookings(session)
+        migrate_feedback(session)
 
         log.info("--- Validation ---")
         ok = validate(session)
