@@ -36,6 +36,7 @@ from migrations.mongo_to_postgres import (
     migrate_external_event_bookings,
     migrate_external_events,
     migrate_external_root,
+    migrate_feedback,
     migrate_token_storage,
     migrate_user_events,
     migrate_users,
@@ -801,6 +802,52 @@ def test_tz_passes_through_none_and_non_datetimes():
     assert _tz("not a datetime") == "not a datetime"
 
 
+# ── Feedback ──────────────────────────────────────────────────────────────────
+
+_FEEDBACK = dict(
+    feedback_votes=[
+        {"_id": "v1", "issue_number": 12, "user_hash": "abc", "value": 1},
+        {"_id": "v2", "issue_number": 12, "user_hash": "def", "value": -1},
+    ],
+    feedback_user_index=[{
+        "_id": "i1", "user_hash": "abc", "user_id": 2007529, "member_number": "12345",
+        "is_member": True, "first_seen": _NOW, "last_seen": _NOW,
+    }],
+)
+
+
+def test_feedback_votes_and_user_index_land(session):
+    """Production had 2 votes and 38 index rows that the migration left behind.
+
+    Without them every vote is gone and moderators cannot tell which member
+    wrote an anonymous feedback post.
+    """
+    migrate_feedback(session, mongo_source=FakeMongo(**_FEEDBACK))
+
+    assert _scalar(session, "SELECT value FROM feedback_votes WHERE user_hash = 'def'") == -1
+    assert _count(session, "feedback_votes") == 2
+    row = _row(session, "feedback_user_index", user_hash="abc")
+    assert row.user_id == 2007529
+    assert row.member_number == "12345"
+    assert row.is_member
+
+
+def test_feedback_migration_is_idempotent(session):
+    mongo = FakeMongo(**_FEEDBACK)
+
+    migrate_feedback(session, mongo_source=mongo)
+    migrate_feedback(session, mongo_source=mongo)
+
+    assert _count(session, "feedback_votes") == 2
+    assert _count(session, "feedback_user_index") == 1
+
+
+def test_validate_detects_missing_feedback(session):
+    mongo = FakeMongo(**_FEEDBACK)
+
+    assert validate(session, mongo_source=mongo) is False
+
+
 # ── Entry point ───────────────────────────────────────────────────────────────
 
 def test_main_applies_the_schema_before_migrating(monkeypatch):
@@ -817,7 +864,7 @@ def test_main_applies_the_schema_before_migrating(monkeypatch):
     monkeypatch.setattr(database, "run_alembic_migrations", lambda: calls.append("schema"))
     for name in ("migrate_users", "migrate_token_storage", "migrate_user_events",
                  "migrate_external_events", "migrate_external_root",
-                 "migrate_external_event_bookings"):
+                 "migrate_external_event_bookings", "migrate_feedback"):
         monkeypatch.setattr(mm, name, lambda session, _n=name: calls.append(_n))
     monkeypatch.setattr(mm, "validate", lambda session: True)
 
