@@ -8,7 +8,7 @@ the next release reaches users.
 `on-release-tag.yml` → GHCR → `swagapp-ops`. Merging to `main` deploys nothing, so
 there is no time pressure. A release before step 1 is a full outage: the backend
 cannot reach a database, fails at startup, and crash-loops. A release after step 1
-but without step 3 comes up against an empty database, and every member sees an
+but before step 2 comes up against an empty database, and every member sees an
 empty app.
 
 Written for whoever owns the cluster and `mensasverige/swagapp-ops`. Names are from
@@ -24,7 +24,7 @@ Service `mongo` on 27017.
 | Database | MongoDB | PostgreSQL 16 |
 | Connection | hardcoded `MongoClient('mongo', 27017)` | `DATABASE_URL` env var |
 | Schema | implicit (schemaless) | Alembic migrations, applied automatically at startup |
-| Driver | `pymongo` | `psycopg2-binary` |
+| Driver | `pymongo` | `psycopg` 3 (SQLAlchemy 2.1's default for `postgresql://`) |
 
 The connection detail matters: there was **no env var before**, so `DATABASE_URL` is
 new configuration that must be added to the backend Deployment. Its default is
@@ -87,24 +87,10 @@ read `DATABASE_URL` from that key, so the names below have to match exactly.
 
 ---
 
-## 2. Release
+## 2. Copy the data (before the release)
 
-Cut the `v*` tag as usual. The backend starts, connects to the empty PostgreSQL, and
-applies migrations `001` and `002` automatically.
-
-Expected in the logs:
-
-    INFO [alembic.runtime.migration] Running upgrade  -> 001, Initial schema
-    INFO [alembic.runtime.migration] Running upgrade 001 -> 002, Add tags column to user_events
-    INFO:root:Ensuring review users exist.
-    INFO:root:Server started at ...
-
-At this point the app is up but **empty apart from two review accounts**. Members will
-see no events and no profiles. Keep the window between this and step 3 short.
-
----
-
-## 3. Run the migration
+Members stay on Mongo while this runs. The Job only reads from Mongo, so it changes
+nothing they see.
 
 ### Why this is not automatic
 
@@ -120,33 +106,40 @@ release's image tag. A committed Job would get a new image on every later releas
 A Job's pod template is immutable, so ArgoCD's sync would fail from then on, on every
 release.
 
+### An image without a release
+
+The running backend is still a Mongo build, so it cannot run this Job. Build the
+commit you are about to release without deploying it: **Actions → Build backend
+image → Run workflow** on `main`. It publishes
+`ghcr.io/mensasverige/swagapp/backend:build.<short sha>` and changes nothing in
+`swagapp-ops`.
+
 ### Running it
 
-The job needs to reach **both** databases at once, so run it while Mongo is still up.
-Use the image the backend is already running. The published tag is
-`<git tag>.<short sha>` (e.g. `v1.4.0.a1b2c3d`), not the bare release tag:
+The Job needs to reach **both** databases at once, so run it while Mongo is still up.
+It applies the schema itself, so it works on the empty database straight after step 1.
 
-    IMAGE=$(kubectl -n swagapp get deploy backend \
-      -o jsonpath='{.spec.template.spec.containers[0].image}')
+    IMAGE=ghcr.io/mensasverige/swagapp/backend:build.<short sha>
     sed "s|ghcr.io/mensasverige/swagapp/backend:VERSION|$IMAGE|" \
       deploy/k8s/mongo-to-postgres-job.yaml.tpl | kubectl -n swagapp apply -f -
 
     kubectl -n swagapp logs -f job/swag-mongo-to-postgres
 
 The manifest is in this repo at [`deploy/k8s/mongo-to-postgres-job.yaml.tpl`](../deploy/k8s/mongo-to-postgres-job.yaml.tpl).
-It uses the same backend image, so no separate build, and needs no editing. It reads
-`DATABASE_URL` from `swagapp-db-app`/`uri`, the same Secret as the backend. Its
-`MONGO_URL` (`mongodb://mongo:27017`) matches the Service in `swagapp-ops`.
+It needs no editing beyond the image. It reads `DATABASE_URL` from
+`swagapp-db-app`/`uri`, the same Secret as the backend. Its `MONGO_URL`
+(`mongodb://mongo:27017`) matches the Service in `swagapp-ops`.
 
 **Re-running is safe.** All writes are upserts (`ON CONFLICT`), and user events are
 tracked in a `_mongo_migration_log` table keyed by Mongo ObjectId, so a second run
-does not duplicate anything.
+does not duplicate anything. Delete the finished Job before applying it again.
 
 ### Reading the outcome
 
 The job migrates, in order: users → token storage → user events (plus hosts,
 attendees, reports) → external events (plus admins, categories) → external root →
-external event bookings. Then it compares row counts against Mongo.
+external event bookings → feedback votes and the feedback user index. Then it
+compares what landed against Mongo.
 
 - **Exit 0**, ending `Migration complete. All row counts match.` → done.
 - **Exit 1**, ending `Migration completed with mismatches` → the counts disagree.
@@ -154,6 +147,24 @@ external event bookings. Then it compares row counts against Mongo.
 
 If the job appears to stall for ~30s and then fails with a server-selection error,
 `MONGO_URL` is wrong or Mongo is unreachable from that namespace.
+
+---
+
+## 3. Release, then copy again
+
+Cut the `v*` tag from the commit you built in step 2. The backend starts on
+PostgreSQL, finds the schema already at head, and serves the copied data.
+
+Expected in the logs:
+
+    INFO:root:Alembic migrations applied (or already up to date).
+    INFO:root:Ensuring review users exist.
+    INFO:root:Server started at ...
+
+Members kept writing to Mongo between step 2 and the new backend starting. Once it is
+up, delete the Job and run it once more to carry those writes over. Two gaps remain:
+something deleted in Mongo in that window comes back, and nothing written to
+PostgreSQL goes back to Mongo. Both are minutes wide.
 
 ---
 
@@ -212,8 +223,8 @@ changed in Mongo.
 
 After the migration, Mongo is untouched by the process (the script only reads), so
 rollback is still: redeploy the previous backend image, which reconnects to Mongo.
-Anything members created in the PostgreSQL window would be lost, which is the reason
-to keep step 2 → step 3 short.
+Anything members created after the release would be lost, because nothing copies
+PostgreSQL back to Mongo.
 
 ---
 
@@ -271,6 +282,33 @@ All four are fixed on `main`; they are listed so you know what the checks are fo
 4. **Retired interests 500'd it too.** `interests` is a strict enum of 79 values;
    Mongo holds whatever was valid when written. A single retired value failed the
    whole response. Unknown entries are now dropped.
+
+### What the run against production data found
+
+The local rehearsal used a seeded dump. Running the Job against the real Mongo, into
+the new CloudNativePG cluster, found four more. All are fixed.
+
+5. **The image could not load its PostgreSQL driver.** `requirements.txt` did not
+   pin SQLAlchemy, so the image installed 2.1. For a `postgresql://` URL, 2.1 loads
+   `psycopg` 3, and only `psycopg2` was installed. The backend would have
+   crash-looped on release. Tests missed it because they run on SQLite, and older
+   local venvs were still on 2.0. The driver is now `psycopg[binary]`, with
+   `sqlalchemy>=2.1`, and a test loads the driver for a URL in CloudNativePG's shape.
+
+6. **The Job needed the backend to have started first.** Only the backend applied
+   the schema, so the Job failed on an empty database with
+   `relation "users" does not exist`. It now applies it itself. That is what lets
+   step 2 run before the release.
+
+7. **One event had `maxAttendees` 10,000,000,000,000.** It does not fit
+   PostgreSQL's INTEGER column, and it aborted the migration. The migration now
+   stores such a value as no limit, and the API refuses anything above
+   2,147,483,647 with a 422 rather than a 500 on save.
+
+8. **Feedback votes and the feedback user index were not migrated at all.**
+   Production held 2 votes and 38 index rows. The index is the only link from an
+   anonymous feedback post to the member who wrote it, which moderation needs.
+   Both are migrated and validated now.
 
 Items 3 and 4 are the same failure shape as the `location_accuracy` bug: a list
 response is all-or-nothing, so one unreadable row takes out the endpoint for

@@ -5,12 +5,10 @@
 # tag, so a committed Job would get a new image on every later release. A Job's
 # pod template is immutable, so from then on every ArgoCD sync would fail.
 #
-# Reuse the image the backend is already running rather than building the tag by
-# hand. The pipeline publishes "<git tag>.<short sha>" (e.g. v1.4.0.a1b2c3d), so
-# VERSION is not simply the release tag. Each command is one line:
+# The running backend is still a Mongo build, so build the commit you are about
+# to release without deploying it (Actions -> Build backend image), then:
 #
-#   IMAGE=$(kubectl -n swagapp get deploy backend -o jsonpath='{.spec.template.spec.containers[0].image}')
-#   sed "s|ghcr.io/mensasverige/swagapp/backend:VERSION|$IMAGE|" mongo-to-postgres-job.yaml.tpl | kubectl -n swagapp apply -f -
+#   sed "s|ghcr.io/mensasverige/swagapp/backend:VERSION|ghcr.io/mensasverige/swagapp/backend:build.<short sha>|" mongo-to-postgres-job.yaml.tpl | kubectl -n swagapp apply -f -
 #
 # Runbook, including when to run this relative to the release: docs/postgres-cutover.md
 #

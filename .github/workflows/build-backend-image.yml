@@ -1,0 +1,31 @@
+# Builds and publishes a backend image from any commit WITHOUT deploying it.
+# A v* tag both builds and deploys; this is for running something against
+# production before the release, e.g. the Mongo -> PostgreSQL data copy
+# (docs/postgres-cutover.md, step 2).
+name: Build backend image
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+  id-token: write
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      SHORT_SHA: ${{ steps.sha.outputs.SHORT_SHA }}
+    steps:
+      - id: sha
+        run: echo "SHORT_SHA=$(echo $GITHUB_SHA | cut -c 1-7)" >> $GITHUB_OUTPUT
+
+  publish-backend:
+    needs: prepare
+    uses: ./.github/workflows/publish-backend.yml
+    with:
+      docker_tag: build.${{ needs.prepare.outputs.SHORT_SHA }}
+      commit_message: Manual build
+      commit_hash: ${{ needs.prepare.outputs.SHORT_SHA }}
+      release_tag: ${{ github.sha }}

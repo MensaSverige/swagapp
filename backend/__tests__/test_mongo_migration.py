@@ -36,6 +36,7 @@ from migrations.mongo_to_postgres import (
     migrate_external_event_bookings,
     migrate_external_events,
     migrate_external_root,
+    migrate_feedback,
     migrate_token_storage,
     migrate_user_events,
     migrate_users,
@@ -382,6 +383,23 @@ def test_event_location_fields_land(session):
     assert abs(lat - 59.334591) < 1e-6
     assert abs(lon - 18.063240) < 1e-6
     assert desc == "The park"
+
+
+def test_event_max_attendees_beyond_postgres_integer_becomes_no_limit(session):
+    """Production held one event with maxAttendees 10**13, typed as "no limit".
+
+    It does not fit PostgreSQL's INTEGER column, and on the real database it
+    aborted the whole migration. NULL is what the app means by no limit.
+    """
+    mongo = FakeMongo(userevent=[
+        {"_id": "huge", "userId": 1, "name": "Huge", "start": _NOW, "maxAttendees": 10**13},
+        {"_id": "ten", "userId": 1, "name": "Ten", "start": _NOW, "maxAttendees": 10},
+    ])
+
+    migrate_user_events(session, mongo_source=mongo)
+
+    assert _scalar(session, 'SELECT "maxAttendees" FROM user_events WHERE name = :n', n="Huge") is None
+    assert _scalar(session, 'SELECT "maxAttendees" FROM user_events WHERE name = :n', n="Ten") == 10
 
 
 def test_event_missing_userId_skipped(session):
@@ -782,3 +800,75 @@ def test_tz_passes_through_none_and_non_datetimes():
 
     assert _tz(None) is None
     assert _tz("not a datetime") == "not a datetime"
+
+
+# ── Feedback ──────────────────────────────────────────────────────────────────
+
+_FEEDBACK = dict(
+    feedback_votes=[
+        {"_id": "v1", "issue_number": 12, "user_hash": "abc", "value": 1},
+        {"_id": "v2", "issue_number": 12, "user_hash": "def", "value": -1},
+    ],
+    feedback_user_index=[{
+        "_id": "i1", "user_hash": "abc", "user_id": 2007529, "member_number": "12345",
+        "is_member": True, "first_seen": _NOW, "last_seen": _NOW,
+    }],
+)
+
+
+def test_feedback_votes_and_user_index_land(session):
+    """Production had 2 votes and 38 index rows that the migration left behind.
+
+    Without them every vote is gone and moderators cannot tell which member
+    wrote an anonymous feedback post.
+    """
+    migrate_feedback(session, mongo_source=FakeMongo(**_FEEDBACK))
+
+    assert _scalar(session, "SELECT value FROM feedback_votes WHERE user_hash = 'def'") == -1
+    assert _count(session, "feedback_votes") == 2
+    row = _row(session, "feedback_user_index", user_hash="abc")
+    assert row.user_id == 2007529
+    assert row.member_number == "12345"
+    assert row.is_member
+
+
+def test_feedback_migration_is_idempotent(session):
+    mongo = FakeMongo(**_FEEDBACK)
+
+    migrate_feedback(session, mongo_source=mongo)
+    migrate_feedback(session, mongo_source=mongo)
+
+    assert _count(session, "feedback_votes") == 2
+    assert _count(session, "feedback_user_index") == 1
+
+
+def test_validate_detects_missing_feedback(session):
+    mongo = FakeMongo(**_FEEDBACK)
+
+    assert validate(session, mongo_source=mongo) is False
+
+
+# ── Entry point ───────────────────────────────────────────────────────────────
+
+def test_main_applies_the_schema_before_migrating(monkeypatch):
+    """The Job must work on an empty database.
+
+    Run against the new cluster before any backend had started, it failed
+    with 'relation "users" does not exist': only the backend applied the
+    Alembic migrations. Running the data copy before the release depends on
+    the Job creating the schema itself.
+    """
+    import migrations.mongo_to_postgres as mm
+
+    calls = []
+    monkeypatch.setattr(database, "run_alembic_migrations", lambda: calls.append("schema"))
+    for name in ("migrate_users", "migrate_token_storage", "migrate_user_events",
+                 "migrate_external_events", "migrate_external_root",
+                 "migrate_external_event_bookings", "migrate_feedback"):
+        monkeypatch.setattr(mm, name, lambda session, _n=name: calls.append(_n))
+    monkeypatch.setattr(mm, "validate", lambda session: True)
+
+    mm.main()
+
+    assert calls[0] == "schema"
+    assert "migrate_users" in calls
