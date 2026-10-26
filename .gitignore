@@ -92,3 +92,4 @@ yarn-error.log
 shots/
 .claude/settings.local.json
 .grit-attachments/
+/opencode.json
