@@ -1,0 +1,32 @@
+# Throwaway: builds a backend image from this branch for the Postgres cutover
+# rehearsal (SWAGAPP-489), without the GitOps update a release triggers.
+# Delete this branch after the cutover.
+name: Build Postgres rehearsal backend image
+
+on:
+  push:
+    branches:
+      - chore/pgtest-image
+
+permissions:
+  contents: read
+  packages: write
+  id-token: write
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      SHORT_SHA: ${{ steps.sha.outputs.SHORT_SHA }}
+    steps:
+      - id: sha
+        run: echo "SHORT_SHA=$(echo $GITHUB_SHA | cut -c 1-7)" >> $GITHUB_OUTPUT
+
+  publish-backend:
+    needs: prepare
+    uses: ./.github/workflows/publish-backend.yml
+    with:
+      docker_tag: pgtest.${{ needs.prepare.outputs.SHORT_SHA }}
+      commit_message: Postgres cutover rehearsal
+      commit_hash: ${{ needs.prepare.outputs.SHORT_SHA }}
+      release_tag: ${{ github.sha }}
