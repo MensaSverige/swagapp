@@ -24,7 +24,7 @@ Service `mongo` on 27017.
 | Database | MongoDB | PostgreSQL 16 |
 | Connection | hardcoded `MongoClient('mongo', 27017)` | `DATABASE_URL` env var |
 | Schema | implicit (schemaless) | Alembic migrations, applied automatically at startup |
-| Driver | `pymongo` | `psycopg2-binary` |
+| Driver | `pymongo` | `psycopg` 3 (SQLAlchemy 2.1's default for `postgresql://`) |
 
 The connection detail matters: there was **no env var before**, so `DATABASE_URL` is
 new configuration that must be added to the backend Deployment. Its default is

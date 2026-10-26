@@ -1,4 +1,4 @@
-psycopg2-binary # PostgreSQL driver
+psycopg[binary] # PostgreSQL driver: SQLAlchemy 2.1's default for postgresql:// URLs
 pymongo # Only for the one-time Mongo->Postgres cutover (migrations/mongo_to_postgres.py).
         # Nothing in v1/ imports it. Remove once the cutover is done — see docs/postgres-cutover.md
 requests # HTTP requests
@@ -11,7 +11,7 @@ fastapi # FastAPI framework
 fastapi-health # Health checks for FastAPI
 python-multipart # Multipart form data
 uvicorn # ASGI server for FastAPI
-sqlalchemy # ORM for databases
+sqlalchemy>=2.1 # ORM for databases. 2.0 defaults postgresql:// to psycopg2, which is not installed
 alembic # Database migrations
 faker # Fake data generator
 googlemaps # Google Maps API
