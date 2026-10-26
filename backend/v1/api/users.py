@@ -1,3 +1,5 @@
+"""Member profile routes. Docs: docs/Users.md"""
+
 import logging
 import shutil
 import os
@@ -61,34 +63,9 @@ async def get_users(show_location: bool = None,
     return result
 
 
-@users_v1.get("/users/{user_id}", response_model=User)
-async def get_user_by_id(user_id: int,
-                         current_user: dict = Depends(validate_request)):
-    user = get_user(user_id)
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-
-    settings = user.get("settings", {})
-    if user.get("userId") != current_user.get("userId") and not viewer_can_see(
-            settings.get("show_profile", PrivacySetting.MEMBERS_ONLY.value), current_user, "show_profile"):
-        raise HTTPException(status_code=403, detail="Profile not visible")
-
-    _apply_privacy_filter(user, current_user)
-    return user
-
-
-@users_v1.put("/users/me/location", response_model=User)
-async def update_user_location(location: UserLocation,
-                               current_user: dict = Depends(validate_request)):
-    logging.info(f"location: {location}")
-    update_dict = location.model_dump(exclude_unset=True)
-    update_dict['timestamp'] = convert_to_tz_aware(
-        get_current_time())  # Set timestamp to current time
-    current_user['location'] = update_dict
-
-    return update_user(current_user['userId'], current_user)
-
-
+# The literal /users/me routes are declared before /users/{user_id}: the
+# first match wins, so the other order hands "me" to an int path parameter
+# and every call returns 400 (SWAGAPP-490).
 @users_v1.get("/users/me", response_model=User)
 async def get_current_user(current_user: User = Depends(validate_request)):
     return current_user
@@ -102,6 +79,18 @@ async def update_current_user(user_update: UserUpdate,
         existing_settings = current_user.get('settings', {})
         update_dict['settings'] = {**existing_settings, **update_dict['settings']}
     current_user.update(update_dict)
+
+    return update_user(current_user['userId'], current_user)
+
+
+@users_v1.put("/users/me/location", response_model=User)
+async def update_user_location(location: UserLocation,
+                               current_user: dict = Depends(validate_request)):
+    logging.info(f"location: {location}")
+    update_dict = location.model_dump(exclude_unset=True)
+    update_dict['timestamp'] = convert_to_tz_aware(
+        get_current_time())  # Set timestamp to current time
+    current_user['location'] = update_dict
 
     return update_user(current_user['userId'], current_user)
 
@@ -139,3 +128,19 @@ async def update_user_avatar(file: UploadFile = File(...),
                 logging.info(f"Deleted old avatar file: {full_path}")
 
     return update_user(current_user['userId'], current_user)
+
+
+@users_v1.get("/users/{user_id}", response_model=User)
+async def get_user_by_id(user_id: int,
+                         current_user: dict = Depends(validate_request)):
+    user = get_user(user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    settings = user.get("settings", {})
+    if user.get("userId") != current_user.get("userId") and not viewer_can_see(
+            settings.get("show_profile", PrivacySetting.MEMBERS_ONLY.value), current_user, "show_profile"):
+        raise HTTPException(status_code=403, detail="Profile not visible")
+
+    _apply_privacy_filter(user, current_user)
+    return user
