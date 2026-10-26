@@ -2,7 +2,7 @@ from datetime import datetime
 from pydantic import BaseModel, Field, field_validator
 from v1.shared.model_with_id import ModelWithId
 from typing import List, Optional
-from v1.events.events_model import Tag
+from v1.events.events_model import PG_INTEGER_MAX, Tag
 
 
 class Attendee(BaseModel):
@@ -45,7 +45,7 @@ class UserEvent(ModelWithId):
                                       "text": "Report Text"
                                   }])
     attendees: List[Attendee] = Field([], example=[{"userId": 123}])
-    maxAttendees: Optional[int] = Field(None, example=10)
+    maxAttendees: Optional[int] = Field(None, le=PG_INTEGER_MAX, example=10)
     tags: List[Tag] = Field([], example=[])
 
     @field_validator('start', 'end', mode='before')

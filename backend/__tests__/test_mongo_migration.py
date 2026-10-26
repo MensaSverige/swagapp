@@ -384,6 +384,23 @@ def test_event_location_fields_land(session):
     assert desc == "The park"
 
 
+def test_event_max_attendees_beyond_postgres_integer_becomes_no_limit(session):
+    """Production held one event with maxAttendees 10**13, typed as "no limit".
+
+    It does not fit PostgreSQL's INTEGER column, and on the real database it
+    aborted the whole migration. NULL is what the app means by no limit.
+    """
+    mongo = FakeMongo(userevent=[
+        {"_id": "huge", "userId": 1, "name": "Huge", "start": _NOW, "maxAttendees": 10**13},
+        {"_id": "ten", "userId": 1, "name": "Ten", "start": _NOW, "maxAttendees": 10},
+    ])
+
+    migrate_user_events(session, mongo_source=mongo)
+
+    assert _scalar(session, 'SELECT "maxAttendees" FROM user_events WHERE name = :n', n="Huge") is None
+    assert _scalar(session, 'SELECT "maxAttendees" FROM user_events WHERE name = :n', n="Ten") == 10
+
+
 def test_event_missing_userId_skipped(session):
     mongo = FakeMongo(userevent=[
         {"_id": "bad1", "name": "Ghost", "start": _NOW},  # no userId
@@ -782,3 +799,29 @@ def test_tz_passes_through_none_and_non_datetimes():
 
     assert _tz(None) is None
     assert _tz("not a datetime") == "not a datetime"
+
+
+# ── Entry point ───────────────────────────────────────────────────────────────
+
+def test_main_applies_the_schema_before_migrating(monkeypatch):
+    """The Job must work on an empty database.
+
+    Run against the new cluster before any backend had started, it failed
+    with 'relation "users" does not exist': only the backend applied the
+    Alembic migrations. Running the data copy before the release depends on
+    the Job creating the schema itself.
+    """
+    import migrations.mongo_to_postgres as mm
+
+    calls = []
+    monkeypatch.setattr(database, "run_alembic_migrations", lambda: calls.append("schema"))
+    for name in ("migrate_users", "migrate_token_storage", "migrate_user_events",
+                 "migrate_external_events", "migrate_external_root",
+                 "migrate_external_event_bookings"):
+        monkeypatch.setattr(mm, name, lambda session, _n=name: calls.append(_n))
+    monkeypatch.setattr(mm, "validate", lambda session: True)
+
+    mm.main()
+
+    assert calls[0] == "schema"
+    assert "migrate_users" in calls
