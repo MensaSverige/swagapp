@@ -4,6 +4,11 @@ from enum import Enum
 from typing import List, Optional, Any
 from pydantic import BaseModel, Field, field_validator
 
+# Largest value a PostgreSQL INTEGER column holds. maxAttendees is stored in
+# one, so a larger value must be refused at the API instead of failing the
+# INSERT with a 500. Leave the field empty for no limit.
+PG_INTEGER_MAX = 2_147_483_647
+
 
 class ShowAttendees(str, Enum):
     none = "none"
@@ -61,7 +66,7 @@ class Event(BaseModel):
     showAttendees: ShowAttendees = ShowAttendees.none
     attendees: List[EventAttendee] = Field(default_factory=list)
     queue: List[EventAttendee] = Field(default_factory=list)
-    maxAttendees: Optional[int] = None
+    maxAttendees: Optional[int] = Field(None, le=PG_INTEGER_MAX)
     price: float = 0.0
     official: bool = Field(..., description="True for external official events, false for user events")
     attending: bool = Field(False, description="Current user is attending/booked")

@@ -41,6 +41,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 
+from v1.events.events_model import PG_INTEGER_MAX
 from v1.utilities import ensure_aware
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
@@ -101,6 +102,17 @@ def _int(v, default=0):
         return int(v)
     except (TypeError, ValueError):
         return default
+
+
+def _max_attendees(v, mongo_id):
+    """maxAttendees, or None (no limit) when it does not fit an INTEGER column.
+
+    Mongo stored any number; production held 10**13, typed as "no limit".
+    """
+    if v is not None and v > PG_INTEGER_MAX:
+        log.warning("userevent %s: maxAttendees %s does not fit; storing no limit", mongo_id, v)
+        return None
+    return v
 
 
 def _bool(v, default=False):
@@ -385,7 +397,7 @@ def migrate_user_events(session, mongo_source=None):
                 "start": _tz(doc.get("start")),
                 "end": _tz(doc.get("end")),
                 "description": doc.get("description"),
-                "maxAttendees": doc.get("maxAttendees"),
+                "maxAttendees": _max_attendees(doc.get("maxAttendees"), mongo_id),
                 "loc_desc": loc.get("description"),
                 "loc_addr": loc.get("address"),
                 "loc_marker": loc.get("marker"),
@@ -739,6 +751,12 @@ def main():
     import urllib.parse
     parsed = urllib.parse.urlparse(DATABASE_URL)
     log.info("Postgres: %s@%s%s", parsed.username, parsed.hostname, parsed.path)
+
+    # The backend applies the schema on boot, but this Job may run first:
+    # copying the data before the release is what avoids an empty app.
+    # Alembic is a no-op on a database that is already at head.
+    from v1.db import database
+    database.run_alembic_migrations()
 
     pg_engine = create_engine(DATABASE_URL, echo=False)
     Session = sessionmaker(bind=pg_engine)
