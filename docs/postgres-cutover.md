@@ -62,8 +62,17 @@ read `DATABASE_URL` from that key, so the names below have to match exactly.
       kubectl -n swagapp get cluster swagapp-db       # STATUS: Cluster in healthy state
       kubectl -n swagapp get secret swagapp-db-app    # must exist, with a uri key
 
-- [ ] **Backups.** A green `ScheduledBackup` proves nothing on its own. A backup only
-      counts once a `Backup` object reaches phase `completed`.
+- [ ] **Backups, for both databases.** Manifests live in `swagapp-ops`
+      (`postgres-backup.yaml`, `mongo-backup.yaml`) and need the Secret
+      `swagapp-backup-s3` sealed **before** they are merged — see
+      [backups.md](backups.md). A green `ScheduledBackup` proves nothing on its
+      own: a PostgreSQL backup counts once a `Backup` object reaches phase
+      `completed`, and a MongoDB one counts once the object is listed in
+      `grit swift ls swagapp-mongodump-prod`.
+
+      Merge the PostgreSQL half before the flip, not after. Adding the
+      barman-cloud plugin rolls the three instances, and that is free while
+      nothing but `backend-pgtest` reads them.
 - [ ] **Add `DATABASE_URL` to `deployment/backend-deployment.yaml.tpl`** in
       `swagapp-ops`. Edit the `.tpl`, not the rendered `.yaml`: every release
       regenerates the `.yaml` from the `.tpl`. ArgoCD only reads the `.yaml`, so this
@@ -152,6 +161,18 @@ If the job appears to stall for ~30s and then fails with a server-selection erro
 
 ## 3. Release, then copy again
 
+**Snapshot MongoDB first.** This is the last moment at which rolling back is
+just redeploying the old image, and Mongo becomes the only copy of the members'
+data the instant the new backend starts writing to PostgreSQL:
+
+    kubectl -n swagapp create job --from=cronjob/mongo-backup mongo-backup-preflip
+    kubectl -n swagapp wait --for=condition=complete job/mongo-backup-preflip --timeout=5m
+    kubectl -n swagapp logs job/mongo-backup-preflip -c upload
+
+Do not cut the tag until `grit swift ls swagapp-mongodump-prod` lists the
+object. The nightly job keeps taking one every day after this, so Mongo stays
+restorable for the whole safety window — see [backups.md](backups.md).
+
 Cut the `v*` tag from the commit you built in step 2. The backend starts on
 PostgreSQL, finds the schema already at head, and serves the copied data.
 
@@ -203,8 +224,14 @@ late, the migration ran from an outdated image — stop and say so.
 - [ ] Delete the Job: `kubectl -n swagapp delete job swag-mongo-to-postgres`
 - [ ] **Keep MongoDB and its PVC for a while.** It is the only rollback path, and it
       costs nothing to leave running.
+- [ ] Before retiring anything, prove the last Mongo snapshot restores: fetch it
+      and `mongorestore` it into a throwaway instance, per
+      [backups.md](backups.md). An archive nobody has opened is not a backup.
 - [ ] Once you are confident, retire the Mongo Deployment, Service, and PVC — and
-      `mongo-express` if it is still deployed.
+      `mongo-express` if it is still deployed. **Remove
+      `deployment/mongo-backup.yaml` in the same change**, or the backup job
+      fails every night against a Service that no longer exists. The snapshots
+      already in `swagapp-mongodump-prod` are kept; nothing deletes them.
 - [ ] Back in this repo: remove `pymongo` from `backend/v1/requirements.txt`. It is
       there only so the shipped image can run this migration; nothing in `v1/`
       imports it.
@@ -225,6 +252,12 @@ After the migration, Mongo is untouched by the process (the script only reads), 
 rollback is still: redeploy the previous backend image, which reconnects to Mongo.
 Anything members created after the release would be lost, because nothing copies
 PostgreSQL back to Mongo.
+
+If Mongo itself is gone or damaged — a lost volume, a bad restore, a pod that
+will not start — restore the pre-flip snapshot into it first and then redeploy
+the old image. [backups.md](backups.md) has the commands. Mongo's image is
+pinned to `mongo:8.3` for this reason: `latest` has moved to 9.0, and the
+rollback path must not change server major on a pod restart.
 
 ---
 
