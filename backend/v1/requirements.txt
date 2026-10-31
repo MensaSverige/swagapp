@@ -11,7 +11,7 @@ fastapi # FastAPI framework
 fastapi-health # Health checks for FastAPI
 python-multipart # Multipart form data
 uvicorn # ASGI server for FastAPI
-sqlalchemy>=2.1 # ORM for databases. 2.0 defaults postgresql:// to psycopg2, which is not installed
+sqlalchemy>=2.1.6 # ORM for databases. 2.0 defaults postgresql:// to psycopg2, which is not installed
 alembic # Database migrations
 faker # Fake data generator
 googlemaps # Google Maps API
