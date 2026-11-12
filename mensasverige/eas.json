@@ -8,6 +8,7 @@
       "channel": "development",
       "developmentClient": true,
       "distribution": "internal",
+      "environment": "development",
       "env": {
         "APP_ENV": "development"
       }
@@ -15,6 +16,7 @@
     "preview": {
       "channel": "preview",
       "distribution": "internal",
+      "environment": "preview",
       "env": {
         "APP_ENV": "preview"
       }
@@ -22,6 +24,7 @@
     "production": {
       "channel": "production",
       "autoIncrement": true,
+      "environment": "production",
       "env": {
         "APP_ENV": "production"
       }

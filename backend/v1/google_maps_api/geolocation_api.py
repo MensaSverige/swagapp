@@ -5,18 +5,18 @@ from fastapi import APIRouter, Depends
 import googlemaps
 from v1.google_maps_api.geolocation_model import GeoLocation
 from v1.request_filter import validate_request
-from v1.env_constants import GOOGLE_MAPS_API_KEY
+from v1.env_constants import GOOGLE_GEOCODING_API_KEY
 
 
 geolocation_v1 = APIRouter(prefix="/v1")
 
-if GOOGLE_MAPS_API_KEY and GOOGLE_MAPS_API_KEY != "":
-    gmaps = googlemaps.Client(key=GOOGLE_MAPS_API_KEY)
+if GOOGLE_GEOCODING_API_KEY and GOOGLE_GEOCODING_API_KEY != "":
+    gmaps = googlemaps.Client(key=GOOGLE_GEOCODING_API_KEY)
 
 @geolocation_v1.get("/geolocation/{address}")
 def getLocationByAdress(address : str, current_user: dict = Depends(validate_request)) -> GeoLocation:
-    if not GOOGLE_MAPS_API_KEY or GOOGLE_MAPS_API_KEY == "":
-        raise HTTPException(status_code=500, detail="Google Maps API key is not configured")
+    if not GOOGLE_GEOCODING_API_KEY or GOOGLE_GEOCODING_API_KEY == "":
+        raise HTTPException(status_code=500, detail="Google Geocoding API key is not configured")
     
     # This function will get the location of the given address
     

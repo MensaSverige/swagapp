@@ -72,8 +72,8 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       [
         "react-native-maps",
         {
-          androidGoogleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY,
-          iOSGoogleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY,
+          androidGoogleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY_ANDROID,
+          iOSGoogleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY_IOS,
         },
       ],
       "expo-secure-store",
