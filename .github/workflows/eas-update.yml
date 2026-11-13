@@ -1,3 +1,8 @@
+# Publishes an OTA update to the channel with the same name as the environment.
+#
+# runtimeVersion follows `version` in app.config.ts, so the update only reaches
+# builds of exactly that version. JS that needs native code a build doesn't have
+# will crash it, so bump `version` (and make a store build) with every native change.
 name: EAS Update
 
 on:
@@ -35,39 +40,35 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
+          cache: yarn
+          cache-dependency-path: mensasverige/yarn.lock
 
       - name: Install dependencies
-        run: |
-          yarn 
-          
+        run: yarn install --frozen-lockfile
+
       - name: Setup EAS
         uses: expo/expo-github-action@v8
         with:
           eas-version: latest
           token: ${{ secrets.EXPO_TOKEN }}
-  
-      - name: Set update message
-        id: update-message
-        run: |
-          if [[ "${{ github.event_name }}" == "workflow_call" ]] || [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-            if [[ -n "${{ inputs.release_tag }}" ]]; then
-              echo "message=Release ${{ inputs.release_tag }}" >> $GITHUB_OUTPUT
-            else
-              echo "message=Update - $(git log -1 --pretty=%s)" >> $GITHUB_OUTPUT
-            fi
-          else
-            echo "message=Update from main branch - $(git log -1 --pretty=%s)" >> $GITHUB_OUTPUT
-          fi
-        
+
       - name: EAS Update
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
           APP_ENV: ${{ inputs.environment }}
+          ENVIRONMENT: ${{ inputs.environment }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
         run: |
-          echo "Publishing update for all platforms..."
-          npx eas update --environment ${{ inputs.environment }} --channel ${{ inputs.environment }} --message "${{ steps.update-message.outputs.message }}"
+          if [[ -n "$RELEASE_TAG" ]]; then
+            MESSAGE="Release $RELEASE_TAG"
+          else
+            MESSAGE="$(git log -1 --pretty=%s)"
+          fi
+
+          echo "Publishing update to $ENVIRONMENT: $MESSAGE"
+          eas update --environment "$ENVIRONMENT" --channel "$ENVIRONMENT" --message "$MESSAGE" --non-interactive

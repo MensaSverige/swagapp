@@ -6,9 +6,7 @@
 </p>
 
 <p align="center">
-<img src="https://github.com/mensasverige/swagapp/actions/workflows/publish-android.yml/badge.svg">
-<img src="https://github.com/mensasverige/swagapp/actions/workflows/publish-website.yml/badge.svg">
-<img src="https://github.com/mensasverige/swagapp/actions/workflows/publish-backend.yml/badge.svg">
+<img src="https://github.com/mensasverige/swagapp/actions/workflows/on-release-tag.yml/badge.svg">
 </p>
 
 <h1 align="center">📱 Mensa Sverige SWAG App</h1>

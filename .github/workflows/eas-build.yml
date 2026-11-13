@@ -1,3 +1,9 @@
+# Starts a build on EAS and finishes as soon as it is queued (--no-wait).
+# Follow the build itself on expo.dev.
+#
+# The production profile also submits to the stores (--auto-submit). That needs
+# the submit keys stored on EAS: a Google Service Account Key for Android and an
+# App Store Connect API Key for iOS (see `eas credentials`).
 name: EAS Build
 
 on:
@@ -51,74 +57,51 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
+          cache: yarn
+          cache-dependency-path: mensasverige/yarn.lock
 
       - name: Install dependencies
-        run: |
-          yarn 
-          
+        run: yarn install --frozen-lockfile
+
       - name: Setup EAS
         uses: expo/expo-github-action@v8
         with:
           eas-version: latest
           token: ${{ secrets.EXPO_TOKEN }}
 
-      - name: Set build parameters
-        id: build-params
-        run: |
-          PROFILE="${{ inputs.profile || 'preview' }}"
-          PLATFORM="${{ inputs.platform || 'all' }}"
-          CLEAR_CACHE="${{ inputs.clear_cache || 'false' }}"
-          
-          # Auto-submit only for production profile
-          if [[ "$PROFILE" == "production" ]]; then
-            AUTO_SUBMIT="true"
-          else
-            AUTO_SUBMIT="false"
-          fi
-          
-          echo "profile=$PROFILE" >> $GITHUB_OUTPUT
-          echo "platform=$PLATFORM" >> $GITHUB_OUTPUT
-          echo "clear_cache=$CLEAR_CACHE" >> $GITHUB_OUTPUT
-          echo "auto_submit=$AUTO_SUBMIT" >> $GITHUB_OUTPUT
-          
-          echo "Building profile: $PROFILE"
-          echo "Platform: $PLATFORM"
-          echo "Clear cache: $CLEAR_CACHE"
-          echo "Auto submit: $AUTO_SUBMIT"
-
       - name: Build with EAS
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+          PROFILE: ${{ inputs.profile }}
+          PLATFORM: ${{ inputs.platform }}
+          CLEAR_CACHE: ${{ inputs.clear_cache }}
         run: |
-          BUILD_ARGS="--profile ${{ steps.build-params.outputs.profile }}"
-          
-          if [[ "${{ steps.build-params.outputs.platform }}" != "all" ]]; then
-            BUILD_ARGS="$BUILD_ARGS --platform ${{ steps.build-params.outputs.platform }}"
+          ARGS=(--profile "$PROFILE" --platform "$PLATFORM" --non-interactive --no-wait)
+          if [[ "$CLEAR_CACHE" == "true" ]]; then
+            ARGS+=(--clear-cache)
           fi
-          
-          if [[ "${{ steps.build-params.outputs.clear_cache }}" == "true" ]]; then
-            BUILD_ARGS="$BUILD_ARGS --clear-cache"
+          if [[ "$PROFILE" == "production" ]]; then
+            ARGS+=(--auto-submit)
           fi
-          
-          if [[ "${{ steps.build-params.outputs.auto_submit }}" == "true" ]]; then
-            BUILD_ARGS="$BUILD_ARGS --auto-submit"
-          fi
-          
-          echo "Running: npx eas build $BUILD_ARGS --non-interactive"
-          npx eas build $BUILD_ARGS --non-interactive
+
+          echo "Running: eas build ${ARGS[*]}"
+          eas build "${ARGS[@]}"
 
       - name: Build Summary
         if: always()
+        env:
+          PROFILE: ${{ inputs.profile }}
+          PLATFORM: ${{ inputs.platform }}
         run: |
-          echo "## Build Summary" >> $GITHUB_STEP_SUMMARY
-          echo "- **Profile**: ${{ steps.build-params.outputs.profile }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Platform**: ${{ steps.build-params.outputs.platform }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Clear Cache**: ${{ steps.build-params.outputs.clear_cache }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Auto Submit**: ${{ steps.build-params.outputs.auto_submit }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Branch**: ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+          {
+            echo "## EAS build queued"
+            echo "- **Profile**: $PROFILE"
+            echo "- **Platform**: $PLATFORM"
+            echo "- **Commit**: $GITHUB_SHA ($GITHUB_REF_NAME)"
+            echo "- Follow it at https://expo.dev/accounts/mensasverige/projects/mensasverige/builds"
+          } >> "$GITHUB_STEP_SUMMARY"
