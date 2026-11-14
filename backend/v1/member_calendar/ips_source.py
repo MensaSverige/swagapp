@@ -12,25 +12,26 @@ from __future__ import annotations
 
 import json
 import logging
-import os
 import re
+from io import StringIO
 from datetime import datetime, timezone
 from typing import List, Optional
 
+import paramiko
 import pymysql
 from sshtunnel import SSHTunnelForwarder
 
 from v1.member_calendar.calendar_model import MemberCalendarEvent
 from v1.env_constants import (
-    IPS_SSH_HOST,
-    IPS_SSH_PORT,
-    IPS_SSH_USER,
-    IPS_SSH_PASSWORD,
-    IPS_SSH_KEY_PATH,
-    IPS_DB_HOST,
-    IPS_DB_NAME,
-    IPS_DB_USER,
-    IPS_DB_PASS,
+    MEDLEM_SSH_HOST,
+    MEDLEM_SSH_PORT,
+    MEDLEM_SSH_USER,
+    MEDLEM_SSH_KEY,
+    MEDLEM_SSH_PASSWORD,
+    MEDLEM_DB_HOST,
+    MEDLEM_DB_NAME,
+    MEDLEM_DB_USER,
+    MEDLEM_DB_PASS,
 )
 
 
@@ -60,17 +61,47 @@ EVENTS_QUERY = """
 EVENT_URL = "https://medlem.mensa.se/calendar/event/{event_id}/"
 
 
+# Every private key format paramiko can read. Tried in turn because the PEM
+# header alone does not say which one it is -- OpenSSH's own container holds
+# ed25519, RSA and ECDSA keys under the same first line.
+_KEY_TYPES = (paramiko.Ed25519Key, paramiko.RSAKey, paramiko.ECDSAKey)
+
+
+def _private_key(material: str):
+    """Parse an SSH private key held as TEXT, not as a file on disk.
+
+    The secret vault hands out the key's contents, and a pod has nowhere to
+    point a path at, so the key never touches the filesystem.
+
+    A secret store or an env file routinely flattens a PEM into one line with
+    literal backslash-n between the armour and the body; that is unparseable,
+    and silently so, which is why it is repaired here rather than diagnosed in
+    an incident. Returns None if the material is not a key at all.
+    """
+    if not material:
+        return None
+    text = material.replace("\\n", "\n").strip() + "\n"
+    for key_type in _KEY_TYPES:
+        try:
+            return key_type.from_private_key(StringIO(text))
+        except Exception:
+            continue
+    logger.error("Member site SSH key could not be parsed as any known key type")
+    return None
+
+
 def _ssh_tunnel() -> SSHTunnelForwarder:
     """Open an SSH tunnel to the member site."""
     kwargs = {
-        "ssh_address_or_host": (IPS_SSH_HOST, int(IPS_SSH_PORT or 22)),
-        "ssh_username": IPS_SSH_USER,
-        "remote_bind_address": (IPS_DB_HOST or "127.0.0.1", 3306),
+        "ssh_address_or_host": (MEDLEM_SSH_HOST, int(MEDLEM_SSH_PORT or 22)),
+        "ssh_username": MEDLEM_SSH_USER,
+        "remote_bind_address": (MEDLEM_DB_HOST or "127.0.0.1", 3306),
     }
-    if IPS_SSH_KEY_PATH:
-        kwargs["ssh_pkey"] = IPS_SSH_KEY_PATH
-    elif IPS_SSH_PASSWORD:
-        kwargs["ssh_password"] = IPS_SSH_PASSWORD
+    key = _private_key(MEDLEM_SSH_KEY)
+    if key is not None:
+        kwargs["ssh_pkey"] = key
+    elif MEDLEM_SSH_PASSWORD:
+        kwargs["ssh_password"] = MEDLEM_SSH_PASSWORD
     return SSHTunnelForwarder(**kwargs)
 
 
@@ -203,14 +234,15 @@ def fetch_member_calendar_events() -> List[MemberCalendarEvent]:
     reach should leave the last successful sync in place, not break the
     scheduler.
     """
-    if not all([IPS_SSH_HOST, IPS_SSH_USER, IPS_DB_NAME, IPS_DB_USER, IPS_DB_PASS]):
+    if not all([MEDLEM_SSH_HOST, MEDLEM_SSH_USER, MEDLEM_DB_NAME,
+                MEDLEM_DB_USER, MEDLEM_DB_PASS]):
         logger.warning("Member calendar database not fully configured, skipping sync")
         return []
 
-    if IPS_SSH_KEY_PATH and not (
-        os.path.isfile(IPS_SSH_KEY_PATH) and os.path.getsize(IPS_SSH_KEY_PATH) > 0
-    ):
-        logger.warning("IPS SSH key file missing or empty, skipping member calendar sync")
+    # Refuse before connecting rather than hand paramiko nothing and let it
+    # fall through to whatever else it can find.
+    if not MEDLEM_SSH_PASSWORD and _private_key(MEDLEM_SSH_KEY) is None:
+        logger.warning("No usable member site SSH credential, skipping sync")
         return []
 
     events: List[MemberCalendarEvent] = []
@@ -222,9 +254,9 @@ def fetch_member_calendar_events() -> List[MemberCalendarEvent]:
         conn = pymysql.connect(
             host="127.0.0.1",
             port=tunnel.local_bind_port,
-            user=IPS_DB_USER,
-            password=IPS_DB_PASS,
-            database=IPS_DB_NAME,
+            user=MEDLEM_DB_USER,
+            password=MEDLEM_DB_PASS,
+            database=MEDLEM_DB_NAME,
             charset="utf8mb4",
             cursorclass=pymysql.cursors.DictCursor,
         )

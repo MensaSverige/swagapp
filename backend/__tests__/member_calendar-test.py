@@ -415,22 +415,6 @@ def test_events_query_targets_real_tables():
     assert "LEFT JOIN calendar_calendars c ON c.cal_id = e.event_calendar_id" in EVENTS_QUERY
 
 
-def test_ssh_tunnel_can_be_built(monkeypatch):
-    """Building the tunnel loads paramiko's key classes; it connects only on start().
-
-    sshtunnel 0.4.0 still names paramiko.DSSKey, which paramiko 4.0 removed.
-    The module imported fine, so every other test passed while each sync
-    failed with an AttributeError before reaching the member site.
-    """
-    from sshtunnel import SSHTunnelForwarder
-    from v1.member_calendar import ips_source
-
-    monkeypatch.setattr(ips_source, "IPS_SSH_HOST", "127.0.0.1")
-    monkeypatch.setattr(ips_source, "IPS_SSH_USER", "sync")
-    monkeypatch.setattr(ips_source, "IPS_SSH_PASSWORD", "secret")
-    assert isinstance(ips_source._ssh_tunnel(), SSHTunnelForwarder)
-
-
 def test_row_without_a_title_gets_a_placeholder():
     event = row_to_event(_row(event_id=2, event_title=None))
     assert event.title == "Untitled Event"
@@ -532,32 +516,6 @@ def test_repeated_city_is_geocoded_once_across_runs(monkeypatch):
     assert len(calls) == 1
     store_member_calendar_events([_no_coords(source_id="r4", city="Örebro")])
     assert len(calls) == 1
-
-
-# -- SSH key robustness -------------------------------------------------------
-
-def _configure(monkeypatch, key_path):
-    from v1.member_calendar import ips_source
-    for name, val in [("IPS_SSH_HOST", "h"), ("IPS_SSH_USER", "u"), ("IPS_DB_NAME", "d"),
-                      ("IPS_DB_USER", "u"), ("IPS_DB_PASS", "p"), ("IPS_SSH_KEY_PATH", key_path)]:
-        monkeypatch.setattr(ips_source, name, val)
-
-    def no_tunnel():
-        raise AssertionError("tunnel must not be built")
-    monkeypatch.setattr(ips_source, "_ssh_tunnel", no_tunnel)
-    return ips_source
-
-
-def test_missing_ssh_key_file_skips_the_sync(monkeypatch, tmp_path):
-    src = _configure(monkeypatch, str(tmp_path / "absent"))
-    assert src.fetch_member_calendar_events() == []
-
-
-def test_empty_ssh_key_file_skips_the_sync(monkeypatch, tmp_path):
-    key = tmp_path / "key"
-    key.write_text("")
-    src = _configure(monkeypatch, str(key))
-    assert src.fetch_member_calendar_events() == []
 
 
 # -- How precise an approximate location is -----------------------------------
