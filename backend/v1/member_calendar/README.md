@@ -20,6 +20,9 @@ name the software the member site happens to run.
    - `fetch_member_calendar_events()`: opens the SSH tunnel, queries MySQL,
      returns `MemberCalendarEvent`s
    - `row_to_event()`: one database row to one model, HTML stripped from the body
+   - The query joins `core_members` for the organiser's display name and their
+     Mensa membership number (`mensa_id`), and takes nothing else from that
+     table -- it also holds email addresses and registration IPs
    - IPS specifics are confined to this file
 
 3. **Database layer** (`calendar_db.py`)
