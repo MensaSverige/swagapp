@@ -17,6 +17,7 @@ from v1.user_events.user_events_db import (
     add_attendee_to_user_event as db_add_attendee_to_user_event,
     remove_attendee_from_user_event as db_remove_attendee_from_user_event,
 )
+from v1.member_calendar.calendar_db import get_member_calendar_events_since
 from v1.user_events.user_events_model import UserEvent, Host as UEHost, Attendee as UEAttendee, Location as UELocation
 from v1.utilities import get_current_time
 from v1.db.users import get_users_by_ids
@@ -67,7 +68,7 @@ def list_unified_events(
     bookable: Optional[bool] = None,
     official: Optional[bool] = None,
 ) -> List[Event]:
-    """Fetch, map, merge and filter events from both sources.
+    """Fetch, map, merge and filter events from all sources (external, user, member calendar).
 
     Filters follow semantics: if param is None -> include both states; else match exact state.
     """
@@ -128,7 +129,16 @@ def list_unified_events(
         for u in user_events
     ]
 
-    merged = external_events + user_events_mapped
+    # Member calendar events (synced into the unified `events` table)
+    try:
+        # Same one-month-back window as user events above.
+        one_month_back = get_current_time() - timedelta(days=30)
+        calendar_events = get_member_calendar_events_since(one_month_back)
+    except Exception as e:
+        logging.error(f"Failed to fetch member calendar events: {e}")
+        calendar_events = []
+
+    merged = external_events + user_events_mapped + calendar_events
 
     # Do not filter to future only; keep all external events and user events from one month back.
 

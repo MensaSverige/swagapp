@@ -568,9 +568,16 @@ export interface components {
         Event: {
             /**
              * Id
-             * @description Globally unique event id, prefixed with source (ext / usr)
+             * @description Globally unique event id, prefixed with source (ext / usr / cal)
              */
             id: string;
+            /**
+             * Sourceid
+             * @description Original ID from the source system
+             */
+            sourceId?: string | null;
+            /** @description Source type of the event */
+            source: components["schemas"]["EventSource"];
             /**
              * Parentevent
              * @description Optional parent event id
@@ -677,6 +684,12 @@ export interface components {
             /** By */
             by: string;
         };
+        /**
+         * EventSource
+         * @description Source type for events
+         * @enum {string}
+         */
+        EventSource: "external" | "user" | "calendar";
         /** ExtendedUserEvent */
         ExtendedUserEvent: {
             /**

@@ -85,6 +85,7 @@ yarn-error.log
 .grit-cache
 .grit/
 .claude/
+CLAUDE.md
 .mcp.json
 .playwright-mcp/
 .vscode/extensions/
