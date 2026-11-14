@@ -47,9 +47,12 @@ EVENTS_QUERY = """
         e.event_saved,
         e.event_lastupdated,
         e.event_calendar_id,
-        c.cal_title_seo
+        c.cal_title_seo,
+        m.name AS organizer_name,
+        m.mensa_id AS organizer_mensa_id
     FROM calendar_events e
     LEFT JOIN calendar_calendars c ON c.cal_id = e.event_calendar_id
+    LEFT JOIN core_members m ON m.member_id = e.event_member_id
     WHERE e.event_approved = 1
     ORDER BY e.event_start_date DESC
 """
@@ -109,6 +112,19 @@ def _coord(value) -> Optional[float]:
         return None
     try:
         number = float(value)
+    except (TypeError, ValueError):
+        return None
+    return number or None
+
+
+def _member_number(value) -> Optional[int]:
+    """`mensa_id` is 0, not NULL, for a member without a membership number.
+
+    Ten of the member site's 8799 members are in that position, and 0 is
+    nobody -- it must not reach the app as a user id.
+    """
+    try:
+        number = int(value)
     except (TypeError, ValueError):
         return None
     return number or None
@@ -174,9 +190,8 @@ def row_to_event(row: dict) -> Optional[MemberCalendarEvent]:
         end=row.get("event_end_date"),
         created=_unix_to_utc(row.get("event_saved")),
         last_modified=_unix_to_utc(row.get("event_lastupdated")),
-        # IPS stores the creator as a member id, which we cannot resolve to a
-        # name from here. Left unset until the sync learns to look it up.
-        organizer=None,
+        organizer=_text(row.get("organizer_name")),
+        organizer_id=_member_number(row.get("organizer_mensa_id")),
         url=EVENT_URL.format(event_id=row["event_id"]),
     )
 

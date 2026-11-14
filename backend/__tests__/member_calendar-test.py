@@ -45,6 +45,7 @@ def _event(source_id="1", title="Manadsmote", **kw):
         created=datetime.datetime(2026, 6, 1, 12, 0, 0, tzinfo=datetime.timezone.utc),
         last_modified=datetime.datetime(2026, 6, 2, 12, 0, 0, tzinfo=datetime.timezone.utc),
         organizer=None,
+        organizer_id=None,
         url="https://medlem.mensa.se/calendar/event/1/",
     )
     base.update(kw)
@@ -177,6 +178,22 @@ def test_missing_organizer_leaves_hosts_empty():
     assert get_all_member_calendar_events()[0].hosts == []
 
 
+def test_organizer_id_becomes_the_host_user_id():
+    """A host the app can link to a profile, rather than a bare name."""
+    store_member_calendar_events(
+        [_event(source_id="hosted-id", organizer="Pontus", organizer_id=2003148)])
+    hosts = get_all_member_calendar_events()[0].hosts
+    assert [(h.userId, h.fullName) for h in hosts] == [(2003148, "Pontus")]
+
+
+def test_organizer_without_a_membership_number_still_hosts():
+    """Ten of the member site's 8799 members have no number. Keep their name."""
+    store_member_calendar_events(
+        [_event(source_id="hosted-anon", organizer="Pontus", organizer_id=None)])
+    hosts = get_all_member_calendar_events()[0].hosts
+    assert [(h.userId, h.fullName) for h in hosts] == [(0, "Pontus")]
+
+
 # -- The `since` filter -------------------------------------------------------
 
 def test_get_since_excludes_earlier_events():
@@ -260,6 +277,8 @@ def _row(**kw):
         "event_lastupdated": None,
         "event_calendar_id": 12,
         "cal_title_seo": "lma-örebro-intern",
+        "organizer_name": None,
+        "organizer_mensa_id": None,
     }
     base.update(kw)
     return base
@@ -356,6 +375,36 @@ def test_missing_calendar_leaves_region_empty():
 def test_row_without_a_start_date_is_skipped():
     """An event with no start has nothing to show against."""
     assert row_to_event(_row(event_start_date=None)) is None
+
+
+def test_row_to_event_reads_the_organizer():
+    event = row_to_event(_row(organizer_name="Hans Brettschneider",
+                              organizer_mensa_id=2003148))
+    assert event.organizer == "Hans Brettschneider"
+    assert event.organizer_id == 2003148
+
+
+def test_zero_membership_number_is_none():
+    """The column is 0, not NULL, for a member who has no number. 0 is nobody."""
+    event = row_to_event(_row(organizer_name="Hans", organizer_mensa_id=0))
+    assert event.organizer == "Hans"
+    assert event.organizer_id is None
+
+
+def test_blank_organizer_name_is_none():
+    event = row_to_event(_row(organizer_name="   "))
+    assert event.organizer is None
+
+
+def test_events_query_joins_the_organizer():
+    from v1.member_calendar.ips_source import EVENTS_QUERY
+    assert "LEFT JOIN core_members m ON m.member_id = e.event_member_id" in EVENTS_QUERY
+    assert "m.name AS organizer_name" in EVENTS_QUERY
+    assert "m.mensa_id AS organizer_mensa_id" in EVENTS_QUERY
+    # The member record also carries an email address and an IP. Neither has
+    # any business in this app's database.
+    assert "m.email" not in EVENTS_QUERY
+    assert "ip_address" not in EVENTS_QUERY
 
 
 def test_events_query_targets_real_tables():

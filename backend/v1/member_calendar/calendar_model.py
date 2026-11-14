@@ -33,6 +33,8 @@ class MemberCalendarEvent(BaseModel):
     created: Optional[datetime] = Field(None, description="When the source created the event")
     last_modified: Optional[datetime] = Field(None, description="When the source last changed it")
     organizer: Optional[str] = Field(None, description="Organizer name, if the source names one")
+    organizer_id: Optional[int] = Field(
+        None, description="Organizer's Mensa membership number, if the source has one")
     url: Optional[str] = Field(None, description="Link to the event on the member site")
 
     class Config:

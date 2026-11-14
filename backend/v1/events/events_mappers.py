@@ -282,7 +282,10 @@ def map_member_calendar_event(calendar_event: MemberCalendarEvent) -> Event:
         # Nobody administers these from inside the app -- they are edited on
         # the member site.
         admin=[],
-        hosts=([EventHost(userId=0, fullName=calendar_event.organizer)]
+        # userId 0 where the member site has no membership number for them:
+        # the name is still worth showing, it just links nowhere.
+        hosts=([EventHost(userId=calendar_event.organizer_id or 0,
+                          fullName=calendar_event.organizer)]
                if calendar_event.organizer else []),
         name=calendar_event.title,
         tags=[],
