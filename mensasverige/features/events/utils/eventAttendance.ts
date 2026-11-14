@@ -11,6 +11,7 @@ export type AttendanceStatus =
   | { kind: 'attending'; canLeave: boolean }
   | { kind: 'host' }
   | { kind: 'paid' }
+  | { kind: 'bookingSite' }
   | { kind: 'open' }
   | { kind: 'full' }
   | { kind: 'closed' };
@@ -44,17 +45,35 @@ export const attendanceStatus = (
   const endIso = event.end ?? event.start;
   const over = !!endIso && new Date(endIso).getTime() < now;
   const paid = !isMainEventSource(event) && (event.price ?? 0) > 0;
-  if (event.attending) return { kind: 'attending', canLeave: !over && !paid };
+  // The riksträff's registration lives on the booking site, as a paid activity's booking does.
+  const managedElsewhere = paid || event.source === 'external_root';
+  if (event.attending) return { kind: 'attending', canLeave: !over && !managedElsewhere };
   if (over) return { kind: 'past' };
   const hosts = userId !== undefined && (
     (event.admin ?? []).includes(userId) || (event.hosts ?? []).some(h => h.userId === userId)
   );
   if (hosts) return { kind: 'host' };
   if (paid) return { kind: 'paid' };
+  if (event.source === 'external_root') return { kind: 'bookingSite' };
   if (event.bookable) return { kind: 'open' };
   const left = placesLeft(event);
   if (left !== null && left <= 0) return { kind: 'full' };
   return { kind: 'closed' };
+};
+
+/**
+ * The booking site for an event of the riksträff: the riksträff's own
+ * `siteUrl`, for itself and for its activities. Null when none is known.
+ */
+export const bookingSiteUrl = (
+  event: Pick<Event, 'source' | 'parentEvent' | 'extras'>,
+  mainEvents: Pick<Event, 'id' | 'source' | 'extras'>[],
+): string | null => {
+  const root = event.source === 'external_root'
+    ? event
+    : mainEvents.find(m => m.id === event.parentEvent) ?? mainEvents.find(m => m.source === 'external_root');
+  const url = root?.extras?.siteUrl;
+  return typeof url === 'string' && url ? url : null;
 };
 
 /** "3 platser kvar", "1 plats kvar", "Fullbokat", or null without a limit. */

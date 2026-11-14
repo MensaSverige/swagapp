@@ -16,7 +16,8 @@ const MainEventListItem: React.FC<MainEventListItemProps> = ({ event, onPress })
   const colorScheme = useColorScheme() ?? 'light';
   const styles = useMemo(() => createStyles(colorScheme), [colorScheme]);
   const date = formatRowDateColumn(event);
-  const meta = [formatRegion(event), event.locationDescription, event.attending ? 'Du är anmäld' : null]
+  const registeredCount = typeof event.extras?.attendeeCount === 'number' ? `${event.extras.attendeeCount} anmälda` : null;
+  const meta = [formatRegion(event), event.locationDescription, registeredCount, event.attending ? 'Du är anmäld' : null]
     .filter(Boolean)
     .join(' · ');
 

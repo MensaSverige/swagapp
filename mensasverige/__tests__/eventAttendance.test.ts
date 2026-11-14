@@ -3,7 +3,7 @@
  * activities.
  */
 import { Event } from '../api_schema/types';
-import { attendanceStatus, formatPlacesLeft, placesLeft } from '../features/events/utils/eventAttendance';
+import { attendanceStatus, bookingSiteUrl, formatPlacesLeft, placesLeft } from '../features/events/utils/eventAttendance';
 
 const NOW = new Date('2026-11-14T12:00:00Z').getTime();
 
@@ -26,6 +26,17 @@ const ev = (overrides: Partial<Event> = {}): Event =>
 describe('attendanceStatus', () => {
   it('lets an attendee leave a future, free event', () => {
     expect(attendanceStatus(ev({ attending: true }), 7, NOW)).toEqual({ kind: 'attending', canLeave: true });
+  });
+
+  it('leaves the riksträff registration to the booking site', () => {
+    expect(attendanceStatus(ev({ source: 'external_root', attending: true }), 7, NOW))
+      .toEqual({ kind: 'attending', canLeave: false });
+    expect(attendanceStatus(ev({ source: 'calendar', attending: true }), 7, NOW))
+      .toEqual({ kind: 'attending', canLeave: true });
+  });
+
+  it('sends registration to the riksträff to the booking site', () => {
+    expect(attendanceStatus(ev({ source: 'external_root', bookable: true }), 7, NOW).kind).toBe('bookingSite');
   });
 
   it('keeps an attendee of a paid activity from leaving in the app', () => {
@@ -62,5 +73,16 @@ describe('places', () => {
     expect(formatPlacesLeft(1)).toBe('1 plats kvar');
     expect(formatPlacesLeft(0)).toBe('Fullbokat');
     expect(formatPlacesLeft(null)).toBeNull();
+  });
+});
+
+describe('bookingSiteUrl', () => {
+  const root = ev({ id: 'root1', source: 'external_root', extras: { siteUrl: 'https://swag.example' } });
+  it("is the riksträff's own site, for it and its activities", () => {
+    expect(bookingSiteUrl(root, [root])).toBe('https://swag.example');
+    expect(bookingSiteUrl(ev({ source: 'external', parentEvent: 'root1' }), [root])).toBe('https://swag.example');
+  });
+  it('is null when no riksträff names one', () => {
+    expect(bookingSiteUrl(ev({ source: 'calendar' }), [])).toBeNull();
   });
 });

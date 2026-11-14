@@ -19,10 +19,14 @@ export const refreshMainEvents = async (): Promise<void> => {
     const list = await fetchMainEvents();
     state.setMainEvents(Array.isArray(list) ? list : []);
     // Hosts and participants, shown with their profiles when they have an account.
-    prefetchUsers((Array.isArray(list) ? list : []).flatMap(e => [
-      ...(e.admin ?? []),
-      ...(e.attendees ?? []).map(a => a.userId),
-    ]));
+    // The riksträff's list says which participants have one; look up only those.
+    prefetchUsers((Array.isArray(list) ? list : []).flatMap(e => {
+      const accounts = e.extras?.attendeeAccounts;
+      const participants = Array.isArray(accounts)
+        ? (accounts as number[])
+        : (e.attendees ?? []).map(a => a.userId);
+      return [...(e.admin ?? []), ...participants];
+    }));
     state.setMainEventsInitialized(true);
 
     const { selectedMainEventId, autoSelectDismissed, mainEvents } = useStore.getState();

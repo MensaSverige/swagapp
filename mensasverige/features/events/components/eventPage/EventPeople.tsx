@@ -27,6 +27,8 @@ const EventPeople: React.FC<{
   const showHosts = adminCount > 0 || (isLocalEvent(event) && (event.hosts?.length ?? 0) > 0);
   const hiddenUntilRegistered = !omitHiddenNote && !canSeeAttendees && event.showAttendees === 'toAttending';
   const showAttendees = canSeeAttendees && attendeeUsers.length > 0;
+  // The riksträff's total includes people not on its list.
+  const attendeeCount = typeof event.extras?.attendeeCount === 'number' ? event.extras.attendeeCount : undefined;
 
   return (
     <View>
@@ -43,7 +45,7 @@ const EventPeople: React.FC<{
       )}
       {showAttendees && (
         <View style={styles.section}>
-          <UserList users={attendeeUsers} title="Deltagare" />
+          <UserList users={attendeeUsers} title="Deltagare" count={attendeeCount} />
         </View>
       )}
       {hiddenUntilRegistered && (

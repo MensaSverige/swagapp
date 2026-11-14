@@ -71,11 +71,14 @@ export const refreshEventsList = async (): Promise<void> => {
  * or whose profile is hidden from the viewer, simply stay missing; the
  * screens then fall back to the names they have.
  */
+// Ids that came back without a user (no account, or a hidden profile): not asked for again this session.
+const unavailableUserIds = new Set<number>();
+
 export const prefetchUsers = (ids: Iterable<number>): void => {
   const wanted = new Set(ids);
   if (wanted.size === 0) return;
   setTimeout(() => {
-    const newIds = [...wanted].filter(id => !useStore.getState().usersById[id]);
+    const newIds = [...wanted].filter(id => id > 0 && !useStore.getState().usersById[id] && !unavailableUserIds.has(id));
     if (newIds.length === 0) return;
     (async () => {
       for (let i = 0; i < newIds.length; i += USER_PREFETCH_CHUNK_SIZE) {
@@ -83,6 +86,8 @@ export const prefetchUsers = (ids: Iterable<number>): void => {
         try {
           const users = await getUsersByIds(chunk.map(String));
           useStore.getState().setUsers(users);
+          const found = new Set(users.map(u => u.userId));
+          chunk.filter(id => !found.has(id)).forEach(id => unavailableUserIds.add(id));
         } catch (err) {
           console.error('[prefetchUsers] getUsersByIds chunk failed:', err);
         }

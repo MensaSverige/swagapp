@@ -4,7 +4,11 @@ import { ThemedText } from '@/components/ThemedText';
 import { BUTTON_HEIGHT, EVENT_HEADER_BG, typeScale } from '../../styles/typeScale';
 
 /** The one way to register on an event page, under the info rows. */
-const EventRegisterButton: React.FC<{ onPress: () => void; busy?: boolean }> = ({ onPress, busy = false }) => (
+const EventRegisterButton: React.FC<{ onPress: () => void; busy?: boolean; label?: string }> = ({
+  onPress,
+  busy = false,
+  label = 'Anmäl mig!',
+}) => (
   <TouchableOpacity
     style={[styles.button, busy && styles.disabled]}
     onPress={onPress}
@@ -12,7 +16,7 @@ const EventRegisterButton: React.FC<{ onPress: () => void; busy?: boolean }> = (
     activeOpacity={0.8}
     accessibilityRole="button"
   >
-    <ThemedText style={styles.text}>{busy ? 'Anmäler...' : 'Anmäl mig!'}</ThemedText>
+    <ThemedText style={styles.text}>{busy ? 'Anmäler...' : label}</ThemedText>
   </TouchableOpacity>
 );
 

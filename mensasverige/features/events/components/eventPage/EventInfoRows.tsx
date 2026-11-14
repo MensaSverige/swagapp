@@ -7,7 +7,7 @@ import { Colors } from '@/constants/Colors';
 import { LocationLinkButton } from '@/features/map/components/LocationLinkIcon';
 import useStore from '@/features/common/store/store';
 import { Event } from '../../../../api_schema/types';
-import { AttendanceStatus, formatPlacesLeft, isMainEventSource, placesLeft } from '../../utils/eventAttendance';
+import { AttendanceStatus, bookingSiteUrl, formatPlacesLeft, isMainEventSource, placesLeft } from '../../utils/eventAttendance';
 import {
   formatMainEventDateRange,
   formatRegion,
@@ -37,14 +37,16 @@ const EventInfoRows: React.FC<EventInfoRowsProps> = ({ event, status, busy = fal
   const styles = useMemo(() => createStyles(dark), [dark]);
   const mainEvents = useStore(s => s.mainEvents);
   const selectMainEvent = useStore(s => s.selectMainEvent);
-  const bookingSiteUrl = useStore(s => s.eventInfo?.siteUrl);
+  const siteUrl = bookingSiteUrl(event, mainEvents);
 
   const iconGray = dark ? Colors.coolGray400 : '#4B5563';
   const green = dark ? Colors.green400 : '#047857';
   const red = dark ? Colors.red400 : '#B91C1C';
   const link = dark ? Colors.primary300 : EVENT_HEADER_BG;
 
-  const relative = formatRelativeStart(event, Date.now());
+  const registeredCount = typeof event.extras?.attendeeCount === 'number' ? event.extras.attendeeCount : null;
+  const relative = [formatRelativeStart(event, Date.now()), registeredCount !== null ? `${registeredCount} anmälda` : null]
+    .filter(Boolean).join(' · ');
   const region = formatRegion(event);
   const place = splitAddress(event.address, event.locationDescription);
   const placeText = place ? [place.line1, place.line2].filter(Boolean).join(', ') : null;
@@ -70,13 +72,20 @@ const EventInfoRows: React.FC<EventInfoRowsProps> = ({ event, status, busy = fal
   };
 
   const statusRow = (() => {
-    const row = (icon: IconName, color: string, text: string, action?: React.ReactNode) => (
+    const row = (icon: IconName, color: string, text: string, action?: React.ReactNode, note?: string) => (
       <View style={[styles.row, action ? styles.rowWithAction : null]}>
         <MaterialIcons name={icon} size={22} color={color} style={styles.icon} />
-        <ThemedText style={[styles.line1, styles.text, { color }]}>{text}</ThemedText>
+        <View style={styles.text}>
+          <ThemedText style={[styles.line1, { color }]}>{text}</ThemedText>
+          {!!note && <ThemedText style={styles.line2}>{note}</ThemedText>}
+        </View>
         {action}
       </View>
     );
+    // Where a registration is changed outside the app, say so instead of offering to leave.
+    const leaveElsewhere = event.source === 'external_root'
+      ? 'Hanteras på bokningssidan'
+      : (event.price ?? 0) > 0 ? 'Avbokas på bokningssidan' : undefined;
     switch (status.kind) {
       case 'attending':
         return row('check-circle', green, 'Du är anmäld', status.canLeave && onUnregister ? (
@@ -91,15 +100,17 @@ const EventInfoRows: React.FC<EventInfoRowsProps> = ({ event, status, busy = fal
               {busy ? 'Avanmäler...' : 'Avanmäl'}
             </ThemedText>
           </TouchableOpacity>
-        ) : undefined);
+        ) : undefined, status.canLeave ? undefined : leaveElsewhere);
       case 'host':
         return row('person', iconGray, 'Du är värd');
       case 'open':
         return row('info-outline', iconGray, 'Du är inte anmäld');
+      case 'bookingSite':
+        return row('info-outline', iconGray, 'Du är inte anmäld', undefined, 'Anmälan sker på bokningssidan');
       case 'paid':
-        return row('payments', iconGray, 'Anmälan och betalning på bokningssidan', bookingSiteUrl ? (
+        return row('payments', iconGray, 'Anmälan och betalning på bokningssidan', siteUrl ? (
           <TouchableOpacity
-            onPress={() => Linking.openURL(bookingSiteUrl)}
+            onPress={() => Linking.openURL(siteUrl)}
             style={styles.action}
             accessibilityRole="link"
           >

@@ -9,6 +9,7 @@ import {
     ActivityIndicator,
     TouchableOpacity,
     Alert,
+    Linking,
 } from 'react-native';
 import useStore from '../../common/store/store';
 import NonMemberInfo from '../../common/components/NonMemberInfo';
@@ -26,6 +27,7 @@ import { useBottomTabOverflow } from '@/components/ui/TabBarBackground';
 import EventListItem from '../components/EventListItem';
 import { countUpcomingEvents, displayLocaleTimeStringDate, filterByOptions, groupEventsByDate } from '../utils/eventUtils';
 import { selectActivityListEvents } from '../utils/mainEventUtils';
+import { bookingSiteUrl } from '../utils/eventAttendance';
 import EventHeader from '../components/EventHeader';
 import { setMainEventAttendance, useSelectedMainEvent } from '../hooks/useMainEvents';
 import { useFilteredLocalEvents, useLocalEventFilter, useUserPosition } from '../hooks/useLocalEventFilter';
@@ -119,7 +121,15 @@ export const ActivitiesList: React.FC<ActivitiesListProps> = ({ initialFilter })
         return Object.keys(grouped).map(date => ({ title: date, data: grouped[date] }));
     }, [filteredEvents]);
 
+    const mainEvents = useStore(s => s.mainEvents);
+    // The riksträff is registered for on the booking site, not in the app.
+    const siteUrl = selectedMainEvent?.source === 'external_root' ? bookingSiteUrl(selectedMainEvent, mainEvents) : null;
+
     const handleRegister = useCallback(async () => {
+        if (siteUrl) {
+            Linking.openURL(siteUrl);
+            return;
+        }
         if (!selectedMainEventId || registering) return;
         setRegistering(true);
         try {
@@ -129,7 +139,7 @@ export const ActivitiesList: React.FC<ActivitiesListProps> = ({ initialFilter })
         } finally {
             setRegistering(false);
         }
-    }, [selectedMainEventId, registering]);
+    }, [selectedMainEventId, registering, siteUrl]);
 
     const isFilterActive = useMemo(() =>
         eventFilter.attendingOrHost !== null ||
@@ -239,7 +249,7 @@ export const ActivitiesList: React.FC<ActivitiesListProps> = ({ initialFilter })
                         activeOpacity={0.8}
                         accessibilityRole="button"
                     >
-                        <Text style={styles.createButtonText}>{registering ? 'Anmäler...' : 'Anmäl mig!'}</Text>
+                        <Text style={styles.createButtonText}>{registering ? 'Anmäler...' : siteUrl ? 'Anmäl dig på bokningssidan' : 'Anmäl mig!'}</Text>
                     </TouchableOpacity>
                 </View>
             ) : (

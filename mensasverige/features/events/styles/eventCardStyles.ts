@@ -122,6 +122,10 @@ export const createEventCardStyles = (colorScheme: string) => {
     alignItems: 'center',
     gap: 4,
   },
+  titleCount: {
+    fontWeight: '400',
+    color: colorScheme === 'dark' ? Colors.coolGray400 : '#4B5563',
+  },
   viewAllText: {
     ...typeScale.link,
     color: link,

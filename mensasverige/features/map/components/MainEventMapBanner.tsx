@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Alert, useColorScheme } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Alert, Linking, useColorScheme } from 'react-native';
 import EventHeader from '../../events/components/EventHeader';
 import { setMainEventAttendance, useSelectedMainEvent } from '../../events/hooks/useMainEvents';
 import { isMapLockedForEvent } from '../../events/utils/mainEventUtils';
+import { bookingSiteUrl } from '../../events/utils/eventAttendance';
+import useStore from '../../common/store/store';
 import { PAGE_PADDING, typeScale } from '../../events/styles/typeScale';
 import { Colors } from '@/constants/Colors';
 
@@ -14,11 +16,19 @@ import { Colors } from '@/constants/Colors';
 const MainEventMapBanner: React.FC = () => {
   const dark = useColorScheme() === 'dark';
   const { selectedMainEvent, selectedMainEventId } = useSelectedMainEvent();
+  const mainEvents = useStore(s => s.mainEvents);
   const [registering, setRegistering] = useState(false);
 
   if (!selectedMainEvent || !selectedMainEventId) return null;
 
+  // The riksträff is registered for on the booking site, not in the app.
+  const siteUrl = selectedMainEvent?.source === 'external_root' ? bookingSiteUrl(selectedMainEvent, mainEvents) : null;
+
   const handleRegister = async () => {
+    if (siteUrl) {
+      Linking.openURL(siteUrl);
+      return;
+    }
     if (registering) return;
     setRegistering(true);
     try {
@@ -44,7 +54,7 @@ const MainEventMapBanner: React.FC = () => {
             accessibilityRole="button"
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
-            <Text style={[styles.link, registering && styles.linkDisabled]}>Anmäl mig</Text>
+            <Text style={[styles.link, registering && styles.linkDisabled]}>{siteUrl ? 'Anmäl dig på bokningssidan' : 'Anmäl mig'}</Text>
           </TouchableOpacity>
         </View>
       )}

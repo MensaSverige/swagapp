@@ -15,6 +15,8 @@ interface UserListProps {
   fallbackData?: Array<{ userId: string | number; fullName?: string }>;
   alwaysExpanded?: boolean;
   gridAvatarSize?: AvatarSize;
+  /** Shown after the title, for a total larger than the list (people who are not listed). */
+  count?: number;
 }
 
 const UserList: React.FC<UserListProps> = ({
@@ -23,6 +25,7 @@ const UserList: React.FC<UserListProps> = ({
   fallbackData = [],
   alwaysExpanded = false,
   gridAvatarSize = 'xs',
+  count,
 }) => {
   const [showAll, setShowAll] = React.useState(false);
   const colorScheme = useColorScheme();
@@ -118,6 +121,9 @@ const UserList: React.FC<UserListProps> = ({
       <View style={styles.userListHeaderRow}>
         <ThemedText type='subtitle'>
           {title}
+          {count !== undefined && (
+            <ThemedText type='subtitle' style={styles.titleCount}> {count}</ThemedText>
+          )}
         </ThemedText>
         {!alwaysExpanded && users.length > 0 && (
           <Pressable onPress={() => setShowAll(v => !v)} hitSlop={8} style={styles.viewAllButton}>

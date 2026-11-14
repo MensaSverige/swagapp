@@ -45,13 +45,13 @@ export const useEventAttendance = (event: Event): {
     try {
       if (isMain) {
         await setMainEventAttendance(event.id, false);
-        // A riksträff booking keeps the registration: it comes from the
-        // booking site, not from the app, so say why nothing changed.
+        // A riksträff registration made on the booking site (or a booking
+        // there) stays: say where to leave instead of nothing happening.
         const after = useStore.getState().mainEvents.find(e => e.id === event.id);
         if (after?.attending) {
           Alert.alert(
             'Du är fortfarande anmäld',
-            'Du har bokat aktiviteter på evenemanget. Avboka dem först för att avanmäla dig.',
+            'Din anmälan finns på bokningssidan. Avanmäl dig och avboka aktiviteter där.',
           );
         }
       } else {

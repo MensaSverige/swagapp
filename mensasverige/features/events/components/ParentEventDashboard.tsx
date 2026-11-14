@@ -1,5 +1,7 @@
 import React, { useMemo } from 'react';
-import { View, StyleSheet, TouchableOpacity, useColorScheme } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Linking, useColorScheme } from 'react-native';
+import useStore from '@/features/common/store/store';
+import { bookingSiteUrl } from '../utils/eventAttendance';
 import { MaterialIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { ThemedText } from '@/components/ThemedText';
@@ -54,6 +56,8 @@ const ParentEventDashboard: React.FC<ParentEventDashboardProps> = ({ mainEvent }
     const { status, busy, register, unregister } = useEventAttendance(mainEvent);
 
     const attending = !!mainEvent.attending;
+    const mainEvents = useStore(s => s.mainEvents);
+    const siteUrl = bookingSiteUrl(mainEvent, mainEvents);
     const isRoot = mainEvent.source === 'external_root';
     // The riksträff's description only repeats its dates; a local event's is
     // the invitation itself (what, where, cost, how to pay).
@@ -113,6 +117,9 @@ const ParentEventDashboard: React.FC<ParentEventDashboardProps> = ({ mainEvent }
         <ThemedView style={styles.container}>
             <EventInfoRows event={mainEvent} status={status} busy={busy} onUnregister={unregister} />
             {status.kind === 'open' && <EventRegisterButton onPress={register} busy={busy} />}
+            {status.kind === 'bookingSite' && !!siteUrl && (
+                <EventRegisterButton label="Anmäl dig på bokningssidan" onPress={() => Linking.openURL(siteUrl)} />
+            )}
 
             {isRoot && <View style={styles.infoSection}>{infoTiles}</View>}
 
