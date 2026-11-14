@@ -573,3 +573,9 @@ def test_description_keeps_paragraphs_and_never_glues_words():
     assert _strip_html("<p>Hej</p><p>Rad två<br>Rad tre</p>") == "Hej\n\nRad två\nRad tre"
     assert _strip_html("<p>  A  </p>\n\n\n<p>B</p>") == "A\n\nB"
     assert _strip_html("Kom<b>hit</b>") == "Kom hit"
+
+
+def test_description_lists_read_as_bullets():
+    from v1.member_calendar.ips_source import _strip_html
+    html = "Meny:\n<ul>\n  <li>Sill</li>\n  <li>Skinka</li>\n</ul>\nVälkommen!"
+    assert _strip_html(html) == "Meny:\n• Sill\n• Skinka\nVälkommen!"

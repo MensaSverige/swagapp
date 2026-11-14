@@ -114,7 +114,11 @@ def _strip_html(html: str) -> str:
     are never glued.
     """
     text = re.sub(r"<br\s*/?>", "\n", html, flags=re.I)
-    text = re.sub(r"</(p|div|li|h[1-6])\s*>", "\n\n", text, flags=re.I)
+    # Lists read as "• " lines, as the app shows the booking site's descriptions.
+    text = re.sub(r"\s*</?(ul|ol)(\s[^>]*)?>\s*", "\n", text, flags=re.I)
+    text = re.sub(r"</li\s*>", "", text, flags=re.I)
+    text = re.sub(r"\s*<li(\s[^>]*)?>\s*", "\n• ", text, flags=re.I)
+    text = re.sub(r"</(p|div|h[1-6])\s*>", "\n\n", text, flags=re.I)
     text = re.sub(r"<[^>]+>", " ", text)
     text = re.sub(r"&nbsp;", " ", text)
     text = re.sub(r"&amp;", "&", text)
