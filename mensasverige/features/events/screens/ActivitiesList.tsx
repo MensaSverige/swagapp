@@ -24,9 +24,10 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ExtendedEvent } from '../types/eventUtilTypes';
 import { useBottomTabOverflow } from '@/components/ui/TabBarBackground';
 import EventListItem from '../components/EventListItem';
-import { displayLocaleTimeStringDate } from '../utils/eventUtils';
+import { countUpcomingEvents, displayLocaleTimeStringDate, filterByOptions, groupEventsByDate } from '../utils/eventUtils';
+import { selectActivityListEvents } from '../utils/mainEventUtils';
 import EventHeader from '../components/EventHeader';
-import { setMainEventAttendance, useSelectedMainEvent } from '../hooks/useMainEvents';
+import { setMainEventAttendance, useLocalEvents, useSelectedMainEvent } from '../hooks/useMainEvents';
 import { BUTTON_HEIGHT, DIVIDER_COLOR, PAGE_PADDING, typeScale } from '../styles/typeScale';
 
 interface ActivitiesListProps {
@@ -77,30 +78,32 @@ export const ActivitiesList: React.FC<ActivitiesListProps> = ({ initialFilter })
     }, [params.attendingOrHost, params.bookable, params.official, params.categories, params.dateFrom, params.dateTo, parseURLParams]);
 
     const {
-        filteredGroupedEvents,
+        allEvents,
         loading,
         refreshing,
-        filteredCount,
-        filteredTotalCount,
         refetch,
         setCurrentEventFilter,
     } = useEvents({ enableAutoRefresh: true });
+    const localEvents = useLocalEvents();
 
     useEffect(() => {
         setCurrentEventFilter(eventFilter);
     }, [eventFilter, setCurrentEventFilter]);
 
-    const sections = useMemo<EventSection[]>(
-        () => Object.keys(filteredGroupedEvents)
-            .map(date => ({
-                title: date,
-                data: selectedMainEventId
-                    ? filteredGroupedEvents[date].filter(e => e.parentEvent === selectedMainEventId)
-                    : filteredGroupedEvents[date],
-            }))
-            .filter(section => section.data.length > 0),
-        [filteredGroupedEvents, selectedMainEventId]
+    // A main event's programme while it is selected; otherwise local events and
+    // activities without a main event. Filters apply within that scope.
+    const listEvents = useMemo(
+        () => selectActivityListEvents(allEvents, localEvents, selectedMainEventId),
+        [allEvents, localEvents, selectedMainEventId]
     );
+    const filteredEvents = useMemo(() => filterByOptions(listEvents, eventFilter), [listEvents, eventFilter]);
+    const filteredCount = filteredEvents.length;
+    const filteredTotalCount = useMemo(() => countUpcomingEvents(listEvents), [listEvents]);
+
+    const sections = useMemo<EventSection[]>(() => {
+        const grouped = groupEventsByDate(filteredEvents);
+        return Object.keys(grouped).map(date => ({ title: date, data: grouped[date] }));
+    }, [filteredEvents]);
 
     const handleRegister = useCallback(async () => {
         if (!selectedMainEventId || registering) return;

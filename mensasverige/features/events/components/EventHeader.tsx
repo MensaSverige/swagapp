@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { router } from 'expo-router';
 import { useSelectedMainEvent } from '../hooks/useMainEvents';
 import { EVENT_HEADER_BG, EVENT_HEADER_HEIGHT, typeScale } from '../styles/typeScale';
 
@@ -15,22 +15,26 @@ interface EventHeaderProps {
 /**
  * Header shown while a main event is selected (focus mode). Reads the selection
  * from the store and renders nothing when none is selected. The back chevron
- * leaves the event: it clears the selection and dismisses auto-select for the
- * session.
+ * leaves the event: it clears the selection, dismisses auto-select for the
+ * session and goes to the start page (Information tab) with the event list,
+ * whichever tab it was pressed on.
+ *
+ * The tab layout's SafeAreaView already keeps it clear of the status bar;
+ * EventHeaderStatusBar paints that strip in the header's blue.
  */
 const EventHeader: React.FC<EventHeaderProps> = ({ title, onBack }) => {
   const { selectedMainEvent, leaveMainEvent } = useSelectedMainEvent();
-  const insets = useSafeAreaInsets();
 
   if (!selectedMainEvent) return null;
 
   const handleBack = () => {
     leaveMainEvent();
     onBack?.();
+    router.navigate('/(tabs)/(home)');
   };
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top, height: EVENT_HEADER_HEIGHT + insets.top }]}>
+    <View style={styles.container}>
       <Pressable
         onPress={handleBack}
         style={styles.back}
@@ -49,6 +53,7 @@ const EventHeader: React.FC<EventHeaderProps> = ({ title, onBack }) => {
 const styles = StyleSheet.create({
   container: {
     backgroundColor: EVENT_HEADER_BG,
+    height: EVENT_HEADER_HEIGHT,
     flexDirection: 'row',
     alignItems: 'center',
     paddingRight: 16,

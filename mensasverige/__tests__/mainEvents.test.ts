@@ -9,14 +9,17 @@ import {
   AUTO_SELECT_BEFORE_MS,
   findAutoSelectMainEventId,
   formatMainEventDateRange,
+  formatRegion,
   formatRelativeStart,
   formatRowDateColumn,
   getMainEventChildren,
   groupMainEvents,
   isMainEventOngoing,
+  selectActivityListEvents,
   selectToBook,
   splitAddress,
 } from '../features/events/utils/mainEventUtils';
+import { countUpcomingEvents } from '../features/events/utils/eventUtils';
 import { Event } from '../api_schema/types';
 import { ExtendedEvent } from '../features/events/types/eventUtilTypes';
 
@@ -218,6 +221,21 @@ describe('formatRelativeStart', () => {
   });
 });
 
+describe('formatRegion', () => {
+  it('names the local group from the calendar slug', () => {
+    expect(formatRegion({ extras: { regionSlug: 'lf-väst-intern' } })).toBe('LF Väst');
+    expect(formatRegion({ extras: { regionSlug: 'lma-örebro-intern' } })).toBe('LMA Örebro');
+    expect(formatRegion({ extras: { regionSlug: 'lf-stockholm-offentlig' } })).toBe('LF Stockholm');
+    expect(formatRegion({ extras: { regionSlug: 'lma-mälardalen' } })).toBe('LMA Mälardalen');
+  });
+
+  it('falls back to the cleaned region, and is null without one', () => {
+    expect(formatRegion({ extras: { regionSlug: 'okänd', region: 'uppsala' } })).toBe('Uppsala');
+    expect(formatRegion({ extras: { url: 'x' } })).toBeNull();
+    expect(formatRegion({})).toBeNull();
+  });
+});
+
 describe('splitAddress', () => {
   it('splits at the first comma', () => {
     expect(splitAddress('Storgatan 1, 111 22 Stockholm', 'Stockholm')).toEqual({
@@ -237,5 +255,36 @@ describe('splitAddress', () => {
     expect(splitAddress(null, 'Uppsala')).toEqual({ line1: 'Uppsala', line2: '' });
     expect(splitAddress('  ', '')).toBeNull();
     expect(splitAddress(undefined, undefined)).toBeNull();
+  });
+});
+
+describe('selectActivityListEvents', () => {
+  const child = main({ id: 'ext1', source: 'external', parentEvent: 'root2026-11-20', start: '2026-11-20T10:00:00' });
+  const standalone = main({ id: 'user1', source: 'user', parentEvent: null, start: '2026-11-18T18:00:00' });
+  const local = main({ id: 'cal1', source: 'calendar', parentEvent: null, start: '2026-11-17T17:00:00' });
+
+  it('shows only the selected main event programme', () => {
+    expect(selectActivityListEvents([child, standalone], [local], 'root2026-11-20')).toEqual([child]);
+  });
+
+  it('without a selection, leaves out main-event programmes and adds local events by start', () => {
+    expect(selectActivityListEvents([child, standalone], [local], null).map(e => e.id)).toEqual(['cal1', 'user1']);
+  });
+
+  it('does not list a local event twice', () => {
+    expect(selectActivityListEvents([local, standalone], [local], null).map(e => e.id)).toEqual(['cal1', 'user1']);
+  });
+});
+
+describe('countUpcomingEvents', () => {
+  it('counts ongoing and future events, not past ones', () => {
+    const hour = 60 * 60 * 1000;
+    const iso = (offset: number) => new Date(Date.now() + offset).toISOString();
+    const events = [
+      main({ start: iso(-2 * hour), end: iso(-hour) }),
+      main({ start: iso(-hour), end: iso(hour) }),
+      main({ start: iso(hour), end: null }),
+    ];
+    expect(countUpcomingEvents(events)).toBe(2);
   });
 });

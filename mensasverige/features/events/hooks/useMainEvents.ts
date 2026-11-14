@@ -2,7 +2,9 @@ import { useCallback, useEffect, useMemo } from 'react';
 import { Event } from '../../../api_schema/types';
 import useStore from '../../common/store/store';
 import { attendEvent, fetchMainEvents, unattendEvent } from '../services/eventService';
-import { findAutoSelectMainEventId } from '../utils/mainEventUtils';
+import { findAutoSelectMainEventId, isLocalEvent } from '../utils/mainEventUtils';
+import { createExtendedEvent } from '../utils/eventUtils';
+import { ExtendedEvent } from '../types/eventUtilTypes';
 import { refreshEventsList } from './useEvents';
 
 let isFetchingMain = false;
@@ -91,4 +93,17 @@ export const useSelectedMainEvent = (): {
     [mainEvents, selectedMainEventId],
   );
   return { selectedMainEvent, selectedMainEventId, selectMainEvent, leaveMainEvent };
+};
+
+/**
+ * Local (member calendar) events, taken from the main-event list and shaped
+ * for the activity list and the event page, which work on ExtendedEvent.
+ */
+export const useLocalEvents = (): ExtendedEvent[] => {
+  const mainEvents = useStore(s => s.mainEvents);
+  const userId = useStore(s => s.user?.userId);
+  return useMemo(
+    () => mainEvents.filter(isLocalEvent).map(e => createExtendedEvent(e, userId)),
+    [mainEvents, userId],
+  );
 };

@@ -160,6 +160,20 @@ export const filterByOptions = (events: ExtendedEvent[], eventFilter: EventFilte
   });
 };
 
+/** Events not yet over: ongoing or starting from now. The unfiltered "total" on the list screen. */
+export const countUpcomingEvents = (events: Event[]): number => {
+  const now = new Date();
+  return events.filter(e => {
+    if (!e.start) return false;
+    const start = new Date(e.start);
+    if (e.end) {
+      const end = new Date(e.end);
+      if (start <= now && end >= now) return true;
+    }
+    return start >= now;
+  }).length;
+};
+
 /** Count bookable events per tag code. */
 export const calcCategoryCounts = (events: ExtendedEvent[]): Record<string, number> => {
   const counts: Record<string, number> = {};

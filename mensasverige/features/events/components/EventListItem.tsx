@@ -5,6 +5,7 @@ import CategoryBadge from './badges/CategoryBadge';
 import { canonicalCategoryCode } from '../utilities/EventCategories';
 import { Colors } from '@/constants/Colors';
 import { ExtendedEvent } from '../types/eventUtilTypes';
+import { formatRegion } from '../utils/mainEventUtils';
 
 interface EventListItemProps {
     event: ExtendedEvent;
@@ -64,7 +65,7 @@ const EventListItem: React.FC<EventListItemProps> = ({
                         </Text>
                     </View>
                     <Text style={styles.eventLocation}>
-                        {event.locationDescription}
+                        {[formatRegion(event), event.locationDescription].filter(Boolean).join(' · ')}
                     </Text>
                 </View>
                 {showCategories && (

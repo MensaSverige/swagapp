@@ -175,6 +175,26 @@ export const filterVisibleEvents = <T extends Event>(events: T[], mainEvents: Ev
   return events.filter(e => !e.parentEvent || !hiddenParents.has(e.parentEvent));
 };
 
+/** Local events come from the member calendar and are main events of their own. */
+export const isLocalEvent = (event: Pick<Event, 'source'>): boolean => event.source === 'calendar';
+
+/**
+ * The events the Aktiviteter list draws from. Inside a main event: its child
+ * events. With none selected: activities that belong to no main event, plus
+ * the local events -- a riksträff's programme shows only while that riksträff
+ * is selected. Sorted by start, since two lists are merged.
+ */
+export const selectActivityListEvents = <T extends Event>(
+  events: T[],
+  localEvents: T[],
+  selectedMainEventId: string | null,
+): T[] => {
+  if (selectedMainEventId) return events.filter(e => e.parentEvent === selectedMainEventId);
+  const localIds = new Set(localEvents.map(e => e.id));
+  return [...events.filter(e => !e.parentEvent && !localIds.has(e.id)), ...localEvents]
+    .sort((a, b) => (startMs(a) ?? 0) - (startMs(b) ?? 0));
+};
+
 /**
  * `parentEvent` for a newly created event: the selected main event when the
  * user is registered to it, otherwise null.
@@ -222,6 +242,25 @@ export const formatRelativeStart = (e: Event, now: number): string => {
  * it differs from the street. Without an address, locationDescription is the
  * only line.
  */
+/**
+ * The Mensa local group a member calendar event belongs to, for display:
+ * `lf-väst-intern` -> "LF Väst", `lma-örebro-intern` -> "LMA Örebro". Every
+ * calendar event has one, while few have a place, so it is what tells the
+ * reader where an event is. Null for events not from the member calendar.
+ */
+export const formatRegion = (event: Pick<Event, 'extras'>): string | null => {
+  const slug = event.extras?.regionSlug;
+  if (typeof slug === 'string') {
+    const match = /^(lf|lma)-(.+?)(?:-(?:intern|offentlig))?$/i.exec(slug.trim());
+    if (match) {
+      const name = match[2].split('-').filter(Boolean).map(capitalize).join(' ');
+      return `${match[1].toUpperCase()} ${name}`;
+    }
+  }
+  const region = event.extras?.region;
+  return typeof region === 'string' && region.trim() ? capitalize(region.trim()) : null;
+};
+
 export const splitAddress = (
   address?: string | null,
   locationDescription?: string | null,

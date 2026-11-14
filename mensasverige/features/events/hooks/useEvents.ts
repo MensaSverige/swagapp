@@ -5,6 +5,7 @@ import {
   groupEventsByDate,
   filterByOptions,
   calcCategoryCounts,
+  countUpcomingEvents,
   getTopCategories,
   selectDashboardEvents,
   selectLastMinuteEvents,
@@ -133,19 +134,7 @@ export const useEvents = (options: UseEventsOptions = {}): UseEventsReturn => {
     [filteredEvents]
   );
 
-  const filteredTotalCount = useMemo(() => {
-    // "total" = all non-past events (no additional filter)
-    const fromDate = new Date();
-    return events.filter(e => {
-      if (!e.start) return false;
-      const start = new Date(e.start);
-      if (e.end) {
-        const end = new Date(e.end);
-        if (start <= fromDate && end >= fromDate) return true;
-      }
-      return start >= fromDate;
-    }).length;
-  }, [events]);
+  const filteredTotalCount = useMemo(() => countUpcomingEvents(events), [events]);
 
   // ── Fetch ─────────────────────────────────────────────────────────────────
 

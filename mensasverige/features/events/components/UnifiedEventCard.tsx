@@ -25,7 +25,7 @@ import { canonicalCategoryCode } from '../utilities/EventCategories';
 import { createEventCardStyles } from '../styles/eventCardStyles';
 import { ExtendedEvent } from '../types/eventUtilTypes';
 import UserList from './UserList';
-import { getMainEventName } from '../utils/mainEventUtils';
+import { formatRegion, getMainEventName } from '../utils/mainEventUtils';
 
 
 const handleLinkPress = (url: string) => {
@@ -52,6 +52,7 @@ const UnifiedEventCard: React.FC<{
     [mainEvents, currentEvent.parentEvent]
   );
 
+  const region = formatRegion(currentEvent);
   const { adminUsers, attendeeUsers } = useEventUsers(currentEvent);
   const showBookedCount = currentEvent.showAttendees !== 'none';
 
@@ -119,8 +120,9 @@ const UnifiedEventCard: React.FC<{
         </View>
       </View>
 
-      {!!(currentEvent.address || currentEvent.locationDescription) && (
+      {!!(region || currentEvent.address || currentEvent.locationDescription) && (
         <View style={eventCardStyles.locationSection}>
+          {!!region && <ThemedText type="defaultSemiBold">{region}</ThemedText>}
           {!!currentEvent.address && (
             <AddressLinkAndIcon
               displayName={

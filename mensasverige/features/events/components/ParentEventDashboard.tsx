@@ -19,6 +19,7 @@ import { ExtendedEvent } from '../types/eventUtilTypes';
 import { groupEventsByDate } from '../utils/eventUtils';
 import {
     formatMainEventDateRange,
+    formatRegion,
     formatRelativeStart,
     getMainEventChildren,
     splitAddress,
@@ -53,6 +54,7 @@ const ParentEventDashboard: React.FC<ParentEventDashboardProps> = ({ mainEvent }
     const attending = !!mainEvent.attending;
     const isRoot = mainEvent.source === 'external_root';
     const place = splitAddress(mainEvent.address, mainEvent.locationDescription);
+    const region = formatRegion(mainEvent);
     const relativeLabel = formatRelativeStart(mainEvent, Date.now());
 
     const children = useMemo(
@@ -128,6 +130,15 @@ const ParentEventDashboard: React.FC<ParentEventDashboardProps> = ({ mainEvent }
                         {!!relativeLabel && <ThemedText style={styles.rowLine2}>{relativeLabel}</ThemedText>}
                     </View>
                 </View>
+                {!!region && (
+                    <View style={styles.infoRow}>
+                        <MaterialIcons name="groups" size={22} color={iconGray} style={styles.rowIcon} />
+                        <View style={styles.rowText}>
+                            <ThemedText style={styles.rowLine1}>{region}</ThemedText>
+                            {!place && <ThemedText style={styles.rowLine2}>Ingen plats angiven</ThemedText>}
+                        </View>
+                    </View>
+                )}
                 {!!place && (
                     <View style={[styles.infoRow, styles.placeRow]}>
                         <MaterialIcons name="place" size={22} color={iconGray} style={styles.rowIcon} />

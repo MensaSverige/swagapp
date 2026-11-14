@@ -4,7 +4,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { Event } from '../../../api_schema/types';
 import { Colors } from '@/constants/Colors';
 import CategoryBadge from './badges/CategoryBadge';
-import { formatRowDateColumn } from '../utils/mainEventUtils';
+import { formatRegion, formatRowDateColumn } from '../utils/mainEventUtils';
 import { typeScale } from '../styles/typeScale';
 
 interface MainEventListItemProps {
@@ -17,7 +17,7 @@ const MainEventListItem: React.FC<MainEventListItemProps> = ({ event, onPress })
   const colorScheme = useColorScheme() ?? 'light';
   const styles = useMemo(() => createStyles(colorScheme), [colorScheme]);
   const date = formatRowDateColumn(event);
-  const meta = [event.locationDescription, event.attending ? 'Du är anmäld' : null]
+  const meta = [formatRegion(event), event.locationDescription, event.attending ? 'Du är anmäld' : null]
     .filter(Boolean)
     .join(' · ');
 
