@@ -1,5 +1,19 @@
 # Member Site Events API Implementation Plan
 
+> **STATUS, 2026-11-14: not the route being taken.** Mikael chose to keep the
+> existing SSH tunnel after this plan was written, so the backend still reads
+> the member site's database directly. What was built instead is in
+> `backend/v1/member_calendar/README.md`: the tunnel now takes its SSH key from
+> the environment as text rather than a file, which is what let it start
+> anywhere but a laptop.
+>
+> This plan is kept because the research in it stands and the decision could
+> turn again. The one thing that would reopen it: the database account behind
+> the tunnel can write to the whole member community database, and an endpoint
+> is how we stop holding that. Both routes need one action from a member site
+> administrator — this one a file in the web root, the tunnel a read-only
+> database account.
+
 > **For agentic workers:** this project is `stepDispatch: agentic`. The session that picks this up does the work itself, task by task, in order. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Read medlem.mensa.se calendar events over an authenticated HTTP endpoint instead of tunnelling into the member site's MySQL, so the sync can run in staging and production.
