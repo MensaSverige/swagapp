@@ -139,6 +139,31 @@ def get_main_event(unified_id: str) -> Optional[Event]:
         return Event(**row.to_dict()) if row else None
 
 
+def is_member_only(unified_id: Optional[str]) -> bool:
+    """Whether a main event id belongs to the member calendar.
+
+    The member calendar is internal to Mensa: its events, and anything that
+    hangs off them, are for members only. Companions (medföljande -- people
+    with an account for a riksträff who are not members) see the riksträff
+    alone.
+    """
+    return bool(unified_id) and unified_id.startswith(_ID_PREFIX[EventSource.calendar])
+
+
+def viewer_can_see(unified_id: Optional[str], current_user: Optional[dict]) -> bool:
+    """False for a member calendar event and a viewer who is not a member."""
+    if not is_member_only(unified_id):
+        return True
+    return bool(current_user and current_user.get("isMember"))
+
+
+def get_visible_main_event(unified_id: str, current_user: Optional[dict]) -> Optional[Event]:
+    """`get_main_event`, but None for one the viewer may not see -- to them it does not exist."""
+    if not viewer_can_see(unified_id, current_user):
+        return None
+    return get_main_event(unified_id)
+
+
 def is_main_event(unified_id: str) -> bool:
     parts = _split_id(unified_id)
     if parts is None:
