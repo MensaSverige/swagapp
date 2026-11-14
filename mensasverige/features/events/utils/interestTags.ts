@@ -115,14 +115,3 @@ export function interestToTag(interestLabel: string): Tag | undefined {
 export function tagByCode(code: string): Tag | undefined {
   return BY_CODE[code];
 }
-
-/** Sort tags so the user's own interests appear first. */
-export function sortByUserInterests(tags: Tag[], userInterestLabels: string[]): Tag[] {
-  const userCodes = new Set(
-    userInterestLabels.map(l => BY_LABEL[l]?.code).filter(Boolean)
-  );
-  return [
-    ...tags.filter(t => userCodes.has(t.code)),
-    ...tags.filter(t => !userCodes.has(t.code)),
-  ];
-}

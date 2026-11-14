@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, ScrollView, TouchableOpacity, ActivityIndicator, StyleSheet, useColorScheme } from 'react-native';
+import { ScrollView, ActivityIndicator, StyleSheet, useColorScheme } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ThemedView } from '@/components/ThemedView';
 import { ThemedText } from '@/components/ThemedText';
@@ -8,6 +8,7 @@ import { Colors } from '@/constants/Colors';
 import useStore from '@/features/common/store/store';
 import { updateUser, getInterestCategories } from '../services/userService';
 import { InterestCategory, UserInterest } from '../constants/interests';
+import InterestChecklist from '../components/InterestChecklist';
 import { useToast } from '@/hooks/useToast';
 
 const InterestsSettings: React.FC = () => {
@@ -95,27 +96,7 @@ const InterestsSettings: React.FC = () => {
         contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + 24 }]}
         showsVerticalScrollIndicator={false}
       >
-        {categories.map(cat => (
-          <View key={cat.category} style={styles.categoryBlock}>
-            <ThemedText type="defaultSemiBold" style={styles.categoryTitle}>{cat.category}</ThemedText>
-            {cat.items.map(item => {
-              const isSelected = selected.includes(item);
-              return (
-                <TouchableOpacity
-                  key={item}
-                  style={[styles.row, isSelected && styles.rowSelected]}
-                  onPress={() => toggle(item)}
-                  activeOpacity={0.7}
-                >
-                  <ThemedText style={styles.rowText}>{item}</ThemedText>
-                  {isSelected && (
-                    <MaterialIcons name="check" size={20} color={Colors.primary500} />
-                  )}
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-        ))}
+        <InterestChecklist categories={categories} selected={selected} onToggle={toggle} />
       </ScrollView>
     </ThemedView>
   );
@@ -126,32 +107,6 @@ const createStyles = (isDark: boolean) => StyleSheet.create({
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12, padding: 32 },
   errorText: { textAlign: 'center', opacity: 0.6, fontSize: 15 },
   scroll: { padding: 20 },
-  categoryBlock: {
-    marginBottom: 20,
-  },
-  categoryTitle: {
-    fontSize: 13,
-    textTransform: 'uppercase',
-    letterSpacing: 0.6,
-    opacity: 0.55,
-    marginBottom: 4,
-  },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 12,
-    paddingHorizontal: 4,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: isDark ? '#374151' : '#E5E7EB',
-  },
-  rowSelected: {
-    backgroundColor: isDark ? 'rgba(79,193,255,0.08)' : 'rgba(0,119,230,0.06)',
-  },
-  rowText: {
-    fontSize: 15,
-    flex: 1,
-  },
 });
 
 export default InterestsSettings;

@@ -313,11 +313,7 @@ const CreateEventCard: React.FC<CreateEventCardProps> = ({
         />
 
         <View style={eventCardStyles.divider} />
-        <TagPicker
-          selectedTags={selectedTags}
-          userInterests={(user?.interests ?? []) as string[]}
-          onChange={setSelectedTags}
-        />
+        <TagPicker selectedTags={selectedTags} onChange={setSelectedTags} />
 
         {!hideButtons && (
           <View style={eventCardStyles.buttonContainer}>
