@@ -12,7 +12,6 @@ from __future__ import annotations
 
 import json
 import logging
-import re
 from io import StringIO
 from datetime import datetime, timezone
 from typing import List, Optional
@@ -103,30 +102,6 @@ def _ssh_tunnel() -> SSHTunnelForwarder:
     elif MEDLEM_SSH_PASSWORD:
         kwargs["ssh_password"] = MEDLEM_SSH_PASSWORD
     return SSHTunnelForwarder(**kwargs)
-
-
-def _strip_html(html: str) -> str:
-    """Reduce the stored HTML body to plain text, keeping its line breaks and paragraphs.
-
-    A local event's description is its invitation -- often long, with the
-    price and how to pay in a paragraph of its own -- so paragraphs survive as
-    blank lines rather than running together, and words either side of a tag
-    are never glued.
-    """
-    text = re.sub(r"<br\s*/?>", "\n", html, flags=re.I)
-    # Lists read as "• " lines, as the app shows the booking site's descriptions.
-    text = re.sub(r"\s*</?(ul|ol)(\s[^>]*)?>\s*", "\n", text, flags=re.I)
-    text = re.sub(r"</li\s*>", "", text, flags=re.I)
-    text = re.sub(r"\s*<li(\s[^>]*)?>\s*", "\n• ", text, flags=re.I)
-    text = re.sub(r"</(p|div|h[1-6])\s*>", "\n\n", text, flags=re.I)
-    text = re.sub(r"<[^>]+>", " ", text)
-    text = re.sub(r"&nbsp;", " ", text)
-    text = re.sub(r"&amp;", "&", text)
-    text = re.sub(r"&lt;", "<", text)
-    text = re.sub(r"&gt;", ">", text)
-    lines = [re.sub(r"[ \t\r\f\v]+", " ", line).strip() for line in text.split("\n")]
-    text = "\n".join(lines)
-    return re.sub(r"\n{3,}", "\n\n", text).strip()
 
 
 def _unix_to_utc(value) -> Optional[datetime]:
@@ -220,7 +195,9 @@ def row_to_event(row: dict) -> Optional[MemberCalendarEvent]:
     return MemberCalendarEvent(
         source_id=str(row["event_id"]),
         title=row.get("event_title") or "Untitled Event",
-        description=_strip_html(content) if content else None,
+        # Kept as HTML, as booking site descriptions arrive: the app turns
+        # both into text the same way, links included.
+        description=content or None,
         location=city or address,
         address=address,
         city=city,

@@ -98,7 +98,7 @@ def test_root_is_stored_as_a_main_event_with_expected_fields():
     assert event.source == EventSource.external_root
     assert event.sourceId == FIRST
     assert event.name == "Halvarstraff"
-    assert event.description == "Boras"
+    assert event.description is None  # header2 only repeated the dates
     assert event.locationDescription == "Boras"
     assert event.address == "Storgatan 1"
     assert event.official is True
@@ -504,7 +504,7 @@ def test_registered_viewer_sees_who_else_is_registered():
     svc.attend_event_via_unified(cal, _user(100))
     svc.attend_event_via_unified(cal, _user(200))
     event = next(e for e in svc.list_main_events(_user(100)) if e.id == cal)
-    assert event.showAttendees.value == "toAttending"
+    assert event.showAttendees.value == "all"
     assert [a.userId for a in event.attendees] == [100, 200]
 
 

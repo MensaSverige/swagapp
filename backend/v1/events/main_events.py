@@ -64,7 +64,8 @@ def store_root_main_event(root: ExternalRoot) -> bool:
         "source": ROOT_SOURCE,
         "source_id": root.dates[0],
         "name": root.header1,
-        "description": root.header2,
+        # header2 only repeats the dates, which the app shows anyway.
+        "description": None,
         "location_description": root.city,
         "location_address": root.streetAddress,
         "start": _utc(first),
@@ -203,13 +204,15 @@ def _booked_stored_events_query(session):
     )
 
 
-def get_registered_user_ids(main_event_id: str) -> Set[int]:
+def get_registered_user_ids(main_event_id: str, is_root: Optional[bool] = None) -> Set[int]:
+    """`is_root` saves looking the riksträff up when the caller already knows."""
+    if is_root is None:
+        is_root = main_event_id == get_external_root_event_id()
     with get_session() as session:
         users = {
             r.user_id for r in
             session.query(MainEventAttendeeTable.user_id).filter_by(event_id=main_event_id).all()
         }
-        is_root = main_event_id == get_external_root_event_id()
         if is_root:
             users |= {r.userId for r in _booked_stored_events_query(session).distinct().all()}
     if is_root:

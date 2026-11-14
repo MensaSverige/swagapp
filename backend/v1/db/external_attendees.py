@@ -1,4 +1,6 @@
 """The cached list of people registered to the riksträff, from the booking site."""
+from datetime import datetime, timezone
+from datetime import datetime, timezone
 from typing import List, Optional, Set
 
 from v1.db.database import get_session
@@ -24,14 +26,14 @@ def store_external_attendees(listing: ExternalAttendeeList) -> None:
             session.add(ExternalAttendeeCountTable(id=1, count=listing.count))
         else:
             row.count = listing.count
+            row.fetched_at = datetime.now(timezone.utc)
         session.commit()
 
 
-def get_external_attendees() -> Optional[List[ExternalAttendee]]:
-    """The cached list in the site's order, or None before the first fetch."""
+def get_external_attendees() -> List[ExternalAttendee]:
+    """The cached list in the site's order. Check get_external_attendee_count first:
+    None there means nothing has been fetched yet."""
     with get_session() as session:
-        if session.get(ExternalAttendeeCountTable, 1) is None:
-            return None
         rows = session.query(ExternalAttendeeTable).order_by(ExternalAttendeeTable.position).all()
         return [
             ExternalAttendee(memberId=r.member_id, firstName=r.first_name, lastName=r.last_name,
