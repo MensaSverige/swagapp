@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, Query
 from v1.events.events_model import Event
 from v1.events.events_service import (
     list_unified_events,
+    list_main_events,
     create_user_event_via_unified,
     update_user_event_via_unified,
     delete_user_event_via_unified,
@@ -24,6 +25,7 @@ async def get_events(
     attending: Optional[bool] = Query(None),
     bookable: Optional[bool] = Query(None),
     official: Optional[bool] = Query(None),
+    parent: Optional[str] = Query(None, description="Only children of this main event id"),
     current_user: dict = Depends(validate_request),
 ):
     return list_unified_events(
@@ -31,7 +33,13 @@ async def get_events(
         attending=attending,
         bookable=bookable,
         official=official,
+        parent=parent,
     )
+
+
+@unified_events_v1.get("/events/main", response_model=List[Event])
+async def get_main_events(current_user: dict = Depends(validate_request)):
+    return list_main_events(current_user)
 
 
 @unified_events_v1.post("/events", response_model=UnifiedEvent)
@@ -66,7 +74,7 @@ async def get_events_unofficial(current_user: dict = Depends(validate_request)):
 
 @unified_events_v1.post("/events/{event_id}/attend", response_model=Event)
 async def attend_event(event_id: str, current_user: dict = Depends(validate_request)):
-    """Attend an event. Works for both user events (usr prefix) and external events (ext prefix)."""
+    """Attend an event. Works for user (usr), external (ext) and main events (cal, root)."""
     try:
         return attend_event_via_unified(event_id, current_user)
     except HTTPException:

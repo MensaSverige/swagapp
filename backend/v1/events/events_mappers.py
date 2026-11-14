@@ -47,12 +47,24 @@ def _utc_now() -> datetime:
     return get_current_time()
 
 
+_LOOKUP_PARENT = "__lookup__"
+
+
 def map_external_event(
     details: ExternalEventDetails,
     current_user_id: int,
     booked_ids: Set[int],
     attendee_user_ids: Optional[Set[int]] = None,
+    parent_event: Optional[str] = _LOOKUP_PARENT,
 ) -> Optional[Event]:
+    """Map stored external event details to a unified Event.
+
+    `parent_event` is looked up from the stored riksträff unless the caller
+    already has it; list callers pass it in to avoid one query per event.
+    """
+    if parent_event is _LOOKUP_PARENT:
+        from v1.events.main_events import get_external_root_event_id
+        parent_event = get_external_root_event_id()
     # eventDate already combined in event_api.get_external_event_details
     if not details.eventDate:
         logging.warning(f"External event missing eventDate: {details.eventId}")
@@ -112,7 +124,7 @@ def map_external_event(
             id=event_id(EventSource.external, details.eventId),
             sourceId=str(details.eventId),
             source=EventSource.external,
-            parentEvent=None,
+            parentEvent=parent_event,
             admin=admin_ids,
             hosts=hosts,
             name=details.titel or details.description.split("\n")[0][:60],
@@ -171,7 +183,7 @@ def map_user_event(ue: ExtendedUserEvent, current_user_id: int) -> Event:
         id=event_id(EventSource.user, ue.id),
         sourceId=str(ue.id),
         source=EventSource.user,
-        parentEvent=None,
+        parentEvent=ue.parentEvent,
         admin=[ue.userId],
         hosts=[EventHost(userId=h.userId, fullName="") for h in (ue.hosts or [])],
         name=ue.name,
@@ -237,9 +249,23 @@ def map_event_to_user_event(event: Event, owner_id: int, existing: UserEvent | N
         reports=(existing.reports if existing else []),
         attendees=[Attendee(userId=a.userId) for a in (existing.attendees if existing else [])],
         maxAttendees=event.maxAttendees,
+        parentEvent=event.parentEvent,
         tags=list(event.tags) if event.tags else [],
     )
     return ue
+
+
+def _compose_calendar_address(calendar_event: MemberCalendarEvent) -> Optional[str]:
+    """Street address, then "postal city" when known; falls back to free text."""
+    parts = []
+    if calendar_event.address:
+        parts.append(calendar_event.address)
+    place = " ".join(p for p in (calendar_event.postal_code, calendar_event.city) if p)
+    if place:
+        parts.append(place)
+    if parts:
+        return ", ".join(parts)
+    return calendar_event.location
 
 
 def map_member_calendar_event(calendar_event: MemberCalendarEvent) -> Event:
@@ -260,11 +286,11 @@ def map_member_calendar_event(calendar_event: MemberCalendarEvent) -> Event:
                if calendar_event.organizer else []),
         name=calendar_event.title,
         tags=[],
-        locationDescription=calendar_event.location,
-        address=calendar_event.location,
+        locationDescription=calendar_event.city or calendar_event.location,
+        address=_compose_calendar_address(calendar_event),
         locationMarker=None,
-        latitude=None,
-        longitude=None,
+        latitude=calendar_event.latitude,
+        longitude=calendar_event.longitude,
         start=calendar_event.start,
         end=calendar_event.end,
         # The source query only returns approved events and exposes no
@@ -282,5 +308,15 @@ def map_member_calendar_event(calendar_event: MemberCalendarEvent) -> Event:
         official=True,
         attending=False,
         bookable=False,
-        extras={"url": calendar_event.url},
+        extras={
+            "url": calendar_event.url,
+            "region": calendar_event.region,
+            "regionSlug": calendar_event.region_slug,
+            "regionId": calendar_event.region_id,
+            "city": calendar_event.city,
+            "postalCode": calendar_event.postal_code,
+            "country": calendar_event.country,
+            # The sync sets True when coordinates were geocoded.
+            "locationApprox": False if calendar_event.latitude is not None else None,
+        },
     )

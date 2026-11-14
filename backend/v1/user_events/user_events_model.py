@@ -46,6 +46,7 @@ class UserEvent(ModelWithId):
                                   }])
     attendees: List[Attendee] = Field([], example=[{"userId": 123}])
     maxAttendees: Optional[int] = Field(None, le=PG_INTEGER_MAX, example=10)
+    parentEvent: Optional[str] = Field(None, example="root2026-11-20")
     tags: List[Tag] = Field([], example=[])
 
     @field_validator('start', 'end', mode='before')

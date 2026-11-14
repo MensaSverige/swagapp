@@ -1,6 +1,7 @@
 
 from http.client import HTTPException
 import logging
+from typing import Optional
 from fastapi import APIRouter, Depends
 import googlemaps
 from v1.google_maps_api.geolocation_model import GeoLocation
@@ -12,6 +13,24 @@ geolocation_v1 = APIRouter(prefix="/v1")
 
 if GOOGLE_GEOCODING_API_KEY and GOOGLE_GEOCODING_API_KEY != "":
     gmaps = googlemaps.Client(key=GOOGLE_GEOCODING_API_KEY)
+
+def geocode_address(address: str) -> Optional[tuple[float, float]]:
+    """Best-effort geocode to (lat, lng). Never raises; None on any failure."""
+    try:
+        if not GOOGLE_GEOCODING_API_KEY or not address:
+            return None
+        client = globals().get("gmaps")
+        if client is None:
+            return None
+        result = client.geocode(address)
+        if not result:
+            return None
+        loc = result[0]["geometry"]["location"]
+        return float(loc["lat"]), float(loc["lng"])
+    except Exception as e:
+        logging.warning(f"Geocoding failed for {address!r}: {e}")
+        return None
+
 
 @geolocation_v1.get("/geolocation/{address}")
 def getLocationByAdress(address : str, current_user: dict = Depends(validate_request)) -> GeoLocation:

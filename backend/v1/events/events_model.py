@@ -15,14 +15,17 @@ class EventSource(str, Enum):
     external = "external"  # Official external events
     user = "user"  # User-created events
     calendar = "calendar"  # Member site calendar events
+    external_root = "external_root"  # The riksträff, from the external root
 
 
 # Event ids carry their source as a prefix so they stay unique across all of
-# them: ext12345 (external), usr7 (user), cal42 (member calendar).
+# them: ext12345 (external), usr7 (user), cal42 (member calendar),
+# root2026-11-20 (riksträff).
 _ID_PREFIX = {
     EventSource.external: "ext",
     EventSource.user: "usr",
     EventSource.calendar: "cal",
+    EventSource.external_root: "root",
 }
 
 
@@ -66,7 +69,7 @@ class Event(BaseModel):
 
     Fields mostly follow the sketch in notes.md. Additional convenience & source-specific fields are stored under `extras`.
     """
-    id: str = Field(..., description="Globally unique event id, prefixed with source (ext / usr / cal)")
+    id: str = Field(..., description="Globally unique event id, prefixed with source (ext / usr / cal / root)")
     sourceId: Optional[str] = Field(None, description="Original ID from the source system")
     # Not required: POST and PUT /v1/events take this model as the request
     # body, and app versions released before the member calendar never send

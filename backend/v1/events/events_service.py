@@ -3,7 +3,7 @@ from typing import List, Optional
 from datetime import datetime, timedelta
 import logging
 
-from v1.events.events_model import Event
+from v1.events.events_model import Event, EventSource, _ID_PREFIX
 from v1.events.events_mappers import map_external_event, map_user_event, map_event_to_user_event
 from v1.db.external_events import get_stored_external_event_details, get_all_stored_external_event_details
 from v1.external.event_api import get_booked_external_events, book_external_event, unbook_external_event
@@ -17,7 +17,8 @@ from v1.user_events.user_events_db import (
     add_attendee_to_user_event as db_add_attendee_to_user_event,
     remove_attendee_from_user_event as db_remove_attendee_from_user_event,
 )
-from v1.member_calendar.calendar_db import get_member_calendar_events_since
+from v1.events import main_events
+from v1 import env_constants
 from v1.user_events.user_events_model import UserEvent, Host as UEHost, Attendee as UEAttendee, Location as UELocation
 from v1.utilities import get_current_time
 from v1.db.users import get_users_by_ids
@@ -62,17 +63,53 @@ def _filter_event_attendees(event: Event, current_user: dict) -> Event:
     return event.model_copy(update={"attendees": filtered_attendees, "extras": new_extras})
 
 
+def _gating_on() -> bool:
+    return bool(env_constants.MAIN_EVENT_GATING)
+
+
+def _require_registered_to_parent(parent: Optional[str], current_user: dict) -> None:
+    """403 when gating is on and `parent` is a main event the user is not registered to."""
+    if not parent or not _gating_on():
+        return
+    if main_events.is_main_event(parent) and not main_events.is_registered(
+            current_user["userId"], parent):
+        raise HTTPException(status_code=403, detail="Not registered to the main event")
+
+
+def _check_parent_for_user_event(parent: Optional[str], current_user: dict) -> None:
+    if not parent:
+        return
+    if not main_events.is_main_event(parent):
+        raise HTTPException(status_code=400, detail="Parent event is not a main event")
+    _require_registered_to_parent(parent, current_user)
+
+
+def list_main_events(current_user: dict) -> List[Event]:
+    """Main events that have not ended, with the viewer's registration applied."""
+    registered = main_events.get_registered_event_ids(current_user["userId"])
+    result = []
+    for e in main_events.get_open_main_events():
+        is_registered = e.id in registered
+        result.append(e.model_copy(update={"attending": is_registered, "bookable": not is_registered}))
+    return result
+
+
 def list_unified_events(
     current_user: dict,
     attending: Optional[bool] = None,
     bookable: Optional[bool] = None,
     official: Optional[bool] = None,
+    parent: Optional[str] = None,
 ) -> List[Event]:
-    """Fetch, map, merge and filter events from all sources (external, user, member calendar).
+    """Fetch, map, merge and filter child events (external, user) -- main events are
+    served by `list_main_events`.
 
     Filters follow semantics: if param is None -> include both states; else match exact state.
+    `parent` keeps only the children of that main event. With main event gating on,
+    children of a main event the user is not registered to are left out.
     """
     current_user_id = current_user["userId"]
+    root_event_id = main_events.get_external_root_event_id()
 
     # External events
     try:
@@ -112,7 +149,7 @@ def list_unified_events(
 
         attendee_user_ids = bookings_by_event.get(d.eventId) if should_show_attendees else None
 
-        mapped = map_external_event(d, current_user_id, booked_ids, attendee_user_ids)
+        mapped = map_external_event(d, current_user_id, booked_ids, attendee_user_ids, parent_event=root_event_id)
         if mapped:
             external_events.append(_filter_event_attendees(mapped, current_user))
 
@@ -129,18 +166,21 @@ def list_unified_events(
         for u in user_events
     ]
 
-    # Member calendar events (synced into the unified `events` table)
-    try:
-        # Same one-month-back window as user events above.
-        one_month_back = get_current_time() - timedelta(days=30)
-        calendar_events = get_member_calendar_events_since(one_month_back)
-    except Exception as e:
-        logging.error(f"Failed to fetch member calendar events: {e}")
-        calendar_events = []
-
-    merged = external_events + user_events_mapped + calendar_events
+    merged = external_events + user_events_mapped
 
     # Do not filter to future only; keep all external events and user events from one month back.
+
+    if _gating_on():
+        parents = {e.parentEvent for e in merged if e.parentEvent}
+        main_ids = {p for p in parents if main_events.is_main_event(p)}
+        registered = main_events.get_registered_event_ids(current_user_id)
+        # Children with no parent (legacy standalone user events) stay visible.
+        merged = [
+            e for e in merged
+            if not e.parentEvent or e.parentEvent not in main_ids or e.parentEvent in registered
+        ]
+    if parent is not None:
+        merged = [e for e in merged if e.parentEvent == parent]
 
     def passes(flag_val: Optional[bool], actual: bool) -> bool:
         return flag_val is None or flag_val == actual
@@ -160,6 +200,7 @@ def create_user_event_via_unified(event: Event, current_user: dict) -> Event:
     if event.official:
         raise HTTPException(status_code=400, detail="Cannot create official events via this endpoint")
     owner_id = current_user["userId"]
+    _check_parent_for_user_event(event.parentEvent, current_user)
     ue = map_event_to_user_event(event, owner_id)
     created_id = db_create_user_event(ue)
     if not created_id:
@@ -183,6 +224,13 @@ def update_user_event_via_unified(unified_event_id: str, event: Event, current_u
         raise HTTPException(status_code=404, detail="Event not found")
     if existing.userId != current_user["userId"]:
         raise HTTPException(status_code=403, detail="Unauthorized")
+
+    # Released apps never send parentEvent; keep the existing link rather than
+    # clearing it on every edit.
+    if event.parentEvent is None:
+        event = event.model_copy(update={"parentEvent": existing.parentEvent})
+    elif event.parentEvent != existing.parentEvent:
+        _check_parent_for_user_event(event.parentEvent, current_user)
 
     # Preserve attendees/reports from existing, rebuild from incoming unified event
     ue = map_event_to_user_event(event, existing.userId, existing)
@@ -220,9 +268,30 @@ def attend_event_via_unified(unified_event_id: str, current_user: dict) -> Event
         return _attend_user_event(unified_event_id, current_user)
     elif unified_event_id.startswith("ext"):
         return _attend_external_event(unified_event_id, current_user)
+    elif unified_event_id.startswith(_MAIN_PREFIXES):
+        return _attend_main_event(unified_event_id, current_user)
     else:
         logging.error(f"Invalid event ID format: {unified_event_id}")
         raise HTTPException(status_code=400, detail="Invalid event ID format")
+
+
+_MAIN_PREFIXES = (_ID_PREFIX[EventSource.calendar], _ID_PREFIX[EventSource.external_root])
+
+
+def _attend_main_event(unified_event_id: str, current_user: dict) -> Event:
+    """Register for a main event. Idempotent."""
+    event = main_events.get_main_event(unified_event_id)
+    if not event:
+        raise HTTPException(status_code=404, detail="Event not found")
+    main_events.register(current_user["userId"], unified_event_id)
+    return event.model_copy(update={"attending": True, "bookable": False})
+
+
+def _unattend_main_event(unified_event_id: str, current_user: dict) -> dict:
+    if not main_events.get_main_event(unified_event_id):
+        raise HTTPException(status_code=404, detail="Event not found")
+    main_events.unregister(current_user["userId"], unified_event_id)
+    return {"message": "Successfully unattended event"}
 
 
 def _attend_user_event(unified_event_id: str, current_user: dict) -> Event:
@@ -236,6 +305,8 @@ def _attend_user_event(unified_event_id: str, current_user: dict) -> Event:
         raise HTTPException(status_code=404, detail="Event not found")
     
     logging.info(f"Found event: {existing.name}, owner: {existing.userId}")
+
+    _require_registered_to_parent(existing.parentEvent, current_user)
     
     if existing.userId == current_user["userId"]:
         logging.error(f"Owner {current_user['userId']} cannot attend their own event")
@@ -276,7 +347,9 @@ def _attend_external_event(unified_event_id: str, current_user: dict) -> Event:
     except ValueError:
         logging.error(f"Invalid eventId format: {event_id_str}")
         raise HTTPException(status_code=400, detail=f"Invalid event ID: {event_id_str}")
-    
+
+    _require_registered_to_parent(main_events.get_external_root_event_id(), current_user)
+
     try:
         # For external events, "attending" means booking
         result = book_external_event(current_user["userId"], event_id)
@@ -338,6 +411,8 @@ def unattend_event_via_unified(unified_event_id: str, current_user: dict) -> dic
         return _unattend_user_event(unified_event_id, current_user)
     elif unified_event_id.startswith("ext"):
         return _unattend_external_event(unified_event_id, current_user)
+    elif unified_event_id.startswith(_MAIN_PREFIXES):
+        return _unattend_main_event(unified_event_id, current_user)
     else:
         raise HTTPException(status_code=400, detail="Invalid event ID format")
 

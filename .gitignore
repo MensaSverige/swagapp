@@ -93,3 +93,6 @@ CLAUDE.md
 shots/
 .claude/settings.local.json
 .grit-attachments/
+
+# local dev SSH key for the member-calendar tunnel (never commit)
+backend/.ips/

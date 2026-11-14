@@ -202,6 +202,9 @@ class UserEventTable(Base):
     description = Column(Text, nullable=True)
     maxAttendees = Column(Integer, nullable=True)
 
+    # Unified id of the main event this event belongs to, if any.
+    parent_event = Column(String, nullable=True, index=True)
+
     # Interest tags, as posted by the client. Stored as JSON rather than a
     # child table: they are a denormalised snapshot of the /v1/tags catalog
     # (code, text and both colours travel together), never queried by tag.
@@ -242,6 +245,7 @@ class UserEventTable(Base):
             "end": self.end,
             "description": self.description,
             "maxAttendees": self.maxAttendees,
+            "parentEvent": self.parent_event,
             "tags": self.tags or [],
             "location": location,
             "hosts": [{"userId": h.userId} for h in self.hosts],
@@ -556,6 +560,24 @@ class EventTable(Base):
             "official": self.official,
             "extras": self.extras or {},
         }
+
+
+class MainEventAttendeeTable(Base):
+    """A user's registration (anmälan) to a main event.
+
+    `event_id` is the unified id (cal42, root2026-11-20), not a foreign key:
+    main events live in `events` under a (source, source_id) pair.
+    """
+    __tablename__ = "main_event_attendees"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    event_id = Column(String, nullable=False)
+    user_id = Column(Integer, nullable=False, index=True)
+    created_at = Column(DateTime(timezone=True), default=_now, nullable=False)
+
+    __table_args__ = (
+        UniqueConstraint("event_id", "user_id", name="uq_main_event_attendee"),
+    )
 
 
 # ── Feedback ──────────────────────────────────────────────────────────────────

@@ -30,11 +30,20 @@ def _event(source_id="1", title="Manadsmote", **kw):
         title=title,
         description="Regular monthly member meeting",
         location="Stockholm",
+        address="Klostergatan 11",
+        city="Stockholm",
+        postal_code="11122",
+        country="SE",
+        latitude=59.33,
+        longitude=18.06,
+        region="stockholm",
+        region_slug="lf-stockholm-intern",
+        region_id=7,
         # Naive, as MySQL hands it over: Swedish local wall clock.
         start=datetime.datetime(2026, 7, 15, 19, 0, 0),
         end=datetime.datetime(2026, 7, 15, 21, 0, 0),
-        created=datetime.datetime(2026, 6, 1, 12, 0, 0),
-        last_modified=datetime.datetime(2026, 6, 2, 12, 0, 0),
+        created=datetime.datetime(2026, 6, 1, 12, 0, 0, tzinfo=datetime.timezone.utc),
+        last_modified=datetime.datetime(2026, 6, 2, 12, 0, 0, tzinfo=datetime.timezone.utc),
         organizer=None,
         url="https://medlem.mensa.se/calendar/event/1/",
     )
@@ -59,7 +68,7 @@ def test_store_upserts_on_source_and_source_id():
     enforced the same thing with a compound index on the same pair.
     """
     store_member_calendar_events([_event(source_id="same", title="Original")])
-    store_member_calendar_events([_event(source_id="same", title="Renamed", location="Goteborg")])
+    store_member_calendar_events([_event(source_id="same", title="Renamed", location="Goteborg", city="Goteborg")])
 
     with get_session() as session:
         rows = session.query(EventTable).all()
@@ -116,6 +125,33 @@ def test_get_all_returns_unified_events():
     assert event.attendees == []
     assert event.showAttendees == ShowAttendees.none
     assert event.extras["url"] == "https://medlem.mensa.se/calendar/event/1/"
+    assert event.locationDescription == "Stockholm"
+    assert event.address == "Klostergatan 11, 11122 Stockholm"
+    assert (event.latitude, event.longitude) == (59.33, 18.06)
+    assert event.extras["region"] == "stockholm"
+    assert event.extras["regionSlug"] == "lf-stockholm-intern"
+    assert event.extras["regionId"] == 7
+    assert event.extras["city"] == "Stockholm"
+    assert event.extras["postalCode"] == "11122"
+    assert event.extras["country"] == "SE"
+
+
+def test_coordinates_land_in_location_columns():
+    store_member_calendar_events([_event(source_id="geo")])
+    with get_session() as session:
+        row = session.query(EventTable).filter_by(source_id="geo").one()
+        assert (row.location_latitude, row.location_longitude) == (59.33, 18.06)
+        assert row.extras["regionSlug"] == "lf-stockholm-intern"
+
+
+def test_event_without_structured_location_falls_back_to_free_text():
+    store_member_calendar_events([_event(
+        source_id="plain", location="Somewhere", address=None, city=None,
+        postal_code=None, latitude=None, longitude=None)])
+    event = get_all_member_calendar_events()[0]
+    assert event.locationDescription == "Somewhere"
+    assert event.address == "Somewhere"
+    assert event.latitude is None and event.longitude is None
 
 
 def test_event_id_follows_the_source_prefix_convention():
@@ -212,27 +248,122 @@ def test_source_timestamps_are_kept_apart_from_sync_timestamps():
 
 # -- Reading rows out of the source database ----------------------------------
 
-def test_row_to_event_maps_a_mysql_row():
-    event = row_to_event({
+def _row(**kw):
+    base = {
         "event_id": 77,
         "event_title": "Pub",
         "event_content": "<p>Kom &amp; hang</p>",
-        "event_location": "Malmo",
+        "event_location": None,
         "event_start_date": datetime.datetime(2026, 7, 15, 19, 0, 0),
         "event_end_date": None,
         "event_saved": None,
-        "event_last_update": None,
-    })
+        "event_lastupdated": None,
+        "event_calendar_id": 12,
+        "cal_title_seo": "lma-örebro-intern",
+    }
+    base.update(kw)
+    return base
+
+
+_LOC = (
+    '{"lat":%s,"long":%s,"addressLines":["Klostergatan 11"],'
+    '"city":"Örebro","region":"","country":"SE","postalCode":"70218"}'
+)
+
+
+def test_row_to_event_maps_a_real_schema_row():
+    event = row_to_event(_row())
     assert event.source_id == "77"
     assert event.title == "Pub"
     # HTML tags and entities are reduced to plain text.
     assert event.description == "Kom & hang"
     assert event.url == "https://medlem.mensa.se/calendar/event/77/"
+    assert event.organizer is None
+    assert event.region_id == 12
+
+
+def test_location_json_with_coordinates():
+    event = row_to_event(_row(event_location=_LOC % ("59.27", "15.21")))
+    assert event.address == "Klostergatan 11"
+    assert event.city == "Örebro"
+    assert event.postal_code == "70218"
+    assert event.country == "SE"
+    assert event.latitude == 59.27
+    assert event.longitude == 15.21
+    assert event.location == "Örebro"
+
+
+def test_location_json_with_null_coordinates():
+    event = row_to_event(_row(event_location=_LOC % ("null", "null")))
+    assert event.latitude is None and event.longitude is None
+    assert event.city == "Örebro"
+
+
+def test_empty_and_zero_coordinates_are_none():
+    event = row_to_event(_row(event_location=_LOC % ('""', "0")))
+    assert event.latitude is None and event.longitude is None
+
+
+def test_null_location_means_no_location():
+    event = row_to_event(_row(event_location=None))
+    assert event.address is None and event.city is None
+    assert event.latitude is None and event.location is None
+
+
+def test_empty_or_invalid_location_is_tolerated():
+    for raw in ("", "not json", "[1, 2]"):
+        event = row_to_event(_row(event_location=raw))
+        assert event.address is None and event.city is None
+
+
+def test_multiple_address_lines_are_joined():
+    raw = '{"addressLines":["Hus A","Gatan 1"],"city":"Lund"}'
+    assert row_to_event(_row(event_location=raw)).address == "Hus A, Gatan 1"
+
+
+def test_unix_timestamps_become_aware_utc():
+    event = row_to_event(_row(event_saved=1780315200, event_lastupdated=1780401600))
+    assert event.created == datetime.datetime(2026, 6, 1, 12, 0, 0, tzinfo=datetime.timezone.utc)
+    assert event.last_modified == datetime.datetime(2026, 6, 2, 12, 0, 0, tzinfo=datetime.timezone.utc)
+    assert event.created.utcoffset() == datetime.timedelta(0)
+
+
+def test_zero_or_missing_timestamps_are_none():
+    event = row_to_event(_row(event_saved=0, event_lastupdated=None))
+    assert event.created is None and event.last_modified is None
+
+
+def test_region_cleaning():
+    cases = {
+        "lma-örebro-intern": "örebro",
+        "lf-stockholm-intern": "stockholm",
+        "lf-väst-intern": "väst",
+        "lf-väst-offentlig": "väst",
+        "mensa-nationellt-intern": "mensa-nationellt",
+        "årsträffen": "årsträffen",
+    }
+    for slug, region in cases.items():
+        event = row_to_event(_row(cal_title_seo=slug))
+        assert event.region == region, slug
+        assert event.region_slug == slug
+
+
+def test_missing_calendar_leaves_region_empty():
+    event = row_to_event(_row(cal_title_seo=None, event_calendar_id=None))
+    assert event.region is None and event.region_slug is None and event.region_id is None
 
 
 def test_row_without_a_start_date_is_skipped():
     """An event with no start has nothing to show against."""
-    assert row_to_event({"event_id": 1, "event_title": "x", "event_start_date": None}) is None
+    assert row_to_event(_row(event_start_date=None)) is None
+
+
+def test_events_query_targets_real_tables():
+    from v1.member_calendar.ips_source import EVENTS_QUERY
+    assert "FROM calendar_events e" in EVENTS_QUERY
+    assert "calendar_calendar_events" not in EVENTS_QUERY
+    assert "e.event_lastupdated" in EVENTS_QUERY
+    assert "LEFT JOIN calendar_calendars c ON c.cal_id = e.event_calendar_id" in EVENTS_QUERY
 
 
 def test_ssh_tunnel_can_be_built(monkeypatch):
@@ -252,11 +383,7 @@ def test_ssh_tunnel_can_be_built(monkeypatch):
 
 
 def test_row_without_a_title_gets_a_placeholder():
-    event = row_to_event({
-        "event_id": 2,
-        "event_title": None,
-        "event_start_date": datetime.datetime(2026, 7, 15, 19, 0, 0),
-    })
+    event = row_to_event(_row(event_id=2, event_title=None))
     assert event.title == "Untitled Event"
 
 
@@ -276,3 +403,126 @@ def test_clear_returns_count():
     store_member_calendar_events([_event(source_id="x"), _event(source_id="y")])
     assert clear_member_calendar_events() == 2
     assert get_all_member_calendar_events() == []
+
+
+# -- Approximate coordinates --------------------------------------------------
+
+def _no_coords(**kw):
+    return _event(latitude=None, longitude=None, **kw)
+
+
+def test_explicit_coordinates_are_not_approximate(monkeypatch):
+    from v1.member_calendar import calendar_db
+    calls = []
+    monkeypatch.setattr(calendar_db, "geocode_address", lambda q: calls.append(q) or (1.0, 2.0))
+    store_member_calendar_events([_event(source_id="exp")])
+    with get_session() as session:
+        row = session.query(EventTable).filter_by(source_id="exp").one()
+        assert (row.location_latitude, row.location_longitude) == (59.33, 18.06)
+        assert row.extras["locationApprox"] is False
+    assert calls == []
+
+
+def test_missing_coordinates_are_geocoded_from_postal_and_city(monkeypatch):
+    from v1.member_calendar import calendar_db
+    calls = []
+    monkeypatch.setattr(calendar_db, "geocode_address", lambda q: calls.append(q) or (59.27, 15.21))
+    store_member_calendar_events([_no_coords(source_id="geo", postal_code="70218", city="Örebro", country="SE")])
+    with get_session() as session:
+        row = session.query(EventTable).filter_by(source_id="geo").one()
+        assert (row.location_latitude, row.location_longitude) == (59.27, 15.21)
+        assert row.extras["locationApprox"] is True
+    assert calls == ["70218 Örebro, SE"]
+
+
+def test_query_defaults_country_to_sverige(monkeypatch):
+    from v1.member_calendar import calendar_db
+    calls = []
+    monkeypatch.setattr(calendar_db, "geocode_address", lambda q: calls.append(q) or None)
+    store_member_calendar_events([_no_coords(source_id="c", postal_code=None, city="Lund", country=None)])
+    assert calls == ["Lund, Sverige"]
+
+
+def test_failed_geocode_leaves_coordinates_empty(monkeypatch):
+    from v1.member_calendar import calendar_db
+    monkeypatch.setattr(calendar_db, "geocode_address", lambda q: None)
+    store_member_calendar_events([_no_coords(source_id="none")])
+    with get_session() as session:
+        row = session.query(EventTable).filter_by(source_id="none").one()
+        assert row.location_latitude is None and row.location_longitude is None
+        assert not row.extras.get("locationApprox")
+
+
+def test_geocoder_exception_does_not_break_the_sync(monkeypatch):
+    from v1.member_calendar import calendar_db
+
+    def boom(q):
+        raise RuntimeError("down")
+    monkeypatch.setattr(calendar_db, "geocode_address", boom)
+    assert store_member_calendar_events([_no_coords(source_id="boom")]) == 1
+
+
+def test_no_place_means_no_geocoding(monkeypatch):
+    from v1.member_calendar import calendar_db
+    calls = []
+    monkeypatch.setattr(calendar_db, "geocode_address", lambda q: calls.append(q))
+    store_member_calendar_events([_no_coords(source_id="np", postal_code=None, city=None)])
+    assert calls == []
+
+
+def test_repeated_city_is_geocoded_once_per_run(monkeypatch):
+    from v1.member_calendar import calendar_db
+    calls = []
+    monkeypatch.setattr(calendar_db, "geocode_address", lambda q: calls.append(q) or (59.0, 15.0))
+    store_member_calendar_events([
+        _no_coords(source_id="r1", city="Örebro"),
+        _no_coords(source_id="r2", city="örebro "),
+        _no_coords(source_id="r3", city="Örebro"),
+    ])
+    assert len(calls) == 1
+    store_member_calendar_events([_no_coords(source_id="r4", city="Örebro")])
+    assert len(calls) == 2  # cache is per run
+
+
+def test_geocode_address_never_raises(monkeypatch):
+    from v1.google_maps_api import geolocation_api as g
+
+    class Client:
+        def geocode(self, a):
+            if a == "boom":
+                raise RuntimeError("x")
+            return [{"geometry": {"location": {"lat": 1.5, "lng": 2.5}}}] if a == "ok" else []
+
+    monkeypatch.setattr(g, "GOOGLE_GEOCODING_API_KEY", "key")
+    monkeypatch.setattr(g, "gmaps", Client(), raising=False)
+    assert g.geocode_address("ok") == (1.5, 2.5)
+    assert g.geocode_address("empty") is None
+    assert g.geocode_address("boom") is None
+    monkeypatch.setattr(g, "GOOGLE_GEOCODING_API_KEY", "")
+    assert g.geocode_address("ok") is None
+
+
+# -- SSH key robustness -------------------------------------------------------
+
+def _configure(monkeypatch, key_path):
+    from v1.member_calendar import ips_source
+    for name, val in [("IPS_SSH_HOST", "h"), ("IPS_SSH_USER", "u"), ("IPS_DB_NAME", "d"),
+                      ("IPS_DB_USER", "u"), ("IPS_DB_PASS", "p"), ("IPS_SSH_KEY_PATH", key_path)]:
+        monkeypatch.setattr(ips_source, name, val)
+
+    def no_tunnel():
+        raise AssertionError("tunnel must not be built")
+    monkeypatch.setattr(ips_source, "_ssh_tunnel", no_tunnel)
+    return ips_source
+
+
+def test_missing_ssh_key_file_skips_the_sync(monkeypatch, tmp_path):
+    src = _configure(monkeypatch, str(tmp_path / "absent"))
+    assert src.fetch_member_calendar_events() == []
+
+
+def test_empty_ssh_key_file_skips_the_sync(monkeypatch, tmp_path):
+    key = tmp_path / "key"
+    key.write_text("")
+    src = _configure(monkeypatch, str(key))
+    assert src.fetch_member_calendar_events() == []

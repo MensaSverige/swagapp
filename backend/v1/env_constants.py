@@ -22,6 +22,8 @@ try:
     IPS_DB_USER = os.getenv('IPS_DB_USER')
     IPS_DB_PASS = os.getenv('IPS_DB_PASS')
 
+    MAIN_EVENT_GATING = os.getenv('MAIN_EVENT_GATING', 'false').lower() == 'true'
+
     if LOGINM_SEED is None or LOGINB_SEED is None or EVENT_API_TOKEN is None or URL_MEMBER_API is None or URL_EXTERNAL_ROOT is None or SECRET_KEY is None or TEST_MODE is None:
         raise ValueError("One or more environment variables are not set")
 except ValueError as e:

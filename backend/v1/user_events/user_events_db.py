@@ -30,6 +30,7 @@ def create_user_event(user_event) -> int:
             end=data.get("end"),
             description=data.get("description"),
             maxAttendees=data.get("maxAttendees"),
+            parent_event=data.get("parentEvent"),
             tags=data.get("tags") or [],
         )
         # Location
@@ -109,6 +110,7 @@ def update_user_event(event_id: str, user_event: UserEvent) -> bool:
         row.end = data.get("end")
         row.description = data.get("description")
         row.maxAttendees = data.get("maxAttendees")
+        row.parent_event = data.get("parentEvent")
         row.tags = data.get("tags") or []
 
         loc = data.get("location")
