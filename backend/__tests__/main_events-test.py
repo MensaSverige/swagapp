@@ -440,3 +440,56 @@ def test_main_listing_excludes_long_past_calendar_rows_in_sql():
         session.commit()
     cal = _calendar_row("fresh")
     assert [e.id for e in svc.list_main_events(_user(1))] == [cal]
+
+
+# -- member calendar events are for members only -------------------------------------
+
+def _companion(user_id):
+    """A medföljande: an account for the riksträff, not a Mensa member."""
+    return {"userId": user_id, "isMember": False, "settings": {}}
+
+
+def test_main_listing_hides_member_calendar_events_from_non_members():
+    main_events.store_root_main_event(_root())
+    cal = _calendar_row()
+    assert [e.id for e in svc.list_main_events(_companion(9))] == [ROOT_ID]
+    assert cal in [e.id for e in svc.list_main_events(_user(9))]
+
+
+def test_non_member_cannot_register_for_a_member_calendar_event():
+    cal = _calendar_row()
+    for call in (svc.attend_event_via_unified, svc.unattend_event_via_unified):
+        with pytest.raises(HTTPException) as exc:
+            call(cal, _companion(9))
+        assert exc.value.status_code == 404
+    assert main_events.is_registered(9, cal) is False
+
+
+def test_non_member_can_still_register_for_the_riksträff():
+    main_events.store_root_main_event(_root())
+    assert svc.attend_event_via_unified(ROOT_ID, _companion(9)).attending is True
+
+
+def test_children_of_a_member_calendar_event_are_hidden_from_non_members(gating):
+    _seed_children()
+    cal = _calendar_row()
+    create_user_event(_user_event(owner=1, parent=cal))
+    assert "usr3" in _ids(svc.list_unified_events(_user(2)))
+    assert _ids(svc.list_unified_events(_companion(9))) == {"ext500", "usr1", "usr2"}
+    assert svc.list_unified_events(_companion(9), parent=cal) == []
+
+
+def test_non_member_cannot_hang_an_event_on_a_member_calendar_event(gating):
+    cal = _calendar_row()
+    with pytest.raises(HTTPException) as exc:
+        svc.create_user_event_via_unified(_event_body(parent=cal), _companion(9))
+    assert exc.value.status_code == 400
+    assert svc.create_user_event_via_unified(_event_body(parent=cal), _user(1)).parentEvent == cal
+
+
+def test_users_event_id_is_404_for_a_non_member_on_a_member_calendar_event():
+    _visible_user(100)
+    cal = _calendar_row()
+    with pytest.raises(HTTPException) as exc:
+        _get_users(_companion(100), event_id=cal)
+    assert exc.value.status_code == 404

@@ -54,7 +54,7 @@ async def get_users(show_location: bool = None,
         )
     users_list = get_users_showing_location()
     if event_id is not None:
-        if not main_events.get_main_event(event_id):
+        if not main_events.get_visible_main_event(event_id, current_user):
             raise HTTPException(status_code=404, detail="Event not found")
         registered = main_events.get_registered_user_ids(event_id)
         if current_user.get("userId") not in registered:
