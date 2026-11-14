@@ -4,6 +4,7 @@ import {
     ActivityIndicator,
     ScrollView,
     RefreshControl,
+    TouchableOpacity,
     useColorScheme,
 } from 'react-native';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
@@ -17,10 +18,17 @@ import { groupEventsByDate, sortEventsByDate } from '@/features/events/utils/eve
 import { Colors } from '@/constants/Colors';
 import { useBottomTabOverflow } from '@/components/ui/TabBarBackground';
 import { MaterialIcons } from '@expo/vector-icons';
+import { DIVIDER_COLOR, EVENT_HEADER_BG, PAGE_PADDING, typeScale } from '@/features/events/styles/typeScale';
 
+/**
+ * A member's bookings: only those, as their own page. Opened from "Se alla"
+ * under Mina bokningar, scoped to that main event (`parent`). From here the
+ * whole programme is one tap away in Aktiviteter.
+ */
 export default function UserEventsScreen() {
-    const { userId: userIdParam } = useLocalSearchParams<{ userId?: string }>();
+    const { userId: userIdParam, parent } = useLocalSearchParams<{ userId?: string; parent?: string }>();
     const { user } = useStore();
+    const selectMainEvent = useStore(s => s.selectMainEvent);
     const router = useRouter();
     const colorScheme = useColorScheme();
     const bottom = useBottomTabOverflow();
@@ -40,6 +48,7 @@ export default function UserEventsScreen() {
             const end = event.end ? new Date(event.end) : null;
             const isOngoing = end ? start <= now && end >= now : false;
             if (start < now && !isOngoing) return false;
+            if (parent && event.parentEvent !== parent) return false;
 
             if (isOwnEvents) {
                 return event.attendingOrHost;
@@ -51,13 +60,31 @@ export default function UserEventsScreen() {
         });
 
         return groupEventsByDate(sortEventsByDate(filtered));
-    }, [allEvents, targetUserId, isOwnEvents]);
+    }, [allEvents, targetUserId, isOwnEvents, parent]);
 
     const handleEventPress = useCallback((event: ExtendedEvent) => {
         router.push({ pathname: '/events/[id]', params: { id: event.id } });
     }, [router]);
 
     const isEmpty = Object.keys(userGroupedEvents).length === 0;
+    const link = colorScheme === 'dark' ? Colors.primary300 : EVENT_HEADER_BG;
+
+    // On to every activity: the main event's programme when scoped to one.
+    const openAllActivities = useCallback(() => {
+        if (parent) selectMainEvent(parent);
+        router.navigate('/(tabs)/(events)');
+    }, [parent, selectMainEvent, router]);
+
+    const allActivitiesRow = isOwnEvents ? (
+        <TouchableOpacity
+            onPress={openAllActivities}
+            style={[styles.linkRow, { borderColor: colorScheme === 'dark' ? Colors.coolGray700 : DIVIDER_COLOR }]}
+            accessibilityRole="link"
+        >
+            <ThemedText style={[styles.linkText, { color: link }]}>Alla aktiviteter</ThemedText>
+            <MaterialIcons name="chevron-right" size={22} color={link} />
+        </TouchableOpacity>
+    ) : null;
 
     const refreshControl = (
         <RefreshControl
@@ -90,6 +117,7 @@ export default function UserEventsScreen() {
                     <ThemedText style={styles.emptyText}>
                         {isOwnEvents ? 'Du har inga bokningar ännu' : 'Inga bokningar hittades'}
                     </ThemedText>
+                    <ThemedView style={styles.emptyLink}>{allActivitiesRow}</ThemedView>
                 </ScrollView>
             ) : (
                 <ScrollView
@@ -102,6 +130,7 @@ export default function UserEventsScreen() {
                         showCategories={true}
                         dateHeaderStyle="aligned"
                     />
+                    {allActivitiesRow}
                 </ScrollView>
             )}
         </ThemedView>
@@ -125,5 +154,23 @@ const styles = StyleSheet.create({
         fontSize: 16,
         textAlign: 'center',
         opacity: 0.7,
+    },
+    emptyLink: {
+        alignSelf: 'stretch',
+        marginTop: 24,
+        marginHorizontal: -20,
+    },
+    linkRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        minHeight: 48,
+        paddingHorizontal: PAGE_PADDING,
+        marginTop: 12,
+        borderTopWidth: 1,
+        borderBottomWidth: 1,
+    },
+    linkText: {
+        ...typeScale.link,
     },
 });

@@ -17,7 +17,6 @@ import { useEvents } from '../hooks/useEvents';
 import { useEventAttendance } from '../hooks/useEventAttendance';
 import {
     navigateToLastMinuteEvents,
-    navigateToScheduleWithFilter,
 } from '../utilities/navigationUtils';
 import { ExtendedEvent } from '../types/eventUtilTypes';
 import { groupEventsByDate } from '../utils/eventUtils';
@@ -78,8 +77,9 @@ const ParentEventDashboard: React.FC<ParentEventDashboardProps> = ({ mainEvent }
         router.push({ pathname: '/events/[id]', params: { id: event.id } });
     };
 
+    // Its own page with only the member's bookings here, not a filtered Aktiviteter.
     const navigateToMyBookings = () =>
-        navigateToScheduleWithFilter({ attendingOrHost: true, bookable: null, official: null, categories: [] });
+        router.push({ pathname: '/events/user-events', params: { parent: mainEvent.id } });
 
     const infoTiles = (
         <View style={styles.infoGrid}>
