@@ -236,12 +236,27 @@ export const formatRelativeStart = (e: Event, now: number): string => {
   return `Om ${days} dagar`;
 };
 
+const REGION_SLUG = /^(lf|lma)-(.+?)(?:-(?:intern|offentlig))?$/;
+
 /**
- * Splits an address into street (before the first comma) and the rest (postal
- * code and city). Without a comma, locationDescription is the second line when
- * it differs from the street. Without an address, locationDescription is the
- * only line.
+ * The Mensa local group a member calendar event belongs to, as a stable key:
+ * `lf-väst-intern` -> `lf-väst`. Null for events not from a local group's
+ * calendar (national calendars, other sources).
  */
+export const regionKey = (event: Pick<Event, 'extras'>): string | null => {
+  const slug = event.extras?.regionSlug;
+  if (typeof slug !== 'string') return null;
+  const match = REGION_SLUG.exec(slug.trim().toLowerCase());
+  return match ? `${match[1]}-${match[2]}` : null;
+};
+
+/** `lf-väst` -> "LF Väst", `lma-örebro` -> "LMA Örebro". */
+export const formatRegionKey = (key: string): string => {
+  const dash = key.indexOf('-');
+  const name = key.slice(dash + 1).split('-').filter(Boolean).map(capitalize).join(' ');
+  return `${key.slice(0, dash).toUpperCase()} ${name}`;
+};
+
 /**
  * The Mensa local group a member calendar event belongs to, for display:
  * `lf-väst-intern` -> "LF Väst", `lma-örebro-intern` -> "LMA Örebro". Every
@@ -249,18 +264,18 @@ export const formatRelativeStart = (e: Event, now: number): string => {
  * reader where an event is. Null for events not from the member calendar.
  */
 export const formatRegion = (event: Pick<Event, 'extras'>): string | null => {
-  const slug = event.extras?.regionSlug;
-  if (typeof slug === 'string') {
-    const match = /^(lf|lma)-(.+?)(?:-(?:intern|offentlig))?$/i.exec(slug.trim());
-    if (match) {
-      const name = match[2].split('-').filter(Boolean).map(capitalize).join(' ');
-      return `${match[1].toUpperCase()} ${name}`;
-    }
-  }
+  const key = regionKey(event);
+  if (key) return formatRegionKey(key);
   const region = event.extras?.region;
   return typeof region === 'string' && region.trim() ? capitalize(region.trim()) : null;
 };
 
+/**
+ * Splits an address into street (before the first comma) and the rest (postal
+ * code and city). Without a comma, locationDescription is the second line when
+ * it differs from the street. Without an address, locationDescription is the
+ * only line.
+ */
 export const splitAddress = (
   address?: string | null,
   locationDescription?: string | null,

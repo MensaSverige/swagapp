@@ -6,8 +6,12 @@ import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { Colors } from '@/constants/Colors';
 import { LocationLinkButton } from '@/features/map/components/LocationLinkIcon';
+import { confirmAsync } from '@/features/common/functions/confirmAsync';
+import useStore from '@/features/common/store/store';
 import { Event } from '../../../api_schema/types';
 import GroupedEventsList from './GroupedEventsList';
+import UserList from './UserList';
+import { useEventUsers } from '../hooks/useEventUsers';
 import { useEvents } from '../hooks/useEvents';
 import { setMainEventAttendance } from '../hooks/useMainEvents';
 import {
@@ -22,6 +26,7 @@ import {
     formatRegion,
     formatRelativeStart,
     getMainEventChildren,
+    isLocalEvent,
     splitAddress,
     selectMyBookings,
     selectToBook,
@@ -52,9 +57,14 @@ const ParentEventDashboard: React.FC<ParentEventDashboardProps> = ({ mainEvent }
     const [registering, setRegistering] = useState(false);
 
     const attending = !!mainEvent.attending;
+    const { adminUsers } = useEventUsers(mainEvent);
+    const hostCount = mainEvent.admin?.length ?? 0;
     const isRoot = mainEvent.source === 'external_root';
     const place = splitAddress(mainEvent.address, mainEvent.locationDescription);
     const region = formatRegion(mainEvent);
+    // The riksträff's description only repeats its dates; a local event's is
+    // the invitation itself (what, where, cost, how to pay).
+    const description = isLocalEvent(mainEvent) ? mainEvent.description?.trim() : null;
     const relativeLabel = formatRelativeStart(mainEvent, Date.now());
 
     const children = useMemo(
@@ -81,6 +91,33 @@ const ParentEventDashboard: React.FC<ParentEventDashboardProps> = ({ mainEvent }
             await setMainEventAttendance(mainEvent.id, true);
         } catch {
             Alert.alert('Något gick fel', 'Det gick inte att anmäla dig. Försök igen.');
+        } finally {
+            setRegistering(false);
+        }
+    };
+
+    const handleUnregister = async () => {
+        if (registering) return;
+        const confirmed = await confirmAsync(
+            'Avanmäl dig?',
+            `Du avanmäls från ${mainEvent.name}.`,
+            'Avanmäl',
+        );
+        if (!confirmed) return;
+        setRegistering(true);
+        try {
+            await setMainEventAttendance(mainEvent.id, false);
+            // A riksträff booking keeps the registration: it is derived from the
+            // booking site, not stored by the app, so say why nothing changed.
+            const after = useStore.getState().mainEvents.find(e => e.id === mainEvent.id);
+            if (after?.attending) {
+                Alert.alert(
+                    'Du är fortfarande anmäld',
+                    'Du har bokat aktiviteter på evenemanget. Avboka dem först för att avanmäla dig.',
+                );
+            }
+        } catch {
+            Alert.alert('Något gick fel', 'Det gick inte att avanmäla dig. Försök igen.');
         } finally {
             setRegistering(false);
         }
@@ -160,11 +197,39 @@ const ParentEventDashboard: React.FC<ParentEventDashboardProps> = ({ mainEvent }
                         color={attending ? registeredColor : iconGray}
                         style={styles.rowIcon}
                     />
-                    <ThemedText style={[styles.rowLine1, { color: attending ? registeredColor : iconGray }]}>
+                    <ThemedText style={[styles.rowLine1, styles.rowText, { color: attending ? registeredColor : iconGray }]}>
                         {attending ? 'Du är anmäld' : 'Du är inte anmäld'}
                     </ThemedText>
+                    {attending && (
+                        <TouchableOpacity
+                            onPress={handleUnregister}
+                            disabled={registering}
+                            style={styles.rowAction}
+                            accessibilityRole="button"
+                            accessibilityLabel={`Avanmäl dig från ${mainEvent.name}`}
+                        >
+                            <ThemedText style={[styles.seeAllText, registering && styles.rowActionDisabled]}>
+                                {registering ? 'Avanmäler...' : 'Avanmäl'}
+                            </ThemedText>
+                        </TouchableOpacity>
+                    )}
                 </View>
             </View>
+
+            {!!description && (
+                <ThemedText style={styles.description}>{description}</ThemedText>
+            )}
+
+            {/* As on the event page: the profile when the host has an account, else the name. */}
+            {hostCount > 0 && (
+                <UserList
+                    users={adminUsers}
+                    title={hostCount === 1 ? 'Värd' : 'Värdar'}
+                    fallbackData={mainEvent.hosts}
+                    alwaysExpanded
+                    gridAvatarSize="md"
+                />
+            )}
 
             {!attending && (
                 <>
@@ -240,6 +305,7 @@ const ParentEventDashboard: React.FC<ParentEventDashboardProps> = ({ mainEvent }
                         {sectionHeader('Mina bokningar', navigateToMyBookings)}
                         {myBookings.length > 0 ? (
                             <GroupedEventsList
+                                bleed
                                 groupedEvents={myBookingsGrouped}
                                 onEventPress={handleEventPress}
                                 showCategories={true}
@@ -256,6 +322,7 @@ const ParentEventDashboard: React.FC<ParentEventDashboardProps> = ({ mainEvent }
                         <View style={styles.eventsSection}>
                             {sectionHeader('Att anmäla sig till', navigateToBookableEvents)}
                             <GroupedEventsList
+                                bleed
                                 groupedEvents={toBookGrouped}
                                 onEventPress={handleEventPress}
                                 showCategories={true}
@@ -309,6 +376,19 @@ const createStyles = (colorScheme: string) => {
         rowLine2: {
             ...typeScale.meta,
             color: dark ? Colors.coolGray400 : '#4B5563',
+        },
+        rowAction: {
+            minHeight: 44,
+            paddingHorizontal: 8,
+            justifyContent: 'center',
+        },
+        rowActionDisabled: {
+            opacity: 0.5,
+        },
+        description: {
+            ...typeScale.body,
+            marginTop: 16,
+            color: dark ? Colors.coolGray100 : '#11181C',
         },
         directions: {
             width: 44,

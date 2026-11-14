@@ -1,9 +1,10 @@
 import { useMemo } from 'react';
 import useStore from '@/features/common/store/store';
-import { User } from '../../../api_schema/types';
-import { ExtendedEvent } from '../types/eventUtilTypes';
+import { Event, User } from '../../../api_schema/types';
 
-export function useEventUsers(event: ExtendedEvent) {
+export function useEventUsers(
+  event: Pick<Event, 'id' | 'admin' | 'attendees' | 'showAttendees' | 'attending'>,
+) {
   const usersById = useStore((s) => s.usersById);
 
   const adminUsers = useMemo(

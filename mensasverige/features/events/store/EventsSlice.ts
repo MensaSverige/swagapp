@@ -2,6 +2,7 @@ import { StateCreator } from 'zustand';
 import { ExtendedEvent } from '../types/eventUtilTypes';
 import { Event, ExternalRoot, Tag } from '../../../api_schema/types';
 import { INTEREST_TAGS } from '../utils/interestTags';
+import { DEFAULT_LOCAL_EVENT_FILTER, LocalEventFilter } from '../utils/localEventFilter';
 
 export interface EventFilterOptions {
   attendingOrHost?: boolean | null;
@@ -38,6 +39,8 @@ export interface EventsSlice {
 
   // Active filter (source of truth — derivations live in useEvents useMemo)
   currentEventFilter: EventFilterOptions;
+  // Local events by local group or distance; saved on the device by useLocalEventFilter.
+  localEventFilter: LocalEventFilter;
 
   setEvents: (events: ExtendedEvent[]) => void;
   setEventsRefreshing: (v: boolean) => void;
@@ -60,6 +63,7 @@ export interface EventsSlice {
 
   setCurrentEventFilter: (filter: EventFilterOptions) => void;
   resetFilters: () => void;
+  setLocalEventFilter: (filter: LocalEventFilter) => void;
 
   addOrUpdateEvent: (event: ExtendedEvent) => void;
 }
@@ -91,6 +95,7 @@ export const createEventsSlice: StateCreator<EventsSlice> = (set, get) => ({
   autoSelectDismissed: false,
 
   currentEventFilter: defaultEventFilter,
+  localEventFilter: DEFAULT_LOCAL_EVENT_FILTER,
 
   setEvents: (events) => set({ events }),
   setEventsRefreshing: (eventsRefreshing) => set({ eventsRefreshing }),
@@ -111,6 +116,7 @@ export const createEventsSlice: StateCreator<EventsSlice> = (set, get) => ({
 
   setCurrentEventFilter: (currentEventFilter) => set({ currentEventFilter }),
   resetFilters: () => set({ currentEventFilter: defaultEventFilter }),
+  setLocalEventFilter: (localEventFilter) => set({ localEventFilter }),
 
   addOrUpdateEvent: (event) => {
     const { events } = get();

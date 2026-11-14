@@ -65,6 +65,32 @@ export const refreshEventsList = async (): Promise<void> => {
   }
 };
 
+/**
+ * Load the users behind these ids into the store, skipping ones already
+ * there, in small chunks after the current render. Ids without an account,
+ * or whose profile is hidden from the viewer, simply stay missing; the
+ * screens then fall back to the names they have.
+ */
+export const prefetchUsers = (ids: Iterable<number>): void => {
+  const wanted = new Set(ids);
+  if (wanted.size === 0) return;
+  setTimeout(() => {
+    const newIds = [...wanted].filter(id => !useStore.getState().usersById[id]);
+    if (newIds.length === 0) return;
+    (async () => {
+      for (let i = 0; i < newIds.length; i += USER_PREFETCH_CHUNK_SIZE) {
+        const chunk = newIds.slice(i, i + USER_PREFETCH_CHUNK_SIZE);
+        try {
+          const users = await getUsersByIds(chunk.map(String));
+          useStore.getState().setUsers(users);
+        } catch (err) {
+          console.error('[prefetchUsers] getUsersByIds chunk failed:', err);
+        }
+      }
+    })().catch(err => console.error('[prefetchUsers] failed:', err));
+  }, 0);
+};
+
 const DASHBOARD_MAX = 3;
 const LAST_MINUTE_HOURS = 2;
 
@@ -175,23 +201,7 @@ export const useEvents = (options: UseEventsOptions = {}): UseEventsReturn => {
         event.attendees?.forEach(a => allIds.add(a.userId));
       }
 
-      if (allIds.size > 0) {
-        setTimeout(() => {
-          const newIds = [...allIds].filter(id => !useStore.getState().usersById[id]);
-          if (newIds.length === 0) return;
-          (async () => {
-            for (let i = 0; i < newIds.length; i += USER_PREFETCH_CHUNK_SIZE) {
-              const chunk = newIds.slice(i, i + USER_PREFETCH_CHUNK_SIZE);
-              try {
-                const users = await getUsersByIds(chunk.map(String));
-                setUsers(users);
-              } catch (err) {
-                console.error('[useEvents] getUsersByIds chunk failed:', err);
-              }
-            }
-          })().catch(err => console.error('[useEvents] user prefetch failed:', err));
-        }, 0);
-      }
+      prefetchUsers(allIds);
     } catch (err) {
       setEventsError(err as Error);
       console.error('Error fetching events:', err);

@@ -6,6 +6,7 @@ import { canonicalCategoryCode } from '../utilities/EventCategories';
 import { Colors } from '@/constants/Colors';
 import { ExtendedEvent } from '../types/eventUtilTypes';
 import { formatRegion } from '../utils/mainEventUtils';
+import { PAGE_PADDING } from '../styles/typeScale';
 
 interface EventListItemProps {
     event: ExtendedEvent;
@@ -30,6 +31,7 @@ const EventListItem: React.FC<EventListItemProps> = ({
     const styles = useMemo(() => createStyles(colorScheme ?? 'light'), [colorScheme]);
 
     const shouldGrayOut = (!event.bookable && !event.attending) || !event.isFutureEvent;
+    const meta = [formatRegion(event), event.locationDescription].filter(Boolean).join(' · ');
     const opacityStyle = useMemo(() => (opacity < 1 ? { opacity } : undefined), [opacity]);
 
     return (
@@ -53,20 +55,13 @@ const EventListItem: React.FC<EventListItemProps> = ({
                         {event.end ? DisplayTime(event.end) : ''}
                     </Text>
                 </View>
-                <CategoryBadge
-                    eventType={event.official ? 'official' : 'non-official'}
-                    showLabel={false}
-                    size="x-small"
-                />
                 <View style={styles.eventContent}>
                     <View style={styles.titleContainer}>
                         <Text style={shouldGrayOut ? styles.eventTitleGrayOut : styles.eventTitle}>
                             {event.name}
                         </Text>
                     </View>
-                    <Text style={styles.eventLocation}>
-                        {[formatRegion(event), event.locationDescription].filter(Boolean).join(' · ')}
-                    </Text>
+                    {!!meta && <Text style={styles.eventLocation}>{meta}</Text>}
                 </View>
                 {showCategories && (
                     <View style={styles.categoriesContainer}>
@@ -88,9 +83,10 @@ const EventListItem: React.FC<EventListItemProps> = ({
 const createStyles = (colorScheme: string) => StyleSheet.create({
     eventItem: {
         flexDirection: 'row',
-        justifyContent: 'space-between',
-        paddingHorizontal: 20,
-        paddingVertical: 8,
+        alignItems: 'flex-start',
+        gap: 12,
+        paddingHorizontal: PAGE_PADDING,
+        paddingVertical: 10,
     },
     attendingEventItem: {
         backgroundColor: 'rgba(16, 185, 129, 0.1)',
@@ -99,7 +95,7 @@ const createStyles = (colorScheme: string) => StyleSheet.create({
         opacity: 0.4,
     },
     timeContainer: {
-        justifyContent: 'flex-start',
+        minWidth: 40,
     },
     startTime: {
         fontSize: 14,
@@ -119,8 +115,7 @@ const createStyles = (colorScheme: string) => StyleSheet.create({
     },
     eventContent: {
         flex: 1,
-        flexDirection: 'column',
-        justifyContent: 'space-between',
+        gap: 2,
     },
     eventTitle: {
         fontSize: 16,
@@ -138,6 +133,7 @@ const createStyles = (colorScheme: string) => StyleSheet.create({
     },
     categoriesContainer: {
         flexDirection: 'row',
+        alignSelf: 'center',
         gap: 8,
     },
     eventLocation: {

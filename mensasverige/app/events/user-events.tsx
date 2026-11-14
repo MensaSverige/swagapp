@@ -100,7 +100,7 @@ export default function UserEventsScreen() {
                         groupedEvents={userGroupedEvents}
                         onEventPress={handleEventPress}
                         showCategories={true}
-                        dateHeaderStyle="default"
+                        dateHeaderStyle="aligned"
                     />
                 </ScrollView>
             )}

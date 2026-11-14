@@ -279,9 +279,11 @@ def map_member_calendar_event(calendar_event: MemberCalendarEvent) -> Event:
         sourceId=calendar_event.source_id,
         source=EventSource.calendar,
         parentEvent=None,
-        # Nobody administers these from inside the app -- they are edited on
-        # the member site.
-        admin=[],
+        # The organiser, by membership number, as for events from the SWAG
+        # site: the app shows them as host and links their profile when they
+        # have an account. It grants no editing -- these are official, and
+        # edited on the member site.
+        admin=[calendar_event.organizer_id] if calendar_event.organizer_id else [],
         # userId 0 where the member site has no membership number for them:
         # the name is still worth showing, it just links nowhere.
         hosts=([EventHost(userId=calendar_event.organizer_id or 0,

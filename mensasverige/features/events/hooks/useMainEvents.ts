@@ -5,7 +5,7 @@ import { attendEvent, fetchMainEvents, unattendEvent } from '../services/eventSe
 import { findAutoSelectMainEventId, isLocalEvent } from '../utils/mainEventUtils';
 import { createExtendedEvent } from '../utils/eventUtils';
 import { ExtendedEvent } from '../types/eventUtilTypes';
-import { refreshEventsList } from './useEvents';
+import { prefetchUsers, refreshEventsList } from './useEvents';
 
 let isFetchingMain = false;
 
@@ -18,6 +18,8 @@ export const refreshMainEvents = async (): Promise<void> => {
     state.setMainEventsLoading(true);
     const list = await fetchMainEvents();
     state.setMainEvents(Array.isArray(list) ? list : []);
+    // Organisers of local events, shown as hosts when they have an account.
+    prefetchUsers((Array.isArray(list) ? list : []).flatMap(e => e.admin ?? []));
     state.setMainEventsInitialized(true);
 
     const { selectedMainEventId, autoSelectDismissed, mainEvents } = useStore.getState();

@@ -11,6 +11,12 @@ import { DatepickerField } from '@/features/common/components/inputs/DatepickerF
 import { EventFilterOptions } from '../store/EventsSlice';
 import { ThemedText } from '@/components/ThemedText';
 import { useBottomTabOverflow } from '@/components/ui/TabBarBackground';
+import {
+  DEFAULT_LOCAL_EVENT_FILTER,
+  DISTANCE_OPTIONS_KM,
+  LocalEventFilter,
+  LocalGroupOption,
+} from '../utils/localEventFilter';
 
 
 const { width: screenWidth } = Dimensions.get('window');
@@ -18,8 +24,13 @@ const { width: screenWidth } = Dimensions.get('window');
 interface EventFilterProps {
   visible: boolean;
   onClose: () => void;
-  onApplyFilter: (filter: EventFilterOptions) => void;
+  onApplyFilter: (filter: EventFilterOptions, localFilter?: LocalEventFilter) => void;
   currentFilter: EventFilterOptions;
+  /** Local groups to choose from. Empty or absent hides the "Lokala träffar" section. */
+  localGroups?: LocalGroupOption[];
+  currentLocalFilter?: LocalEventFilter;
+  /** Whether the user's position is known; distance filtering needs it. */
+  hasUserPosition?: boolean;
 }
 
 export const EventFilter: React.FC<EventFilterProps> = ({
@@ -27,10 +38,19 @@ export const EventFilter: React.FC<EventFilterProps> = ({
   onClose,
   onApplyFilter,
   currentFilter,
+  localGroups = [],
+  currentLocalFilter = DEFAULT_LOCAL_EVENT_FILTER,
+  hasUserPosition = false,
 }) => {
   const colorScheme = useColorScheme();
   const insets = useSafeAreaInsets();
   const [localFilter, setLocalFilter] = useState<EventFilterOptions>(currentFilter);
+  const [draftLocal, setDraftLocal] = useState<LocalEventFilter>(currentLocalFilter);
+  // The last picked groups, so switching to distance and back does not lose them.
+  const [lastRegions, setLastRegions] = useState<string[]>(
+    currentLocalFilter.mode === 'regions' ? currentLocalFilter.regions : [],
+  );
+  const showLocalSection = localGroups.length > 0;
   
   // Animation values
   const slideAnim = useRef(new Animated.Value(screenWidth * 0.75)).current;
@@ -42,6 +62,11 @@ export const EventFilter: React.FC<EventFilterProps> = ({
   useEffect(() => {
     setLocalFilter(currentFilter);
   }, [currentFilter]);
+
+  useEffect(() => {
+    setDraftLocal(currentLocalFilter);
+    if (currentLocalFilter.mode === 'regions') setLastRegions(currentLocalFilter.regions);
+  }, [currentLocalFilter]);
 
   useEffect(() => {
     if (visible) {
@@ -76,8 +101,20 @@ export const EventFilter: React.FC<EventFilterProps> = ({
   }, [visible]);
 
   const handleApply = () => {
-    onApplyFilter(localFilter);
+    // "Lokalavdelning" with nothing ticked keeps everything: store it as "Alla".
+    const local: LocalEventFilter =
+      draftLocal.mode === 'regions' && draftLocal.regions.length === 0 ? { mode: 'all' } : draftLocal;
+    onApplyFilter(localFilter, showLocalSection ? local : undefined);
     onClose();
+  };
+
+  const toggleRegion = (key: string) => {
+    setDraftLocal(prev => {
+      const regions = prev.mode === 'regions' ? prev.regions : [];
+      const next = regions.includes(key) ? regions.filter(r => r !== key) : [...regions, key];
+      setLastRegions(next);
+      return { mode: 'regions', regions: next };
+    });
   };
 
   const handleReset = () => {
@@ -90,6 +127,8 @@ export const EventFilter: React.FC<EventFilterProps> = ({
       dateTo: null,
     };
     setLocalFilter(resetFilter);
+    setDraftLocal({ mode: 'all' });
+    setLastRegions([]);
   };
 
   const toggleTriStateOption = (
@@ -146,6 +185,38 @@ export const EventFilter: React.FC<EventFilterProps> = ({
   };
 
   const styles = createStyles(colorScheme ?? 'light');
+  const selectedColor = colorScheme === 'dark' ? Colors.primary300 : '#005DB4';
+  const unselectedColor = colorScheme === 'dark' ? '#9ca3af' : '#6b7280';
+
+  /** One tappable row with a radio or checkbox icon; `indent` for the choices under a mode. */
+  const choiceRow = (opts: {
+    key: string;
+    label: string;
+    selected: boolean;
+    onPress: () => void;
+    kind: 'radio' | 'check';
+    indent?: boolean;
+    disabled?: boolean;
+    trailing?: string;
+  }) => {
+    const icon = opts.kind === 'radio'
+      ? (opts.selected ? 'radio-button-checked' : 'radio-button-unchecked')
+      : (opts.selected ? 'check-box' : 'check-box-outline-blank');
+    return (
+      <TouchableOpacity
+        key={opts.key}
+        style={[styles.choiceRow, opts.indent && styles.choiceRowIndent, opts.disabled && styles.choiceRowDisabled]}
+        onPress={opts.onPress}
+        disabled={opts.disabled}
+        accessibilityRole={opts.kind === 'radio' ? 'radio' : 'checkbox'}
+        accessibilityState={{ checked: opts.selected, disabled: Boolean(opts.disabled) }}
+      >
+        <MaterialIcons name={icon} size={22} color={opts.selected ? selectedColor : unselectedColor} />
+        <ThemedText style={styles.choiceLabel}>{opts.label}</ThemedText>
+        {opts.trailing ? <Text style={styles.choiceTrailing}>{opts.trailing}</Text> : null}
+      </TouchableOpacity>
+    );
+  };
 
   if (!visible) {
     return null;
@@ -194,6 +265,49 @@ export const EventFilter: React.FC<EventFilterProps> = ({
 
         <ScrollView style={styles.menuContent} showsVerticalScrollIndicator={false}>
           {/* Status Filters */}
+          {showLocalSection && (
+            <View style={styles.section}>
+              <ThemedText type='sectionHeader'>Lokala träffar</ThemedText>
+              {choiceRow({
+                key: 'all', label: 'Alla', kind: 'radio',
+                selected: draftLocal.mode === 'all',
+                onPress: () => setDraftLocal({ mode: 'all' }),
+              })}
+              {choiceRow({
+                key: 'regions', label: 'Lokalavdelning', kind: 'radio',
+                selected: draftLocal.mode === 'regions',
+                onPress: () => setDraftLocal({ mode: 'regions', regions: lastRegions }),
+              })}
+              {draftLocal.mode === 'regions' && localGroups.map(group => choiceRow({
+                key: `region-${group.key}`, label: group.label, kind: 'check', indent: true,
+                selected: draftLocal.regions.includes(group.key),
+                onPress: () => toggleRegion(group.key),
+                trailing: String(group.count),
+              }))}
+              {choiceRow({
+                key: 'distance', label: 'Avstånd från mig', kind: 'radio',
+                selected: draftLocal.mode === 'distance',
+                onPress: () => setDraftLocal({ mode: 'distance', km: 50 }),
+                disabled: !hasUserPosition && draftLocal.mode !== 'distance',
+              })}
+              {!hasUserPosition && (
+                <ThemedText style={styles.choiceHint}>
+                  Kräver att appen får använda din position.
+                </ThemedText>
+              )}
+              {draftLocal.mode === 'distance' && DISTANCE_OPTIONS_KM.map(km => choiceRow({
+                key: `km-${km}`, label: `Inom ${km} km`, kind: 'radio', indent: true,
+                selected: draftLocal.km === km,
+                onPress: () => setDraftLocal({ mode: 'distance', km }),
+              }))}
+              {draftLocal.mode === 'distance' && (
+                <ThemedText style={styles.choiceHint}>
+                  Träffar utan plats räknas från lokalavdelningens ort.
+                </ThemedText>
+              )}
+            </View>
+          )}
+
           <View style={styles.section}>
             <ThemedText type='sectionHeader'>Status</ThemedText>
             
@@ -366,6 +480,32 @@ const createStyles = (colorScheme: string) => StyleSheet.create({
   },
   section: {
     marginBottom: 18,
+  },
+  choiceRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    minHeight: 44,
+    gap: 10,
+  },
+  choiceRowIndent: {
+    paddingLeft: 28,
+  },
+  choiceRowDisabled: {
+    opacity: 0.5,
+  },
+  choiceLabel: {
+    flex: 1,
+    fontSize: 15,
+  },
+  choiceTrailing: {
+    fontSize: 13,
+    color: colorScheme === 'dark' ? '#9ca3af' : '#6b7280',
+  },
+  choiceHint: {
+    fontSize: 13,
+    lineHeight: 18,
+    color: colorScheme === 'dark' ? '#9ca3af' : '#6b7280',
+    marginBottom: 4,
   },
   sectionTitle: {
     fontSize: 16,

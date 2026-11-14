@@ -27,7 +27,9 @@ import EventListItem from '../components/EventListItem';
 import { countUpcomingEvents, displayLocaleTimeStringDate, filterByOptions, groupEventsByDate } from '../utils/eventUtils';
 import { selectActivityListEvents } from '../utils/mainEventUtils';
 import EventHeader from '../components/EventHeader';
-import { setMainEventAttendance, useLocalEvents, useSelectedMainEvent } from '../hooks/useMainEvents';
+import { setMainEventAttendance, useSelectedMainEvent } from '../hooks/useMainEvents';
+import { useFilteredLocalEvents, useLocalEventFilter, useUserPosition } from '../hooks/useLocalEventFilter';
+import { LocalEventFilter, isLocalEventFilterActive, localGroupOptions } from '../utils/localEventFilter';
 import { BUTTON_HEIGHT, DIVIDER_COLOR, PAGE_PADDING, typeScale } from '../styles/typeScale';
 
 interface ActivitiesListProps {
@@ -84,7 +86,14 @@ export const ActivitiesList: React.FC<ActivitiesListProps> = ({ initialFilter })
         refetch,
         setCurrentEventFilter,
     } = useEvents({ enableAutoRefresh: true });
-    const localEvents = useLocalEvents();
+    const { all: localEvents, filtered: filteredLocalEvents } = useFilteredLocalEvents();
+    const [localEventFilter, setLocalEventFilter] = useLocalEventFilter();
+    const userPosition = useUserPosition();
+    // The local group choices, only where local events are listed: no main event selected.
+    const localGroups = useMemo(
+        () => (selectedMainEventId ? [] : localGroupOptions(localEvents)),
+        [selectedMainEventId, localEvents]
+    );
 
     useEffect(() => {
         setCurrentEventFilter(eventFilter);
@@ -93,12 +102,17 @@ export const ActivitiesList: React.FC<ActivitiesListProps> = ({ initialFilter })
     // A main event's programme while it is selected; otherwise local events and
     // activities without a main event. Filters apply within that scope.
     const listEvents = useMemo(
+        () => selectActivityListEvents(allEvents, filteredLocalEvents, selectedMainEventId),
+        [allEvents, filteredLocalEvents, selectedMainEventId]
+    );
+    // The "total" in "x / y" counts every local event, before the local event filter.
+    const unfilteredListEvents = useMemo(
         () => selectActivityListEvents(allEvents, localEvents, selectedMainEventId),
         [allEvents, localEvents, selectedMainEventId]
     );
     const filteredEvents = useMemo(() => filterByOptions(listEvents, eventFilter), [listEvents, eventFilter]);
     const filteredCount = filteredEvents.length;
-    const filteredTotalCount = useMemo(() => countUpcomingEvents(listEvents), [listEvents]);
+    const filteredTotalCount = useMemo(() => countUpcomingEvents(unfilteredListEvents), [unfilteredListEvents]);
 
     const sections = useMemo<EventSection[]>(() => {
         const grouped = groupEventsByDate(filteredEvents);
@@ -123,17 +137,19 @@ export const ActivitiesList: React.FC<ActivitiesListProps> = ({ initialFilter })
         eventFilter.official !== null ||
         (eventFilter.categories?.length ?? 0) > 0 ||
         eventFilter.dateFrom !== null ||
-        eventFilter.dateTo !== null,
-        [eventFilter]
+        eventFilter.dateTo !== null ||
+        (localGroups.length > 0 && isLocalEventFilterActive(localEventFilter)),
+        [eventFilter, localGroups.length, localEventFilter]
     );
 
     const handlePress = useCallback((event: ExtendedEvent) => {
         router.push({ pathname: '/events/[id]', params: { id: event.id } });
     }, [router]);
 
-    const handleApplyFilter = useCallback((filter: EventFilterOptions) => {
+    const handleApplyFilter = useCallback((filter: EventFilterOptions, localFilter?: LocalEventFilter) => {
         setEventFilter(filter);
-    }, []);
+        if (localFilter) setLocalEventFilter(localFilter);
+    }, [setLocalEventFilter]);
 
     const handleRefresh = useCallback(async () => {
         await refetch();
@@ -274,6 +290,9 @@ export const ActivitiesList: React.FC<ActivitiesListProps> = ({ initialFilter })
                 onClose={() => setShowFilter(false)}
                 onApplyFilter={handleApplyFilter}
                 currentFilter={eventFilter}
+                localGroups={localGroups}
+                currentLocalFilter={localEventFilter}
+                hasUserPosition={!!userPosition}
             />
         </ThemedView>
     );
