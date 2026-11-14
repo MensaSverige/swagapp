@@ -11,6 +11,10 @@ from v1.db.database import get_session
 from v1.db.tables import GeocodeCacheTable
 from v1.google_maps_api import geocode_cache
 from v1.google_maps_api.geocode_cache import geocode_cached
+from v1.google_maps_api.geolocation_api import GeocodedPlace
+
+
+ÖREBRO = GeocodedPlace(59.27, 15.21, 4200, "approximate")
 
 
 @pytest.fixture
@@ -20,20 +24,20 @@ def geocoder(monkeypatch):
 
     def fake(query):
         calls.append(query)
-        return (59.27, 15.21) if query != "nowhere" else None
+        return ÖREBRO if query != "nowhere" else None
 
     monkeypatch.setattr(geocode_cache, "geocode_address", fake)
     return calls
 
 
 def test_first_lookup_asks_google(geocoder):
-    assert geocode_cached("70218 Örebro, SE") == (59.27, 15.21)
+    assert geocode_cached("70218 Örebro, SE") == ÖREBRO
     assert geocoder == ["70218 Örebro, SE"]
 
 
 def test_second_lookup_comes_from_the_cache(geocoder):
     geocode_cached("70218 Örebro, SE")
-    assert geocode_cached("70218 Örebro, SE") == (59.27, 15.21)
+    assert geocode_cached("70218 Örebro, SE") == ÖREBRO
     assert len(geocoder) == 1
 
 
@@ -74,6 +78,8 @@ def test_the_answer_is_stored_in_the_table(geocoder):
         row = session.query(GeocodeCacheTable).one()
     assert row.query == "lund, sverige"
     assert (row.latitude, row.longitude) == (59.27, 15.21)
+    assert row.radius_meters == 4200
+    assert row.precision == "approximate"
     assert row.found is True
 
 
@@ -97,3 +103,26 @@ def test_an_empty_query_never_reaches_google(geocoder):
     assert geocode_cached("") is None
     assert geocode_cached("   ") is None
     assert geocoder == []
+
+
+# -- Radius and precision ------------------------------------------------------
+
+def test_radius_and_precision_survive_the_cache(monkeypatch):
+    from v1.google_maps_api.geolocation_api import GeocodedPlace
+    calls = []
+    monkeypatch.setattr(
+        geocode_cache, "geocode_address",
+        lambda q: calls.append(q) or GeocodedPlace(59.33, 18.06, 14200, "approximate"))
+
+    first = geocode_cached("Stockholm, Sverige")
+    second = geocode_cached("Stockholm, Sverige")
+    assert first == second == GeocodedPlace(59.33, 18.06, 14200, "approximate")
+    assert len(calls) == 1
+
+
+def test_a_place_without_a_radius_round_trips(monkeypatch):
+    from v1.google_maps_api.geolocation_api import GeocodedPlace
+    monkeypatch.setattr(geocode_cache, "geocode_address",
+                        lambda q: GeocodedPlace(1.5, 2.5, None, None))
+    geocode_cached("sparse")
+    assert geocode_cached("sparse") == GeocodedPlace(1.5, 2.5, None, None)

@@ -12,11 +12,11 @@ from __future__ import annotations
 
 import logging
 from datetime import datetime, timezone
-from typing import Optional, Tuple
+from typing import Optional
 
 from v1.db.database import get_session
 from v1.db.tables import GeocodeCacheTable
-from v1.google_maps_api.geolocation_api import geocode_address
+from v1.google_maps_api.geolocation_api import GeocodedPlace, geocode_address
 
 
 logger = logging.getLogger(__name__)
@@ -27,7 +27,7 @@ def _normalize(query: str) -> str:
     return " ".join(query.lower().split())
 
 
-def geocode_cached(query: Optional[str]) -> Optional[Tuple[float, float]]:
+def geocode_cached(query: Optional[str]) -> Optional[GeocodedPlace]:
     """Coordinates for `query`, from the cache where possible.
 
     Returns None when the geocoder cannot place the address, and remembers
@@ -45,19 +45,24 @@ def geocode_cached(query: Optional[str]) -> Optional[Tuple[float, float]]:
         if cached is not None:
             if not cached.found:
                 return None
-            return cached.latitude, cached.longitude
+            return GeocodedPlace(
+                latitude=cached.latitude,
+                longitude=cached.longitude,
+                radius_meters=cached.radius_meters,
+                precision=cached.precision,
+            )
 
     try:
-        coordinates = geocode_address(query)
+        place = geocode_address(query)
     except Exception as e:
         logger.warning("Geocoding %r failed, not caching: %s", query, e)
         return None
 
-    _remember(key, coordinates)
-    return coordinates
+    _remember(key, place)
+    return place
 
 
-def _remember(key: str, coordinates: Optional[Tuple[float, float]]) -> None:
+def _remember(key: str, place: Optional[GeocodedPlace]) -> None:
     """Store one answer. A concurrent writer winning the race is not an error."""
     try:
         with get_session() as session:
@@ -65,9 +70,11 @@ def _remember(key: str, coordinates: Optional[Tuple[float, float]]) -> None:
             if row is None:
                 row = GeocodeCacheTable(query=key)
                 session.add(row)
-            row.found = coordinates is not None
-            row.latitude = coordinates[0] if coordinates else None
-            row.longitude = coordinates[1] if coordinates else None
+            row.found = place is not None
+            row.latitude = place.latitude if place else None
+            row.longitude = place.longitude if place else None
+            row.radius_meters = place.radius_meters if place else None
+            row.precision = place.precision if place else None
             row.updated_at = datetime.now(timezone.utc)
             session.commit()
     except Exception as e:

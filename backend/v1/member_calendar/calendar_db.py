@@ -110,10 +110,17 @@ def _approximate_location(calendar_event, event) -> None:
     query = _geocode_query(calendar_event)
     if not query:
         return
-    coords = geocode_cached(query)
-    if coords:
-        event.latitude, event.longitude = coords
-        event.extras["locationApprox"] = True
+    place = geocode_cached(query)
+    if not place:
+        return
+    event.latitude, event.longitude = place.latitude, place.longitude
+    event.extras["locationApprox"] = True
+    # How wide the guess is, so the app can draw a circle rather than claim a
+    # street corner. Absent when the geocoder gave no box.
+    if place.radius_meters is not None:
+        event.extras["locationRadiusMeters"] = place.radius_meters
+    if place.precision:
+        event.extras["locationPrecision"] = place.precision
 
 
 def store_member_calendar_events(calendar_events: List[MemberCalendarEvent]) -> int:

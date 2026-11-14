@@ -627,5 +627,9 @@ class GeocodeCacheTable(Base):
     query = Column(String, primary_key=True)
     latitude = Column(Float, nullable=True)
     longitude = Column(Float, nullable=True)
+    # How big the geocoder's own box around the place was, and what kind of
+    # hit it was. A city is tens of kilometres; a rooftop is tens of metres.
+    radius_meters = Column(Integer, nullable=True)
+    precision = Column(String, nullable=True)
     found = Column(Boolean, nullable=False, default=False)
     updated_at = Column(DateTime(timezone=True), nullable=False, default=_now)

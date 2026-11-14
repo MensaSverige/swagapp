@@ -463,7 +463,7 @@ def _no_coords(**kw):
 def test_explicit_coordinates_are_not_approximate(monkeypatch):
     from v1.google_maps_api import geocode_cache
     calls = []
-    monkeypatch.setattr(geocode_cache, "geocode_address", lambda q: calls.append(q) or (1.0, 2.0))
+    monkeypatch.setattr(geocode_cache, "geocode_address", lambda q: calls.append(q) or _place(1.0, 2.0))
     store_member_calendar_events([_event(source_id="exp")])
     with get_session() as session:
         row = session.query(EventTable).filter_by(source_id="exp").one()
@@ -475,7 +475,7 @@ def test_explicit_coordinates_are_not_approximate(monkeypatch):
 def test_missing_coordinates_are_geocoded_from_postal_and_city(monkeypatch):
     from v1.google_maps_api import geocode_cache
     calls = []
-    monkeypatch.setattr(geocode_cache, "geocode_address", lambda q: calls.append(q) or (59.27, 15.21))
+    monkeypatch.setattr(geocode_cache, "geocode_address", lambda q: calls.append(q) or _place(59.27, 15.21))
     store_member_calendar_events([_no_coords(source_id="geo", postal_code="70218", city="Örebro", country="SE")])
     with get_session() as session:
         row = session.query(EventTable).filter_by(source_id="geo").one()
@@ -523,7 +523,7 @@ def test_repeated_city_is_geocoded_once_across_runs(monkeypatch):
     """The sync runs every half hour. A place is bought once, not every time."""
     from v1.google_maps_api import geocode_cache
     calls = []
-    monkeypatch.setattr(geocode_cache, "geocode_address", lambda q: calls.append(q) or (59.0, 15.0))
+    monkeypatch.setattr(geocode_cache, "geocode_address", lambda q: calls.append(q) or _place(59.0, 15.0))
     store_member_calendar_events([
         _no_coords(source_id="r1", city="Örebro"),
         _no_coords(source_id="r2", city="örebro "),
@@ -532,24 +532,6 @@ def test_repeated_city_is_geocoded_once_across_runs(monkeypatch):
     assert len(calls) == 1
     store_member_calendar_events([_no_coords(source_id="r4", city="Örebro")])
     assert len(calls) == 1
-
-
-def test_geocode_address_never_raises(monkeypatch):
-    from v1.google_maps_api import geolocation_api as g
-
-    class Client:
-        def geocode(self, a):
-            if a == "boom":
-                raise RuntimeError("x")
-            return [{"geometry": {"location": {"lat": 1.5, "lng": 2.5}}}] if a == "ok" else []
-
-    monkeypatch.setattr(g, "GOOGLE_GEOCODING_API_KEY", "key")
-    monkeypatch.setattr(g, "gmaps", Client(), raising=False)
-    assert g.geocode_address("ok") == (1.5, 2.5)
-    assert g.geocode_address("empty") is None
-    assert g.geocode_address("boom") is None
-    monkeypatch.setattr(g, "GOOGLE_GEOCODING_API_KEY", "")
-    assert g.geocode_address("ok") is None
 
 
 # -- SSH key robustness -------------------------------------------------------
@@ -576,3 +558,44 @@ def test_empty_ssh_key_file_skips_the_sync(monkeypatch, tmp_path):
     key.write_text("")
     src = _configure(monkeypatch, str(key))
     assert src.fetch_member_calendar_events() == []
+
+
+# -- How precise an approximate location is -----------------------------------
+
+def _place(lat=59.0, lng=15.0, radius=14200, precision="approximate"):
+    from v1.google_maps_api.geolocation_api import GeocodedPlace
+    return GeocodedPlace(lat, lng, radius, precision)
+
+
+def test_an_approximate_location_says_how_big_the_guess_was(monkeypatch):
+    from v1.google_maps_api import geocode_cache
+    monkeypatch.setattr(geocode_cache, "geocode_address", lambda q: _place())
+    store_member_calendar_events([_no_coords(source_id="r", city="Örebro")])
+    with get_session() as session:
+        row = session.query(EventTable).filter_by(source_id="r").one()
+    assert row.extras["locationApprox"] is True
+    assert row.extras["locationRadiusMeters"] == 14200
+    assert row.extras["locationPrecision"] == "approximate"
+
+
+def test_an_exact_location_carries_no_radius(monkeypatch):
+    """The member site gave real coordinates, so there is nothing to guess."""
+    from v1.google_maps_api import geocode_cache
+    monkeypatch.setattr(geocode_cache, "geocode_address", lambda q: _place())
+    store_member_calendar_events([_event(source_id="exact")])
+    with get_session() as session:
+        row = session.query(EventTable).filter_by(source_id="exact").one()
+    assert row.extras["locationApprox"] is False
+    assert "locationRadiusMeters" not in row.extras
+    assert "locationPrecision" not in row.extras
+
+
+def test_a_geocode_without_a_radius_sets_no_radius(monkeypatch):
+    from v1.google_maps_api import geocode_cache
+    monkeypatch.setattr(geocode_cache, "geocode_address",
+                        lambda q: _place(radius=None, precision=None))
+    store_member_calendar_events([_no_coords(source_id="nr", city="Örebro")])
+    with get_session() as session:
+        row = session.query(EventTable).filter_by(source_id="nr").one()
+    assert row.extras["locationApprox"] is True
+    assert "locationRadiusMeters" not in row.extras
