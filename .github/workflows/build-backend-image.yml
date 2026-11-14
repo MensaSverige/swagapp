@@ -1,7 +1,6 @@
 # Builds and publishes a backend image from any commit WITHOUT deploying it.
 # A v* tag both builds and deploys; this is for running something against
-# production before the release, e.g. the Mongo -> PostgreSQL data copy
-# (docs/postgres-cutover.md, step 2).
+# production before the release, such as a one-off Job.
 name: Build backend image
 
 on:

@@ -1,5 +1,16 @@
 # MongoDB → PostgreSQL cutover
 
+> **Done.** Production moved to PostgreSQL with v2.1.7.1 on 2026-11-14, and
+> MongoDB has been retired. This page is kept as the record of how the cutover
+> was run and what the rehearsals found. The migration script, its Job manifest
+> and the `migrate` compose service it refers to have been removed; tag
+> `v2.1.7.1` still has them.
+>
+> The release found one more thing: the backend ran the external-event sync
+> before accepting connections, and its per-user booking refresh kept the API
+> at 502 for about nine minutes. The rehearsal deployment had that sync switched
+> off. Startup jobs now run on the scheduler's thread (`v1/jobs/scheduler.py`).
+
 The backend no longer speaks MongoDB. `main` runs on PostgreSQL, but **no production
 data has moved yet** — that is a manual, one-time step, and it has to happen before
 the next release reaches users.
