@@ -14,7 +14,6 @@ import EventPeople from './eventPage/EventPeople';
 import { useEvents } from '../hooks/useEvents';
 import { useEventAttendance } from '../hooks/useEventAttendance';
 import {
-    navigateToBookableEvents,
     navigateToLastMinuteEvents,
     navigateToScheduleWithFilter,
 } from '../utilities/navigationUtils';
@@ -24,7 +23,6 @@ import {
     getMainEventChildren,
     isLocalEvent,
     selectMyBookings,
-    selectToBook,
 } from '../utils/mainEventUtils';
 import { EVENT_HEADER_BG, PAGE_PADDING, typeScale } from '../styles/typeScale';
 
@@ -67,8 +65,6 @@ const ParentEventDashboard: React.FC<ParentEventDashboardProps> = ({ mainEvent }
     );
     const myBookings = useMemo(() => selectMyBookings(children).slice(0, 3), [children]);
     const myBookingsGrouped = useMemo(() => groupEventsByDate(myBookings), [myBookings]);
-    const toBook = useMemo(() => selectToBook(children), [children]);
-    const toBookGrouped = useMemo(() => groupEventsByDate(toBook), [toBook]);
     const lastMinuteEvents = useMemo(
         () => allLastMinute.filter(e => e.parentEvent === mainEvent.id),
         [allLastMinute, mainEvent.id],
@@ -192,18 +188,6 @@ const ParentEventDashboard: React.FC<ParentEventDashboardProps> = ({ mainEvent }
                         )}
                     </View>
 
-                    {toBook.length > 0 && (
-                        <View style={styles.eventsSection}>
-                            {sectionHeader('Att anmäla sig till', navigateToBookableEvents)}
-                            <GroupedEventsList
-                                bleed
-                                groupedEvents={toBookGrouped}
-                                onEventPress={handleEventPress}
-                                showCategories={true}
-                                dateHeaderStyle="default"
-                            />
-                        </View>
-                    )}
                 </>
             )}
         </ThemedView>
