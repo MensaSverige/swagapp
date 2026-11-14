@@ -27,8 +27,14 @@ const EventPeople: React.FC<{
   const showHosts = adminCount > 0 || (isLocalEvent(event) && (event.hosts?.length ?? 0) > 0);
   const hiddenUntilRegistered = !omitHiddenNote && !canSeeAttendees && event.showAttendees === 'toAttending';
   const showAttendees = canSeeAttendees && attendeeUsers.length > 0;
-  // The riksträff's total includes people not on its list.
-  const attendeeCount = typeof event.extras?.attendeeCount === 'number' ? event.extras.attendeeCount : undefined;
+  // The booking site's total, which includes people not on the list: everyone
+  // registered to the riksträff, or everyone booked on an activity (the app
+  // only knows the bookers who use it).
+  const extras = event.extras ?? {};
+  const attendeeCount = typeof extras.attendeeCount === 'number' ? extras.attendeeCount
+    : typeof extras.bookedCount === 'number' ? extras.bookedCount : undefined;
+  // Booked, but none of them known to the app: the total alone.
+  const countOnly = canSeeAttendees && !showAttendees && (attendeeCount ?? 0) > 0;
 
   return (
     <View>
@@ -48,6 +54,13 @@ const EventPeople: React.FC<{
           <UserList users={attendeeUsers} title="Deltagare" count={attendeeCount} />
         </View>
       )}
+      {countOnly && (
+        <View style={styles.hidden}>
+          <ThemedText style={styles.h2}>
+            Deltagare <ThemedText style={[styles.h2, styles.count, { color: dark ? Colors.coolGray400 : '#4B5563' }]}>{attendeeCount}</ThemedText>
+          </ThemedText>
+        </View>
+      )}
       {hiddenUntilRegistered && (
         <View style={styles.hidden}>
           <ThemedText style={styles.h2}>Deltagare</ThemedText>
@@ -64,6 +77,7 @@ const styles = StyleSheet.create({
   section: { marginTop: 24 },
   hidden: { marginTop: 24, gap: 4 },
   h2: { ...typeScale.h2 },
+  count: { fontWeight: '400' },
   meta: { ...typeScale.meta },
 });
 
