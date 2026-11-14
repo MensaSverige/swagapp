@@ -36,5 +36,5 @@ a status assertion alone would not catch a reorder.
 `_PRIVACY_FIELDS` and the viewer's own settings: the `_MUTUAL` values also
 require the viewer to have opened the same field up. It never filters the
 caller's own row.
-Unrecognised stored values read as `NO_ONE`; see `docs/postgres-cutover.md`
-for why the write path rejects them instead.
+Unrecognised stored values read as `NO_ONE`, while the write path rejects them:
+a value nobody can interpret must not quietly widen what a member shares.
