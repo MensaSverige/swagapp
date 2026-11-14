@@ -1,6 +1,4 @@
 psycopg[binary] # PostgreSQL driver: SQLAlchemy 2.1's default for postgresql:// URLs
-pymongo # Only for the one-time Mongo->Postgres cutover (migrations/mongo_to_postgres.py).
-        # Nothing in v1/ imports it. Remove once the cutover is done — see docs/postgres-cutover.md
 requests # HTTP requests
 PyJWT # JWT tokens
 pytest # Testing
