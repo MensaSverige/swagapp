@@ -16,6 +16,7 @@ import {
   splitAddress,
 } from '../../utils/mainEventUtils';
 import { canonicalCategoryCode, getCategoryByCode } from '../../utilities/EventCategories';
+import { describeLocationAccuracy } from '../../utilities/locationAccuracy';
 import { PAGE_PADDING, themeColors, typeScale } from '../../styles/typeScale';
 
 type IconName = React.ComponentProps<typeof MaterialIcons>['name'];
@@ -52,6 +53,8 @@ const EventInfoRows: React.FC<EventInfoRowsProps> = ({ event, status, siteUrl, b
   const place = splitAddress(event.address, event.locationDescription);
   const placeText = place ? [place.line1, place.line2].filter(Boolean).join(', ') : null;
   const hasDirections = !!(event.address || (event.latitude && event.longitude));
+  // Null unless the backend geocoded the place from a postal code or a city.
+  const accuracy = describeLocationAccuracy(event.extras);
   const parentName = event.parentEvent ? getMainEventName(mainEvents, event.parentEvent) : null;
 
   // Kind, price and places: activities only. A main event's price is in its description.
@@ -147,6 +150,11 @@ const EventInfoRows: React.FC<EventInfoRowsProps> = ({ event, status, siteUrl, b
             ) : (
               !!place?.line2 && <ThemedText style={styles.line2}>{place.line2}</ThemedText>
             )}
+            {!!accuracy && (
+              <ThemedText style={styles.line2}>
+                {accuracy.spread ? `${accuracy.label} · ${accuracy.spread}` : accuracy.label}
+              </ThemedText>
+            )}
           </View>
           {hasDirections && (
             <View style={styles.directions}>
@@ -154,6 +162,7 @@ const EventInfoRows: React.FC<EventInfoRowsProps> = ({ event, status, siteUrl, b
                 address={event.address ?? undefined}
                 latitude={event.latitude ?? undefined}
                 longitude={event.longitude ?? undefined}
+                approximate={!!accuracy}
               />
             </View>
           )}

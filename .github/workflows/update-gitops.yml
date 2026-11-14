@@ -28,16 +28,18 @@ jobs:
           app_id: ${{ secrets.GITOPS_APP_ID }}
           private_key: ${{ secrets.GITOPS_APP_PRIVATE_KEY }}
 
+      - name: Checkout swagapp
+        uses: actions/checkout@v4
+        with:
+          path: swagapp
+
       - name: Checkout GitOps repo
         run: |
           git clone https://x-access-token:${{ steps.generate_token.outputs.token }}@github.com/mensasverige/swagapp-ops.git
 
-      - name: Update Kubernetes Manifest Templates
-        working-directory: swagapp-ops/deployment
+      - name: Render Kubernetes manifests from their templates
         run: |
-          for file in *.yaml.tpl; do
-            sed "s/VERSION/${{ inputs.docker_tag }}/" "$file" > "${file%.tpl}"
-          done
+          swagapp/tools/render-manifests.sh '${{ inputs.docker_tag }}' swagapp-ops/deployment
 
       - name: Update Kubernetes Manifest repo
         working-directory: swagapp-ops

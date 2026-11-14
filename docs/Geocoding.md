@@ -77,6 +77,33 @@ DELETE FROM geocode_cache WHERE query = '70218 örebro, se';
 An event with no place at all is never geocoded and carries none of them — see
 `_geocode_query`, which returns nothing without a postal code or a city.
 
-City-only coordinates are a pin on the city, not on the venue, and
-`locationRadiusMeters` is how wide to draw that uncertainty. The app does not
-read any of these yet; rendering the circle is separate work.
+## What the app shows
+
+City-only coordinates are a point on the city, not on the venue, so the event
+card says so instead of presenting them like an address a member typed.
+
+`features/events/utilities/locationAccuracy.ts` turns the three extras into one
+line, and `UnifiedEventCard` prints it under the address:
+
+| Extras | Line |
+|---|---|
+| `locationApprox` false, or absent | nothing |
+| approximate, radius 14200 m | `Ungefärlig plats · inom ca 14 km` |
+| approximate, precision `range_interpolated`, radius 180 m | `Ungefärlig gatuadress · inom ca 200 m` |
+| approximate, no radius | `Ungefärlig plats` |
+
+Distances read the way a person says them: metres to the nearest fifty while
+the number is small, then kilometres with one decimal, then whole kilometres.
+Fifty metres is the floor — a tighter figure claims precision the geocoder
+never gave.
+
+The address stays tappable, because a map search for `70218 Örebro` is a
+sensible thing to open. Its icon changes: an exact address offers directions,
+an approximate one shows a plain marker, so nothing offers to navigate a member
+to a city centre as though it were the venue.
+
+No map in the app draws these as a circle today, because no screen puts events
+on a map at all: `features/map/screens/MapScreen.tsx` renders user markers
+only, and `EventMarker`/`ClusterMarker` are unreferenced and import a component
+that no longer exists. A circle of `locationRadiusMeters` is the right shape
+whenever events do reach the map.
