@@ -1,68 +1,70 @@
 import { useCallback, useState } from 'react';
-import { Alert } from 'react-native';
+import { Alert, Linking } from 'react-native';
 import { Event } from '../../../api_schema/types';
 import useStore from '../../common/store/store';
 import { confirmAsync } from '../../common/functions/confirmAsync';
-import { AttendanceStatus, attendanceStatus, isMainEventSource } from '../utils/eventAttendance';
-import { useEvents } from './useEvents';
+import { attendEvent, unattendEvent } from '../services/eventService';
+import { createExtendedEvent } from '../utils/eventUtils';
+import { AttendanceStatus, attendanceStatus, bookingSiteUrl, isMainEventSource } from '../utils/eventAttendance';
 import { setMainEventAttendance } from './useMainEvents';
 
 /**
  * The viewer's status for an event and the actions to change it, for every
- * kind of event. Main events go through their own list so the start page and
- * focus mode update; activities through the events list.
+ * kind of event and every screen that offers them. `register` opens the
+ * booking site where registration happens there (the riksträff); otherwise
+ * main events go through their own list, so the start page and focus mode
+ * follow, and activities through the events list.
  */
-export const useEventAttendance = (event: Event): {
-  status: AttendanceStatus;
+export const useEventAttendance = (event: Event | null): {
+  status: AttendanceStatus | null;
+  siteUrl: string | null;
   busy: boolean;
   register: () => Promise<void>;
   unregister: () => Promise<void>;
 } => {
   const userId = useStore(s => s.user?.userId);
-  const { attendEventById, unattendEventById } = useEvents();
+  const mainEvents = useStore(s => s.mainEvents);
+  const addOrUpdateEvent = useStore(s => s.addOrUpdateEvent);
   const [busy, setBusy] = useState(false);
-  const status = attendanceStatus(event, userId, Date.now());
-  const isMain = isMainEventSource(event);
+  const status = event ? attendanceStatus(event, userId, Date.now()) : null;
+  const siteUrl = event ? bookingSiteUrl(event, mainEvents) : null;
 
   const register = useCallback(async () => {
-    if (busy) return;
+    if (!event || busy) return;
+    if (status?.kind === 'bookingSite' || status?.kind === 'paid') {
+      if (siteUrl) Linking.openURL(siteUrl);
+      return;
+    }
     setBusy(true);
     try {
-      if (isMain) await setMainEventAttendance(event.id, true);
-      else await attendEventById(event.id);
+      if (isMainEventSource(event)) await setMainEventAttendance(event.id, true);
+      else addOrUpdateEvent(createExtendedEvent(await attendEvent(event.id), userId));
     } catch {
       Alert.alert('Något gick fel', 'Det gick inte att anmäla dig. Försök igen.');
     } finally {
       setBusy(false);
     }
-  }, [busy, isMain, event.id, attendEventById]);
+  }, [event, busy, status?.kind, siteUrl, addOrUpdateEvent, userId]);
 
   const unregister = useCallback(async () => {
-    if (busy) return;
+    if (!event || busy) return;
     const confirmed = await confirmAsync('Avanmäl dig?', `Du avanmäls från ${event.name}.`, 'Avanmäl');
     if (!confirmed) return;
     setBusy(true);
     try {
-      if (isMain) {
+      if (isMainEventSource(event)) {
         await setMainEventAttendance(event.id, false);
-        // A riksträff registration made on the booking site (or a booking
-        // there) stays: say where to leave instead of nothing happening.
-        const after = useStore.getState().mainEvents.find(e => e.id === event.id);
-        if (after?.attending) {
-          Alert.alert(
-            'Du är fortfarande anmäld',
-            'Din anmälan finns på bokningssidan. Avanmäl dig och avboka aktiviteter där.',
-          );
-        }
       } else {
-        await unattendEventById(event.id);
+        await unattendEvent(event.id);
+        const existing = useStore.getState().events.find(e => e.id === event.id);
+        if (existing) addOrUpdateEvent(createExtendedEvent({ ...existing, attending: false }, userId));
       }
     } catch {
       Alert.alert('Något gick fel', 'Det gick inte att avanmäla dig. Försök igen.');
     } finally {
       setBusy(false);
     }
-  }, [busy, isMain, event.id, event.name, unattendEventById]);
+  }, [event, busy, addOrUpdateEvent, userId]);
 
-  return { status, busy, register, unregister };
+  return { status, siteUrl, busy, register, unregister };
 };

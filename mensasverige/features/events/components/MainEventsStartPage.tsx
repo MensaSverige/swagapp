@@ -10,11 +10,11 @@ import { useSelectedMainEvent } from '../hooks/useMainEvents';
 import { groupMainEvents, isLocalEvent } from '../utils/mainEventUtils';
 import { useLocalEventFilter, useUserPosition } from '../hooks/useLocalEventFilter';
 import {
-  applyLocalEventFilter,
+  matchesLocalEventFilter,
   describeLocalEventFilter,
   isLocalEventFilterActive,
 } from '../utils/localEventFilter';
-import { DIVIDER_COLOR, PAGE_PADDING, typeScale } from '../styles/typeScale';
+import { DIVIDER_COLOR, PAGE_PADDING, themeColors, typeScale } from '../styles/typeScale';
 import MainEventListItem from './MainEventListItem';
 
 const GROUPS: Array<{ key: 'ongoing' | 'rootEvents' | 'local'; title: string }> = [
@@ -35,15 +35,17 @@ const MainEventsStartPage: React.FC<MainEventsStartPageProps> = ({ mainEvents, l
   const { selectMainEvent } = useSelectedMainEvent();
 
   const [localFilter] = useLocalEventFilter();
-  const position = useUserPosition();
+  const userPosition = useUserPosition();
+  // Only the distance mode reads the position, so GPS updates do not regroup otherwise.
+  const position = localFilter.mode === 'distance' ? userPosition : null;
   const hasLocalEvents = useMemo(() => mainEvents.some(isLocalEvent), [mainEvents]);
   const localFilterActive = hasLocalEvents && isLocalEventFilterActive(localFilter);
 
   // The local event filter set under Aktiviteter applies here too; riksträffar are never filtered.
-  const visibleEvents = useMemo(() => {
-    const kept = new Set(applyLocalEventFilter(mainEvents.filter(isLocalEvent), localFilter, position));
-    return mainEvents.filter(e => !isLocalEvent(e) || kept.has(e));
-  }, [mainEvents, localFilter, position]);
+  const visibleEvents = useMemo(
+    () => mainEvents.filter(e => !isLocalEvent(e) || matchesLocalEventFilter(e, localFilter, position)),
+    [mainEvents, localFilter, position],
+  );
   const groups = useMemo(() => groupMainEvents(visibleEvents, Date.now()), [visibleEvents]);
   const handlePress = (event: Event) => selectMainEvent(event.id);
 
@@ -111,11 +113,11 @@ const createStyles = (colorScheme: string) =>
     filterNote: { minHeight: 44, justifyContent: 'center' },
     filterNoteText: {
       ...typeScale.meta,
-      color: colorScheme === 'dark' ? Colors.coolGray400 : '#4B5563',
+      color: themeColors(colorScheme === 'dark').meta,
     },
     filterNoteLink: {
       ...typeScale.meta,
-      color: colorScheme === 'dark' ? Colors.primary300 : '#005DB4',
+      color: themeColors(colorScheme === 'dark').link,
     },
     noEvents: {
       alignItems: 'center',

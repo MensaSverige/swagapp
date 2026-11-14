@@ -7,7 +7,7 @@ import { Colors } from '@/constants/Colors';
 import { LocationLinkButton } from '@/features/map/components/LocationLinkIcon';
 import useStore from '@/features/common/store/store';
 import { Event } from '../../../../api_schema/types';
-import { AttendanceStatus, bookingSiteUrl, formatPlacesLeft, isMainEventSource, placesLeft } from '../../utils/eventAttendance';
+import { AttendanceStatus, formatPlacesLeft, isMainEventSource, placesLeft, registeredCount } from '../../utils/eventAttendance';
 import {
   formatMainEventDateRange,
   formatRegion,
@@ -16,13 +16,15 @@ import {
   splitAddress,
 } from '../../utils/mainEventUtils';
 import { canonicalCategoryCode, getCategoryByCode } from '../../utilities/EventCategories';
-import { DIVIDER_COLOR, EVENT_HEADER_BG, PAGE_PADDING, typeScale } from '../../styles/typeScale';
+import { PAGE_PADDING, themeColors, typeScale } from '../../styles/typeScale';
 
 type IconName = React.ComponentProps<typeof MaterialIcons>['name'];
 
 interface EventInfoRowsProps {
   event: Event;
-  status: AttendanceStatus;
+  status: AttendanceStatus | null;
+  /** The booking site, for a paid activity's "Öppna". */
+  siteUrl?: string | null;
   busy?: boolean;
   onUnregister?: () => void;
 }
@@ -32,20 +34,19 @@ interface EventInfoRowsProps {
  * group), what it is part of, what kind of event and what it costs, and the
  * viewer's status. Stretches to the screen edges inside a PAGE_PADDING page.
  */
-const EventInfoRows: React.FC<EventInfoRowsProps> = ({ event, status, busy = false, onUnregister }) => {
+const EventInfoRows: React.FC<EventInfoRowsProps> = ({ event, status, siteUrl, busy = false, onUnregister }) => {
   const dark = useColorScheme() === 'dark';
   const styles = useMemo(() => createStyles(dark), [dark]);
   const mainEvents = useStore(s => s.mainEvents);
   const selectMainEvent = useStore(s => s.selectMainEvent);
-  const siteUrl = bookingSiteUrl(event, mainEvents);
 
-  const iconGray = dark ? Colors.coolGray400 : '#4B5563';
+  const { link, meta: iconGray } = themeColors(dark);
   const green = dark ? Colors.green400 : '#047857';
   const red = dark ? Colors.red400 : '#B91C1C';
-  const link = dark ? Colors.primary300 : EVENT_HEADER_BG;
 
-  const registeredCount = typeof event.extras?.attendeeCount === 'number' ? event.extras.attendeeCount : null;
-  const relative = [formatRelativeStart(event, Date.now()), registeredCount !== null ? `${registeredCount} anmälda` : null]
+  // A main event's total registered, by its date; an activity's is by its participants.
+  const total = isMainEventSource(event) ? registeredCount(event) : null;
+  const relative = [formatRelativeStart(event, Date.now()), total !== null ? `${total} anmälda` : null]
     .filter(Boolean).join(' · ');
   const region = formatRegion(event);
   const place = splitAddress(event.address, event.locationDescription);
@@ -82,13 +83,11 @@ const EventInfoRows: React.FC<EventInfoRowsProps> = ({ event, status, busy = fal
         {action}
       </View>
     );
-    // Where a registration is changed outside the app, say so instead of offering to leave.
-    const leaveElsewhere = event.source === 'external_root'
-      ? 'Hanteras på bokningssidan'
-      : (event.price ?? 0) > 0 ? 'Avbokas på bokningssidan' : undefined;
-    switch (status.kind) {
+    switch (status?.kind) {
+      case undefined:
+        return null;
       case 'attending':
-        return row('check-circle', green, 'Du är anmäld', status.canLeave && onUnregister ? (
+        return row('check-circle', green, 'Du är anmäld', status.leave === 'app' && onUnregister ? (
           <TouchableOpacity
             onPress={onUnregister}
             disabled={busy}
@@ -100,7 +99,7 @@ const EventInfoRows: React.FC<EventInfoRowsProps> = ({ event, status, busy = fal
               {busy ? 'Avanmäler...' : 'Avanmäl'}
             </ThemedText>
           </TouchableOpacity>
-        ) : undefined, status.canLeave ? undefined : leaveElsewhere);
+        ) : undefined, status.leave === 'bookingSite' ? 'Hanteras på bokningssidan' : undefined);
       case 'host':
         return row('person', iconGray, 'Du är värd');
       case 'open':
@@ -202,7 +201,7 @@ const createStyles = (dark: boolean) =>
     rows: {
       marginHorizontal: -PAGE_PADDING,
       borderTopWidth: 1,
-      borderTopColor: dark ? Colors.coolGray700 : DIVIDER_COLOR,
+      borderTopColor: themeColors(dark).divider,
     },
     row: {
       flexDirection: 'row',
@@ -211,7 +210,7 @@ const createStyles = (dark: boolean) =>
       paddingVertical: 10,
       paddingHorizontal: PAGE_PADDING,
       borderBottomWidth: 1,
-      borderBottomColor: dark ? Colors.coolGray700 : DIVIDER_COLOR,
+      borderBottomColor: themeColors(dark).divider,
     },
     rowWithAction: {
       paddingRight: 8,
@@ -229,7 +228,7 @@ const createStyles = (dark: boolean) =>
     },
     line2: {
       ...typeScale.meta,
-      color: dark ? Colors.coolGray400 : '#4B5563',
+      color: themeColors(dark).meta,
     },
     action: {
       minHeight: 44,

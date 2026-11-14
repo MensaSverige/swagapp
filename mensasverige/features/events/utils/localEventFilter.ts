@@ -1,4 +1,5 @@
 import { Event } from '../../../api_schema/types';
+import { getCoordinateDistance } from '../../map/functions/getCoordinateDistance';
 import { formatRegionKey, regionKey } from './mainEventUtils';
 
 /**
@@ -47,17 +48,8 @@ export const LOCAL_GROUP_HOMES: Record<string, Position> = {
   'lma-örebro': { latitude: 59.2753, longitude: 15.2134 },
 };
 
-const toRad = (deg: number) => (deg * Math.PI) / 180;
-
 /** Great-circle distance in kilometres. */
-export const distanceKm = (a: Position, b: Position): number => {
-  const dLat = toRad(b.latitude - a.latitude);
-  const dLon = toRad(b.longitude - a.longitude);
-  const h =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos(toRad(a.latitude)) * Math.cos(toRad(b.latitude)) * Math.sin(dLon / 2) ** 2;
-  return 2 * 6371 * Math.asin(Math.sqrt(h));
-};
+export const distanceKm = (a: Position, b: Position): number => getCoordinateDistance(a, b) / 1000;
 
 /** The event's own place when it has one, otherwise its local group's home; null if neither. */
 export const eventPosition = (event: Pick<Event, 'latitude' | 'longitude' | 'extras'>): Position | null => {
@@ -76,32 +68,34 @@ export const isLocalEventFilterActive = (filter: LocalEventFilter): boolean =>
   filter.mode === 'distance' || (filter.mode === 'regions' && filter.regions.length > 0);
 
 /**
- * Narrow local events by the filter. Distance needs the user's position:
- * without one the filter cannot apply, and everything is kept rather than
- * hiding all events for a reason the user cannot see.
+ * Whether one local event passes the filter. Distance needs the user's
+ * position: without one the filter cannot apply, and the event is kept
+ * rather than hidden for a reason the user cannot see.
  */
+export const matchesLocalEventFilter = (
+  event: Pick<Event, 'latitude' | 'longitude' | 'extras'>,
+  filter: LocalEventFilter,
+  userPosition: Position | null,
+): boolean => {
+  if (filter.mode === 'regions') {
+    if (filter.regions.length === 0) return true;
+    const key = regionKey(event);
+    return !!key && filter.regions.includes(key);
+  }
+  if (filter.mode === 'distance' && userPosition) {
+    const pos = eventPosition(event);
+    return !!pos && distanceKm(userPosition, pos) <= filter.km;
+  }
+  return true;
+};
+
+/** Local events that pass the filter; the same array when nothing is filtered. */
 export const applyLocalEventFilter = <T extends Pick<Event, 'latitude' | 'longitude' | 'extras'>>(
   events: T[],
   filter: LocalEventFilter,
   userPosition: Position | null,
-): T[] => {
-  if (filter.mode === 'regions') {
-    if (filter.regions.length === 0) return events;
-    const wanted = new Set(filter.regions);
-    return events.filter(e => {
-      const key = regionKey(e);
-      return !!key && wanted.has(key);
-    });
-  }
-  if (filter.mode === 'distance') {
-    if (!userPosition) return events;
-    return events.filter(e => {
-      const pos = eventPosition(e);
-      return !!pos && distanceKm(userPosition, pos) <= filter.km;
-    });
-  }
-  return events;
-};
+): T[] =>
+  isLocalEventFilterActive(filter) ? events.filter(e => matchesLocalEventFilter(e, filter, userPosition)) : events;
 
 export interface LocalGroupOption {
   key: string;

@@ -15,10 +15,11 @@ import { ThemedText } from '@/components/ThemedText';
 import GroupedEventsList from '@/features/events/components/GroupedEventsList';
 import { ExtendedEvent } from '@/features/events/types/eventUtilTypes';
 import { groupEventsByDate, sortEventsByDate } from '@/features/events/utils/eventUtils';
+import { getMainEventChildren, isEventOver, selectMyBookings } from '@/features/events/utils/mainEventUtils';
 import { Colors } from '@/constants/Colors';
 import { useBottomTabOverflow } from '@/components/ui/TabBarBackground';
 import { MaterialIcons } from '@expo/vector-icons';
-import { DIVIDER_COLOR, EVENT_HEADER_BG, PAGE_PADDING, typeScale } from '@/features/events/styles/typeScale';
+import { PAGE_PADDING, themeColors, typeScale } from '@/features/events/styles/typeScale';
 
 /**
  * A member's bookings: only those, as their own page. Opened from "Se alla"
@@ -39,26 +40,19 @@ export default function UserEventsScreen() {
     const { allEvents, loading, refreshing, refetch } = useEvents({ enableAutoRefresh: true });
 
     const userGroupedEvents = useMemo(() => {
-        const now = new Date();
-
+        // On one main event: the same bookings the riksträff page previews.
+        if (parent && isOwnEvents) {
+            return groupEventsByDate(selectMyBookings(getMainEventChildren(allEvents, parent)));
+        }
+        const now = Date.now();
         const filtered = allEvents.filter((event: ExtendedEvent) => {
-            if (!event.start) return false;
-
-            const start = new Date(event.start);
-            const end = event.end ? new Date(event.end) : null;
-            const isOngoing = end ? start <= now && end >= now : false;
-            if (start < now && !isOngoing) return false;
-            if (parent && event.parentEvent !== parent) return false;
-
-            if (isOwnEvents) {
-                return event.attendingOrHost;
-            }
+            if (!event.start || isEventOver(event, now)) return false;
+            if (isOwnEvents) return event.attendingOrHost;
             return (
                 event.hosts?.some(h => h.userId === targetUserId) ||
                 (event.admin?.includes(targetUserId!) ?? false)
             );
         });
-
         return groupEventsByDate(sortEventsByDate(filtered));
     }, [allEvents, targetUserId, isOwnEvents, parent]);
 
@@ -67,7 +61,7 @@ export default function UserEventsScreen() {
     }, [router]);
 
     const isEmpty = Object.keys(userGroupedEvents).length === 0;
-    const link = colorScheme === 'dark' ? Colors.primary300 : EVENT_HEADER_BG;
+    const link = themeColors(colorScheme === 'dark').link;
 
     // On to every activity: the main event's programme when scoped to one.
     const openAllActivities = useCallback(() => {
@@ -78,7 +72,7 @@ export default function UserEventsScreen() {
     const allActivitiesRow = isOwnEvents ? (
         <TouchableOpacity
             onPress={openAllActivities}
-            style={[styles.linkRow, { borderColor: colorScheme === 'dark' ? Colors.coolGray700 : DIVIDER_COLOR }]}
+            style={[styles.linkRow, { borderColor: themeColors(colorScheme === 'dark').divider }]}
             accessibilityRole="link"
         >
             <ThemedText style={[styles.linkText, { color: link }]}>Alla aktiviteter</ThemedText>

@@ -13,8 +13,6 @@ export const AUTO_SELECT_BEFORE_MS = 2 * DAY_MS;
 /** ... until this long after end (start when end is missing). */
 export const AUTO_SELECT_AFTER_MS = 1 * DAY_MS;
 
-export const MAX_BOOKABLE_PREVIEW = 5;
-
 const WEEKDAYS = ['söndag', 'måndag', 'tisdag', 'onsdag', 'torsdag', 'fredag', 'lördag'];
 const MONTHS = [
   'januari', 'februari', 'mars', 'april', 'maj', 'juni',
@@ -138,6 +136,10 @@ export const isEventOver = (e: Pick<Event, 'start' | 'end'>, now: number): boole
   return (isAllDay(e) ? start + DAY_MS : start) < now;
 };
 
+/** Events not yet over: ongoing or still to come. The unfiltered "total" on the list screen. */
+export const countUpcomingEvents = (events: Pick<Event, 'start' | 'end'>[], now: number = Date.now()): number =>
+  events.filter(e => !!e.start && !isEventOver(e, now)).length;
+
 /**
  * Date column of a row: start/end dates for multi-day, otherwise the date
  * with the start time below it ("Heldag" for a whole-day event), so a row
@@ -178,26 +180,6 @@ export const selectMyBookings = (
   now: number = Date.now(),
 ): ExtendedEvent[] => selectDashboardEvents(children, now);
 
-/** Upcoming bookable children the user is not attending, soonest first, capped. */
-export const selectToBook = (
-  children: ExtendedEvent[],
-  now: number = Date.now(),
-  limit: number = MAX_BOOKABLE_PREVIEW,
-): ExtendedEvent[] =>
-  children
-    .filter(e => {
-      if (!e.bookable || e.attendingOrHost || !e.start) return false;
-      const s = startMs(e);
-      return s !== null && s >= now;
-    })
-    .sort(byStart)
-    .slice(0, limit);
-
-/**
- * Visibility rule: a child event is hidden while the user is not registered
- * (`attending === false`) to its main event. Events without a parent, or whose
- * parent is not in `mainEvents`, stay visible.
- */
 export const filterVisibleEvents = <T extends Event>(events: T[], mainEvents: Event[]): T[] => {
   const hiddenParents = new Set(mainEvents.filter(m => m.attending === false).map(m => m.id));
   if (hiddenParents.size === 0) return events;

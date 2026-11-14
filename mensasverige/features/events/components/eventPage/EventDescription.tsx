@@ -4,7 +4,7 @@ import { ThemedText } from '@/components/ThemedText';
 import { Colors } from '@/constants/Colors';
 import { filterHtml } from '@/features/common/functions/filterHtml';
 import { extractLinks } from '@/features/common/functions/extractLinks';
-import { EVENT_HEADER_BG, typeScale } from '../../styles/typeScale';
+import { themeColors, typeScale } from '../../styles/typeScale';
 
 const openLink = (url: string) => {
   Linking.openURL(url).catch(err => console.error('Error opening link:', err));
@@ -13,16 +13,16 @@ const openLink = (url: string) => {
 /** The event's own text, with any links in it as tappable lines below. */
 const EventDescription: React.FC<{ description?: string | null }> = ({ description }) => {
   const dark = useColorScheme() === 'dark';
-  const text = description ? filterHtml(description).trim() : '';
-  if (!text) return null;
-  const links = extractLinks(description ?? '') ?? [];
+  const text = description ? filterHtml(description) : '';
+  if (!description || !text) return null;
+  const links = extractLinks(description) ?? [];
 
   return (
     <View style={styles.container}>
       <ThemedText style={[styles.text, { color: dark ? Colors.coolGray100 : '#11181C' }]}>{text}</ThemedText>
       {links.map((link, index) => (
         <TouchableOpacity key={index} onPress={() => openLink(link.url)} style={styles.link} accessibilityRole="link">
-          <ThemedText style={[styles.linkText, { color: dark ? Colors.primary300 : EVENT_HEADER_BG }]}>
+          <ThemedText style={[styles.linkText, { color: themeColors(dark).link }]}>
             {link.name}
           </ThemedText>
         </TouchableOpacity>

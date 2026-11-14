@@ -6,7 +6,8 @@ import { Event } from '../../../../api_schema/types';
 import UserList from '../UserList';
 import { useEventUsers } from '../../hooks/useEventUsers';
 import { isLocalEvent } from '../../utils/mainEventUtils';
-import { typeScale } from '../../styles/typeScale';
+import { registeredCount } from '../../utils/eventAttendance';
+import { themeColors, typeScale } from '../../styles/typeScale';
 
 /**
  * Who hosts the event and who comes, the same on every event page. A host
@@ -14,25 +15,16 @@ import { typeScale } from '../../styles/typeScale';
  * as a name otherwise. Participants show only to those who may see them;
  * where registering would reveal them, the section says so.
  */
-const EventPeople: React.FC<{
-  event: Event;
-  /** Leave out "visas när du är anmäld" where the page already says so, as the riksträff's locked box does. */
-  omitHiddenNote?: boolean;
-}> = ({ event, omitHiddenNote = false }) => {
+const EventPeople: React.FC<{ event: Event }> = ({ event }) => {
   const dark = useColorScheme() === 'dark';
   const { adminUsers, attendeeUsers, canSeeAttendees } = useEventUsers(event);
 
   const adminCount = event.admin?.length ?? 0;
   // A local event's organiser without a membership number has a name but no admin id.
   const showHosts = adminCount > 0 || (isLocalEvent(event) && (event.hosts?.length ?? 0) > 0);
-  const hiddenUntilRegistered = !omitHiddenNote && !canSeeAttendees && event.showAttendees === 'toAttending';
+  const hiddenUntilRegistered = !canSeeAttendees && event.showAttendees === 'toAttending';
   const showAttendees = canSeeAttendees && attendeeUsers.length > 0;
-  // The booking site's total, which includes people not on the list: everyone
-  // registered to the riksträff, or everyone booked on an activity (the app
-  // only knows the bookers who use it).
-  const extras = event.extras ?? {};
-  const attendeeCount = typeof extras.attendeeCount === 'number' ? extras.attendeeCount
-    : typeof extras.bookedCount === 'number' ? extras.bookedCount : undefined;
+  const attendeeCount = registeredCount(event) ?? undefined;
   // Booked, but none of them known to the app: the total alone.
   const countOnly = canSeeAttendees && !showAttendees && (attendeeCount ?? 0) > 0;
 
@@ -57,14 +49,14 @@ const EventPeople: React.FC<{
       {countOnly && (
         <View style={styles.hidden}>
           <ThemedText style={styles.h2}>
-            Deltagare <ThemedText style={[styles.h2, styles.count, { color: dark ? Colors.coolGray400 : '#4B5563' }]}>{attendeeCount}</ThemedText>
+            Deltagare <ThemedText style={[styles.h2, styles.count, { color: themeColors(dark).meta }]}>{attendeeCount}</ThemedText>
           </ThemedText>
         </View>
       )}
       {hiddenUntilRegistered && (
         <View style={styles.hidden}>
           <ThemedText style={styles.h2}>Deltagare</ThemedText>
-          <ThemedText style={[styles.meta, { color: dark ? Colors.coolGray400 : '#4B5563' }]}>
+          <ThemedText style={[styles.meta, { color: themeColors(dark).meta }]}>
             Visas när du är anmäld.
           </ThemedText>
         </View>

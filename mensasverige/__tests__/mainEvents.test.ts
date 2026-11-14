@@ -17,11 +17,10 @@ import {
   isAllDay,
   isEventOver,
   isMainEventOngoing,
+  countUpcomingEvents,
   selectActivityListEvents,
-  selectToBook,
   splitAddress,
 } from '../features/events/utils/mainEventUtils';
-import { countUpcomingEvents } from '../features/events/utils/eventUtils';
 import { Event } from '../api_schema/types';
 import { ExtendedEvent } from '../features/events/types/eventUtilTypes';
 
@@ -199,19 +198,6 @@ describe('children selection', () => {
     expect(getMainEventChildren(list, 'root2026-11-20').map(e => e.id)).toEqual(['a']);
   });
 
-  it('selectToBook keeps upcoming bookable non-attending events, sorted and capped at 5', () => {
-    const many = Array.from({ length: 7 }, (_, i) =>
-      child({ id: `e${i}`, start: `2026-11-22T${String(20 - i).padStart(2, '0')}:00:00` }),
-    );
-    const excluded = [
-      child({ id: 'past', start: '2026-11-21T08:00:00' }),
-      child({ id: 'attending', attendingOrHost: true, attending: true }),
-      child({ id: 'full', bookable: false }),
-    ];
-    const res = selectToBook([...excluded, ...many], now);
-    expect(res).toHaveLength(5);
-    expect(res.map(e => e.id)).toEqual(['e6', 'e5', 'e4', 'e3', 'e2']);
-  });
 });
 
 describe('formatRelativeStart', () => {

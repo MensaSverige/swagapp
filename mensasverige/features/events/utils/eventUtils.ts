@@ -22,25 +22,12 @@ export const isUserEffectivelyAttending = (event: Event, currentUserId?: number)
 };
 
 /**
- * Check if an event is in the future
- */
-export const isFutureEvent = (event: Event): boolean => {
-  if (!event.start) return false;
-  
-  const now = new Date();
-  const eventStartDate = new Date(event.start);
-  
-  return eventStartDate > now;
-};
-
-/**
  * Convert a regular Event to an ExtendedEvent with computed properties
  */
 export const createExtendedEvent = (event: Event, currentUserId?: number): ExtendedEvent => {
   return {
     ...event,
     attendingOrHost: isUserEffectivelyAttending(event, currentUserId),
-    isFutureEvent: isFutureEvent(event)
   };
 };
 
@@ -158,20 +145,6 @@ export const filterByOptions = (events: ExtendedEvent[], eventFilter: EventFilte
     if (toDate && eventStartDate > toDate) return false;
     return true;
   });
-};
-
-/** Events not yet over: ongoing or starting from now. The unfiltered "total" on the list screen. */
-export const countUpcomingEvents = (events: Event[]): number => {
-  const now = new Date();
-  return events.filter(e => {
-    if (!e.start) return false;
-    const start = new Date(e.start);
-    if (e.end) {
-      const end = new Date(e.end);
-      if (start <= now && end >= now) return true;
-    }
-    return start >= now;
-  }).length;
 };
 
 /** Count bookable events per tag code. */

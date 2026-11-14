@@ -25,14 +25,14 @@ const ev = (overrides: Partial<Event> = {}): Event =>
 
 describe('attendanceStatus', () => {
   it('lets an attendee leave a future, free event', () => {
-    expect(attendanceStatus(ev({ attending: true }), 7, NOW)).toEqual({ kind: 'attending', canLeave: true });
+    expect(attendanceStatus(ev({ attending: true }), 7, NOW)).toEqual({ kind: 'attending', leave: 'app' });
   });
 
   it('leaves the riksträff registration to the booking site', () => {
     expect(attendanceStatus(ev({ source: 'external_root', attending: true }), 7, NOW))
-      .toEqual({ kind: 'attending', canLeave: false });
+      .toEqual({ kind: 'attending', leave: 'bookingSite' });
     expect(attendanceStatus(ev({ source: 'calendar', attending: true }), 7, NOW))
-      .toEqual({ kind: 'attending', canLeave: true });
+      .toEqual({ kind: 'attending', leave: 'app' });
   });
 
   it('sends registration to the riksträff to the booking site', () => {
@@ -40,7 +40,7 @@ describe('attendanceStatus', () => {
   });
 
   it('keeps an attendee of a paid activity from leaving in the app', () => {
-    expect(attendanceStatus(ev({ attending: true, price: 300 }), 7, NOW)).toEqual({ kind: 'attending', canLeave: false });
+    expect(attendanceStatus(ev({ attending: true, price: 300 }), 7, NOW)).toEqual({ kind: 'attending', leave: 'bookingSite' });
   });
 
   it('sends a paid activity to the booking site, but never a main event', () => {

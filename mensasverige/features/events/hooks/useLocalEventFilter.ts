@@ -53,7 +53,8 @@ export const useUserPosition = (): Position | null => {
 export const useFilteredLocalEvents = (): { all: ExtendedEvent[]; filtered: ExtendedEvent[] } => {
   const all = useLocalEvents();
   const [filter] = useLocalEventFilter();
-  const position = useUserPosition();
+  const userPosition = useUserPosition();
+  const position = filter.mode === 'distance' ? userPosition : null;
   const filtered = useMemo(() => applyLocalEventFilter(all, filter, position), [all, filter, position]);
   return { all, filtered };
 };

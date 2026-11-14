@@ -75,7 +75,6 @@ const EventListItem: React.FC<EventListItemProps> = ({
                             <CategoryBadge
                                 key={index}
                                 categoryCode={canonicalCategoryCode(category)}
-                                showLabel={false}
                                 size="small"
                             />
                         ))}

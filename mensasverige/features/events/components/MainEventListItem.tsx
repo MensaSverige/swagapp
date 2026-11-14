@@ -4,7 +4,8 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { Event } from '../../../api_schema/types';
 import { Colors } from '@/constants/Colors';
 import { formatRegion, formatRowDateColumn } from '../utils/mainEventUtils';
-import { PAGE_PADDING, typeScale } from '../styles/typeScale';
+import { registeredCount } from '../utils/eventAttendance';
+import { PAGE_PADDING, themeColors, typeScale } from '../styles/typeScale';
 
 interface MainEventListItemProps {
   event: Event;
@@ -16,8 +17,8 @@ const MainEventListItem: React.FC<MainEventListItemProps> = ({ event, onPress })
   const colorScheme = useColorScheme() ?? 'light';
   const styles = useMemo(() => createStyles(colorScheme), [colorScheme]);
   const date = formatRowDateColumn(event);
-  const registeredCount = typeof event.extras?.attendeeCount === 'number' ? `${event.extras.attendeeCount} anmälda` : null;
-  const meta = [formatRegion(event), event.locationDescription, registeredCount, event.attending ? 'Du är anmäld' : null]
+  const total = registeredCount(event);
+  const meta = [formatRegion(event), event.locationDescription, total !== null ? `${total} anmälda` : null, event.attending ? 'Du är anmäld' : null]
     .filter(Boolean)
     .join(' · ');
 
@@ -69,7 +70,7 @@ const createStyles = (colorScheme: string) =>
     },
     meta: {
       ...typeScale.meta,
-      color: colorScheme === 'dark' ? Colors.coolGray400 : '#4B5563',
+      color: themeColors(colorScheme === 'dark').meta,
     },
   });
 

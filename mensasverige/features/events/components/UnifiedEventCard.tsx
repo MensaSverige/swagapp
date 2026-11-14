@@ -4,6 +4,7 @@ import { useEvents } from '../hooks/useEvents';
 import { useEventAttendance } from '../hooks/useEventAttendance';
 import { ExtendedEvent } from '../types/eventUtilTypes';
 import EventInfoRows from './eventPage/EventInfoRows';
+import { registerLabel } from '../utils/eventAttendance';
 import EventRegisterButton from './eventPage/EventRegisterButton';
 import EventDescription from './eventPage/EventDescription';
 import EventPeople from './eventPage/EventPeople';
@@ -21,15 +22,16 @@ const UnifiedEventCard: React.FC<{ event: ExtendedEvent }> = ({ event }) => {
     () => allEvents.find(e => e.id === event.id) ?? event,
     [allEvents, event],
   );
-  const { status, busy, register, unregister } = useEventAttendance(currentEvent);
+  const { status, siteUrl, busy, register, unregister } = useEventAttendance(currentEvent);
+  const label = registerLabel(status, siteUrl);
 
   return (
     <View>
       {!!currentEvent.imageUrl && (
         <Image style={styles.image} source={{ uri: currentEvent.imageUrl }} resizeMode="contain" />
       )}
-      <EventInfoRows event={currentEvent} status={status} busy={busy} onUnregister={unregister} />
-      {status.kind === 'open' && <EventRegisterButton onPress={register} busy={busy} />}
+      <EventInfoRows event={currentEvent} status={status} siteUrl={siteUrl} busy={busy} onUnregister={unregister} />
+      {!!label && <EventRegisterButton label={label} onPress={register} busy={busy} />}
       <EventDescription description={currentEvent.description} />
       <EventPeople event={currentEvent} />
     </View>

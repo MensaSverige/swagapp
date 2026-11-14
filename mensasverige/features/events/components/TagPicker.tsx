@@ -11,7 +11,7 @@ import { getInterestCategories } from '@/features/account/services/userService';
 import { InterestCategory } from '@/features/account/constants/interests';
 import { Tag } from '../../../api_schema/types';
 import useStore from '../../common/store/store';
-import { DIVIDER_COLOR, EVENT_HEADER_BG } from '../styles/typeScale';
+import { themeColors } from '../styles/typeScale';
 
 interface TagPickerProps {
   selectedTags: Tag[];
@@ -64,10 +64,10 @@ const TagPicker: React.FC<TagPickerProps> = ({ selectedTags, onChange }) => {
       <Modal visible={open} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setOpen(false)}>
         <ThemedView style={styles.sheet}>
           <SafeAreaView edges={['top', 'bottom']} style={styles.sheet}>
-            <View style={[styles.header, { borderBottomColor: scheme === 'dark' ? Colors.coolGray700 : DIVIDER_COLOR }]}>
+            <View style={[styles.header, { borderBottomColor: themeColors(scheme === 'dark').divider }]}>
               <ThemedText style={styles.title} accessibilityRole="header">Taggar</ThemedText>
               <TouchableOpacity onPress={() => setOpen(false)} style={styles.done} accessibilityRole="button">
-                <ThemedText style={[styles.doneText, { color: scheme === 'dark' ? Colors.primary300 : EVENT_HEADER_BG }]}>
+                <ThemedText style={[styles.doneText, { color: themeColors(scheme === 'dark').link }]}>
                   Klar
                 </ThemedText>
               </TouchableOpacity>

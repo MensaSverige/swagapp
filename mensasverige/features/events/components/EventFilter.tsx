@@ -16,11 +16,28 @@ import {
   LocalEventFilter,
   LocalGroupOption,
 } from '../utils/localEventFilter';
+import { EVENT_HEADER_BG, themeColors } from '../styles/typeScale';
 
 
 const { width: screenWidth } = Dimensions.get('window');
 
 type TriKey = 'attendingOrHost' | 'bookable' | 'official';
+
+/** The local event section while it is being edited: every choice kept, whatever the mode. */
+type LocalDraft = { mode: LocalEventFilter['mode']; regions: string[]; km: number };
+
+const toDraft = (filter: LocalEventFilter): LocalDraft => ({
+  mode: filter.mode,
+  regions: filter.mode === 'regions' ? filter.regions : [],
+  km: filter.mode === 'distance' ? filter.km : 50,
+});
+
+/** "Lokalavdelning" with nothing ticked keeps everything, so it is stored as "Alla". */
+const fromDraft = (draft: LocalDraft): LocalEventFilter => {
+  if (draft.mode === 'regions' && draft.regions.length > 0) return { mode: 'regions', regions: draft.regions };
+  if (draft.mode === 'distance') return { mode: 'distance', km: draft.km };
+  return { mode: 'all' };
+};
 const TRI_OPTIONS: Array<{ label: string; value: boolean | null }> = [
   { label: 'Alla', value: null },
   { label: 'Ja', value: true },
@@ -51,11 +68,8 @@ export const EventFilter: React.FC<EventFilterProps> = ({
   const colorScheme = useColorScheme();
   const insets = useSafeAreaInsets();
   const [localFilter, setLocalFilter] = useState<EventFilterOptions>(currentFilter);
-  const [draftLocal, setDraftLocal] = useState<LocalEventFilter>(currentLocalFilter);
-  // The last picked groups, so switching to distance and back does not lose them.
-  const [lastRegions, setLastRegions] = useState<string[]>(
-    currentLocalFilter.mode === 'regions' ? currentLocalFilter.regions : [],
-  );
+  // Flat, so the picked groups and distance survive switching mode and back.
+  const [draftLocal, setDraftLocal] = useState<LocalDraft>(() => toDraft(currentLocalFilter));
   const showLocalSection = localGroups.length > 0;
   
   // Animation values
@@ -70,8 +84,7 @@ export const EventFilter: React.FC<EventFilterProps> = ({
   }, [currentFilter]);
 
   useEffect(() => {
-    setDraftLocal(currentLocalFilter);
-    if (currentLocalFilter.mode === 'regions') setLastRegions(currentLocalFilter.regions);
+    setDraftLocal(toDraft(currentLocalFilter));
   }, [currentLocalFilter]);
 
   useEffect(() => {
@@ -107,20 +120,16 @@ export const EventFilter: React.FC<EventFilterProps> = ({
   }, [visible]);
 
   const handleApply = () => {
-    // "Lokalavdelning" with nothing ticked keeps everything: store it as "Alla".
-    const local: LocalEventFilter =
-      draftLocal.mode === 'regions' && draftLocal.regions.length === 0 ? { mode: 'all' } : draftLocal;
-    onApplyFilter(localFilter, showLocalSection ? local : undefined);
+    onApplyFilter(localFilter, showLocalSection ? fromDraft(draftLocal) : undefined);
     onClose();
   };
 
   const toggleRegion = (key: string) => {
-    setDraftLocal(prev => {
-      const regions = prev.mode === 'regions' ? prev.regions : [];
-      const next = regions.includes(key) ? regions.filter(r => r !== key) : [...regions, key];
-      setLastRegions(next);
-      return { mode: 'regions', regions: next };
-    });
+    setDraftLocal(prev => ({
+      ...prev,
+      mode: 'regions',
+      regions: prev.regions.includes(key) ? prev.regions.filter(r => r !== key) : [...prev.regions, key],
+    }));
   };
 
   const handleReset = () => {
@@ -133,8 +142,7 @@ export const EventFilter: React.FC<EventFilterProps> = ({
       dateTo: null,
     };
     setLocalFilter(resetFilter);
-    setDraftLocal({ mode: 'all' });
-    setLastRegions([]);
+    setDraftLocal(toDraft({ mode: 'all' }));
   };
 
   const toggleCategory = (categoryCode: string) => {
@@ -165,8 +173,8 @@ export const EventFilter: React.FC<EventFilterProps> = ({
   };
 
   const styles = createStyles(colorScheme ?? 'light');
-  const selectedColor = colorScheme === 'dark' ? Colors.primary300 : '#005DB4';
-  const unselectedColor = colorScheme === 'dark' ? '#9ca3af' : '#6b7280';
+  const selectedColor = themeColors(colorScheme === 'dark').link;
+  const unselectedColor = colorScheme === 'dark' ? Colors.coolGray400 : Colors.coolGray500;
 
   /** One tappable row with a radio or checkbox icon; `indent` for the choices under a mode. */
   const choiceRow = (opts: {
@@ -278,12 +286,12 @@ export const EventFilter: React.FC<EventFilterProps> = ({
               {choiceRow({
                 key: 'all', label: 'Alla', kind: 'radio',
                 selected: draftLocal.mode === 'all',
-                onPress: () => setDraftLocal({ mode: 'all' }),
+                onPress: () => setDraftLocal(prev => ({ ...prev, mode: 'all' })),
               })}
               {choiceRow({
                 key: 'regions', label: 'Lokalavdelning', kind: 'radio',
                 selected: draftLocal.mode === 'regions',
-                onPress: () => setDraftLocal({ mode: 'regions', regions: lastRegions }),
+                onPress: () => setDraftLocal(prev => ({ ...prev, mode: 'regions' })),
               })}
               {draftLocal.mode === 'regions' && localGroups.map(group => choiceRow({
                 key: `region-${group.key}`, label: group.label, kind: 'check', indent: true,
@@ -294,7 +302,7 @@ export const EventFilter: React.FC<EventFilterProps> = ({
               {choiceRow({
                 key: 'distance', label: 'Avstånd från mig', kind: 'radio',
                 selected: draftLocal.mode === 'distance',
-                onPress: () => setDraftLocal({ mode: 'distance', km: 50 }),
+                onPress: () => setDraftLocal(prev => ({ ...prev, mode: 'distance' })),
                 disabled: !hasUserPosition && draftLocal.mode !== 'distance',
               })}
               {!hasUserPosition && (
@@ -305,7 +313,7 @@ export const EventFilter: React.FC<EventFilterProps> = ({
               {draftLocal.mode === 'distance' && DISTANCE_OPTIONS_KM.map(km => choiceRow({
                 key: `km-${km}`, label: `Inom ${km} km`, kind: 'radio', indent: true,
                 selected: draftLocal.km === km,
-                onPress: () => setDraftLocal({ mode: 'distance', km }),
+                onPress: () => setDraftLocal(prev => ({ ...prev, mode: 'distance', km })),
               }))}
               {draftLocal.mode === 'distance' && (
                 <ThemedText style={styles.choiceHint}>
@@ -452,7 +460,7 @@ const createStyles = (colorScheme: string) => StyleSheet.create({
   },
   choiceTrailing: {
     fontSize: 13,
-    color: colorScheme === 'dark' ? '#9ca3af' : '#6b7280',
+    color: colorScheme === 'dark' ? Colors.coolGray400 : Colors.coolGray500,
   },
   triOption: {
     minWidth: 44,
@@ -470,7 +478,7 @@ const createStyles = (colorScheme: string) => StyleSheet.create({
   choiceHint: {
     fontSize: 13,
     lineHeight: 18,
-    color: colorScheme === 'dark' ? '#9ca3af' : '#6b7280',
+    color: colorScheme === 'dark' ? Colors.coolGray400 : Colors.coolGray500,
     marginBottom: 4,
   },
   sectionTitle: {
@@ -496,18 +504,18 @@ const createStyles = (colorScheme: string) => StyleSheet.create({
   },
   buttonOutline: {
     borderWidth: 1,
-    borderColor: colorScheme === 'dark' ? Colors.primary300 : '#005DB4',
+    borderColor: themeColors(colorScheme === 'dark').link,
     backgroundColor: 'transparent',
   },
   buttonSolid: {
-    backgroundColor: '#005DB4',
+    backgroundColor: EVENT_HEADER_BG,
   },
   buttonText: {
     fontSize: 16,
     fontWeight: '600',
   },
   buttonTextOutline: {
-    color: colorScheme === 'dark' ? Colors.primary300 : '#005DB4',
+    color: themeColors(colorScheme === 'dark').link,
   },
   buttonTextSolid: {
     color: '#ffffff',

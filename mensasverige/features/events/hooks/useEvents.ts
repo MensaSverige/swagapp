@@ -3,9 +3,7 @@ import { GroupedEvents, ExtendedEvent } from '../types/eventUtilTypes';
 import {
   createExtendedEvent,
   groupEventsByDate,
-  filterByOptions,
   calcCategoryCounts,
-  countUpcomingEvents,
   getTopCategories,
   selectDashboardEvents,
   selectLastMinuteEvents,
@@ -13,7 +11,6 @@ import {
 import { fetchEvents, attendEvent, unattendEvent, fetchInterestTags } from '../services/eventService';
 import { getUsersByIds } from '../../account/services/userService';
 import useStore from '../../common/store/store';
-import { EventFilterOptions } from '../store/EventsSlice';
 import { filterVisibleEvents } from '../utils/mainEventUtils';
 
 interface UseEventsOptions {
@@ -25,18 +22,10 @@ interface UseEventsReturn {
   dashboardGroupedEvents: GroupedEvents;
   dashboardHasMoreEvents: boolean;
 
-  filteredGroupedEvents: GroupedEvents;
-  filteredTotalCount: number;
-  filteredCount: number;
-
   loading: boolean;
   error: Error | null;
   refreshing: boolean;
   lastFetched: Date | null;
-
-  currentEventFilter: EventFilterOptions;
-  setCurrentEventFilter: (filter: EventFilterOptions) => void;
-  resetFilters: () => void;
 
   categoryEventCounts: Record<string, number>;
   topCategories: string[];
@@ -115,9 +104,6 @@ export const useEvents = (options: UseEventsOptions = {}): UseEventsReturn => {
     setEventsLastFetched,
     setEventsInitialized,
     setInterestTags,
-    currentEventFilter,
-    setCurrentEventFilter,
-    resetFilters,
     addOrUpdateEvent,
     user,
     getEventsRefreshInterval,
@@ -154,18 +140,6 @@ export const useEvents = (options: UseEventsOptions = {}): UseEventsReturn => {
     () => getTopCategories(categoryEventCounts),
     [categoryEventCounts]
   );
-
-  const filteredEvents = useMemo(
-    () => filterByOptions(events, currentEventFilter),
-    [events, currentEventFilter]
-  );
-
-  const filteredGroupedEvents = useMemo(
-    () => groupEventsByDate(filteredEvents),
-    [filteredEvents]
-  );
-
-  const filteredTotalCount = useMemo(() => countUpcomingEvents(events), [events]);
 
   // ── Fetch ─────────────────────────────────────────────────────────────────
 
@@ -290,9 +264,6 @@ export const useEvents = (options: UseEventsOptions = {}): UseEventsReturn => {
     allEvents: events,
     dashboardGroupedEvents,
     dashboardHasMoreEvents: dashboardHasMore,
-    filteredGroupedEvents,
-    filteredTotalCount,
-    filteredCount: filteredEvents.length,
     // Both come from the store: with the module-level isFetching guard, only
     // the first caller runs a fetch, so per-instance state would leave the
     // second consumer rendering an empty list instead of a spinner.
@@ -300,9 +271,6 @@ export const useEvents = (options: UseEventsOptions = {}): UseEventsReturn => {
     error: eventsError,
     refreshing: eventsRefreshing,
     lastFetched: eventsLastFetched,
-    currentEventFilter,
-    setCurrentEventFilter,
-    resetFilters,
     categoryEventCounts,
     topCategories,
     lastMinuteEvents,

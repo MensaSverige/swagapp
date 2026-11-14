@@ -1,7 +1,6 @@
 import React, { useMemo } from 'react';
-import { View, StyleSheet, TouchableOpacity, Linking, useColorScheme } from 'react-native';
-import useStore from '@/features/common/store/store';
-import { bookingSiteUrl } from '../utils/eventAttendance';
+import { View, StyleSheet, TouchableOpacity, useColorScheme } from 'react-native';
+import { registerLabel } from '../utils/eventAttendance';
 import { MaterialIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { ThemedText } from '@/components/ThemedText';
@@ -17,15 +16,15 @@ import { useEvents } from '../hooks/useEvents';
 import { useEventAttendance } from '../hooks/useEventAttendance';
 import {
     navigateToLastMinuteEvents,
+    navigateToUserEvents,
 } from '../utilities/navigationUtils';
 import { ExtendedEvent } from '../types/eventUtilTypes';
 import { groupEventsByDate } from '../utils/eventUtils';
 import {
     getMainEventChildren,
-    isLocalEvent,
     selectMyBookings,
 } from '../utils/mainEventUtils';
-import { EVENT_HEADER_BG, PAGE_PADDING, typeScale } from '../styles/typeScale';
+import { PAGE_PADDING, themeColors, typeScale } from '../styles/typeScale';
 
 type MaterialIconName = React.ComponentProps<typeof MaterialIcons>['name'];
 
@@ -52,15 +51,11 @@ const ParentEventDashboard: React.FC<ParentEventDashboardProps> = ({ mainEvent }
     const colorScheme = useColorScheme() ?? 'light';
     const styles = useMemo(() => createStyles(colorScheme), [colorScheme]);
     const { allEvents, loading: eventsLoading, lastMinuteEvents: allLastMinute } = useEvents();
-    const { status, busy, register, unregister } = useEventAttendance(mainEvent);
+    const { status, siteUrl, busy, register, unregister } = useEventAttendance(mainEvent);
+    const label = registerLabel(status, siteUrl);
 
     const attending = !!mainEvent.attending;
-    const mainEvents = useStore(s => s.mainEvents);
-    const siteUrl = bookingSiteUrl(mainEvent, mainEvents);
     const isRoot = mainEvent.source === 'external_root';
-    // The riksträff's description only repeats its dates; a local event's is
-    // the invitation itself (what, where, cost, how to pay).
-    const description = isLocalEvent(mainEvent) ? mainEvent.description : null;
 
     const children = useMemo(
         () => getMainEventChildren(allEvents, mainEvent.id),
@@ -78,8 +73,7 @@ const ParentEventDashboard: React.FC<ParentEventDashboardProps> = ({ mainEvent }
     };
 
     // Its own page with only the member's bookings here, not a filtered Aktiviteter.
-    const navigateToMyBookings = () =>
-        router.push({ pathname: '/events/user-events', params: { parent: mainEvent.id } });
+    const navigateToMyBookings = () => navigateToUserEvents({ parent: mainEvent.id });
 
     const infoTiles = (
         <View style={styles.infoGrid}>
@@ -115,23 +109,20 @@ const ParentEventDashboard: React.FC<ParentEventDashboardProps> = ({ mainEvent }
 
     return (
         <ThemedView style={styles.container}>
-            <EventInfoRows event={mainEvent} status={status} busy={busy} onUnregister={unregister} />
-            {status.kind === 'open' && <EventRegisterButton onPress={register} busy={busy} />}
-            {status.kind === 'bookingSite' && !!siteUrl && (
-                <EventRegisterButton label="Anmäl dig på bokningssidan" onPress={() => Linking.openURL(siteUrl)} />
-            )}
+            <EventInfoRows event={mainEvent} status={status} siteUrl={siteUrl} busy={busy} onUnregister={unregister} />
+            {!!label && <EventRegisterButton label={label} onPress={register} busy={busy} />}
 
             {isRoot && <View style={styles.infoSection}>{infoTiles}</View>}
 
-            <EventDescription description={description} />
-            <EventPeople event={mainEvent} omitHiddenNote={!attending && isRoot} />
+            <EventDescription description={mainEvent.description} />
+            <EventPeople event={mainEvent} />
 
             {!attending && isRoot && (
                 <View style={styles.lockedContainer}>
                     <MaterialIcons name="lock" size={40} color="#9CA3AF" style={styles.lockedIcon} />
                     <ThemedText style={styles.lockedTitle}>Aktiviteterna visas när du är anmäld</ThemedText>
                     <ThemedText style={styles.lockedText}>
-                        Då ser du programmet, kan boka aktiviteter och se vilka som kommer, även på kartan.
+                        Då ser du programmet och kan boka aktiviteter.
                     </ThemedText>
                 </View>
             )}
@@ -226,11 +217,11 @@ const createStyles = (colorScheme: string) => {
         },
         seeAllText: {
             ...typeScale.link,
-            color: dark ? Colors.primary300 : EVENT_HEADER_BG,
+            color: themeColors(dark).link,
         },
         emptyText: {
             ...typeScale.meta,
-            color: dark ? Colors.coolGray400 : '#4B5563',
+            color: themeColors(dark).meta,
         },
         lockedContainer: {
             alignItems: 'center',
@@ -251,7 +242,7 @@ const createStyles = (colorScheme: string) => {
         },
         lockedText: {
             ...typeScale.meta,
-            color: dark ? Colors.coolGray400 : '#4B5563',
+            color: themeColors(dark).meta,
             textAlign: 'center',
         },
         actionsRow: {
