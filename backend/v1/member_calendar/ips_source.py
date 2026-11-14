@@ -106,13 +106,23 @@ def _ssh_tunnel() -> SSHTunnelForwarder:
 
 
 def _strip_html(html: str) -> str:
-    """Reduce the stored HTML body to plain text."""
-    text = re.sub(r"<[^>]+>", "", html)
+    """Reduce the stored HTML body to plain text, keeping its line breaks and paragraphs.
+
+    A local event's description is its invitation -- often long, with the
+    price and how to pay in a paragraph of its own -- so paragraphs survive as
+    blank lines rather than running together, and words either side of a tag
+    are never glued.
+    """
+    text = re.sub(r"<br\s*/?>", "\n", html, flags=re.I)
+    text = re.sub(r"</(p|div|li|h[1-6])\s*>", "\n\n", text, flags=re.I)
+    text = re.sub(r"<[^>]+>", " ", text)
     text = re.sub(r"&nbsp;", " ", text)
     text = re.sub(r"&amp;", "&", text)
     text = re.sub(r"&lt;", "<", text)
     text = re.sub(r"&gt;", ">", text)
-    return re.sub(r"\s+", " ", text).strip()
+    lines = [re.sub(r"[ \t\r\f\v]+", " ", line).strip() for line in text.split("\n")]
+    text = "\n".join(lines)
+    return re.sub(r"\n{3,}", "\n\n", text).strip()
 
 
 def _unix_to_utc(value) -> Optional[datetime]:

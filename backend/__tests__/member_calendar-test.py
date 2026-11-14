@@ -565,3 +565,11 @@ def test_a_geocode_without_a_radius_sets_no_radius(monkeypatch):
         row = session.query(EventTable).filter_by(source_id="nr").one()
     assert row.extras["locationApprox"] is True
     assert "locationRadiusMeters" not in row.extras
+
+
+def test_description_keeps_paragraphs_and_never_glues_words():
+    """A local event's invitation stays readable: paragraphs survive, words keep their spaces."""
+    from v1.member_calendar.ips_source import _strip_html
+    assert _strip_html("<p>Hej</p><p>Rad två<br>Rad tre</p>") == "Hej\n\nRad två\nRad tre"
+    assert _strip_html("<p>  A  </p>\n\n\n<p>B</p>") == "A\n\nB"
+    assert _strip_html("Kom<b>hit</b>") == "Kom hit"
