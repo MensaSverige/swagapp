@@ -79,16 +79,22 @@ def _require_registered_to_parent(parent: Optional[str], current_user: dict) -> 
 def _check_parent_for_user_event(parent: Optional[str], current_user: dict) -> None:
     if not parent:
         return
-    if not main_events.is_main_event(parent):
+    # A member calendar event is no parent for a non-member: to them it does not exist.
+    if not main_events.viewer_can_see(parent, current_user) or not main_events.is_main_event(parent):
         raise HTTPException(status_code=400, detail="Parent event is not a main event")
     _require_registered_to_parent(parent, current_user)
 
 
 def list_main_events(current_user: dict) -> List[Event]:
-    """Main events that have not ended, with the viewer's registration applied."""
+    """Main events that have not ended, with the viewer's registration applied.
+
+    Member calendar events are left out for a viewer who is not a member.
+    """
     registered = main_events.get_registered_event_ids(current_user["userId"])
     result = []
     for e in main_events.get_open_main_events():
+        if not main_events.viewer_can_see(e.id, current_user):
+            continue
         is_registered = e.id in registered
         result.append(e.model_copy(update={"attending": is_registered, "bookable": not is_registered}))
     return result
@@ -167,6 +173,9 @@ def list_unified_events(
     ]
 
     merged = external_events + user_events_mapped
+
+    # Children of a member calendar event are members-only like their parent.
+    merged = [e for e in merged if main_events.viewer_can_see(e.parentEvent, current_user)]
 
     # Do not filter to future only; keep all external events and user events from one month back.
 
@@ -280,7 +289,7 @@ _MAIN_PREFIXES = (_ID_PREFIX[EventSource.calendar], _ID_PREFIX[EventSource.exter
 
 def _attend_main_event(unified_event_id: str, current_user: dict) -> Event:
     """Register for a main event. Idempotent."""
-    event = main_events.get_main_event(unified_event_id)
+    event = main_events.get_visible_main_event(unified_event_id, current_user)
     if not event:
         raise HTTPException(status_code=404, detail="Event not found")
     main_events.register(current_user["userId"], unified_event_id)
@@ -288,7 +297,7 @@ def _attend_main_event(unified_event_id: str, current_user: dict) -> Event:
 
 
 def _unattend_main_event(unified_event_id: str, current_user: dict) -> dict:
-    if not main_events.get_main_event(unified_event_id):
+    if not main_events.get_visible_main_event(unified_event_id, current_user):
         raise HTTPException(status_code=404, detail="Event not found")
     main_events.unregister(current_user["userId"], unified_event_id)
     return {"message": "Successfully unattended event"}
