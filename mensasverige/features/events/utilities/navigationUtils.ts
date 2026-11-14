@@ -37,7 +37,6 @@ export const navigateToScheduleWithFilter = (filter: EventFilterOptions) => {
 };
 
 // Convenience functions
-export const navigateToBookableEvents = () => navigateToScheduleWithFilter({ attendingOrHost: null, bookable: true, official: null, categories: [] });
 export const navigateToOfficialEvents = () => navigateToScheduleWithFilter({ attendingOrHost: null, bookable: null, official: true, categories: [] });
 export const navigateToLastMinuteEvents = () => {
     const { now, twoHoursFromNow } = getLastMinuteDateRange();
@@ -52,7 +51,10 @@ export const navigateToLastMinuteEvents = () => {
     });
 };
 
-export const navigateToUserEvents = (userId?: number) => {
-    const params = userId ? { userId: String(userId) } : {};
+/** A member's bookings: someone else's with `userId`, those on one main event with `parent`. */
+export const navigateToUserEvents = ({ userId, parent }: { userId?: number; parent?: string } = {}) => {
+    const params: Record<string, string> = {};
+    if (userId) params.userId = String(userId);
+    if (parent) params.parent = parent;
     router.push({ pathname: '/events/user-events', params });
 };

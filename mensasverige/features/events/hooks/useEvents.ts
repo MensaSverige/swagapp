@@ -3,7 +3,6 @@ import { GroupedEvents, ExtendedEvent } from '../types/eventUtilTypes';
 import {
   createExtendedEvent,
   groupEventsByDate,
-  filterByOptions,
   calcCategoryCounts,
   getTopCategories,
   selectDashboardEvents,
@@ -12,7 +11,6 @@ import {
 import { fetchEvents, attendEvent, unattendEvent, fetchInterestTags } from '../services/eventService';
 import { getUsersByIds } from '../../account/services/userService';
 import useStore from '../../common/store/store';
-import { EventFilterOptions } from '../store/EventsSlice';
 import { filterVisibleEvents } from '../utils/mainEventUtils';
 
 interface UseEventsOptions {
@@ -24,18 +22,10 @@ interface UseEventsReturn {
   dashboardGroupedEvents: GroupedEvents;
   dashboardHasMoreEvents: boolean;
 
-  filteredGroupedEvents: GroupedEvents;
-  filteredTotalCount: number;
-  filteredCount: number;
-
   loading: boolean;
   error: Error | null;
   refreshing: boolean;
   lastFetched: Date | null;
-
-  currentEventFilter: EventFilterOptions;
-  setCurrentEventFilter: (filter: EventFilterOptions) => void;
-  resetFilters: () => void;
 
   categoryEventCounts: Record<string, number>;
   topCategories: string[];
@@ -64,6 +54,37 @@ export const refreshEventsList = async (): Promise<void> => {
   }
 };
 
+/**
+ * Load the users behind these ids into the store, skipping ones already
+ * there, in small chunks after the current render. Ids without an account,
+ * or whose profile is hidden from the viewer, simply stay missing; the
+ * screens then fall back to the names they have.
+ */
+// Ids that came back without a user (no account, or a hidden profile): not asked for again this session.
+const unavailableUserIds = new Set<number>();
+
+export const prefetchUsers = (ids: Iterable<number>): void => {
+  const wanted = new Set(ids);
+  if (wanted.size === 0) return;
+  setTimeout(() => {
+    const newIds = [...wanted].filter(id => id > 0 && !useStore.getState().usersById[id] && !unavailableUserIds.has(id));
+    if (newIds.length === 0) return;
+    (async () => {
+      for (let i = 0; i < newIds.length; i += USER_PREFETCH_CHUNK_SIZE) {
+        const chunk = newIds.slice(i, i + USER_PREFETCH_CHUNK_SIZE);
+        try {
+          const users = await getUsersByIds(chunk.map(String));
+          useStore.getState().setUsers(users);
+          const found = new Set(users.map(u => u.userId));
+          chunk.filter(id => !found.has(id)).forEach(id => unavailableUserIds.add(id));
+        } catch (err) {
+          console.error('[prefetchUsers] getUsersByIds chunk failed:', err);
+        }
+      }
+    })().catch(err => console.error('[prefetchUsers] failed:', err));
+  }, 0);
+};
+
 const DASHBOARD_MAX = 3;
 const LAST_MINUTE_HOURS = 2;
 
@@ -83,9 +104,6 @@ export const useEvents = (options: UseEventsOptions = {}): UseEventsReturn => {
     setEventsLastFetched,
     setEventsInitialized,
     setInterestTags,
-    currentEventFilter,
-    setCurrentEventFilter,
-    resetFilters,
     addOrUpdateEvent,
     user,
     getEventsRefreshInterval,
@@ -122,30 +140,6 @@ export const useEvents = (options: UseEventsOptions = {}): UseEventsReturn => {
     () => getTopCategories(categoryEventCounts),
     [categoryEventCounts]
   );
-
-  const filteredEvents = useMemo(
-    () => filterByOptions(events, currentEventFilter),
-    [events, currentEventFilter]
-  );
-
-  const filteredGroupedEvents = useMemo(
-    () => groupEventsByDate(filteredEvents),
-    [filteredEvents]
-  );
-
-  const filteredTotalCount = useMemo(() => {
-    // "total" = all non-past events (no additional filter)
-    const fromDate = new Date();
-    return events.filter(e => {
-      if (!e.start) return false;
-      const start = new Date(e.start);
-      if (e.end) {
-        const end = new Date(e.end);
-        if (start <= fromDate && end >= fromDate) return true;
-      }
-      return start >= fromDate;
-    }).length;
-  }, [events]);
 
   // ── Fetch ─────────────────────────────────────────────────────────────────
 
@@ -186,23 +180,7 @@ export const useEvents = (options: UseEventsOptions = {}): UseEventsReturn => {
         event.attendees?.forEach(a => allIds.add(a.userId));
       }
 
-      if (allIds.size > 0) {
-        setTimeout(() => {
-          const newIds = [...allIds].filter(id => !useStore.getState().usersById[id]);
-          if (newIds.length === 0) return;
-          (async () => {
-            for (let i = 0; i < newIds.length; i += USER_PREFETCH_CHUNK_SIZE) {
-              const chunk = newIds.slice(i, i + USER_PREFETCH_CHUNK_SIZE);
-              try {
-                const users = await getUsersByIds(chunk.map(String));
-                setUsers(users);
-              } catch (err) {
-                console.error('[useEvents] getUsersByIds chunk failed:', err);
-              }
-            }
-          })().catch(err => console.error('[useEvents] user prefetch failed:', err));
-        }, 0);
-      }
+      prefetchUsers(allIds);
     } catch (err) {
       setEventsError(err as Error);
       console.error('Error fetching events:', err);
@@ -286,9 +264,6 @@ export const useEvents = (options: UseEventsOptions = {}): UseEventsReturn => {
     allEvents: events,
     dashboardGroupedEvents,
     dashboardHasMoreEvents: dashboardHasMore,
-    filteredGroupedEvents,
-    filteredTotalCount,
-    filteredCount: filteredEvents.length,
     // Both come from the store: with the module-level isFetching guard, only
     // the first caller runs a fetch, so per-instance state would leave the
     // second consumer rendering an empty list instead of a spinner.
@@ -296,9 +271,6 @@ export const useEvents = (options: UseEventsOptions = {}): UseEventsReturn => {
     error: eventsError,
     refreshing: eventsRefreshing,
     lastFetched: eventsLastFetched,
-    currentEventFilter,
-    setCurrentEventFilter,
-    resetFilters,
     categoryEventCounts,
     topCategories,
     lastMinuteEvents,

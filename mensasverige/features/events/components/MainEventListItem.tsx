@@ -3,9 +3,9 @@ import { View, Text, TouchableOpacity, StyleSheet, useColorScheme } from 'react-
 import { MaterialIcons } from '@expo/vector-icons';
 import { Event } from '../../../api_schema/types';
 import { Colors } from '@/constants/Colors';
-import CategoryBadge from './badges/CategoryBadge';
-import { formatRowDateColumn } from '../utils/mainEventUtils';
-import { typeScale } from '../styles/typeScale';
+import { formatRegion, formatRowDateColumn } from '../utils/mainEventUtils';
+import { registeredCount } from '../utils/eventAttendance';
+import { PAGE_PADDING, themeColors, typeScale } from '../styles/typeScale';
 
 interface MainEventListItemProps {
   event: Event;
@@ -17,7 +17,8 @@ const MainEventListItem: React.FC<MainEventListItemProps> = ({ event, onPress })
   const colorScheme = useColorScheme() ?? 'light';
   const styles = useMemo(() => createStyles(colorScheme), [colorScheme]);
   const date = formatRowDateColumn(event);
-  const meta = [event.locationDescription, event.attending ? 'Du är anmäld' : null]
+  const total = registeredCount(event);
+  const meta = [formatRegion(event), event.locationDescription, total !== null ? `${total} anmälda` : null, event.attending ? 'Du är anmäld' : null]
     .filter(Boolean)
     .join(' · ');
 
@@ -28,11 +29,6 @@ const MainEventListItem: React.FC<MainEventListItemProps> = ({ event, onPress })
           <Text style={styles.startDate}>{date.start}</Text>
           {!!date.end && <Text style={styles.endDate}>{date.end}</Text>}
         </View>
-        <CategoryBadge
-          eventType={event.official ? 'official' : 'non-official'}
-          showLabel={false}
-          size="x-small"
-        />
         <View style={styles.content}>
           <Text style={styles.title}>{event.name}</Text>
           {!!meta && <Text style={styles.meta}>{meta}</Text>}
@@ -52,9 +48,10 @@ const createStyles = (colorScheme: string) =>
     item: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 8,
-      paddingHorizontal: 20,
-      paddingVertical: 8,
+      gap: 12,
+      marginHorizontal: -PAGE_PADDING,
+      paddingHorizontal: PAGE_PADDING,
+      paddingVertical: 10,
     },
     attending: { backgroundColor: 'rgba(16, 185, 129, 0.1)' },
     dateColumn: { minWidth: 48, alignSelf: 'flex-start' },
@@ -73,7 +70,7 @@ const createStyles = (colorScheme: string) =>
     },
     meta: {
       ...typeScale.meta,
-      color: colorScheme === 'dark' ? Colors.coolGray400 : '#4B5563',
+      color: themeColors(colorScheme === 'dark').meta,
     },
   });
 

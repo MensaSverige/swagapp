@@ -2,7 +2,6 @@ import '@/features/map/tasks/backgroundLocationTask';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
@@ -14,6 +13,7 @@ import useStore from '@/features/common/store/store';
 import apiClient from '@/features/common/services/apiClient';
 import useUserLocation from '@/features/map/hooks/useUserLocation';
 import { UpdateRequiredModal } from '@/features/updateCheck/components/UpdateRequiredModal';
+import { AppStatusBar } from '@/features/events/components/EventHeaderStatusBar';
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
@@ -95,7 +95,7 @@ export default function RootLayout() {
           <Stack.Screen name="privacy" options={{ title: 'Integritetspolicy', headerBackTitle: 'Tillbaka' }} />
           <Stack.Screen name="+not-found" />
         </Stack>
-        <StatusBar style="auto" />
+        <AppStatusBar />
       </ThemeProvider>
     </SafeAreaProvider>
   );

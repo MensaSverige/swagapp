@@ -4,6 +4,7 @@ import {
     ActivityIndicator,
     ScrollView,
     RefreshControl,
+    TouchableOpacity,
     useColorScheme,
 } from 'react-native';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
@@ -14,13 +15,21 @@ import { ThemedText } from '@/components/ThemedText';
 import GroupedEventsList from '@/features/events/components/GroupedEventsList';
 import { ExtendedEvent } from '@/features/events/types/eventUtilTypes';
 import { groupEventsByDate, sortEventsByDate } from '@/features/events/utils/eventUtils';
+import { getMainEventChildren, isEventOver, selectMyBookings } from '@/features/events/utils/mainEventUtils';
 import { Colors } from '@/constants/Colors';
 import { useBottomTabOverflow } from '@/components/ui/TabBarBackground';
 import { MaterialIcons } from '@expo/vector-icons';
+import { PAGE_PADDING, themeColors, typeScale } from '@/features/events/styles/typeScale';
 
+/**
+ * A member's bookings: only those, as their own page. Opened from "Se alla"
+ * under Mina bokningar, scoped to that main event (`parent`). From here the
+ * whole programme is one tap away in Aktiviteter.
+ */
 export default function UserEventsScreen() {
-    const { userId: userIdParam } = useLocalSearchParams<{ userId?: string }>();
+    const { userId: userIdParam, parent } = useLocalSearchParams<{ userId?: string; parent?: string }>();
     const { user } = useStore();
+    const selectMainEvent = useStore(s => s.selectMainEvent);
     const router = useRouter();
     const colorScheme = useColorScheme();
     const bottom = useBottomTabOverflow();
@@ -31,33 +40,45 @@ export default function UserEventsScreen() {
     const { allEvents, loading, refreshing, refetch } = useEvents({ enableAutoRefresh: true });
 
     const userGroupedEvents = useMemo(() => {
-        const now = new Date();
-
+        // On one main event: the same bookings the riksträff page previews.
+        if (parent && isOwnEvents) {
+            return groupEventsByDate(selectMyBookings(getMainEventChildren(allEvents, parent)));
+        }
+        const now = Date.now();
         const filtered = allEvents.filter((event: ExtendedEvent) => {
-            if (!event.start) return false;
-
-            const start = new Date(event.start);
-            const end = event.end ? new Date(event.end) : null;
-            const isOngoing = end ? start <= now && end >= now : false;
-            if (start < now && !isOngoing) return false;
-
-            if (isOwnEvents) {
-                return event.attendingOrHost;
-            }
+            if (!event.start || isEventOver(event, now)) return false;
+            if (isOwnEvents) return event.attendingOrHost;
             return (
                 event.hosts?.some(h => h.userId === targetUserId) ||
                 (event.admin?.includes(targetUserId!) ?? false)
             );
         });
-
         return groupEventsByDate(sortEventsByDate(filtered));
-    }, [allEvents, targetUserId, isOwnEvents]);
+    }, [allEvents, targetUserId, isOwnEvents, parent]);
 
     const handleEventPress = useCallback((event: ExtendedEvent) => {
         router.push({ pathname: '/events/[id]', params: { id: event.id } });
     }, [router]);
 
     const isEmpty = Object.keys(userGroupedEvents).length === 0;
+    const link = themeColors(colorScheme === 'dark').link;
+
+    // On to every activity: the main event's programme when scoped to one.
+    const openAllActivities = useCallback(() => {
+        if (parent) selectMainEvent(parent);
+        router.navigate('/(tabs)/(events)');
+    }, [parent, selectMainEvent, router]);
+
+    const allActivitiesRow = isOwnEvents ? (
+        <TouchableOpacity
+            onPress={openAllActivities}
+            style={[styles.linkRow, { borderColor: themeColors(colorScheme === 'dark').divider }]}
+            accessibilityRole="link"
+        >
+            <ThemedText style={[styles.linkText, { color: link }]}>Alla aktiviteter</ThemedText>
+            <MaterialIcons name="chevron-right" size={22} color={link} />
+        </TouchableOpacity>
+    ) : null;
 
     const refreshControl = (
         <RefreshControl
@@ -90,6 +111,7 @@ export default function UserEventsScreen() {
                     <ThemedText style={styles.emptyText}>
                         {isOwnEvents ? 'Du har inga bokningar ännu' : 'Inga bokningar hittades'}
                     </ThemedText>
+                    <ThemedView style={styles.emptyLink}>{allActivitiesRow}</ThemedView>
                 </ScrollView>
             ) : (
                 <ScrollView
@@ -100,8 +122,9 @@ export default function UserEventsScreen() {
                         groupedEvents={userGroupedEvents}
                         onEventPress={handleEventPress}
                         showCategories={true}
-                        dateHeaderStyle="default"
+                        dateHeaderStyle="aligned"
                     />
+                    {allActivitiesRow}
                 </ScrollView>
             )}
         </ThemedView>
@@ -125,5 +148,23 @@ const styles = StyleSheet.create({
         fontSize: 16,
         textAlign: 'center',
         opacity: 0.7,
+    },
+    emptyLink: {
+        alignSelf: 'stretch',
+        marginTop: 24,
+        marginHorizontal: -20,
+    },
+    linkRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        minHeight: 48,
+        paddingHorizontal: PAGE_PADDING,
+        marginTop: 12,
+        borderTopWidth: 1,
+        borderBottomWidth: 1,
+    },
+    linkText: {
+        ...typeScale.link,
     },
 });

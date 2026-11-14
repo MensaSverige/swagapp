@@ -1,12 +1,14 @@
 import { StyleSheet } from 'react-native';
 import { Colors } from '../../../constants/Colors';
+import { BUTTON_HEIGHT, EVENT_HEADER_BG, themeColors, typeScale } from './typeScale';
 
 /**
- * Shared styles for event card components (UnifiedEventCard and CreateEventCard)
+ * Shared styles for the activity form (CreateEventCard) and UserList
  * These styles are used for displaying event information in both read and edit modes
  */
 export const createEventCardStyles = (colorScheme: string) => {
   const colors = colorScheme === 'dark' ? Colors.dark : Colors.light;
+  const { link } = themeColors(colorScheme === 'dark');
   
   return StyleSheet.create({
   // Divider
@@ -17,16 +19,6 @@ export const createEventCardStyles = (colorScheme: string) => {
   },
 
   // Typography styles
-  subHeading: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 4,
-    color: colors.coolGray900,
-  },
-  detailText: {
-    fontSize: 14,
-    color: colors.coolGray700,
-  },
   fieldLabel: {
     fontSize: 12,
     fontWeight: '600',
@@ -34,77 +26,10 @@ export const createEventCardStyles = (colorScheme: string) => {
     marginBottom: 4,
   },
   
-  // Image styles
-  eventImage: {
-    height: 150,
-    borderRadius: 8,
-    marginBottom: 8,
-  },
-
-  // Location styles
-  locationSection: {
-    marginBottom: 12,
-  },
-
-  // Event status and info
-  eventStatusSection: {
-    marginBottom: 12,
-  },
-  statusRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 4,
-  },
-
-  // Tags and categories
-  tagsSection: {
-    marginBottom: 12,
-  },
-  tagsContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginTop: 4,
-  },
 
   // Hosts and attendees
   hostsSection: {
     marginBottom: 12,
-  },
-  attendeesSection: {
-    marginBottom: 12,
-  },
-
-  // Links
-  linksContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    paddingTop: 10,
-  },
-  linkButton: {
-    marginRight: 12,
-    marginBottom: 8,
-  },
-
-  // Additional styles for UnifiedEventCard
-  titleContainer: {
-    marginBottom: 4,
-  },
-  badgeContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginTop: 8,
-  },
-  statusLabelMinWidth: {
-    minWidth: 60,
-  },
-  attendeeItem: {
-    marginBottom: 2,
-  },
-  attendeesMoreText: {
-    fontStyle: 'italic',
-    marginTop: 4,
   },
 
   // UserList styles
@@ -119,10 +44,13 @@ export const createEventCardStyles = (colorScheme: string) => {
     alignItems: 'center',
     gap: 4,
   },
+  titleCount: {
+    fontWeight: '400',
+    color: themeColors(colorScheme === 'dark').meta,
+  },
   viewAllText: {
-    fontSize: 12,
-    fontWeight: '600',
-    opacity: 0.55,
+    ...typeScale.link,
+    color: link,
   },
   userListContainer: {
     flexDirection: 'row',
@@ -132,16 +60,6 @@ export const createEventCardStyles = (colorScheme: string) => {
     width: '50%',
     paddingBottom: 8,
     paddingRight: 8,
-  },
-  userListItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 4,
-    marginRight: 10,
-    minWidth: 0,
-  },
-  userListAvatar: {
-    marginLeft: 6,
   },
   compactAvatarRow: {
     flexDirection: 'row',
@@ -164,17 +82,6 @@ export const createEventCardStyles = (colorScheme: string) => {
     fontWeight: '600' as const,
   },
 
-  // Admin styles
-  adminRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  adminInfo: {
-    flex: 1,
-    marginLeft: 8,
-  },
-
   // Button styles
   buttonContainer: {
     flexDirection: 'row',
@@ -184,34 +91,16 @@ export const createEventCardStyles = (colorScheme: string) => {
   },
   button: {
     flex: 1,
-    paddingVertical: 12,
+    minHeight: BUTTON_HEIGHT,
     paddingHorizontal: 20,
-    borderRadius: 8,
+    borderRadius: 10,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   buttonText: {
     color: colors.white,
     fontSize: 16,
     fontWeight: '600',
-  },
-
-  // Attending buttons
-  attendingButtonContainer: {
-    marginTop: 16,
-  },
-  attendingButton: {
-    backgroundColor: colors.teal700,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  unattendButton: {
-    backgroundColor: colors.red600,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-    alignItems: 'center',
   },
 
   // Edit mode styles
@@ -227,10 +116,15 @@ export const createEventCardStyles = (colorScheme: string) => {
 
   // Component-specific button colors
   createButton: {
-    backgroundColor: colors.teal600,
+    backgroundColor: EVENT_HEADER_BG,
   },
   cancelButton: {
-    backgroundColor: colors.blueGray500,
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: link,
+  },
+  cancelButtonText: {
+    color: link,
   },
   });
 };

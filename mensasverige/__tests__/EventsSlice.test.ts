@@ -24,7 +24,6 @@ const makeEvent = (overrides: Partial<ExtendedEvent> = {}): ExtendedEvent => {
     end: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(),
     attending: false,
     attendingOrHost: false,
-    isFutureEvent: true,
     bookable: false,
     official: false,
     tags: [],

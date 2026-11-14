@@ -22,25 +22,12 @@ export const isUserEffectivelyAttending = (event: Event, currentUserId?: number)
 };
 
 /**
- * Check if an event is in the future
- */
-export const isFutureEvent = (event: Event): boolean => {
-  if (!event.start) return false;
-  
-  const now = new Date();
-  const eventStartDate = new Date(event.start);
-  
-  return eventStartDate > now;
-};
-
-/**
  * Convert a regular Event to an ExtendedEvent with computed properties
  */
 export const createExtendedEvent = (event: Event, currentUserId?: number): ExtendedEvent => {
   return {
     ...event,
     attendingOrHost: isUserEffectivelyAttending(event, currentUserId),
-    isFutureEvent: isFutureEvent(event)
   };
 };
 

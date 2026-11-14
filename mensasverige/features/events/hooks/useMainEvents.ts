@@ -2,8 +2,10 @@ import { useCallback, useEffect, useMemo } from 'react';
 import { Event } from '../../../api_schema/types';
 import useStore from '../../common/store/store';
 import { attendEvent, fetchMainEvents, unattendEvent } from '../services/eventService';
-import { findAutoSelectMainEventId } from '../utils/mainEventUtils';
-import { refreshEventsList } from './useEvents';
+import { findAutoSelectMainEventId, isLocalEvent } from '../utils/mainEventUtils';
+import { createExtendedEvent } from '../utils/eventUtils';
+import { ExtendedEvent } from '../types/eventUtilTypes';
+import { prefetchUsers, refreshEventsList } from './useEvents';
 
 let isFetchingMain = false;
 
@@ -16,6 +18,15 @@ export const refreshMainEvents = async (): Promise<void> => {
     state.setMainEventsLoading(true);
     const list = await fetchMainEvents();
     state.setMainEvents(Array.isArray(list) ? list : []);
+    // Hosts and participants, shown with their profiles when they have an account.
+    // The riksträff's list says which participants have one; look up only those.
+    prefetchUsers((Array.isArray(list) ? list : []).flatMap(e => {
+      const accounts = e.extras?.attendeeAccounts;
+      const participants = Array.isArray(accounts)
+        ? (accounts as number[])
+        : (e.attendees ?? []).map(a => a.userId);
+      return [...(e.admin ?? []), ...participants];
+    }));
     state.setMainEventsInitialized(true);
 
     const { selectedMainEventId, autoSelectDismissed, mainEvents } = useStore.getState();
@@ -91,4 +102,17 @@ export const useSelectedMainEvent = (): {
     [mainEvents, selectedMainEventId],
   );
   return { selectedMainEvent, selectedMainEventId, selectMainEvent, leaveMainEvent };
+};
+
+/**
+ * Local (member calendar) events, taken from the main-event list and shaped
+ * for the activity list and the event page, which work on ExtendedEvent.
+ */
+export const useLocalEvents = (): ExtendedEvent[] => {
+  const mainEvents = useStore(s => s.mainEvents);
+  const userId = useStore(s => s.user?.userId);
+  return useMemo(
+    () => mainEvents.filter(isLocalEvent).map(e => createExtendedEvent(e, userId)),
+    [mainEvents, userId],
+  );
 };

@@ -6,20 +6,54 @@ import { Colors } from '@/constants/Colors';
 import { MaterialIcons } from '@expo/vector-icons';
 import { EVENT_CATEGORIES } from '../utilities/EventCategories';
 import { FilterButton } from './FilterButton';
-import OfficialEventIcon from '../../../components/icons/OfficialEventIcon';
 import { DatepickerField } from '@/features/common/components/inputs/DatepickerField';
 import { EventFilterOptions } from '../store/EventsSlice';
 import { ThemedText } from '@/components/ThemedText';
 import { useBottomTabOverflow } from '@/components/ui/TabBarBackground';
+import {
+  DEFAULT_LOCAL_EVENT_FILTER,
+  DISTANCE_OPTIONS_KM,
+  LocalEventFilter,
+  LocalGroupOption,
+} from '../utils/localEventFilter';
+import { EVENT_HEADER_BG, themeColors } from '../styles/typeScale';
 
 
 const { width: screenWidth } = Dimensions.get('window');
 
+type TriKey = 'attendingOrHost' | 'bookable' | 'official';
+
+/** The local event section while it is being edited: every choice kept, whatever the mode. */
+type LocalDraft = { mode: LocalEventFilter['mode']; regions: string[]; km: number };
+
+const toDraft = (filter: LocalEventFilter): LocalDraft => ({
+  mode: filter.mode,
+  regions: filter.mode === 'regions' ? filter.regions : [],
+  km: filter.mode === 'distance' ? filter.km : 50,
+});
+
+/** "Lokalavdelning" with nothing ticked keeps everything, so it is stored as "Alla". */
+const fromDraft = (draft: LocalDraft): LocalEventFilter => {
+  if (draft.mode === 'regions' && draft.regions.length > 0) return { mode: 'regions', regions: draft.regions };
+  if (draft.mode === 'distance') return { mode: 'distance', km: draft.km };
+  return { mode: 'all' };
+};
+const TRI_OPTIONS: Array<{ label: string; value: boolean | null }> = [
+  { label: 'Alla', value: null },
+  { label: 'Ja', value: true },
+  { label: 'Nej', value: false },
+];
+
 interface EventFilterProps {
   visible: boolean;
   onClose: () => void;
-  onApplyFilter: (filter: EventFilterOptions) => void;
+  onApplyFilter: (filter: EventFilterOptions, localFilter?: LocalEventFilter) => void;
   currentFilter: EventFilterOptions;
+  /** Local groups to choose from. Empty or absent hides the "Lokala träffar" section. */
+  localGroups?: LocalGroupOption[];
+  currentLocalFilter?: LocalEventFilter;
+  /** Whether the user's position is known; distance filtering needs it. */
+  hasUserPosition?: boolean;
 }
 
 export const EventFilter: React.FC<EventFilterProps> = ({
@@ -27,10 +61,16 @@ export const EventFilter: React.FC<EventFilterProps> = ({
   onClose,
   onApplyFilter,
   currentFilter,
+  localGroups = [],
+  currentLocalFilter = DEFAULT_LOCAL_EVENT_FILTER,
+  hasUserPosition = false,
 }) => {
   const colorScheme = useColorScheme();
   const insets = useSafeAreaInsets();
   const [localFilter, setLocalFilter] = useState<EventFilterOptions>(currentFilter);
+  // Flat, so the picked groups and distance survive switching mode and back.
+  const [draftLocal, setDraftLocal] = useState<LocalDraft>(() => toDraft(currentLocalFilter));
+  const showLocalSection = localGroups.length > 0;
   
   // Animation values
   const slideAnim = useRef(new Animated.Value(screenWidth * 0.75)).current;
@@ -42,6 +82,10 @@ export const EventFilter: React.FC<EventFilterProps> = ({
   useEffect(() => {
     setLocalFilter(currentFilter);
   }, [currentFilter]);
+
+  useEffect(() => {
+    setDraftLocal(toDraft(currentLocalFilter));
+  }, [currentLocalFilter]);
 
   useEffect(() => {
     if (visible) {
@@ -76,8 +120,16 @@ export const EventFilter: React.FC<EventFilterProps> = ({
   }, [visible]);
 
   const handleApply = () => {
-    onApplyFilter(localFilter);
+    onApplyFilter(localFilter, showLocalSection ? fromDraft(draftLocal) : undefined);
     onClose();
+  };
+
+  const toggleRegion = (key: string) => {
+    setDraftLocal(prev => ({
+      ...prev,
+      mode: 'regions',
+      regions: prev.regions.includes(key) ? prev.regions.filter(r => r !== key) : [...prev.regions, key],
+    }));
   };
 
   const handleReset = () => {
@@ -90,22 +142,7 @@ export const EventFilter: React.FC<EventFilterProps> = ({
       dateTo: null,
     };
     setLocalFilter(resetFilter);
-  };
-
-  const toggleTriStateOption = (
-    key: 'attendingOrHost' | 'bookable' | 'official',
-    currentValue: boolean | null | undefined
-  ) => {
-    let newValue: boolean | null;
-    if (currentValue === null || currentValue === undefined) {
-      newValue = true;
-    } else if (currentValue === true) {
-      newValue = false;
-    } else {
-      newValue = null;
-    }
-    
-    setLocalFilter(prev => ({ ...prev, [key]: newValue }));
+    setDraftLocal(toDraft({ mode: 'all' }));
   };
 
   const toggleCategory = (categoryCode: string) => {
@@ -122,16 +159,6 @@ export const EventFilter: React.FC<EventFilterProps> = ({
     });
   };
 
-  const getTriStateLabel = (value: boolean | null | undefined): string => {
-    if (value === null || value === undefined) return 'Alla';
-    return value ? 'Ja' : 'Nej';
-  };
-
-  const getTriStateColor = (value: boolean | null | undefined): string => {
-    if (value === null || value === undefined) return colorScheme === 'dark' ? '#6b7280' : '#9ca3af';
-    return value ? Colors.primary300 : '#ef4444';
-  };
-
   const handleDateFromChange = (date?: Date) => {
     setLocalFilter(prev => ({ 
       ...prev, 
@@ -146,6 +173,65 @@ export const EventFilter: React.FC<EventFilterProps> = ({
   };
 
   const styles = createStyles(colorScheme ?? 'light');
+  const selectedColor = themeColors(colorScheme === 'dark').link;
+  const unselectedColor = colorScheme === 'dark' ? Colors.coolGray400 : Colors.coolGray500;
+
+  /** One tappable row with a radio or checkbox icon; `indent` for the choices under a mode. */
+  const choiceRow = (opts: {
+    key: string;
+    label: string;
+    selected: boolean;
+    onPress: () => void;
+    kind: 'radio' | 'check';
+    indent?: boolean;
+    disabled?: boolean;
+    trailing?: string;
+  }) => {
+    const icon = opts.kind === 'radio'
+      ? (opts.selected ? 'radio-button-checked' : 'radio-button-unchecked')
+      : (opts.selected ? 'check-box' : 'check-box-outline-blank');
+    return (
+      <TouchableOpacity
+        key={opts.key}
+        style={[styles.choiceRow, opts.indent && styles.choiceRowIndent, opts.disabled && styles.choiceRowDisabled]}
+        onPress={opts.onPress}
+        disabled={opts.disabled}
+        accessibilityRole={opts.kind === 'radio' ? 'radio' : 'checkbox'}
+        accessibilityState={{ checked: opts.selected, disabled: Boolean(opts.disabled) }}
+      >
+        <MaterialIcons name={icon} size={22} color={opts.selected ? selectedColor : unselectedColor} />
+        <ThemedText style={styles.choiceLabel}>{opts.label}</ThemedText>
+        {opts.trailing ? <Text style={styles.choiceTrailing}>{opts.trailing}</Text> : null}
+      </TouchableOpacity>
+    );
+  };
+
+  /** A yes/no filter as a row: its label, then Alla, Ja and Nej as plain text choices. */
+  const triStateRow = (key: TriKey, label: string) => {
+    const current = localFilter[key] ?? null;
+    return (
+      <View key={key} style={styles.choiceRow}>
+        <ThemedText style={styles.choiceLabel}>{label}</ThemedText>
+        {TRI_OPTIONS.map(option => {
+          const selected = current === option.value;
+          return (
+            <TouchableOpacity
+              key={option.label}
+              onPress={() => setLocalFilter(prev => ({ ...prev, [key]: option.value }))}
+              style={styles.triOption}
+              accessibilityRole="radio"
+              accessibilityState={{ checked: selected }}
+              accessibilityLabel={`${label}: ${option.label}`}
+            >
+              <Text style={[styles.triOptionText, { color: selected ? selectedColor : unselectedColor }, selected && styles.triOptionSelected]}>
+                {option.label}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+    );
+  };
 
   if (!visible) {
     return null;
@@ -194,49 +280,54 @@ export const EventFilter: React.FC<EventFilterProps> = ({
 
         <ScrollView style={styles.menuContent} showsVerticalScrollIndicator={false}>
           {/* Status Filters */}
+          {showLocalSection && (
+            <View style={styles.section}>
+              <ThemedText type='sectionHeader'>Lokala träffar</ThemedText>
+              {choiceRow({
+                key: 'all', label: 'Alla', kind: 'radio',
+                selected: draftLocal.mode === 'all',
+                onPress: () => setDraftLocal(prev => ({ ...prev, mode: 'all' })),
+              })}
+              {choiceRow({
+                key: 'regions', label: 'Lokalavdelning', kind: 'radio',
+                selected: draftLocal.mode === 'regions',
+                onPress: () => setDraftLocal(prev => ({ ...prev, mode: 'regions' })),
+              })}
+              {draftLocal.mode === 'regions' && localGroups.map(group => choiceRow({
+                key: `region-${group.key}`, label: group.label, kind: 'check', indent: true,
+                selected: draftLocal.regions.includes(group.key),
+                onPress: () => toggleRegion(group.key),
+                trailing: String(group.count),
+              }))}
+              {choiceRow({
+                key: 'distance', label: 'Avstånd från mig', kind: 'radio',
+                selected: draftLocal.mode === 'distance',
+                onPress: () => setDraftLocal(prev => ({ ...prev, mode: 'distance' })),
+                disabled: !hasUserPosition && draftLocal.mode !== 'distance',
+              })}
+              {!hasUserPosition && (
+                <ThemedText style={styles.choiceHint}>
+                  Kräver att appen får använda din position.
+                </ThemedText>
+              )}
+              {draftLocal.mode === 'distance' && DISTANCE_OPTIONS_KM.map(km => choiceRow({
+                key: `km-${km}`, label: `Inom ${km} km`, kind: 'radio', indent: true,
+                selected: draftLocal.km === km,
+                onPress: () => setDraftLocal(prev => ({ ...prev, mode: 'distance', km })),
+              }))}
+              {draftLocal.mode === 'distance' && (
+                <ThemedText style={styles.choiceHint}>
+                  Träffar utan plats räknas från lokalavdelningens ort.
+                </ThemedText>
+              )}
+            </View>
+          )}
+
           <View style={styles.section}>
             <ThemedText type='sectionHeader'>Status</ThemedText>
-            
-            <View style={styles.filterRow}>
-              <ThemedText>Deltagande</ThemedText>
-              <TouchableOpacity
-                style={[styles.triStateButton, { borderColor: getTriStateColor(localFilter.attendingOrHost) }]}
-                onPress={() => toggleTriStateOption('attendingOrHost', localFilter.attendingOrHost)}
-              >
-                <Text style={[styles.triStateButtonText, { color: getTriStateColor(localFilter.attendingOrHost) }]}>
-                  {getTriStateLabel(localFilter.attendingOrHost)}
-                </Text>
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.filterRow}>
-              <ThemedText >Bokningsbar</ThemedText>
-              <TouchableOpacity
-                style={[styles.triStateButton, { borderColor: getTriStateColor(localFilter.bookable) }]}
-                onPress={() => toggleTriStateOption('bookable', localFilter.bookable)}
-              >
-                <Text style={[styles.triStateButtonText, { color: getTriStateColor(localFilter.bookable) }]}>
-                  {getTriStateLabel(localFilter.bookable)}
-                </Text>
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.filterRow}>
-              <View style={styles.filterLabelContainer}>
-                <ThemedText>Officiell</ThemedText>
-                <View style={{ marginLeft: 4 }}>
-                  <OfficialEventIcon size={14} color={getTriStateColor(localFilter.official)} />
-                </View>
-              </View>
-              <TouchableOpacity
-                style={[styles.triStateButton, { borderColor: getTriStateColor(localFilter.official) }]}
-                onPress={() => toggleTriStateOption('official', localFilter.official)}
-              >
-                <Text style={[styles.triStateButtonText, { color: getTriStateColor(localFilter.official) }]}>
-                  {getTriStateLabel(localFilter.official)}
-                </Text>
-              </TouchableOpacity>
-            </View>
+            {triStateRow('attendingOrHost', 'Deltagande')}
+            {triStateRow('bookable', 'Bokningsbar')}
+            {triStateRow('official', 'Officiell')}
           </View>
 
           {/* Date Range Filters */}
@@ -261,38 +352,22 @@ export const EventFilter: React.FC<EventFilterProps> = ({
           {/* Category Filters */}
           <View style={styles.section}>
             <ThemedText type='sectionHeader'>Kategorier</ThemedText>
-            <View style={styles.categoryGrid}>
-              {EVENT_CATEGORIES.map((category) => {
-                const isSelected = localFilter.categories?.includes(category.code) ?? false;
-                return (
-                  <TouchableOpacity
-                    key={category.code}
-                    style={[
-                      styles.categoryButton,
-                      {
-                        backgroundColor: isSelected ? category.color : 'transparent',
-                        borderColor: category.color,
-                      }
-                    ]}
-                    onPress={() => toggleCategory(category.code)}
-                  >
-                    <View style={styles.categoryButtonContent}>
-                      <MaterialIcons 
-                        name={category.icon} 
-                        size={16} 
-                        color={isSelected ? '#ffffff' : category.color} 
-                      />
-                      <Text style={[
-                        styles.categoryButtonText,
-                        { color: isSelected ? '#ffffff' : category.color }
-                      ]}>
-                        {category.label}
-                      </Text>
-                    </View>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
+            {EVENT_CATEGORIES.map((category) => {
+              const isSelected = localFilter.categories?.includes(category.code) ?? false;
+              return (
+                <TouchableOpacity
+                  key={category.code}
+                  style={styles.choiceRow}
+                  onPress={() => toggleCategory(category.code)}
+                  accessibilityRole="checkbox"
+                  accessibilityState={{ checked: isSelected }}
+                >
+                  <MaterialIcons name={category.icon} size={22} color={category.color} />
+                  <ThemedText style={styles.choiceLabel}>{category.label}</ThemedText>
+                  {isSelected && <MaterialIcons name="check" size={20} color={selectedColor} />}
+                </TouchableOpacity>
+              );
+            })}
           </View>
         </ScrollView>
 
@@ -367,58 +442,50 @@ const createStyles = (colorScheme: string) => StyleSheet.create({
   section: {
     marginBottom: 18,
   },
+  choiceRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    minHeight: 44,
+    gap: 10,
+  },
+  choiceRowIndent: {
+    paddingLeft: 28,
+  },
+  choiceRowDisabled: {
+    opacity: 0.5,
+  },
+  choiceLabel: {
+    flex: 1,
+    fontSize: 15,
+  },
+  choiceTrailing: {
+    fontSize: 13,
+    color: colorScheme === 'dark' ? Colors.coolGray400 : Colors.coolGray500,
+  },
+  triOption: {
+    minWidth: 44,
+    minHeight: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  triOptionText: {
+    fontSize: 15,
+  },
+  triOptionSelected: {
+    fontWeight: '600',
+    textDecorationLine: 'underline',
+  },
+  choiceHint: {
+    fontSize: 13,
+    lineHeight: 18,
+    color: colorScheme === 'dark' ? Colors.coolGray400 : Colors.coolGray500,
+    marginBottom: 4,
+  },
   sectionTitle: {
     fontSize: 16,
     fontWeight: '600',
     marginBottom: 16,
     color: colorScheme === 'dark' ? '#ffffff' : '#000000',
-  },
-  filterRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  filterLabel: {
-    fontSize: 12,
-    color: colorScheme === 'dark' ? '#d1d5db' : '#374151',
-  },
-  filterLabelContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  triStateButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 6,
-    borderRadius: 16,
-    borderWidth: 1,
-    minWidth: 60,
-    alignItems: 'center',
-  },
-  triStateButtonText: {
-    fontSize: 12,
-    fontWeight: '500',
-  },
-  categoryGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 6,
-  },
-  categoryButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 16,
-    borderWidth: 1,
-    marginTop: 4,
-  },
-  categoryButtonContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  categoryButtonText: {
-    fontSize: 12,
-    fontWeight: '500',
   },
   buttonContainer: {
     flexDirection: 'row',
@@ -437,18 +504,18 @@ const createStyles = (colorScheme: string) => StyleSheet.create({
   },
   buttonOutline: {
     borderWidth: 1,
-    borderColor: Colors.primary300,
+    borderColor: themeColors(colorScheme === 'dark').link,
     backgroundColor: 'transparent',
   },
   buttonSolid: {
-    backgroundColor: Colors.primary500,
+    backgroundColor: EVENT_HEADER_BG,
   },
   buttonText: {
     fontSize: 16,
     fontWeight: '600',
   },
   buttonTextOutline: {
-    color: Colors.primary300,
+    color: themeColors(colorScheme === 'dark').link,
   },
   buttonTextSolid: {
     color: '#ffffff',

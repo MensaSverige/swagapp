@@ -12,7 +12,6 @@ from __future__ import annotations
 
 import json
 import logging
-import re
 from io import StringIO
 from datetime import datetime, timezone
 from typing import List, Optional
@@ -103,16 +102,6 @@ def _ssh_tunnel() -> SSHTunnelForwarder:
     elif MEDLEM_SSH_PASSWORD:
         kwargs["ssh_password"] = MEDLEM_SSH_PASSWORD
     return SSHTunnelForwarder(**kwargs)
-
-
-def _strip_html(html: str) -> str:
-    """Reduce the stored HTML body to plain text."""
-    text = re.sub(r"<[^>]+>", "", html)
-    text = re.sub(r"&nbsp;", " ", text)
-    text = re.sub(r"&amp;", "&", text)
-    text = re.sub(r"&lt;", "<", text)
-    text = re.sub(r"&gt;", ">", text)
-    return re.sub(r"\s+", " ", text).strip()
 
 
 def _unix_to_utc(value) -> Optional[datetime]:
@@ -206,7 +195,9 @@ def row_to_event(row: dict) -> Optional[MemberCalendarEvent]:
     return MemberCalendarEvent(
         source_id=str(row["event_id"]),
         title=row.get("event_title") or "Untitled Event",
-        description=_strip_html(content) if content else None,
+        # Kept as HTML, as booking site descriptions arrive: the app turns
+        # both into text the same way, links included.
+        description=content or None,
         location=city or address,
         address=address,
         city=city,

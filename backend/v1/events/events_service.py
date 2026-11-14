@@ -3,7 +3,7 @@ from typing import List, Optional
 from datetime import datetime, timedelta
 import logging
 
-from v1.events.events_model import Event, EventSource, _ID_PREFIX
+from v1.events.events_model import Event, EventAttendee, EventSource, ShowAttendees, _ID_PREFIX
 from v1.events.events_mappers import map_external_event, map_user_event, map_event_to_user_event
 from v1.db.external_events import get_stored_external_event_details, get_all_stored_external_event_details
 from v1.external.event_api import get_booked_external_events, book_external_event, unbook_external_event
@@ -18,6 +18,7 @@ from v1.user_events.user_events_db import (
     remove_attendee_from_user_event as db_remove_attendee_from_user_event,
 )
 from v1.events import main_events
+from v1.db import external_attendees
 from v1 import env_constants
 from v1.user_events.user_events_model import UserEvent, Host as UEHost, Attendee as UEAttendee, Location as UELocation
 from v1.utilities import get_current_time
@@ -27,8 +28,14 @@ from v1.db.models.user import PrivacySetting, viewer_can_see, effective_setting
 from fastapi import HTTPException
 
 
-def _filter_event_attendees(event: Event, current_user: dict) -> Event:
-    """Remove attendees whose show_attendance setting hides them from this viewer."""
+def _filter_event_attendees(event: Event, current_user: dict, keep_unknown: bool = False) -> Event:
+    """Remove attendees whose show_attendance setting hides them from this viewer.
+
+    `keep_unknown` keeps attendees without an app account: for the booking
+    site's list, which has already left out those who chose not to be shown.
+    It also records in `attendeeAccounts` which of them have one, so the app
+    looks up only those.
+    """
     if not event.attendees:
         return event
     current_user_id = current_user.get("userId")
@@ -47,6 +54,7 @@ def _filter_event_attendees(event: Event, current_user: dict) -> Event:
     filtered_attendees = [
         a for a in event.attendees
         if a.userId == current_user_id
+        or (keep_unknown and a.userId not in user_docs)
         or viewer_can_see(
             effective_setting(user_docs.get(a.userId, {}).get("settings", {}), "show_attendance"),
             resolved_viewer,
@@ -60,6 +68,11 @@ def _filter_event_attendees(event: Event, current_user: dict) -> Event:
         name for a, name in zip(event.attendees, original_names) if a.userId in filtered_ids
     ]
     new_extras = {**(event.extras or {}), "attendeeNames": filtered_names}
+    if keep_unknown:
+        new_extras["attendeeAccounts"] = [
+            a.userId for a in filtered_attendees
+            if a.userId in user_docs or a.userId == current_user_id
+        ]
     return event.model_copy(update={"attendees": filtered_attendees, "extras": new_extras})
 
 
@@ -89,6 +102,9 @@ def list_main_events(current_user: dict) -> List[Event]:
     """Main events that have not ended, with the viewer's registration applied.
 
     Member calendar events are left out for a viewer who is not a member.
+    Who else is registered is shown only to those registered themselves, as
+    for the participants on the map, and to the event's hosts; each person's
+    show_attendance setting still decides whether they appear.
     """
     registered = main_events.get_registered_event_ids(current_user["userId"])
     result = []
@@ -96,8 +112,55 @@ def list_main_events(current_user: dict) -> List[Event]:
         if not main_events.viewer_can_see(e.id, current_user):
             continue
         is_registered = e.id in registered
-        result.append(e.model_copy(update={"attending": is_registered, "bookable": not is_registered}))
+        is_root = e.source == EventSource.external_root
+        sees_participants = is_registered or current_user["userId"] in (e.admin or [])
+        update = {
+            "attending": is_registered,
+            "bookable": not is_registered,
+            # Says what this viewer may see, so the app need not work it out again.
+            "showAttendees": ShowAttendees.all if sees_participants else ShowAttendees.toAttending,
+            "attendees": [],
+        }
+        count = external_attendees.get_external_attendee_count() if is_root else None
+        if count is not None:
+            update["extras"] = {**(e.extras or {}), "attendeeCount": count}
+        if sees_participants and count is not None:
+            # The riksträff's participants are the booking site's list, in its order.
+            update.update(_participants_from_booking_site(
+                external_attendees.get_external_attendees(), update["extras"]))
+        elif sees_participants:
+            update["attendees"] = [
+                EventAttendee(userId=uid)
+                for uid in sorted(main_events.get_registered_user_ids(e.id, is_root=is_root))
+            ]
+        event = e.model_copy(update=update)
+        if sees_participants:
+            event = _filter_event_attendees(event, current_user, keep_unknown=count is not None)
+        result.append(event)
     return result
+
+
+def _hosts_see_attendees(event: Event, current_user_id: int) -> Event:
+    """An event's own admins see who comes, whatever it shows everyone else."""
+    if current_user_id in (event.admin or []) and event.showAttendees != ShowAttendees.all:
+        return event.model_copy(update={"showAttendees": ShowAttendees.all})
+    return event
+
+
+def _participants_from_booking_site(listed, extras) -> dict:
+    """Attendees and their names from the booking site's list.
+
+    Membership numbers are the app's user ids, so an attendee with an app
+    account shows with their profile and everyone else by name.
+    """
+    people = [a for a in listed if a.memberId.isdigit()]
+    return {
+        "attendees": [EventAttendee(userId=int(a.memberId)) for a in people],
+        "extras": {
+            **(extras or {}),
+            "attendeeNames": [" ".join(p for p in (a.firstName, a.lastName) if p) for a in people],
+        },
+    }
 
 
 def list_unified_events(
@@ -157,6 +220,9 @@ def list_unified_events(
 
         mapped = map_external_event(d, current_user_id, booked_ids, attendee_user_ids, parent_event=root_event_id)
         if mapped:
+            # An activity's admins see its participants: say so in showAttendees too.
+            mapped = mapped.model_copy(update={
+                "showAttendees": ShowAttendees.all if should_show_attendees else ShowAttendees.none})
             external_events.append(_filter_event_attendees(mapped, current_user))
 
     # User events (already filtered to future via db function)
@@ -168,7 +234,8 @@ def list_unified_events(
         logging.error(f"Failed to fetch user events since range: {e}")
         user_events = []
     user_events_mapped = [
-        _filter_event_attendees(map_user_event(u, current_user_id), current_user)
+        _filter_event_attendees(_hosts_see_attendees(map_user_event(u, current_user_id), current_user_id),
+                                current_user)
         for u in user_events
     ]
 

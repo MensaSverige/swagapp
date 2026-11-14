@@ -1,25 +1,37 @@
-export function filterHtml(htmlString: string) {
-    let previousHtml;
-    do {
-        previousHtml = htmlString;
-        htmlString = htmlString
-            .replace(/<div.*?>([\s\S]*?)<\/div>/g, '$1\n') // handle div tags with or without classes
-            .replace(/<span.*?>([\s\S]*?)<\/span>/g, '$1') // handle  <span> tags with or without classes
-            .replace(/<p.*?>([\s\S]*?)<\/p>/g, '$1\n')  // handle <p> tags with or without classes
-            .replace(/<b.*?>([\s\S]*?)<\/b>/g, '$1')  // handle <b> tags with or without classes
-            .replace(/<strong.*?>([\s\S]*?)<\/strong>/g, '$1')  //  handle <strong> tags with or without classes
-            .replace(/<em.*?>([\s\S]*?)<\/em>/g, '$1')  // handle <em> tags with or without classes
-            .replace(/<i.*?>([\s\S]*?)<\/i>/g, '$1')  //  handle <i> tags with or without classes
-            .replace(/<u.*?>([\s\S]*?)<\/u>/g, '$1')  // handle <u> tags with or without classes
-            .replace(/<a.*?href="(.*?)".*?>(.*?)<\/a>/g, '$2')  // handle <a> tags with or without classes
-            .replace(/<br>/g, '\n')  // handle <br> tags
-            .replace(/&nbsp;/g, ' ')  // handle &nbsp; entities
-            .replace(/&lt;/g, '<')  // handle &lt; entities
-            .replace(/&gt;/g, '>')  // handle &gt; entities
-            .replace(/&quot;/g, '"')  // handle &quot; entities
-            .replace(/&apos;/g, "'")  // handle &apos; entities
-            .replace(/&#8211;/g, '–')  // handle – entities
-            .replace(/&amp;/g, '&');  // handle &amp; entities
-    } while (htmlString !== previousHtml);
-    return htmlString;
+/**
+ * Plain text for an event description that may hold HTML, as the booking
+ * site's descriptions do.
+ *
+ * Paragraphs and line breaks are kept, list items become "• " lines, and any
+ * other tag is dropped rather than shown. Entities are decoded last, so text
+ * that only looks like a tag once decoded ("&lt;b&gt;") stays text.
+ */
+export function filterHtml(html: string): string {
+    const text = html
+        .replace(/\r\n?/g, '\n')
+        .replace(/<br\s*\/?>/gi, '\n')
+        // Lists: one "• " line per item, without the blank lines the source
+        // indentation would leave.
+        .replace(/\s*<\/?(ul|ol)(\s[^>]*)?>\s*/gi, '\n')
+        .replace(/<\/li\s*>/gi, '')
+        .replace(/\s*<li(\s[^>]*)?>\s*/gi, '\n• ')
+        // Blocks end in a blank line, as paragraphs do.
+        .replace(/<\/(p|div|h[1-6]|blockquote|tr)\s*>/gi, '\n\n')
+        // Any other tag, opening or closing, goes; its text stays.
+        .replace(/<\/?[a-z][a-z0-9]*(\s[^>]*)?\/?>/gi, '')
+        .replace(/&nbsp;/g, ' ')
+        .replace(/&quot;/g, '"')
+        .replace(/&(apos|#39);/g, "'")
+        .replace(/&(ndash|#8211);/g, '–')
+        .replace(/&(mdash|#8212);/g, '—')
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/&amp;/g, '&');
+
+    return text
+        .split('\n')
+        .map(line => line.replace(/[ \t]+/g, ' ').trim())
+        .join('\n')
+        .replace(/\n{3,}/g, '\n\n')
+        .trim();
 }

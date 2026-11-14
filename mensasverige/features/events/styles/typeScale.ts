@@ -1,4 +1,5 @@
 import { TextStyle } from 'react-native';
+import { Colors } from '../../../constants/Colors';
 
 /** Shared type scale for the event screens. Colours are applied by the components. */
 export const typeScale = {
@@ -20,3 +21,10 @@ export const BUTTON_HEIGHT = 48;
 export const EVENT_HEADER_HEIGHT = 56;
 export const EVENT_HEADER_BG = '#005DB4';
 export const DIVIDER_COLOR = '#E5E7EB';
+
+/** The event screens' colours that follow the colour scheme: links and buttons, secondary text, dividers. */
+export const themeColors = (dark: boolean) => ({
+  link: dark ? Colors.primary300 : EVENT_HEADER_BG,
+  meta: dark ? Colors.coolGray400 : Colors.coolGray600,
+  divider: dark ? Colors.coolGray700 : DIVIDER_COLOR,
+});

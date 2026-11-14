@@ -17,7 +17,7 @@ class MemberCalendarEvent(BaseModel):
 
     source_id: str = Field(..., description="Event id in the source system")
     title: str = Field(..., description="Event title")
-    description: Optional[str] = Field(None, description="Event description, HTML stripped")
+    description: Optional[str] = Field(None, description="Event description, HTML as the member site stores it")
     location: Optional[str] = Field(None, description="Free-text location")
     address: Optional[str] = Field(None, description="Street address lines, comma-joined")
     city: Optional[str] = Field(None, description="City")

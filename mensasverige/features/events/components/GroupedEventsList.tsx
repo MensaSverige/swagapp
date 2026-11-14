@@ -5,6 +5,7 @@ import { ThemedText } from '@/components/ThemedText';
 import EventListItem from './EventListItem';
 import { ExtendedEvent, GroupedEvents } from '../types/eventUtilTypes';
 import { displayLocaleTimeStringDate } from '../utils/eventUtils';
+import { PAGE_PADDING } from '../styles/typeScale';
 
 interface GroupedEventsListProps {
   groupedEvents: GroupedEvents;
@@ -13,6 +14,8 @@ interface GroupedEventsListProps {
   nextEventMarkerRef?: React.RefObject<View | null>;
   showCategories?: boolean;
   dateHeaderStyle?: 'default' | 'subtitle' | 'aligned';
+  /** The parent pads its content by PAGE_PADDING; stretch rows and dividers to the screen edges. */
+  bleed?: boolean;
 }
 
 const GroupedEventsList: React.FC<GroupedEventsListProps> = ({
@@ -21,7 +24,8 @@ const GroupedEventsList: React.FC<GroupedEventsListProps> = ({
   nextEvent,
   nextEventMarkerRef,
   showCategories = true,
-  dateHeaderStyle = 'default'
+  dateHeaderStyle = 'default',
+  bleed = false,
 }) => {
   return (
     <>
@@ -41,25 +45,27 @@ const GroupedEventsList: React.FC<GroupedEventsListProps> = ({
           </ThemedText>
 
           
-          <View style={styles.divider} />
-          
-          {/* Events for this date */}
-          {groupedEvents[date].map((event) => (
-            <EventListItem
-              key={event.id}
-              event={event}
-              onPress={onEventPress}
-              opacity={
-                event.start && nextEvent && nextEvent.start && event.start < nextEvent?.start 
-                  ? 0.5 
-                  : 1.0
-              }
-              nextEventMarkerRef={nextEventMarkerRef}
-              isNextEvent={!!(nextEvent && nextEvent.id === event.id)}
-              isFirstEventOfDay={event.id === groupedEvents[date][0].id}
-              showCategories={showCategories}
-            />
-          ))}
+          <View style={bleed ? styles.bleed : undefined}>
+            <View style={styles.divider} />
+
+            {/* Events for this date */}
+            {groupedEvents[date].map((event) => (
+              <EventListItem
+                key={event.id}
+                event={event}
+                onPress={onEventPress}
+                opacity={
+                  event.start && nextEvent && nextEvent.start && event.start < nextEvent?.start 
+                    ? 0.5 
+                    : 1.0
+                }
+                nextEventMarkerRef={nextEventMarkerRef}
+                isNextEvent={!!(nextEvent && nextEvent.id === event.id)}
+                isFirstEventOfDay={event.id === groupedEvents[date][0].id}
+                showCategories={showCategories}
+              />
+            ))}
+          </View>
         </View>
       ))}
     </>
@@ -68,8 +74,11 @@ const GroupedEventsList: React.FC<GroupedEventsListProps> = ({
 
 const styles = StyleSheet.create({
   dateHeaderAligned: {
-    paddingHorizontal: 20,
+    paddingHorizontal: PAGE_PADDING,
     marginBottom: 8,
+  },
+  bleed: {
+    marginHorizontal: -PAGE_PADDING,
   },
   divider: {
     height: 1,

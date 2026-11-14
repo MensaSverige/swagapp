@@ -1,13 +1,20 @@
 import React, { useMemo } from 'react';
-import { View, StyleSheet, useColorScheme } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, useColorScheme } from 'react-native';
+import { router } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { Colors } from '@/constants/Colors';
 import { Event } from '../../../api_schema/types';
 import { useSelectedMainEvent } from '../hooks/useMainEvents';
-import { groupMainEvents } from '../utils/mainEventUtils';
-import { DIVIDER_COLOR, PAGE_PADDING, typeScale } from '../styles/typeScale';
+import { groupMainEvents, isLocalEvent } from '../utils/mainEventUtils';
+import { useLocalEventFilter, useUserPosition } from '../hooks/useLocalEventFilter';
+import {
+  matchesLocalEventFilter,
+  describeLocalEventFilter,
+  isLocalEventFilterActive,
+} from '../utils/localEventFilter';
+import { DIVIDER_COLOR, PAGE_PADDING, themeColors, typeScale } from '../styles/typeScale';
 import MainEventListItem from './MainEventListItem';
 
 const GROUPS: Array<{ key: 'ongoing' | 'rootEvents' | 'local'; title: string }> = [
@@ -27,8 +34,36 @@ const MainEventsStartPage: React.FC<MainEventsStartPageProps> = ({ mainEvents, l
   const styles = useMemo(() => createStyles(colorScheme), [colorScheme]);
   const { selectMainEvent } = useSelectedMainEvent();
 
-  const groups = useMemo(() => groupMainEvents(mainEvents, Date.now()), [mainEvents]);
+  const [localFilter] = useLocalEventFilter();
+  const userPosition = useUserPosition();
+  // Only the distance mode reads the position, so GPS updates do not regroup otherwise.
+  const position = localFilter.mode === 'distance' ? userPosition : null;
+  const hasLocalEvents = useMemo(() => mainEvents.some(isLocalEvent), [mainEvents]);
+  const localFilterActive = hasLocalEvents && isLocalEventFilterActive(localFilter);
+
+  // The local event filter set under Aktiviteter applies here too; riksträffar are never filtered.
+  const visibleEvents = useMemo(
+    () => mainEvents.filter(e => !isLocalEvent(e) || matchesLocalEventFilter(e, localFilter, position)),
+    [mainEvents, localFilter, position],
+  );
+  const groups = useMemo(() => groupMainEvents(visibleEvents, Date.now()), [visibleEvents]);
   const handlePress = (event: Event) => selectMainEvent(event.id);
+
+  const filterSummary = localFilter.mode === 'distance' && !position
+    ? 'Avståndsfiltret väntar på din position'
+    : describeLocalEventFilter(localFilter);
+  const filterNote = localFilterActive ? (
+    <TouchableOpacity
+      onPress={() => router.navigate('/(tabs)/(events)')}
+      style={styles.filterNote}
+      accessibilityRole="button"
+      accessibilityLabel={`Lokala träffar filtreras: ${filterSummary}. Ändra under Aktiviteter.`}
+    >
+      <ThemedText style={styles.filterNoteText}>
+        {filterSummary} · <ThemedText style={styles.filterNoteLink}>Ändra</ThemedText>
+      </ThemedText>
+    </TouchableOpacity>
+  ) : null;
 
   return (
     <ThemedView style={styles.container}>
@@ -45,17 +80,24 @@ const MainEventsStartPage: React.FC<MainEventsStartPageProps> = ({ mainEvents, l
         </View>
       )}
 
-      {GROUPS.map(({ key, title }) =>
-        groups[key].length > 0 ? (
+      {GROUPS.map(({ key, title }) => {
+        // "Lokalt" stays visible while filtered, so an empty result explains itself.
+        const showFiltered = key === 'local' && localFilterActive;
+        if (groups[key].length === 0 && !showFiltered) return null;
+        return (
           <View key={key} style={styles.group}>
             <ThemedText style={styles.h3} accessibilityRole="header">{title}</ThemedText>
             <View style={styles.divider} />
+            {showFiltered && filterNote}
             {groups[key].map(event => (
               <MainEventListItem key={event.id} event={event} onPress={handlePress} />
             ))}
+            {showFiltered && groups[key].length === 0 && (
+              <ThemedText style={styles.loading}>Inga lokala träffar matchar filtret.</ThemedText>
+            )}
           </View>
-        ) : null,
-      )}
+        );
+      })}
     </ThemedView>
   );
 };
@@ -67,7 +109,16 @@ const createStyles = (colorScheme: string) =>
     loading: { textAlign: 'center', color: Colors.coolGray500, marginVertical: 20 },
     group: { marginTop: 16 },
     h3: typeScale.h3,
-    divider: { height: 1, backgroundColor: DIVIDER_COLOR, marginBottom: 8 },
+    divider: { height: 1, backgroundColor: DIVIDER_COLOR, marginBottom: 8, marginHorizontal: -PAGE_PADDING },
+    filterNote: { minHeight: 44, justifyContent: 'center' },
+    filterNoteText: {
+      ...typeScale.meta,
+      color: themeColors(colorScheme === 'dark').meta,
+    },
+    filterNoteLink: {
+      ...typeScale.meta,
+      color: themeColors(colorScheme === 'dark').link,
+    },
     noEvents: {
       alignItems: 'center',
       marginTop: 12,

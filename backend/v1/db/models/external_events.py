@@ -54,3 +54,18 @@ class ExternalEvent(BaseModel):
 class ExternalEventBooking(BaseModel):
     userId: int
     eventId: int
+
+class ExternalAttendee(BaseModel):
+    """A person on the booking site's list of those registered to the riksträff."""
+    memberId: str
+    firstName: Optional[str] = None
+    lastName: Optional[str] = None
+    city: Optional[str] = None
+    registered: Optional[str] = None
+
+
+class ExternalAttendeeList(BaseModel):
+    """The booking site's `attendees` answer. `count` includes people not listed."""
+    status: Optional[str] = None
+    count: int = 0
+    attendees: List[ExternalAttendee] = []

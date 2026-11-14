@@ -12,8 +12,6 @@ export interface EventFilter {
 export interface ExtendedEvent extends Event {
   /** Whether the user is attending or is a host/admin */
   attendingOrHost: boolean;
-  /** Whether the event is in the future */
-  isFutureEvent: boolean;
 }
 
 export interface GroupedEvents {

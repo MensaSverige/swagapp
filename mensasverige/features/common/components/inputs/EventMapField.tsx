@@ -103,7 +103,7 @@ const EventMapField: React.FC<EventMapFieldProps> = ({
                 </View>
             ) : (
                 <View style={styles.mapPreviewContainer}>
-                    {locationForm.address && locationForm.latitude && locationForm.longitude && (
+                    {!!locationForm.address && !!locationForm.latitude && !!locationForm.longitude && (
                         <MapLocationPreview 
                             latitude={locationForm.latitude}
                             longitude={locationForm.longitude}

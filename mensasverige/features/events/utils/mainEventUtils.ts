@@ -13,8 +13,6 @@ export const AUTO_SELECT_BEFORE_MS = 2 * DAY_MS;
 /** ... until this long after end (start when end is missing). */
 export const AUTO_SELECT_AFTER_MS = 1 * DAY_MS;
 
-export const MAX_BOOKABLE_PREVIEW = 5;
-
 const WEEKDAYS = ['söndag', 'måndag', 'tisdag', 'onsdag', 'torsdag', 'fredag', 'lördag'];
 const MONTHS = [
   'januari', 'februari', 'mars', 'april', 'maj', 'juni',
@@ -114,11 +112,43 @@ export const formatShortDate = (iso: string): string => {
   return `${d.getDate()} ${MONTHS_SHORT[d.getMonth()]}`;
 };
 
-/** Date column of a row: start/end dates for multi-day, start time otherwise. */
+/**
+ * A whole-day event: the member calendar stores one as local midnight with no
+ * end (or an end at 23:59). Its "00:00" means no time at all.
+ */
+export const isAllDay = (e: Pick<Event, 'start' | 'end'>): boolean => {
+  if (!e.start) return false;
+  const s = new Date(e.start);
+  if (s.getHours() !== 0 || s.getMinutes() !== 0) return false;
+  if (!e.end) return true;
+  const en = new Date(e.end);
+  return sameLocalDay(s, en) && en.getHours() === 23 && en.getMinutes() === 59;
+};
+
+/**
+ * Whether an event is over: its end has passed. Without an end, a whole-day
+ * event lasts the day and any other is over once it has started.
+ */
+export const isEventOver = (e: Pick<Event, 'start' | 'end'>, now: number): boolean => {
+  if (e.end) return new Date(e.end).getTime() < now;
+  if (!e.start) return false;
+  const start = new Date(e.start).getTime();
+  return (isAllDay(e) ? start + DAY_MS : start) < now;
+};
+
+/** Events not yet over: ongoing or still to come. The unfiltered "total" on the list screen. */
+export const countUpcomingEvents = (events: Pick<Event, 'start' | 'end'>[], now: number = Date.now()): number =>
+  events.filter(e => !!e.start && !isEventOver(e, now)).length;
+
+/**
+ * Date column of a row: start/end dates for multi-day, otherwise the date
+ * with the start time below it ("Heldag" for a whole-day event), so a row
+ * on a list mixing days still says which day.
+ */
 export const formatRowDateColumn = (e: Event): { start: string; end: string } => {
   if (!e.start) return { start: '', end: '' };
   if (isMultiDay(e)) return { start: formatShortDate(e.start), end: formatShortDate(e.end as string) };
-  return { start: timeOf(new Date(e.start)), end: '' };
+  return { start: formatShortDate(e.start), end: isAllDay(e) ? 'Heldag' : timeOf(new Date(e.start)) };
 };
 
 const dayLabel = (d: Date) => `${WEEKDAYS[d.getDay()]} ${d.getDate()}`;
@@ -135,6 +165,7 @@ export const formatMainEventDateRange = (e: Event): string => {
     return capitalize(`${left} – ${dayLabel(en)} ${MONTHS[en.getMonth()]}`);
   }
   const date = capitalize(`${dayLabel(s)} ${MONTHS[s.getMonth()]}`);
+  if (isAllDay(e)) return `${date}, heldag`;
   const end = e.end ? new Date(e.end) : null;
   const range = end && !Number.isNaN(end.getTime()) ? `${timeOf(s)}–${timeOf(end)}` : timeOf(s);
   return `${date}, ${range}`;
@@ -149,30 +180,30 @@ export const selectMyBookings = (
   now: number = Date.now(),
 ): ExtendedEvent[] => selectDashboardEvents(children, now);
 
-/** Upcoming bookable children the user is not attending, soonest first, capped. */
-export const selectToBook = (
-  children: ExtendedEvent[],
-  now: number = Date.now(),
-  limit: number = MAX_BOOKABLE_PREVIEW,
-): ExtendedEvent[] =>
-  children
-    .filter(e => {
-      if (!e.bookable || e.attendingOrHost || !e.start) return false;
-      const s = startMs(e);
-      return s !== null && s >= now;
-    })
-    .sort(byStart)
-    .slice(0, limit);
-
-/**
- * Visibility rule: a child event is hidden while the user is not registered
- * (`attending === false`) to its main event. Events without a parent, or whose
- * parent is not in `mainEvents`, stay visible.
- */
 export const filterVisibleEvents = <T extends Event>(events: T[], mainEvents: Event[]): T[] => {
   const hiddenParents = new Set(mainEvents.filter(m => m.attending === false).map(m => m.id));
   if (hiddenParents.size === 0) return events;
   return events.filter(e => !e.parentEvent || !hiddenParents.has(e.parentEvent));
+};
+
+/** Local events come from the member calendar and are main events of their own. */
+export const isLocalEvent = (event: Pick<Event, 'source'>): boolean => event.source === 'calendar';
+
+/**
+ * The events the Aktiviteter list draws from. Inside a main event: its child
+ * events. With none selected: activities that belong to no main event, plus
+ * the local events -- a riksträff's programme shows only while that riksträff
+ * is selected. Sorted by start, since two lists are merged.
+ */
+export const selectActivityListEvents = <T extends Event>(
+  events: T[],
+  localEvents: T[],
+  selectedMainEventId: string | null,
+): T[] => {
+  if (selectedMainEventId) return events.filter(e => e.parentEvent === selectedMainEventId);
+  const localIds = new Set(localEvents.map(e => e.id));
+  return [...events.filter(e => !e.parentEvent && !localIds.has(e.id)), ...localEvents]
+    .sort((a, b) => (startMs(a) ?? 0) - (startMs(b) ?? 0));
 };
 
 /**
@@ -214,6 +245,40 @@ export const formatRelativeStart = (e: Event, now: number): string => {
   if (days <= 0) return 'I dag';
   if (days === 1) return 'I morgon';
   return `Om ${days} dagar`;
+};
+
+const REGION_SLUG = /^(lf|lma)-(.+?)(?:-(?:intern|offentlig))?$/;
+
+/**
+ * The Mensa local group a member calendar event belongs to, as a stable key:
+ * `lf-väst-intern` -> `lf-väst`. Null for events not from a local group's
+ * calendar (national calendars, other sources).
+ */
+export const regionKey = (event: Pick<Event, 'extras'>): string | null => {
+  const slug = event.extras?.regionSlug;
+  if (typeof slug !== 'string') return null;
+  const match = REGION_SLUG.exec(slug.trim().toLowerCase());
+  return match ? `${match[1]}-${match[2]}` : null;
+};
+
+/** `lf-väst` -> "LF Väst", `lma-örebro` -> "LMA Örebro". */
+export const formatRegionKey = (key: string): string => {
+  const dash = key.indexOf('-');
+  const name = key.slice(dash + 1).split('-').filter(Boolean).map(capitalize).join(' ');
+  return `${key.slice(0, dash).toUpperCase()} ${name}`;
+};
+
+/**
+ * The Mensa local group a member calendar event belongs to, for display:
+ * `lf-väst-intern` -> "LF Väst", `lma-örebro-intern` -> "LMA Örebro". Every
+ * calendar event has one, while few have a place, so it is what tells the
+ * reader where an event is. Null for events not from the member calendar.
+ */
+export const formatRegion = (event: Pick<Event, 'extras'>): string | null => {
+  const key = regionKey(event);
+  if (key) return formatRegionKey(key);
+  const region = event.extras?.region;
+  return typeof region === 'string' && region.trim() ? capitalize(region.trim()) : null;
 };
 
 /**

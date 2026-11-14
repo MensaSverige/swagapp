@@ -11,6 +11,7 @@ import TabBarBackground from '@/components/ui/TabBarBackground';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { UpdateBanner } from '@/features/updateCheck/components/UpdateBanner';
+import { EventHeaderStatusBarBackdrop } from '@/features/events/components/EventHeaderStatusBar';
 import useStore from '@/features/common/store/store';
 import { getFullUrl } from '@/features/common/functions/GetFullUrl';
 
@@ -21,6 +22,7 @@ export default function TabLayout() {
 
   return (
     <SafeAreaView edges={['top']} style={{ flex: 1 }}>
+    <EventHeaderStatusBarBackdrop />
     <UpdateBanner />
     <Tabs
       screenOptions={{

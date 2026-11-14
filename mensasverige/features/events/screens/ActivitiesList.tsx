@@ -8,7 +8,6 @@ import {
     RefreshControl,
     ActivityIndicator,
     TouchableOpacity,
-    Alert,
 } from 'react-native';
 import useStore from '../../common/store/store';
 import NonMemberInfo from '../../common/components/NonMemberInfo';
@@ -24,10 +23,16 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ExtendedEvent } from '../types/eventUtilTypes';
 import { useBottomTabOverflow } from '@/components/ui/TabBarBackground';
 import EventListItem from '../components/EventListItem';
-import { displayLocaleTimeStringDate } from '../utils/eventUtils';
+import { displayLocaleTimeStringDate, filterByOptions, groupEventsByDate } from '../utils/eventUtils';
+import { countUpcomingEvents, selectActivityListEvents } from '../utils/mainEventUtils';
+import { registerLabel } from '../utils/eventAttendance';
+import { useEventAttendance } from '../hooks/useEventAttendance';
+import EventRegisterButton from '../components/eventPage/EventRegisterButton';
 import EventHeader from '../components/EventHeader';
-import { setMainEventAttendance, useSelectedMainEvent } from '../hooks/useMainEvents';
-import { BUTTON_HEIGHT, DIVIDER_COLOR, PAGE_PADDING, typeScale } from '../styles/typeScale';
+import { useSelectedMainEvent } from '../hooks/useMainEvents';
+import { useFilteredLocalEvents, useLocalEventFilter, useUserPosition } from '../hooks/useLocalEventFilter';
+import { LocalEventFilter, isLocalEventFilterActive, localGroupOptions } from '../utils/localEventFilter';
+import { BUTTON_HEIGHT, EVENT_HEADER_BG, PAGE_PADDING, themeColors, typeScale } from '../styles/typeScale';
 
 interface ActivitiesListProps {
     initialFilter?: EventFilterOptions;
@@ -42,7 +47,6 @@ export const ActivitiesList: React.FC<ActivitiesListProps> = ({ initialFilter })
     const styles = useMemo(() => createStyles(colorScheme ?? 'light'), [colorScheme]);
     const bottom = useBottomTabOverflow();
     const [showFilter, setShowFilter] = useState(false);
-    const [registering, setRegistering] = useState(false);
     const { selectedMainEvent, selectedMainEventId } = useSelectedMainEvent();
     const locked = !!selectedMainEvent && !selectedMainEvent.attending;
 
@@ -77,42 +81,42 @@ export const ActivitiesList: React.FC<ActivitiesListProps> = ({ initialFilter })
     }, [params.attendingOrHost, params.bookable, params.official, params.categories, params.dateFrom, params.dateTo, parseURLParams]);
 
     const {
-        filteredGroupedEvents,
+        allEvents,
         loading,
         refreshing,
-        filteredCount,
-        filteredTotalCount,
         refetch,
-        setCurrentEventFilter,
     } = useEvents({ enableAutoRefresh: true });
-
-    useEffect(() => {
-        setCurrentEventFilter(eventFilter);
-    }, [eventFilter, setCurrentEventFilter]);
-
-    const sections = useMemo<EventSection[]>(
-        () => Object.keys(filteredGroupedEvents)
-            .map(date => ({
-                title: date,
-                data: selectedMainEventId
-                    ? filteredGroupedEvents[date].filter(e => e.parentEvent === selectedMainEventId)
-                    : filteredGroupedEvents[date],
-            }))
-            .filter(section => section.data.length > 0),
-        [filteredGroupedEvents, selectedMainEventId]
+    const { all: localEvents, filtered: filteredLocalEvents } = useFilteredLocalEvents();
+    const [localEventFilter, setLocalEventFilter] = useLocalEventFilter();
+    const userPosition = useUserPosition();
+    // The local group choices, only where local events are listed: no main event selected.
+    const localGroups = useMemo(
+        () => (selectedMainEventId ? [] : localGroupOptions(localEvents)),
+        [selectedMainEventId, localEvents]
     );
 
-    const handleRegister = useCallback(async () => {
-        if (!selectedMainEventId || registering) return;
-        setRegistering(true);
-        try {
-            await setMainEventAttendance(selectedMainEventId, true);
-        } catch {
-            Alert.alert('Något gick fel', 'Det gick inte att anmäla dig. Försök igen.');
-        } finally {
-            setRegistering(false);
-        }
-    }, [selectedMainEventId, registering]);
+    // A main event's programme while it is selected; otherwise local events and
+    // activities without a main event. Filters apply within that scope.
+    const listEvents = useMemo(
+        () => selectActivityListEvents(allEvents, filteredLocalEvents, selectedMainEventId),
+        [allEvents, filteredLocalEvents, selectedMainEventId]
+    );
+    // The "total" in "x / y" counts every local event, before the local event filter.
+    const unfilteredListEvents = useMemo(
+        () => selectActivityListEvents(allEvents, localEvents, selectedMainEventId),
+        [allEvents, localEvents, selectedMainEventId]
+    );
+    const filteredEvents = useMemo(() => filterByOptions(listEvents, eventFilter), [listEvents, eventFilter]);
+    const filteredCount = filteredEvents.length;
+    const filteredTotalCount = useMemo(() => countUpcomingEvents(unfilteredListEvents), [unfilteredListEvents]);
+
+    const sections = useMemo<EventSection[]>(() => {
+        const grouped = groupEventsByDate(filteredEvents);
+        return Object.keys(grouped).map(date => ({ title: date, data: grouped[date] }));
+    }, [filteredEvents]);
+
+    const { status, siteUrl, busy: registering, register } = useEventAttendance(selectedMainEvent);
+    const label = registerLabel(status, siteUrl);
 
     const isFilterActive = useMemo(() =>
         eventFilter.attendingOrHost !== null ||
@@ -120,17 +124,19 @@ export const ActivitiesList: React.FC<ActivitiesListProps> = ({ initialFilter })
         eventFilter.official !== null ||
         (eventFilter.categories?.length ?? 0) > 0 ||
         eventFilter.dateFrom !== null ||
-        eventFilter.dateTo !== null,
-        [eventFilter]
+        eventFilter.dateTo !== null ||
+        (localGroups.length > 0 && isLocalEventFilterActive(localEventFilter)),
+        [eventFilter, localGroups.length, localEventFilter]
     );
 
     const handlePress = useCallback((event: ExtendedEvent) => {
         router.push({ pathname: '/events/[id]', params: { id: event.id } });
     }, [router]);
 
-    const handleApplyFilter = useCallback((filter: EventFilterOptions) => {
+    const handleApplyFilter = useCallback((filter: EventFilterOptions, localFilter?: LocalEventFilter) => {
         setEventFilter(filter);
-    }, []);
+        if (localFilter) setLocalEventFilter(localFilter);
+    }, [setLocalEventFilter]);
 
     const handleRefresh = useCallback(async () => {
         await refetch();
@@ -191,8 +197,8 @@ export const ActivitiesList: React.FC<ActivitiesListProps> = ({ initialFilter })
                     {!locked && filterButton}
                 </View>
             ) : (
-                <View style={styles.header}>
-                    <ThemedText type="title">Aktiviteter</ThemedText>
+                <View style={styles.eventTitleRow}>
+                    <ThemedText style={styles.h1}>Aktiviteter</ThemedText>
                     <View style={styles.headerActions}>
                         {filteredCount !== filteredTotalCount && (
                             <Text style={styles.filterCount}>
@@ -213,15 +219,7 @@ export const ActivitiesList: React.FC<ActivitiesListProps> = ({ initialFilter })
                             Då ser du programmet, kan boka aktiviteter och se vilka som kommer, även på kartan.
                         </ThemedText>
                     </View>
-                    <TouchableOpacity
-                        style={[styles.registerButton, registering && styles.registerButtonDisabled]}
-                        onPress={handleRegister}
-                        disabled={registering}
-                        activeOpacity={0.8}
-                        accessibilityRole="button"
-                    >
-                        <Text style={styles.createButtonText}>{registering ? 'Anmäler...' : 'Anmäl mig!'}</Text>
-                    </TouchableOpacity>
+                    {!!label && <EventRegisterButton label={label} onPress={register} busy={registering} />}
                 </View>
             ) : (
                 <>
@@ -271,24 +269,19 @@ export const ActivitiesList: React.FC<ActivitiesListProps> = ({ initialFilter })
                 onClose={() => setShowFilter(false)}
                 onApplyFilter={handleApplyFilter}
                 currentFilter={eventFilter}
+                localGroups={localGroups}
+                currentLocalFilter={localEventFilter}
+                hasUserPosition={!!userPosition}
             />
         </ThemedView>
     );
 }
 
 const createStyles = (colorScheme: string) => StyleSheet.create({
-    header: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        height: 50,
-        paddingLeft: 20,
-    },
     headerActions: {
         flexDirection: 'row',
         alignItems: 'center',
         gap: 8,
-        paddingRight: 15,
     },
     filterCount: {
         fontSize: 12,
@@ -314,7 +307,7 @@ const createStyles = (colorScheme: string) => StyleSheet.create({
     },
     divider: {
         height: 1,
-        backgroundColor: colorScheme === 'dark' ? Colors.coolGray700 : DIVIDER_COLOR,
+        backgroundColor: themeColors(colorScheme === 'dark').divider,
         marginBottom: 8,
     },
     noEventsContainer: {
@@ -346,7 +339,7 @@ const createStyles = (colorScheme: string) => StyleSheet.create({
     createButton: {
         height: BUTTON_HEIGHT,
         borderRadius: 10,
-        backgroundColor: '#005DB4',
+        backgroundColor: EVENT_HEADER_BG,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
@@ -355,17 +348,6 @@ const createStyles = (colorScheme: string) => StyleSheet.create({
     createButtonText: {
         ...typeScale.button,
         color: '#FFFFFF',
-    },
-    registerButton: {
-        height: BUTTON_HEIGHT,
-        borderRadius: 10,
-        backgroundColor: '#005DB4',
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginTop: 16,
-    },
-    registerButtonDisabled: {
-        opacity: 0.6,
     },
     lockedWrapper: {
         paddingHorizontal: PAGE_PADDING,
@@ -389,7 +371,7 @@ const createStyles = (colorScheme: string) => StyleSheet.create({
     },
     lockedText: {
         ...typeScale.meta,
-        color: colorScheme === 'dark' ? Colors.coolGray400 : '#4B5563',
+        color: themeColors(colorScheme === 'dark').meta,
         textAlign: 'center',
     },
     createButtonContainer: {

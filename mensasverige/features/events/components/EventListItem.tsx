@@ -5,6 +5,8 @@ import CategoryBadge from './badges/CategoryBadge';
 import { canonicalCategoryCode } from '../utilities/EventCategories';
 import { Colors } from '@/constants/Colors';
 import { ExtendedEvent } from '../types/eventUtilTypes';
+import { formatRegion, formatShortDate, isAllDay, isEventOver, isMultiDay } from '../utils/mainEventUtils';
+import { PAGE_PADDING } from '../styles/typeScale';
 
 interface EventListItemProps {
     event: ExtendedEvent;
@@ -28,7 +30,12 @@ const EventListItem: React.FC<EventListItemProps> = ({
     const colorScheme = useColorScheme();
     const styles = useMemo(() => createStyles(colorScheme ?? 'light'), [colorScheme]);
 
-    const shouldGrayOut = (!event.bookable && !event.attending) || !event.isFutureEvent;
+    // Dimmed when it can no longer be joined: over, or closed to the viewer. An
+    // ongoing event is not over.
+    const shouldGrayOut = (!event.bookable && !event.attending) || isEventOver(event, Date.now());
+    const meta = [formatRegion(event), event.locationDescription].filter(Boolean).join(' · ');
+    const multiDay = isMultiDay(event);
+    const allDay = !multiDay && isAllDay(event);
     const opacityStyle = useMemo(() => (opacity < 1 ? { opacity } : undefined), [opacity]);
 
     return (
@@ -46,26 +53,21 @@ const EventListItem: React.FC<EventListItemProps> = ({
             ]}>
                 <View style={styles.timeContainer}>
                     <Text style={shouldGrayOut ? styles.startTimeGrayOut : styles.startTime}>
-                        {DisplayTime(event.start)}
+                        {multiDay ? formatShortDate(event.start as string) : allDay ? 'Heldag' : DisplayTime(event.start)}
                     </Text>
-                    <Text style={shouldGrayOut ? styles.endTimeGrayOut : styles.endTime}>
-                        {event.end ? DisplayTime(event.end) : ''}
-                    </Text>
+                    {(multiDay || (!allDay && !!event.end)) && (
+                        <Text style={shouldGrayOut ? styles.endTimeGrayOut : styles.endTime}>
+                            {multiDay ? formatShortDate(event.end as string) : DisplayTime(event.end as string)}
+                        </Text>
+                    )}
                 </View>
-                <CategoryBadge
-                    eventType={event.official ? 'official' : 'non-official'}
-                    showLabel={false}
-                    size="x-small"
-                />
                 <View style={styles.eventContent}>
                     <View style={styles.titleContainer}>
                         <Text style={shouldGrayOut ? styles.eventTitleGrayOut : styles.eventTitle}>
                             {event.name}
                         </Text>
                     </View>
-                    <Text style={styles.eventLocation}>
-                        {event.locationDescription}
-                    </Text>
+                    {!!meta && <Text style={styles.eventLocation}>{meta}</Text>}
                 </View>
                 {showCategories && (
                     <View style={styles.categoriesContainer}>
@@ -73,7 +75,6 @@ const EventListItem: React.FC<EventListItemProps> = ({
                             <CategoryBadge
                                 key={index}
                                 categoryCode={canonicalCategoryCode(category)}
-                                showLabel={false}
                                 size="small"
                             />
                         ))}
@@ -87,9 +88,10 @@ const EventListItem: React.FC<EventListItemProps> = ({
 const createStyles = (colorScheme: string) => StyleSheet.create({
     eventItem: {
         flexDirection: 'row',
-        justifyContent: 'space-between',
-        paddingHorizontal: 20,
-        paddingVertical: 8,
+        alignItems: 'flex-start',
+        gap: 12,
+        paddingHorizontal: PAGE_PADDING,
+        paddingVertical: 10,
     },
     attendingEventItem: {
         backgroundColor: 'rgba(16, 185, 129, 0.1)',
@@ -97,8 +99,9 @@ const createStyles = (colorScheme: string) => StyleSheet.create({
     dimmed: {
         opacity: 0.4,
     },
+    // Fixed, so titles line up whether the column says 10:00, 13 nov or Heldag.
     timeContainer: {
-        justifyContent: 'flex-start',
+        width: 48,
     },
     startTime: {
         fontSize: 14,
@@ -118,8 +121,7 @@ const createStyles = (colorScheme: string) => StyleSheet.create({
     },
     eventContent: {
         flex: 1,
-        flexDirection: 'column',
-        justifyContent: 'space-between',
+        gap: 2,
     },
     eventTitle: {
         fontSize: 16,
@@ -137,6 +139,7 @@ const createStyles = (colorScheme: string) => StyleSheet.create({
     },
     categoriesContainer: {
         flexDirection: 'row',
+        alignSelf: 'center',
         gap: 8,
     },
     eventLocation: {

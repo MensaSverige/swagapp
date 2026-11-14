@@ -186,12 +186,20 @@ def test_organizer_id_becomes_the_host_user_id():
     assert [(h.userId, h.fullName) for h in hosts] == [(2003148, "Pontus")]
 
 
+def test_organizer_id_becomes_the_admin_as_for_swag_site_events():
+    """The app looks admins up as users to show the host's profile."""
+    store_member_calendar_events(
+        [_event(source_id="admin-id", organizer="Pontus", organizer_id=2003148)])
+    assert get_all_member_calendar_events()[0].admin == [2003148]
+
+
 def test_organizer_without_a_membership_number_still_hosts():
     """Ten of the member site's 8799 members have no number. Keep their name."""
     store_member_calendar_events(
         [_event(source_id="hosted-anon", organizer="Pontus", organizer_id=None)])
-    hosts = get_all_member_calendar_events()[0].hosts
-    assert [(h.userId, h.fullName) for h in hosts] == [(0, "Pontus")]
+    event = get_all_member_calendar_events()[0]
+    assert [(h.userId, h.fullName) for h in event.hosts] == [(0, "Pontus")]
+    assert event.admin == []
 
 
 # -- The `since` filter -------------------------------------------------------
@@ -294,8 +302,8 @@ def test_row_to_event_maps_a_real_schema_row():
     event = row_to_event(_row())
     assert event.source_id == "77"
     assert event.title == "Pub"
-    # HTML tags and entities are reduced to plain text.
-    assert event.description == "Kom & hang"
+    # The HTML is kept; the app turns it into text with its links.
+    assert event.description == "<p>Kom &amp; hang</p>"
     assert event.url == "https://medlem.mensa.se/calendar/event/77/"
     assert event.organizer is None
     assert event.region_id == 12

@@ -2,7 +2,6 @@ import React from 'react';
 import { View, Pressable, useColorScheme } from 'react-native';
 import { User } from '../../../api_schema/types';
 import { ThemedText } from '@/components/ThemedText';
-import { IconSymbol } from '@/components/ui/IconSymbol';
 import PressableUser, { AvatarSize } from '@/features/account/components/PressableUser';
 import UserAvatar from '@/features/map/components/UserAvatar';
 import { Colors } from '../../../constants/Colors';
@@ -16,6 +15,8 @@ interface UserListProps {
   fallbackData?: Array<{ userId: string | number; fullName?: string }>;
   alwaysExpanded?: boolean;
   gridAvatarSize?: AvatarSize;
+  /** Shown after the title, for a total larger than the list (people who are not listed). */
+  count?: number;
 }
 
 const UserList: React.FC<UserListProps> = ({
@@ -24,6 +25,7 @@ const UserList: React.FC<UserListProps> = ({
   fallbackData = [],
   alwaysExpanded = false,
   gridAvatarSize = 'xs',
+  count,
 }) => {
   const [showAll, setShowAll] = React.useState(false);
   const colorScheme = useColorScheme();
@@ -31,19 +33,20 @@ const UserList: React.FC<UserListProps> = ({
   const styles = createEventCardStyles(colorScheme ?? 'light');
   const colors = (colorScheme === 'dark' ? Colors.dark : Colors.light);
 
-  if (users.length === 0 && fallbackData.length === 0) {
-    return null;
-  }
-
-  const sorted = [...users].sort((a, b) => {
+  // A riksträff lists hundreds: sort once per list, not on every render.
+  const sorted = React.useMemo(() => [...users].sort((a, b) => {
     const nameA = `${a.firstName ?? ''} ${a.lastName ?? ''}`.trim().toLowerCase();
     const nameB = `${b.firstName ?? ''} ${b.lastName ?? ''}`.trim().toLowerCase();
     return nameA.localeCompare(nameB);
-  });
+  }), [users]);
 
-  const compactUsers = [...sorted]
+  const compactUsers = React.useMemo(() => [...sorted]
     .sort((a, b) => (b.avatar_url ? 1 : 0) - (a.avatar_url ? 1 : 0))
-    .slice(0, COMPACT_VISIBLE);
+    .slice(0, COMPACT_VISIBLE), [sorted]);
+
+  if (users.length === 0 && fallbackData.length === 0) {
+    return null;
+  }
   const overflowCount = sorted.length - COMPACT_VISIBLE;
 
   const compactRow = (
@@ -119,19 +122,15 @@ const UserList: React.FC<UserListProps> = ({
       <View style={styles.userListHeaderRow}>
         <ThemedText type='subtitle'>
           {title}
+          {count !== undefined && (
+            <ThemedText type='subtitle' style={styles.titleCount}> {count}</ThemedText>
+          )}
         </ThemedText>
         {!alwaysExpanded && users.length > 0 && (
           <Pressable onPress={() => setShowAll(v => !v)} hitSlop={8} style={styles.viewAllButton}>
             <ThemedText style={styles.viewAllText}>
               {showAll ? 'Visa färre' : 'Visa alla'}
             </ThemedText>
-            <IconSymbol
-              name="chevron.right"
-              size={18}
-              weight="medium"
-              color={isDark ? 'rgba(255,255,255,0.55)' : 'rgba(0,0,0,0.55)'}
-              style={{ transform: [{ rotate: showAll ? '270deg' : '90deg' }] }}
-            />
           </Pressable>
         )}
       </View>

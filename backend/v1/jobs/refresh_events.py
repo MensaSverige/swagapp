@@ -6,7 +6,9 @@ from v1.external.event_api import (
     get_external_root,
     get_external_event_details,
     get_booked_external_events,
+    fetch_external_attendees,
 )
+from v1.db.external_attendees import store_external_attendees
 from v1.db.external_bookings import upsert_user_bookings
 from v1.db.database import get_session
 from v1.events.main_events import store_root_main_event
@@ -42,6 +44,24 @@ def refresh_external_events():
 
     # Refresh per-user booking cache after events are updated
     refresh_external_bookings()
+    refresh_external_attendees(root.restUrl)
+
+
+def refresh_external_attendees(rest_url: str):
+    """Cache the booking site's list of people registered to the riksträff.
+
+    On the same 15-minute beat as the events. A failed fetch keeps the last
+    list rather than emptying it.
+    """
+    try:
+        listing = fetch_external_attendees(rest_url)
+    except Exception as e:
+        logging.error(f"[refresh_external_attendees] Fetch failed: {e}")
+        return
+    if listing is None:
+        return
+    store_external_attendees(listing)
+    logging.info(f"[refresh_external_attendees] {len(listing.attendees)} listed of {listing.count} registered")
 
 
 def refresh_external_bookings():

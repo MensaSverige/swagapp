@@ -6,6 +6,7 @@ import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import UnifiedEventCard from '@/features/events/components/UnifiedEventCard';
 import { useEvents } from '@/features/events/hooks/useEvents';
+import { useLocalEvents } from '@/features/events/hooks/useMainEvents';
 import { canUserEditEvent } from '@/features/events/utils/eventPermissions';
 import useStore from '@/features/common/store/store';
 import { useThemeColor } from '@/hooks/useThemeColor';
@@ -16,13 +17,15 @@ export default function EventDetailScreen() {
     const { id } = useLocalSearchParams<{ id: string }>();
     const { user } = useStore();
     const { allEvents } = useEvents();
+    const localEvents = useLocalEvents();
     const iconColor = useThemeColor({}, 'icon');
     const { bottom } = useSafeAreaInsets();
     const router = useRouter();
 
     const event = useMemo(
-        () => allEvents.find(e => e.id === id) ?? null,
-        [allEvents, id]
+        // Local events are main events, so they are not in the events list.
+        () => allEvents.find(e => e.id === id) ?? localEvents.find(e => e.id === id) ?? null,
+        [allEvents, localEvents, id]
     );
 
     const canEdit = useMemo(

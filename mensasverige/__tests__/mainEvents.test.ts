@@ -9,12 +9,16 @@ import {
   AUTO_SELECT_BEFORE_MS,
   findAutoSelectMainEventId,
   formatMainEventDateRange,
+  formatRegion,
   formatRelativeStart,
   formatRowDateColumn,
   getMainEventChildren,
   groupMainEvents,
+  isAllDay,
+  isEventOver,
   isMainEventOngoing,
-  selectToBook,
+  countUpcomingEvents,
+  selectActivityListEvents,
   splitAddress,
 } from '../features/events/utils/mainEventUtils';
 import { Event } from '../api_schema/types';
@@ -141,7 +145,25 @@ describe('date formatting', () => {
   it('formats the row date column for multi-day and one-day events', () => {
     expect(formatRowDateColumn(main())).toEqual({ start: '20 nov', end: '22 nov' });
     const oneDay = main({ start: '2026-11-21T18:30:00', end: '2026-11-21T21:00:00' });
-    expect(formatRowDateColumn(oneDay)).toEqual({ start: '18:30', end: '' });
+    expect(formatRowDateColumn(oneDay)).toEqual({ start: '21 nov', end: '18:30' });
+  });
+
+  it('treats an ongoing event as not over', () => {
+    const now = at('2026-11-21T12:00:00');
+    expect(isEventOver(main({ start: '2026-11-21T10:00:00', end: '2026-11-21T14:00:00' }), now)).toBe(false);
+    expect(isEventOver(main({ start: '2026-11-21T00:00:00', end: null }), now)).toBe(false);
+    expect(isEventOver(main({ start: '2026-11-21T10:00:00', end: null }), now)).toBe(true);
+    expect(isEventOver(main({ start: '2026-11-20T10:00:00', end: '2026-11-20T14:00:00' }), now)).toBe(true);
+  });
+
+  it('says Heldag for a whole-day event instead of 00:00', () => {
+    const allDay = main({ start: '2026-11-21T00:00:00', end: null });
+    expect(isAllDay(allDay)).toBe(true);
+    expect(formatRowDateColumn(allDay)).toEqual({ start: '21 nov', end: 'Heldag' });
+    expect(formatMainEventDateRange(allDay)).toBe('Lördag 21 november, heldag');
+    expect(isAllDay(main({ start: '2026-11-21T00:00:00', end: '2026-11-21T23:59:00' }))).toBe(true);
+    expect(isAllDay(main({ start: '2026-11-21T00:00:00', end: '2026-11-21T03:00:00' }))).toBe(false);
+    expect(isAllDay(main({ start: '2026-11-21T18:00:00', end: null }))).toBe(false);
   });
 
   it('formats multi-day ranges within and across months', () => {
@@ -176,19 +198,6 @@ describe('children selection', () => {
     expect(getMainEventChildren(list, 'root2026-11-20').map(e => e.id)).toEqual(['a']);
   });
 
-  it('selectToBook keeps upcoming bookable non-attending events, sorted and capped at 5', () => {
-    const many = Array.from({ length: 7 }, (_, i) =>
-      child({ id: `e${i}`, start: `2026-11-22T${String(20 - i).padStart(2, '0')}:00:00` }),
-    );
-    const excluded = [
-      child({ id: 'past', start: '2026-11-21T08:00:00' }),
-      child({ id: 'attending', attendingOrHost: true, attending: true }),
-      child({ id: 'full', bookable: false }),
-    ];
-    const res = selectToBook([...excluded, ...many], now);
-    expect(res).toHaveLength(5);
-    expect(res.map(e => e.id)).toEqual(['e6', 'e5', 'e4', 'e3', 'e2']);
-  });
 });
 
 describe('formatRelativeStart', () => {
@@ -218,6 +227,21 @@ describe('formatRelativeStart', () => {
   });
 });
 
+describe('formatRegion', () => {
+  it('names the local group from the calendar slug', () => {
+    expect(formatRegion({ extras: { regionSlug: 'lf-väst-intern' } })).toBe('LF Väst');
+    expect(formatRegion({ extras: { regionSlug: 'lma-örebro-intern' } })).toBe('LMA Örebro');
+    expect(formatRegion({ extras: { regionSlug: 'lf-stockholm-offentlig' } })).toBe('LF Stockholm');
+    expect(formatRegion({ extras: { regionSlug: 'lma-mälardalen' } })).toBe('LMA Mälardalen');
+  });
+
+  it('falls back to the cleaned region, and is null without one', () => {
+    expect(formatRegion({ extras: { regionSlug: 'okänd', region: 'uppsala' } })).toBe('Uppsala');
+    expect(formatRegion({ extras: { url: 'x' } })).toBeNull();
+    expect(formatRegion({})).toBeNull();
+  });
+});
+
 describe('splitAddress', () => {
   it('splits at the first comma', () => {
     expect(splitAddress('Storgatan 1, 111 22 Stockholm', 'Stockholm')).toEqual({
@@ -237,5 +261,36 @@ describe('splitAddress', () => {
     expect(splitAddress(null, 'Uppsala')).toEqual({ line1: 'Uppsala', line2: '' });
     expect(splitAddress('  ', '')).toBeNull();
     expect(splitAddress(undefined, undefined)).toBeNull();
+  });
+});
+
+describe('selectActivityListEvents', () => {
+  const child = main({ id: 'ext1', source: 'external', parentEvent: 'root2026-11-20', start: '2026-11-20T10:00:00' });
+  const standalone = main({ id: 'user1', source: 'user', parentEvent: null, start: '2026-11-18T18:00:00' });
+  const local = main({ id: 'cal1', source: 'calendar', parentEvent: null, start: '2026-11-17T17:00:00' });
+
+  it('shows only the selected main event programme', () => {
+    expect(selectActivityListEvents([child, standalone], [local], 'root2026-11-20')).toEqual([child]);
+  });
+
+  it('without a selection, leaves out main-event programmes and adds local events by start', () => {
+    expect(selectActivityListEvents([child, standalone], [local], null).map(e => e.id)).toEqual(['cal1', 'user1']);
+  });
+
+  it('does not list a local event twice', () => {
+    expect(selectActivityListEvents([local, standalone], [local], null).map(e => e.id)).toEqual(['cal1', 'user1']);
+  });
+});
+
+describe('countUpcomingEvents', () => {
+  it('counts ongoing and future events, not past ones', () => {
+    const hour = 60 * 60 * 1000;
+    const iso = (offset: number) => new Date(Date.now() + offset).toISOString();
+    const events = [
+      main({ start: iso(-2 * hour), end: iso(-hour) }),
+      main({ start: iso(-hour), end: iso(hour) }),
+      main({ start: iso(hour), end: null }),
+    ];
+    expect(countUpcomingEvents(events)).toBe(2);
   });
 });

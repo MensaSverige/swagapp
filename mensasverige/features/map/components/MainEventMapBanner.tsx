@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Alert, useColorScheme } from 'react-native';
+import React from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, useColorScheme } from 'react-native';
 import EventHeader from '../../events/components/EventHeader';
-import { setMainEventAttendance, useSelectedMainEvent } from '../../events/hooks/useMainEvents';
+import { useSelectedMainEvent } from '../../events/hooks/useMainEvents';
+import { useEventAttendance } from '../../events/hooks/useEventAttendance';
 import { isMapLockedForEvent } from '../../events/utils/mainEventUtils';
-import { PAGE_PADDING, typeScale } from '../../events/styles/typeScale';
+import { registerLabel } from '../../events/utils/eventAttendance';
+import { EVENT_HEADER_BG, PAGE_PADDING, typeScale } from '../../events/styles/typeScale';
 import { Colors } from '@/constants/Colors';
 
 /**
@@ -13,22 +15,11 @@ import { Colors } from '@/constants/Colors';
  */
 const MainEventMapBanner: React.FC = () => {
   const dark = useColorScheme() === 'dark';
-  const { selectedMainEvent, selectedMainEventId } = useSelectedMainEvent();
-  const [registering, setRegistering] = useState(false);
+  const { selectedMainEvent } = useSelectedMainEvent();
+  const { status, siteUrl, busy: registering, register } = useEventAttendance(selectedMainEvent);
+  const label = registerLabel(status, siteUrl);
 
-  if (!selectedMainEvent || !selectedMainEventId) return null;
-
-  const handleRegister = async () => {
-    if (registering) return;
-    setRegistering(true);
-    try {
-      await setMainEventAttendance(selectedMainEventId, true);
-    } catch {
-      Alert.alert('Något gick fel', 'Det gick inte att anmäla dig. Försök igen.');
-    } finally {
-      setRegistering(false);
-    }
-  };
+  if (!selectedMainEvent) return null;
 
   return (
     <View>
@@ -38,14 +29,16 @@ const MainEventMapBanner: React.FC = () => {
           <Text style={[styles.infoText, { color: dark ? Colors.coolGray200 : '#374151' }]}>
             Deltagare visas för den som är anmäld till evenemanget.
           </Text>
-          <TouchableOpacity
-            onPress={handleRegister}
-            disabled={registering}
-            accessibilityRole="button"
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          >
-            <Text style={[styles.link, registering && styles.linkDisabled]}>Anmäl mig</Text>
-          </TouchableOpacity>
+          {!!label && (
+            <TouchableOpacity
+              onPress={register}
+              disabled={registering}
+              accessibilityRole="button"
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Text style={[styles.link, registering && styles.linkDisabled]}>{label}</Text>
+            </TouchableOpacity>
+          )}
         </View>
       )}
     </View>
@@ -64,7 +57,7 @@ const styles = StyleSheet.create({
   },
   link: {
     ...typeScale.link,
-    color: '#005DB4',
+    color: EVENT_HEADER_BG,
   },
   linkDisabled: {
     opacity: 0.6,
