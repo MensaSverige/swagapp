@@ -1,7 +1,7 @@
 # scheduler.py
 import os
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
@@ -80,20 +80,27 @@ def create_scheduler() -> BackgroundScheduler:
             continue
 
         trigger = job_cfg.build_trigger()
+
+        # An init job's first run is due the moment the scheduler starts, and
+        # runs on the scheduler's thread. It must not run inline here: this
+        # executes while uvicorn imports the app, so nothing answers until it
+        # returns. The booking refresh makes two unbounded HTTP calls per
+        # stored token, which kept the API at 502 for nine minutes after the
+        # 2026-11-14 release. Never pass next_run_time=None: that pauses the job.
+        job_kwargs = {}
+        if job_cfg.init:
+            job_kwargs["next_run_time"] = datetime.now(timezone.utc)
+
         scheduler.add_job(
             job_cfg.func,
             trigger=trigger,
             id=job_cfg.name,
             replace_existing=True,
             max_instances=1,
+            **job_kwargs,
         )
         log.info("Scheduled job %s with trigger %s", job_cfg.name, trigger)
-
         if job_cfg.init:
-            log.info("Running job %s immediately on startup", job_cfg.name)
-            try:
-                job_cfg.func()
-            except Exception as e:
-                log.error("Error running job %s on startup: %s", job_cfg.name, e)
+            log.info("Job %s will run as soon as the scheduler starts", job_cfg.name)
 
     return scheduler
