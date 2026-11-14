@@ -25,6 +25,7 @@ import { canonicalCategoryCode } from '../utilities/EventCategories';
 import { createEventCardStyles } from '../styles/eventCardStyles';
 import { ExtendedEvent } from '../types/eventUtilTypes';
 import UserList from './UserList';
+import { getMainEventName } from '../utils/mainEventUtils';
 
 
 const handleLinkPress = (url: string) => {
@@ -38,12 +39,18 @@ const UnifiedEventCard: React.FC<{
   const eventCardStyles = createEventCardStyles(colorScheme ?? 'light');
   const user = useStore(state => state.user);
   const { allEvents } = useEvents();
+  const mainEvents = useStore(state => state.mainEvents);
 
   // Get the current event state from the store to ensure we have the latest data
   const currentEvent = useMemo(() => {
     const storeEvent = allEvents.find(e => e.id === event.id);
     return storeEvent || event; // Fallback to prop if not found in store
   }, [allEvents, event]);
+
+  const parentName = useMemo(
+    () => (currentEvent.parentEvent ? getMainEventName(mainEvents, currentEvent.parentEvent) : null),
+    [mainEvents, currentEvent.parentEvent]
+  );
 
   const { adminUsers, attendeeUsers } = useEventUsers(currentEvent);
   const showBookedCount = currentEvent.showAttendees !== 'none';
@@ -84,7 +91,7 @@ const UnifiedEventCard: React.FC<{
         end={currentEvent.end}
         isEditable={false}
       />
-      {currentEvent.imageUrl && (
+      {!!currentEvent.imageUrl && (
         <Image
           style={eventCardStyles.eventImage}
           source={{ uri: currentEvent.imageUrl }}
@@ -102,7 +109,7 @@ const UnifiedEventCard: React.FC<{
             <FullyBookedBadge />
           )}
 
-          {currentEvent.bookable && showBookedCount && placesLeft !== null && placesLeft > 0 && currentEvent.maxAttendees && (
+          {currentEvent.bookable && showBookedCount && placesLeft !== null && placesLeft > 0 && !!currentEvent.maxAttendees && (
             <PlacesLeftBadge placesLeft={placesLeft} maxAttendees={currentEvent.maxAttendees} />
           )}
 
@@ -112,9 +119,9 @@ const UnifiedEventCard: React.FC<{
         </View>
       </View>
 
-      {(currentEvent.address || currentEvent.locationDescription) && (
+      {!!(currentEvent.address || currentEvent.locationDescription) && (
         <View style={eventCardStyles.locationSection}>
-          {currentEvent.address && (
+          {!!currentEvent.address && (
             <AddressLinkAndIcon
               displayName={
                 currentEvent.address.includes(', Sweden')
@@ -124,7 +131,7 @@ const UnifiedEventCard: React.FC<{
               address={currentEvent.address}
             />
           )}
-          {currentEvent.locationDescription && (
+          {!!currentEvent.locationDescription && (
             <ThemedText lightColor="#6B7280" darkColor="#9CA3AF">{currentEvent.locationDescription}</ThemedText>
           )}
         </View>
@@ -152,9 +159,9 @@ const UnifiedEventCard: React.FC<{
         </View>
       )}
       {/* Event Status and Type */}
-      {(currentEvent.cancelled || (currentEvent.price !== undefined && currentEvent.price > 0) || currentEvent.parentEvent) && (
+      {(!!currentEvent.cancelled || (currentEvent.price !== undefined && currentEvent.price > 0) || !!parentName) && (
         <View style={eventCardStyles.eventStatusSection}>
-          {currentEvent.cancelled && (
+          {!!currentEvent.cancelled && (
             <View style={eventCardStyles.statusRow}>
               <ThemedText type="defaultSemiBold" style={eventCardStyles.statusLabelMinWidth}>Status:</ThemedText>
               <ThemedText lightColor="#DC2626" darkColor="#F87171" type="defaultSemiBold">Inställt</ThemedText>
@@ -166,10 +173,10 @@ const UnifiedEventCard: React.FC<{
               <ThemedText>{currentEvent.price} SEK</ThemedText>
             </View>
           )}
-          {currentEvent.parentEvent && (
+          {!!parentName && (
             <View style={eventCardStyles.statusRow}>
               <ThemedText type="defaultSemiBold" style={eventCardStyles.statusLabelMinWidth}>Del av:</ThemedText>
-              <ThemedText>{currentEvent.parentEvent}</ThemedText>
+              <ThemedText>{parentName}</ThemedText>
             </View>
           )}
         </View>

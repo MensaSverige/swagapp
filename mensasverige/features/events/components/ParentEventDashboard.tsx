@@ -1,17 +1,31 @@
-import React, { useEffect } from 'react';
-import { View, StyleSheet, TouchableOpacity, useColorScheme } from 'react-native';
-import { fetchExternalRoot } from '../services/eventService';
+import React, { useMemo, useState } from 'react';
+import { View, StyleSheet, TouchableOpacity, Alert, useColorScheme } from 'react-native';
+import { MaterialIcons } from '@expo/vector-icons';
+import { router } from 'expo-router';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
-import ParentEventDetails from './ParentEventDetails';
-import GroupedEventsList from './GroupedEventsList';
-import { MaterialIcons } from '@expo/vector-icons';
 import { Colors } from '@/constants/Colors';
+import { LocationLinkButton } from '@/features/map/components/LocationLinkIcon';
+import { Event } from '../../../api_schema/types';
+import GroupedEventsList from './GroupedEventsList';
 import { useEvents } from '../hooks/useEvents';
-import { navigateToUserEvents, navigateToBookableEvents, navigateToLastMinuteEvents } from '../utilities/navigationUtils';
+import { setMainEventAttendance } from '../hooks/useMainEvents';
+import {
+    navigateToBookableEvents,
+    navigateToLastMinuteEvents,
+    navigateToScheduleWithFilter,
+} from '../utilities/navigationUtils';
 import { ExtendedEvent } from '../types/eventUtilTypes';
-import { router } from 'expo-router';
-import useStore from '@/features/common/store/store';
+import { groupEventsByDate } from '../utils/eventUtils';
+import {
+    formatMainEventDateRange,
+    formatRelativeStart,
+    getMainEventChildren,
+    splitAddress,
+    selectMyBookings,
+    selectToBook,
+} from '../utils/mainEventUtils';
+import { BUTTON_HEIGHT, DIVIDER_COLOR, EVENT_HEADER_BG, PAGE_PADDING, typeScale } from '../styles/typeScale';
 
 type MaterialIconName = React.ComponentProps<typeof MaterialIcons>['name'];
 
@@ -25,338 +39,407 @@ const INFO_SHORTCUTS: Array<{
     { id: 'kontakt',    label: 'Kontakt',      icon: 'phone',    iconColor: Colors.amber600,    bgLight: Colors.amber100,    bgDark: Colors.amber900,    section: 'kontakt' },
 ];
 
-const ParentEventDashboard = () => {
-    const colorScheme = useColorScheme();
-    const styles = createStyles(colorScheme ?? 'light');
-    const {eventInfo, eventInfoLoading, setEventInfo, setEventInfoLoading, user} = useStore();
+interface ParentEventDashboardProps {
+    mainEvent: Event;
+}
 
-    const {
-        dashboardGroupedEvents,
-        loading: eventsLoading,
-        lastMinuteEvents
-    } = useEvents();
+/** Information tab content for the selected main event (below the EventHeader). */
+const ParentEventDashboard: React.FC<ParentEventDashboardProps> = ({ mainEvent }) => {
+    const colorScheme = useColorScheme() ?? 'light';
+    const styles = useMemo(() => createStyles(colorScheme), [colorScheme]);
+    const { allEvents, loading: eventsLoading, lastMinuteEvents: allLastMinute } = useEvents();
+    const [registering, setRegistering] = useState(false);
 
-    useEffect(() => {
-        const loadParentEventInfo = async () => {
-            try {
-                setEventInfoLoading(true);
-                const parentEventInfo = await fetchExternalRoot();
-                setEventInfo(parentEventInfo);
-            } catch (error) {
-                console.error('Error loading parent event info:', error);
-                setEventInfo(null);
-            } finally {
-                setEventInfoLoading(false);
-            }
-        };
+    const attending = !!mainEvent.attending;
+    const isRoot = mainEvent.source === 'external_root';
+    const place = splitAddress(mainEvent.address, mainEvent.locationDescription);
+    const relativeLabel = formatRelativeStart(mainEvent, Date.now());
 
-        loadParentEventInfo();
-    }, [setEventInfo, setEventInfoLoading]);
-
-    const loading = eventInfoLoading || eventsLoading;
-
-    const navigateToFullSchedule = () => {
-        navigateToUserEvents(user?.userId);
-    };
-
-    const navigateToAllEvents = () => {
-        navigateToBookableEvents();
-    };
+    const children = useMemo(
+        () => getMainEventChildren(allEvents, mainEvent.id),
+        [allEvents, mainEvent.id],
+    );
+    const myBookings = useMemo(() => selectMyBookings(children).slice(0, 3), [children]);
+    const myBookingsGrouped = useMemo(() => groupEventsByDate(myBookings), [myBookings]);
+    const toBook = useMemo(() => selectToBook(children), [children]);
+    const toBookGrouped = useMemo(() => groupEventsByDate(toBook), [toBook]);
+    const lastMinuteEvents = useMemo(
+        () => allLastMinute.filter(e => e.parentEvent === mainEvent.id),
+        [allLastMinute, mainEvent.id],
+    );
 
     const handleEventPress = (event: ExtendedEvent) => {
         router.push({ pathname: '/events/[id]', params: { id: event.id } });
     };
 
-    if (loading && !eventInfo) {
-        return (
-            <ThemedView style={styles.container}>
-                <ThemedText style={styles.loadingText}>Laddar...</ThemedText>
-            </ThemedView>
-        );
-    }
+    const handleRegister = async () => {
+        if (registering) return;
+        setRegistering(true);
+        try {
+            await setMainEventAttendance(mainEvent.id, true);
+        } catch {
+            Alert.alert('Något gick fel', 'Det gick inte att anmäla dig. Försök igen.');
+        } finally {
+            setRegistering(false);
+        }
+    };
 
-    if (!eventInfo) {
-        return (
-            <ThemedView style={styles.container}>
-                <ThemedText type="subtitle">Inga pågående evenemang</ThemedText>
-                <ThemedText style={styles.noEventText}>
-                    Det finns för närvarande inga stora evenemang eller träffar planerade.
-                </ThemedText>
-            </ThemedView>
-        );
-    }
+    const iconGray = colorScheme === 'dark' ? Colors.coolGray400 : '#4B5563';
+    const registeredColor = colorScheme === 'dark' ? Colors.green400 : '#047857';
+
+    const navigateToMyBookings = () =>
+        navigateToScheduleWithFilter({ attendingOrHost: true, bookable: null, official: null, categories: [] });
+
+    const infoTiles = (
+        <View style={styles.infoGrid}>
+            {INFO_SHORTCUTS.map(shortcut => (
+                <TouchableOpacity
+                    key={shortcut.id}
+                    style={[
+                        styles.infoCard,
+                        { backgroundColor: colorScheme === 'dark' ? shortcut.bgDark : shortcut.bgLight },
+                    ]}
+                    onPress={() => router.push({ pathname: '/(tabs)/(home)/guide' as any, params: shortcut.section ? { initialSection: shortcut.section } : {} })}
+                    activeOpacity={0.7}
+                >
+                    <MaterialIcons name={shortcut.icon} size={22} color={shortcut.iconColor} />
+                    <ThemedText style={styles.infoCardLabel}>{shortcut.label}</ThemedText>
+                </TouchableOpacity>
+            ))}
+        </View>
+    );
+
+    const sectionHeader = (title: string, onSeeAll: () => void) => (
+        <View style={styles.sectionHeader}>
+            <ThemedText style={styles.h2} accessibilityRole="header">{title}</ThemedText>
+            <TouchableOpacity onPress={onSeeAll} style={styles.seeAllButton}>
+                <ThemedText style={styles.seeAllText}>Se alla</ThemedText>
+            </TouchableOpacity>
+        </View>
+    );
 
     return (
         <ThemedView style={styles.container}>
-            <ParentEventDetails />
-
-            {/* SWAG Guide Info Shortcuts */}
-            <View style={styles.infoSection}>
-                <View style={styles.infoGrid}>
-                    {INFO_SHORTCUTS.map(shortcut => (
-                        <TouchableOpacity
-                            key={shortcut.id}
-                            style={[
-                                styles.infoCard,
-                                { backgroundColor: colorScheme === 'dark' ? shortcut.bgDark : shortcut.bgLight },
-                            ]}
-                            onPress={() => router.push({ pathname: '/(tabs)/(home)/guide' as any, params: shortcut.section ? { initialSection: shortcut.section } : {} })}
-                            activeOpacity={0.7}
-                        >
-                            <MaterialIcons name={shortcut.icon} size={22} color={shortcut.iconColor} />
-                            <ThemedText style={styles.infoCardLabel}>{shortcut.label}</ThemedText>
-                        </TouchableOpacity>
-                    ))}
-                </View>
-            </View>
-
-            {/* Last Minute and Create Activity Side by Side */}
-            <View style={styles.actionsRow}>
-                {lastMinuteEvents.length > 0 && (
-                    <TouchableOpacity
-                        style={[
-                            styles.actionCard,
-                            styles.lastMinuteCard,
-                            styles.equalWidth
-                        ]}
-                        onPress={navigateToLastMinuteEvents}
-                        activeOpacity={0.7}
-                    >
-                        <View style={styles.actionContent}>
-                            <View style={styles.titleContainer}>
-                                <MaterialIcons name="downhill-skiing" size={20} color={colorScheme === 'dark' ? Colors.amber300 : Colors.amber600} />
-                                <ThemedText type="subtitle" style={styles.lastMinuteTitle}>Sista minuten</ThemedText>
-                            </View>
-                            <ThemedText style={styles.lastMinuteDescription}>
-                                Hinner du med? {lastMinuteEvents.length} {lastMinuteEvents.length === 1 ? 'aktivitet' : 'aktiviteter'} startar snart!
-                            </ThemedText>
-                            <MaterialIcons name="arrow-forward" size={16} color={colorScheme === 'dark' ? Colors.amber400 : Colors.amber700} style={styles.actionArrow} />
-                        </View>
-                    </TouchableOpacity>
-                )}
-
-                {Object.keys(dashboardGroupedEvents).length !== 0 && eventInfo && (
-                    <TouchableOpacity
-                        style={[
-                            styles.actionCard,
-                            styles.createCard,
-                            lastMinuteEvents.length > 0 ? styles.equalWidth : styles.fullWidthSingle
-                        ]}
-                        onPress={() => router.push({ pathname: '/(tabs)/(events)/event-form' })}
-                        activeOpacity={0.7}
-                    >
-                        <View style={styles.actionContent}>
-                            <View style={styles.titleContainer}>
-                                <MaterialIcons name="celebration" size={20} color={Colors.primary300} />
-                                <ThemedText type="subtitle" style={styles.createTitle}>Bjud in andra!</ThemedText>
-                            </View>
-                            <ThemedText style={styles.createDescription}>
-                                Skapa dina egna aktiviteter och träffa nya vänner.
-                            </ThemedText>
-                            <MaterialIcons name="arrow-forward" size={16} color={Colors.primary400} style={styles.actionArrow} />
-                        </View>
-                    </TouchableOpacity>
-                )}
-            </View>
-
-            {/* Upcoming Events Section */}
-            {Object.keys(dashboardGroupedEvents).length > 0 && (
-                <View style={styles.eventsSection}>
-                    <View style={styles.sectionHeader}>
-                        <View style={styles.sectionTitleContainer}>
-                            <MaterialIcons name="event-available" size={20} color={Colors.primary600} />
-                            <ThemedText type="subtitle">Mina bokningar</ThemedText>
-                        </View>
-                        <TouchableOpacity
-                            onPress={navigateToFullSchedule}
-                            style={styles.seeAllButton}
-                        >
-                            <ThemedText style={styles.seeAllText}>Se alla</ThemedText>
-                            <MaterialIcons name="chevron-right" size={16} color={Colors.primary400} />
-                        </TouchableOpacity>
+            <View style={styles.infoRows}>
+                <View style={styles.infoRow}>
+                    <MaterialIcons name="event" size={22} color={iconGray} style={styles.rowIcon} />
+                    <View style={styles.rowText}>
+                        <ThemedText style={styles.rowLine1}>{formatMainEventDateRange(mainEvent)}</ThemedText>
+                        {!!relativeLabel && <ThemedText style={styles.rowLine2}>{relativeLabel}</ThemedText>}
                     </View>
-
-                    <GroupedEventsList
-                        groupedEvents={dashboardGroupedEvents}
-                        onEventPress={handleEventPress}
-                        showCategories={true}
-                        dateHeaderStyle="default"
-                    />
                 </View>
+                {!!place && (
+                    <View style={[styles.infoRow, styles.placeRow]}>
+                        <MaterialIcons name="place" size={22} color={iconGray} style={styles.rowIcon} />
+                        <View style={styles.rowText}>
+                            <ThemedText style={styles.rowLine1}>{place.line1}</ThemedText>
+                            {!!place.line2 && <ThemedText style={styles.rowLine2}>{place.line2}</ThemedText>}
+                        </View>
+                        {!!mainEvent.address && (
+                            <View style={styles.directions}>
+                                <LocationLinkButton address={mainEvent.address} />
+                            </View>
+                        )}
+                    </View>
+                )}
+                <View style={styles.infoRow}>
+                    <MaterialIcons
+                        name={attending ? 'check-circle' : 'info-outline'}
+                        size={22}
+                        color={attending ? registeredColor : iconGray}
+                        style={styles.rowIcon}
+                    />
+                    <ThemedText style={[styles.rowLine1, { color: attending ? registeredColor : iconGray }]}>
+                        {attending ? 'Du är anmäld' : 'Du är inte anmäld'}
+                    </ThemedText>
+                </View>
+            </View>
+
+            {!attending && (
+                <>
+                    {isRoot && <View style={styles.infoSection}>{infoTiles}</View>}
+
+                    <TouchableOpacity
+                        style={[styles.primaryButton, registering && styles.primaryButtonDisabled]}
+                        onPress={handleRegister}
+                        disabled={registering}
+                        activeOpacity={0.8}
+                        accessibilityRole="button"
+                    >
+                        <ThemedText style={styles.primaryButtonText}>
+                            {registering ? 'Anmäler...' : 'Anmäl mig!'}
+                        </ThemedText>
+                    </TouchableOpacity>
+
+                    <View style={styles.lockedContainer}>
+                        <MaterialIcons name="lock" size={40} color="#9CA3AF" style={styles.lockedIcon} />
+                        <ThemedText style={styles.lockedTitle}>Aktiviteterna visas när du är anmäld</ThemedText>
+                        <ThemedText style={styles.lockedText}>
+                            Då ser du programmet, kan boka aktiviteter och se vilka som kommer, även på kartan.
+                        </ThemedText>
+                    </View>
+                </>
             )}
 
-            {/* No upcoming events message */}
-            {!loading && Object.keys(dashboardGroupedEvents).length === 0 && eventInfo && (
-                <TouchableOpacity onPress={navigateToAllEvents}>
-                    <View style={[styles.noEventsContainer, styles.actionCard]}>
-                        <MaterialIcons name="event-note" size={48} color={Colors.coolGray400} style={styles.noEventsIcon} />
-                        <ThemedText style={styles.noEventsText}>
-                            Inga bokade aktiviteter för närvarande
-                        </ThemedText>
-                        <ThemedText style={styles.noEventsSubtext}>
-                            Upptäck intressanta aktiviteter eller skapa din egen!
-                        </ThemedText>
-                        <View style={styles.noEventsActions}>
-                            <MaterialIcons name="arrow-forward" size={16} color={Colors.coolGray600} style={styles.actionArrow} />
-                        </View>
+            {attending && (
+                <>
+                    {isRoot && <View style={styles.infoSection}>{infoTiles}</View>}
+
+                    <View style={styles.actionsRow}>
+                        {lastMinuteEvents.length > 0 && (
+                            <TouchableOpacity
+                                style={[styles.actionCard, styles.lastMinuteCard, styles.equalWidth]}
+                                onPress={navigateToLastMinuteEvents}
+                                activeOpacity={0.7}
+                            >
+                                <View style={styles.actionContent}>
+                                    <View style={styles.titleContainer}>
+                                        <MaterialIcons name="downhill-skiing" size={20} color={colorScheme === 'dark' ? Colors.amber300 : Colors.amber600} />
+                                        <ThemedText type="subtitle" style={styles.lastMinuteTitle}>Sista minuten</ThemedText>
+                                    </View>
+                                    <ThemedText style={styles.lastMinuteDescription}>
+                                        Hinner du med? {lastMinuteEvents.length} {lastMinuteEvents.length === 1 ? 'aktivitet' : 'aktiviteter'} startar snart!
+                                    </ThemedText>
+                                    <MaterialIcons name="arrow-forward" size={16} color={colorScheme === 'dark' ? Colors.amber400 : Colors.amber700} style={styles.actionArrow} />
+                                </View>
+                            </TouchableOpacity>
+                        )}
+
+                        {myBookings.length > 0 && (
+                            <TouchableOpacity
+                                style={[styles.actionCard, styles.createCard, styles.equalWidth]}
+                                onPress={() => router.push({ pathname: '/(tabs)/(events)/event-form' })}
+                                activeOpacity={0.7}
+                            >
+                                <View style={styles.actionContent}>
+                                    <View style={styles.titleContainer}>
+                                        <MaterialIcons name="celebration" size={20} color={Colors.primary300} />
+                                        <ThemedText type="subtitle" style={styles.createTitle}>Bjud in andra!</ThemedText>
+                                    </View>
+                                    <ThemedText style={styles.createDescription}>
+                                        Skapa dina egna aktiviteter och träffa nya vänner.
+                                    </ThemedText>
+                                    <MaterialIcons name="arrow-forward" size={16} color={Colors.primary400} style={styles.actionArrow} />
+                                </View>
+                            </TouchableOpacity>
+                        )}
                     </View>
-                </TouchableOpacity>
+
+                    <View style={styles.eventsSection}>
+                        {sectionHeader('Mina bokningar', navigateToMyBookings)}
+                        {myBookings.length > 0 ? (
+                            <GroupedEventsList
+                                groupedEvents={myBookingsGrouped}
+                                onEventPress={handleEventPress}
+                                showCategories={true}
+                                dateHeaderStyle="default"
+                            />
+                        ) : (
+                            !eventsLoading && (
+                                <ThemedText style={styles.emptyText}>Inga bokade aktiviteter ännu</ThemedText>
+                            )
+                        )}
+                    </View>
+
+                    {toBook.length > 0 && (
+                        <View style={styles.eventsSection}>
+                            {sectionHeader('Att anmäla sig till', navigateToBookableEvents)}
+                            <GroupedEventsList
+                                groupedEvents={toBookGrouped}
+                                onEventPress={handleEventPress}
+                                showCategories={true}
+                                dateHeaderStyle="default"
+                            />
+                        </View>
+                    )}
+                </>
             )}
         </ThemedView>
     );
 };
 
-const createStyles = (colorScheme: string) => StyleSheet.create({
-    container: {
-        padding: 16,
-        flex: 1
-    },
-    loadingText: {
-        textAlign: 'center',
-        color: Colors.coolGray500,
-        marginVertical: 20,
-    },
-    noEventText: {
-        color: Colors.coolGray500,
-        textAlign: 'center',
-        marginTop: 8,
-        lineHeight: 20,
-    },
-    eventsSection: {
-        marginTop: 24
-    },
-    sectionHeader: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 16
-    },
-    sectionTitleContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 8,
-    },
-    seeAllButton: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 4,
-    },
-    seeAllText: {
-        color: Colors.primary400,
-        fontSize: 14,
-        fontWeight: '500',
-    },
-    noEventsContainer: {
-        alignItems: 'center',
-        marginTop: 12,
-        paddingVertical: 50,
-        paddingHorizontal: 16,
-        backgroundColor: colorScheme === 'dark' ? 'rgba(31, 41, 55, 0.6)' : 'rgba(243, 244, 246, 0.6)',
-    },
-    noEventsIcon: {
-        marginVertical: 12,
-        opacity: 0.6,
-    },
-    noEventsText: {
-        fontSize: 16,
-        color: Colors.coolGray500,
-        textAlign: 'center',
-        marginBottom: 8,
-        fontWeight: '500',
-    },
-    noEventsSubtext: {
-        fontSize: 14,
-        color: Colors.coolGray400,
-        textAlign: 'center',
-        marginBottom: 24,
-        lineHeight: 20,
-    },
-    noEventsActions: {
-        flexDirection: 'row',
-        gap: 12,
-    },
-    actionsRow: {
-        flexDirection: 'row',
-        gap: 8,
-        marginTop: 10,
-    },
-    actionCard: {
-        paddingVertical: 10,
-        paddingHorizontal: 12,
-        borderRadius: 8,
-    },
-    equalWidth: {
-        flex: 1,
-    },
-    fullWidthSingle: {
-        flex: 1,
-    },
-    fullWidth: {
-        flex: 2,
-    },
-    lastMinuteCard: {
-        backgroundColor: colorScheme === 'dark' ? Colors.amber900 : Colors.amber100,
-        borderWidth: 1,
-        borderColor: colorScheme === 'dark' ? Colors.amber800 : Colors.amber200,
-    },
-    createCard: {
-        backgroundColor: colorScheme === 'dark' ? Colors.primary900 : Colors.primary50,
-    },
-    actionContent: {
-        alignItems: 'center',
-        gap: 4,
-    },
-    titleContainer: {
-        flexDirection: 'column',
-        alignItems: 'center',
-        gap: 2,
-    },
-    createTitle: {
-        textAlign: 'center',
-        color: colorScheme === 'dark' ? Colors.primary300 : Colors.primary600,
-    },
-    lastMinuteTitle: {
-        textAlign: 'center',
-        color: colorScheme === 'dark' ? Colors.amber300 : Colors.amber600,
-    },
-    createDescription: {
-        fontSize: 12,
-        color: colorScheme === 'dark' ? Colors.primary200 : Colors.primary700,
-        lineHeight: 16,
-        textAlign: 'center',
-        marginBottom: 1,
-    },
-    lastMinuteDescription: {
-        fontSize: 12,
-        color: colorScheme === 'dark' ? Colors.amber200 : Colors.amber700,
-        lineHeight: 16,
-        textAlign: 'center',
-        marginBottom: 1,
-    },
-    actionArrow: {
-        opacity: 0.6,
-    },
-    infoSection: {
-        marginTop: 10,
-    },
-    infoGrid: {
-        flexDirection: 'row',
-        gap: 8,
-        marginTop: 10,
-    },
-    infoCard: {
-        flex: 1,
-        paddingVertical: 12,
-        paddingHorizontal: 8,
-        borderRadius: 8,
-        alignItems: 'center',
-        gap: 4,
-    },
-    infoCardLabel: {
-        fontSize: 11,
-        textAlign: 'center',
-        color: colorScheme === 'dark' ? Colors.coolGray100 : Colors.coolGray800,
-    },
-});
+const createStyles = (colorScheme: string) => {
+    const dark = colorScheme === 'dark';
+    return StyleSheet.create({
+        container: {
+            paddingHorizontal: PAGE_PADDING,
+            paddingTop: 8,
+            paddingBottom: PAGE_PADDING,
+            flex: 1,
+        },
+        infoRows: {
+            marginHorizontal: -PAGE_PADDING,
+            borderTopWidth: 1,
+            borderTopColor: DIVIDER_COLOR,
+        },
+        infoRow: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            minHeight: 56,
+            paddingVertical: 12,
+            paddingHorizontal: 16,
+            borderBottomWidth: 1,
+            borderBottomColor: DIVIDER_COLOR,
+        },
+        placeRow: {
+            paddingRight: 8,
+        },
+        rowIcon: {
+            width: 22,
+            marginRight: 14,
+        },
+        rowText: {
+            flex: 1,
+        },
+        rowLine1: {
+            ...typeScale.body,
+            color: dark ? Colors.coolGray100 : '#11181C',
+        },
+        rowLine2: {
+            ...typeScale.meta,
+            color: dark ? Colors.coolGray400 : '#4B5563',
+        },
+        directions: {
+            width: 44,
+            height: 44,
+            alignItems: 'center',
+            justifyContent: 'center',
+        },
+        h2: typeScale.h2,
+        eventsSection: {
+            marginTop: 24,
+        },
+        sectionHeader: {
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: 12,
+        },
+        seeAllButton: {
+            minHeight: 44,
+            justifyContent: 'center',
+        },
+        seeAllText: {
+            ...typeScale.link,
+            color: dark ? Colors.primary300 : EVENT_HEADER_BG,
+        },
+        emptyText: {
+            ...typeScale.meta,
+            color: dark ? Colors.coolGray400 : '#4B5563',
+        },
+        primaryButton: {
+            height: BUTTON_HEIGHT,
+            borderRadius: 10,
+            backgroundColor: EVENT_HEADER_BG,
+            alignItems: 'center',
+            justifyContent: 'center',
+            marginTop: 16,
+        },
+        primaryButtonDisabled: {
+            opacity: 0.6,
+        },
+        primaryButtonText: {
+            ...typeScale.button,
+            color: '#FFFFFF',
+        },
+        lockedContainer: {
+            alignItems: 'center',
+            marginTop: 16,
+            paddingVertical: 32,
+            paddingHorizontal: 16,
+            borderRadius: 8,
+            backgroundColor: dark ? Colors.coolGray800 : '#F3F4F6',
+        },
+        lockedIcon: {
+            marginBottom: 12,
+        },
+        lockedTitle: {
+            ...typeScale.h3,
+            color: dark ? Colors.coolGray200 : '#374151',
+            textAlign: 'center',
+            marginBottom: 8,
+        },
+        lockedText: {
+            ...typeScale.meta,
+            color: dark ? Colors.coolGray400 : '#4B5563',
+            textAlign: 'center',
+        },
+        actionsRow: {
+            flexDirection: 'row',
+            gap: 8,
+            marginTop: 10,
+        },
+        actionCard: {
+            paddingVertical: 10,
+            paddingHorizontal: 12,
+            borderRadius: 8,
+        },
+        equalWidth: {
+            flex: 1,
+        },
+        lastMinuteCard: {
+            backgroundColor: dark ? Colors.amber900 : Colors.amber100,
+            borderWidth: 1,
+            borderColor: dark ? Colors.amber800 : Colors.amber200,
+        },
+        createCard: {
+            backgroundColor: dark ? Colors.primary900 : Colors.primary50,
+        },
+        actionContent: {
+            alignItems: 'center',
+            gap: 4,
+        },
+        titleContainer: {
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: 2,
+        },
+        createTitle: {
+            textAlign: 'center',
+            color: dark ? Colors.primary300 : Colors.primary600,
+        },
+        lastMinuteTitle: {
+            textAlign: 'center',
+            color: dark ? Colors.amber300 : Colors.amber600,
+        },
+        createDescription: {
+            fontSize: 12,
+            color: dark ? Colors.primary200 : Colors.primary700,
+            lineHeight: 16,
+            textAlign: 'center',
+            marginBottom: 1,
+        },
+        lastMinuteDescription: {
+            fontSize: 12,
+            color: dark ? Colors.amber200 : Colors.amber700,
+            lineHeight: 16,
+            textAlign: 'center',
+            marginBottom: 1,
+        },
+        actionArrow: {
+            opacity: 0.6,
+        },
+        infoSection: {
+            marginTop: 12,
+        },
+        infoGrid: {
+            flexDirection: 'row',
+            gap: 8,
+        },
+        infoCard: {
+            flex: 1,
+            paddingVertical: 12,
+            paddingHorizontal: 8,
+            borderRadius: 8,
+            alignItems: 'center',
+            gap: 4,
+        },
+        infoCardLabel: {
+            ...typeScale.label,
+            textAlign: 'center',
+            color: dark ? Colors.coolGray100 : Colors.coolGray800,
+        },
+    });
+};
 
 export default ParentEventDashboard;

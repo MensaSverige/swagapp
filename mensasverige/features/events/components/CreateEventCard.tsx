@@ -23,6 +23,8 @@ import { ExtendedEvent } from '../types/eventUtilTypes';
 import { createExtendedEvent } from '../utils/eventUtils';
 import { Tag } from '../../../api_schema/types';
 import TagPicker from './TagPicker';
+import { useSelectedMainEvent } from '../hooks/useMainEvents';
+import { resolveParentEventForNewEvent } from '../utils/mainEventUtils';
 
 interface CreateEventCardProps {
   onEventCreated?: (event: ExtendedEvent) => void;
@@ -40,6 +42,7 @@ const CreateEventCard: React.FC<CreateEventCardProps> = ({
   existingEvent,
 }) => {
   const { user } = useStore();
+  const { selectedMainEvent } = useSelectedMainEvent();
   const colorScheme = useColorScheme();
   const [selectedTags, setSelectedTags] = useState<Tag[]>(existingEvent?.tags ?? []);
   const eventCardStyles = createEventCardStyles(colorScheme ?? 'light');
@@ -158,7 +161,7 @@ const CreateEventCard: React.FC<CreateEventCardProps> = ({
           locationMarker: null,
           latitude: eventData.latitude,
           longitude: eventData.longitude,
-          parentEvent: null,
+          parentEvent: resolveParentEventForNewEvent(selectedMainEvent),
           admin: user ? [user.userId] : [],
           hosts: [],
           tags: selectedTags,

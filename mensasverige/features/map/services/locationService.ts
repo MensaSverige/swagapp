@@ -2,9 +2,9 @@ import apiClient from '../../common/services/apiClient';
 import UserWithLocation, {calculateOnlineStatus, isUserWithLocation} from '../types/userWithLocation';
 import { GeoLocation, UserLocation } from '../../../api_schema/types';
 
-export const getUserLocations = async (): Promise<UserWithLocation[]> => {
+export const getUserLocations = async (eventId?: string | null): Promise<UserWithLocation[]> => {
   return apiClient
-  .get('/users', { params: { show_location: true } })
+  .get('/users', { params: eventId ? { show_location: true, event_id: eventId } : { show_location: true } })
     .then(
       response => {
         if (response.data) {

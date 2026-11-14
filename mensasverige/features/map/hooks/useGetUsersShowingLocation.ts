@@ -1,14 +1,20 @@
 import {useEffect} from 'react';
 import useStore from '../../common/store/store';
 import {getUserLocations} from '../services/locationService';
+import {useSelectedMainEvent} from '../../events/hooks/useMainEvents';
+import {isMapLockedForEvent} from '../../events/utils/mainEventUtils';
 
 const useGetUsersShowingLocation = () => {
   const user = useStore(state => state.user);
   const getLocationUpdateInterval = useStore(state => state.getLocationUpdateInterval);
   const setUsersShowingLocation = useStore(state => state.setUsersShowingLocation);
+  const {selectedMainEvent, selectedMainEventId} = useSelectedMainEvent();
+  const locked = isMapLockedForEvent(selectedMainEvent);
+  // Fetch participants of the selected event only; none while not registered.
+  const eventId = selectedMainEvent && !locked ? selectedMainEventId : null;
 
   useEffect(() => {
-    if (!user) {
+    if (!user || locked) {
       setUsersShowingLocation([]);
       return;
     }
@@ -19,7 +25,7 @@ const useGetUsersShowingLocation = () => {
 
     const poll = async () => {
       try {
-        const users = await getUserLocations();
+        const users = await getUserLocations(eventId);
         if (active) {
           consecutiveErrors = 0;
           setUsersShowingLocation(users);
@@ -38,7 +44,7 @@ const useGetUsersShowingLocation = () => {
     poll();
 
     return () => { active = false; };
-  }, [user?.userId,  user?.settings?.show_location, setUsersShowingLocation, getLocationUpdateInterval]);
+  }, [user?.userId, user?.settings?.show_location, eventId, locked, setUsersShowingLocation, getLocationUpdateInterval]);
 };
 
 export default useGetUsersShowingLocation;

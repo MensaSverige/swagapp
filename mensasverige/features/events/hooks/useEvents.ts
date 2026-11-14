@@ -13,6 +13,7 @@ import { fetchEvents, attendEvent, unattendEvent, fetchInterestTags } from '../s
 import { getUsersByIds } from '../../account/services/userService';
 import useStore from '../../common/store/store';
 import { EventFilterOptions } from '../store/EventsSlice';
+import { filterVisibleEvents } from '../utils/mainEventUtils';
 
 interface UseEventsOptions {
   enableAutoRefresh?: boolean;
@@ -54,6 +55,15 @@ let globalInterval: ReturnType<typeof setInterval> | null = null;
 let intervalSubscribers = 0;
 let latestRefetch: (() => Promise<void>) | null = null;
 
+/** Refetch the events list from outside the hook (e.g. after registering to a main event). */
+export const refreshEventsList = async (): Promise<void> => {
+  if (latestRefetch) {
+    await latestRefetch();
+  } else {
+    useStore.getState().setEventsInitialized(false);
+  }
+};
+
 const DASHBOARD_MAX = 3;
 const LAST_MINUTE_HOURS = 2;
 
@@ -61,7 +71,8 @@ export const useEvents = (options: UseEventsOptions = {}): UseEventsReturn => {
   const { enableAutoRefresh = true } = options;
 
   const {
-    events,
+    events: rawEvents,
+    mainEvents,
     eventsRefreshing,
     eventsError,
     eventsLastFetched,
@@ -80,6 +91,9 @@ export const useEvents = (options: UseEventsOptions = {}): UseEventsReturn => {
     getEventsRefreshInterval,
     setUsers,
   } = useStore();
+
+  // Children of a main event the user is not registered to are hidden everywhere.
+  const events = useMemo(() => filterVisibleEvents(rawEvents, mainEvents), [rawEvents, mainEvents]);
 
   // ── Derivations (all pure, run only when events / filter change) ──────────
 
@@ -255,7 +269,7 @@ export const useEvents = (options: UseEventsOptions = {}): UseEventsReturn => {
     async (eventId: string): Promise<boolean> => {
       try {
         await unattendEvent(eventId);
-        const existing = events.find(e => e.id === eventId);
+        const existing = rawEvents.find(e => e.id === eventId);
         if (existing) {
           addOrUpdateEvent(createExtendedEvent({ ...existing, attending: false }, user?.userId));
         }
@@ -265,7 +279,7 @@ export const useEvents = (options: UseEventsOptions = {}): UseEventsReturn => {
         throw err;
       }
     },
-    [events, addOrUpdateEvent, user?.userId]
+    [rawEvents, addOrUpdateEvent, user?.userId]
   );
 
   return {

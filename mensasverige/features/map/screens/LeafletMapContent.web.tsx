@@ -18,6 +18,9 @@ import { useColorScheme } from '@/hooks/useColorScheme';
 import UserWithLocation from '../types/userWithLocation';
 import { getFullUrl } from '@/features/common/functions/GetFullUrl';
 import { defaultFilter } from '../store/LocationSlice';
+import MainEventMapBanner from '../components/MainEventMapBanner';
+import { useSelectedMainEvent } from '../../events/hooks/useMainEvents';
+import { getMainEventMapCenter } from '../../events/utils/mainEventUtils';
 
 // Fix leaflet's default icon paths broken by bundlers (browser-only, guarded for SSR)
 if (typeof window !== 'undefined') {
@@ -176,7 +179,11 @@ const LeafletMapContent: React.FC = () => {
   useRequestLocationPermission();
   useGetUsersShowingLocation();
 
-  const initialCenter: [number, number] = [region.latitude, region.longitude];
+  const { selectedMainEvent } = useSelectedMainEvent();
+  const [eventCenter] = useState(() => getMainEventMapCenter(selectedMainEvent, Date.now()));
+  const initialCenter: [number, number] = eventCenter
+    ? [eventCenter.latitude, eventCenter.longitude]
+    : [region.latitude, region.longitude];
   const initialZoom = latDeltaToZoom(region.latitudeDelta ?? 0.002);
 
   const onClose = useCallback(() => {
@@ -227,6 +234,8 @@ const LeafletMapContent: React.FC = () => {
 
   return (
     <ThemedView style={styles.root}>
+      <MainEventMapBanner />
+      <View style={styles.body}>
       {/* Map fills the background */}
       <View style={styles.mapWrapper}>
         <MapContainer
@@ -292,12 +301,16 @@ const LeafletMapContent: React.FC = () => {
       )}
 
       <IncognitoInfo />
+      </View>
     </ThemedView>
   );
 };
 
 const styles = StyleSheet.create({
   root: {
+    flex: 1,
+  },
+  body: {
     flex: 1,
   },
   mapWrapper: {

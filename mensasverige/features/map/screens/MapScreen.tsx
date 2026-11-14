@@ -27,6 +27,9 @@ import { ThemedView } from '@/components/ThemedView';
 import { useBottomTabOverflow } from '@/components/ui/TabBarBackground';
 import { UserListPanel } from '../components/UserListPanel';
 import { defaultFilter } from '../store/LocationSlice';
+import MainEventMapBanner from '../components/MainEventMapBanner';
+import { useSelectedMainEvent } from '../../events/hooks/useMainEvents';
+import { getMainEventMapCenter } from '../../events/utils/mainEventUtils';
 
 const ZOOM_DELTA = 0.005;
 
@@ -61,6 +64,9 @@ const MapScreen: React.FC = () => {
   const colorMode = colorScheme ?? 'light';
   const mapRef = useRef<ReactNativeMapView | null>(null);
   const { region, filteredUsers, selectedUser, setSelectedUser, user, userFilter } = useStore();
+  const { selectedMainEvent } = useSelectedMainEvent();
+  // Centre on the selected main event while it is ongoing (initial region only).
+  const [eventCenter] = useState(() => getMainEventMapCenter(selectedMainEvent, Date.now()));
   const [visibleRegion, setVisibleRegion] = useState(region);
   const [showContactCard, setShowContactCard] = useState(false);
   const [showUserList, setShowUserList] = useState(false);
@@ -203,6 +209,7 @@ const MapScreen: React.FC = () => {
 
   return (
     <ThemedView style={{ flex: 1 }}>
+      <MainEventMapBanner />
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={{ flex: 1}}>
@@ -232,7 +239,13 @@ const MapScreen: React.FC = () => {
                 ref={mapRef}
                 style={{ flex: 1 }}
                 initialRegion={
-                  user?.location
+                  eventCenter
+                    ? {
+                      ...eventCenter,
+                      latitudeDelta: visibleRegion.latitudeDelta,
+                      longitudeDelta: visibleRegion.longitudeDelta,
+                    }
+                  : user?.location
                     ? {
                       latitude: user.location.latitude,
                       longitude: user.location.longitude,

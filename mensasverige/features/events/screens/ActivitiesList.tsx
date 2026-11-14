@@ -7,12 +7,13 @@ import {
     useColorScheme,
     RefreshControl,
     ActivityIndicator,
+    TouchableOpacity,
+    Alert,
 } from 'react-native';
 import useStore from '../../common/store/store';
 import NonMemberInfo from '../../common/components/NonMemberInfo';
 import { ThemedView } from '@/components/ThemedView';
 import { ThemedText } from '@/components/ThemedText';
-import { ThemedButton } from '@/components/ThemedButton';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useEvents } from '../hooks/useEvents';
 import { EventFilter } from '../components/EventFilter';
@@ -24,6 +25,9 @@ import { ExtendedEvent } from '../types/eventUtilTypes';
 import { useBottomTabOverflow } from '@/components/ui/TabBarBackground';
 import EventListItem from '../components/EventListItem';
 import { displayLocaleTimeStringDate } from '../utils/eventUtils';
+import EventHeader from '../components/EventHeader';
+import { setMainEventAttendance, useSelectedMainEvent } from '../hooks/useMainEvents';
+import { BUTTON_HEIGHT, DIVIDER_COLOR, PAGE_PADDING, typeScale } from '../styles/typeScale';
 
 interface ActivitiesListProps {
     initialFilter?: EventFilterOptions;
@@ -38,6 +42,9 @@ export const ActivitiesList: React.FC<ActivitiesListProps> = ({ initialFilter })
     const styles = useMemo(() => createStyles(colorScheme ?? 'light'), [colorScheme]);
     const bottom = useBottomTabOverflow();
     const [showFilter, setShowFilter] = useState(false);
+    const [registering, setRegistering] = useState(false);
+    const { selectedMainEvent, selectedMainEventId } = useSelectedMainEvent();
+    const locked = !!selectedMainEvent && !selectedMainEvent.attending;
 
     const params = useLocalSearchParams();
 
@@ -84,12 +91,28 @@ export const ActivitiesList: React.FC<ActivitiesListProps> = ({ initialFilter })
     }, [eventFilter, setCurrentEventFilter]);
 
     const sections = useMemo<EventSection[]>(
-        () => Object.keys(filteredGroupedEvents).map(date => ({
-            title: date,
-            data: filteredGroupedEvents[date],
-        })),
-        [filteredGroupedEvents]
+        () => Object.keys(filteredGroupedEvents)
+            .map(date => ({
+                title: date,
+                data: selectedMainEventId
+                    ? filteredGroupedEvents[date].filter(e => e.parentEvent === selectedMainEventId)
+                    : filteredGroupedEvents[date],
+            }))
+            .filter(section => section.data.length > 0),
+        [filteredGroupedEvents, selectedMainEventId]
     );
+
+    const handleRegister = useCallback(async () => {
+        if (!selectedMainEventId || registering) return;
+        setRegistering(true);
+        try {
+            await setMainEventAttendance(selectedMainEventId, true);
+        } catch {
+            Alert.alert('Något gick fel', 'Det gick inte att anmäla dig. Försök igen.');
+        } finally {
+            setRegistering(false);
+        }
+    }, [selectedMainEventId, registering]);
 
     const isFilterActive = useMemo(() =>
         eventFilter.attendingOrHost !== null ||
@@ -124,7 +147,7 @@ export const ActivitiesList: React.FC<ActivitiesListProps> = ({ initialFilter })
 
     const renderSectionHeader = useCallback(({ section }: { section: EventSection }) => (
         <View>
-            <ThemedText style={styles.dateHeaderAligned} type="defaultSemiBold">
+            <ThemedText style={styles.dateHeaderAligned}>
                 {displayLocaleTimeStringDate(section.title)}
             </ThemedText>
             <View style={styles.divider} />
@@ -151,53 +174,93 @@ export const ActivitiesList: React.FC<ActivitiesListProps> = ({ initialFilter })
         </View>
     ) : null, [loading, refreshing, isFilterActive, styles, colorScheme]);
 
+    const filterButton = (
+        <FilterButton
+            onPress={() => setShowFilter(true)}
+            isActive={isFilterActive}
+            icon="filter-list"
+        />
+    );
+
     return (
         <ThemedView style={{ flex: 1 }}>
-            <View style={styles.header}>
-                <ThemedText type="title">Aktiviteter</ThemedText>
-                <View style={styles.headerActions}>
-                    {filteredCount !== filteredTotalCount && (
-                        <Text style={styles.filterCount}>
-                            {filteredCount} / {filteredTotalCount}
-                        </Text>
-                    )}
-                    <FilterButton
-                        onPress={() => setShowFilter(true)}
-                        isActive={isFilterActive}
-                        icon="filter-list"
-                    />
+            <EventHeader />
+            {selectedMainEvent ? (
+                <View style={styles.eventTitleRow}>
+                    <ThemedText style={styles.h1}>Aktiviteter</ThemedText>
+                    {!locked && filterButton}
                 </View>
-            </View>
+            ) : (
+                <View style={styles.header}>
+                    <ThemedText type="title">Aktiviteter</ThemedText>
+                    <View style={styles.headerActions}>
+                        {filteredCount !== filteredTotalCount && (
+                            <Text style={styles.filterCount}>
+                                {filteredCount} / {filteredTotalCount}
+                            </Text>
+                        )}
+                        {filterButton}
+                    </View>
+                </View>
+            )}
 
-            <SectionList
-                sections={sections}
-                keyExtractor={(item) => item.id}
-                renderItem={renderItem}
-                renderSectionHeader={renderSectionHeader}
-                refreshControl={
-                    <RefreshControl
-                        refreshing={refreshing}
-                        onRefresh={handleRefresh}
-                        tintColor={colorScheme === 'dark' ? Colors.primary400 : Colors.primary600}
+            {locked ? (
+                <View style={styles.lockedWrapper}>
+                    <View style={styles.lockedContainer}>
+                        <MaterialIcons name="lock" size={40} color="#9CA3AF" style={styles.lockedIcon} />
+                        <ThemedText style={styles.lockedTitle}>Aktiviteterna visas när du är anmäld</ThemedText>
+                        <ThemedText style={styles.lockedText}>
+                            Då ser du programmet, kan boka aktiviteter och se vilka som kommer, även på kartan.
+                        </ThemedText>
+                    </View>
+                    <TouchableOpacity
+                        style={[styles.registerButton, registering && styles.registerButtonDisabled]}
+                        onPress={handleRegister}
+                        disabled={registering}
+                        activeOpacity={0.8}
+                        accessibilityRole="button"
+                    >
+                        <Text style={styles.createButtonText}>{registering ? 'Anmäler...' : 'Anmäl mig!'}</Text>
+                    </TouchableOpacity>
+                </View>
+            ) : (
+                <>
+                    <SectionList
+                        sections={sections}
+                        keyExtractor={(item) => item.id}
+                        renderItem={renderItem}
+                        renderSectionHeader={renderSectionHeader}
+                        refreshControl={
+                            <RefreshControl
+                                refreshing={refreshing}
+                                onRefresh={handleRefresh}
+                                tintColor={colorScheme === 'dark' ? Colors.primary400 : Colors.primary600}
+                            />
+                        }
+                        ListHeaderComponent={listHeader}
+                        ListEmptyComponent={listEmpty}
+                        contentContainerStyle={{ paddingBottom: 80 + bottom }}
+                        stickySectionHeadersEnabled={false}
+                        initialNumToRender={12}
+                        maxToRenderPerBatch={10}
+                        windowSize={10}
+                        removeClippedSubviews={true}
                     />
-                }
-                ListHeaderComponent={listHeader}
-                ListEmptyComponent={listEmpty}
-                contentContainerStyle={{ paddingBottom: 80 + bottom }}
-                stickySectionHeadersEnabled={false}
-                initialNumToRender={12}
-                maxToRenderPerBatch={10}
-                windowSize={10}
-                removeClippedSubviews={true}
-            />
 
-            <View style={{...styles.createButtonContainer, paddingBottom: styles.createButtonContainer.paddingBottom + bottom}}>
-                <ThemedButton
-                    text="✨ Skapa din aktivitet"
-                    variant="primary"
-                    onPress={() => router.push({ pathname: '/(tabs)/(events)/event-form' })}
-                />
-            </View>
+                    <View style={{...styles.createButtonContainer, paddingBottom: styles.createButtonContainer.paddingBottom + bottom}}>
+                        <TouchableOpacity
+                            style={styles.createButton}
+                            onPress={() => router.push({ pathname: '/(tabs)/(events)/event-form' })}
+                            activeOpacity={0.8}
+                            accessibilityRole="button"
+                            accessibilityLabel="Skapa aktivitet"
+                        >
+                            <MaterialIcons name="add" size={24} color="#FFFFFF" />
+                            <Text style={styles.createButtonText}>Skapa aktivitet</Text>
+                        </TouchableOpacity>
+                    </View>
+                </>
+            )}
 
             {user && !user.isMember && (
                 <NonMemberInfo />
@@ -232,13 +295,26 @@ const createStyles = (colorScheme: string) => StyleSheet.create({
         color: colorScheme === 'dark' ? Colors.coolGray400 : Colors.coolGray500,
         fontWeight: '500',
     },
+    eventTitleRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        minHeight: 50,
+        paddingLeft: PAGE_PADDING,
+        paddingRight: 7,
+        marginTop: 8,
+    },
+    h1: {
+        ...typeScale.h1,
+    },
     dateHeaderAligned: {
-        paddingHorizontal: 20,
+        ...typeScale.h3,
+        paddingHorizontal: PAGE_PADDING,
         marginBottom: 8,
     },
     divider: {
         height: 1,
-        backgroundColor: colorScheme === 'dark' ? Colors.coolGray700 : Colors.coolGray200,
+        backgroundColor: colorScheme === 'dark' ? Colors.coolGray700 : DIVIDER_COLOR,
         marginBottom: 8,
     },
     noEventsContainer: {
@@ -266,6 +342,55 @@ const createStyles = (colorScheme: string) => StyleSheet.create({
     },
     initialLoader: {
         marginTop: 60,
+    },
+    createButton: {
+        height: BUTTON_HEIGHT,
+        borderRadius: 10,
+        backgroundColor: '#005DB4',
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 8,
+    },
+    createButtonText: {
+        ...typeScale.button,
+        color: '#FFFFFF',
+    },
+    registerButton: {
+        height: BUTTON_HEIGHT,
+        borderRadius: 10,
+        backgroundColor: '#005DB4',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginTop: 16,
+    },
+    registerButtonDisabled: {
+        opacity: 0.6,
+    },
+    lockedWrapper: {
+        paddingHorizontal: PAGE_PADDING,
+    },
+    lockedContainer: {
+        alignItems: 'center',
+        marginTop: 16,
+        paddingVertical: 32,
+        paddingHorizontal: 16,
+        borderRadius: 8,
+        backgroundColor: colorScheme === 'dark' ? Colors.coolGray800 : '#F3F4F6',
+    },
+    lockedIcon: {
+        marginBottom: 12,
+    },
+    lockedTitle: {
+        ...typeScale.h3,
+        color: colorScheme === 'dark' ? Colors.coolGray200 : '#374151',
+        textAlign: 'center',
+        marginBottom: 8,
+    },
+    lockedText: {
+        ...typeScale.meta,
+        color: colorScheme === 'dark' ? Colors.coolGray400 : '#4B5563',
+        textAlign: 'center',
     },
     createButtonContainer: {
         paddingHorizontal: 20,

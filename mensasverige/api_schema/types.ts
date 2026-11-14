@@ -9,7 +9,17 @@ npx openapi-typescript http://{{api-url}}/openapi.json -o ./api_schema/schema.d.
 export type AuthRequest = components['schemas']['AuthRequest'];
 export type AuthResponse = components['schemas']['AuthResponse'];
 export type Event = components['schemas']['Event'];
-export type ExtendedUserEvent = components['schemas']['ExtendedUserEvent'];
+// Legacy: the backend no longer has a separate UserEvent schema; user events are Event.
+export type ExtendedUserEvent = Event & {
+  userId?: number;
+  location?: {
+    description?: string | null;
+    address?: string | null;
+    marker?: string | null;
+    latitude?: number | null;
+    longitude?: number | null;
+  } | null;
+};
 export type ExternalEventDetails = components["schemas"]["ExternalEventDetails"];
 export type ExternalRoot = components["schemas"]["ExternalRoot"];
 export type GeoLocation = components["schemas"]["GeoLocation"];
@@ -17,8 +27,6 @@ export type HTTPValidationError = components["schemas"]["HTTPValidationError"];
 export type News = components["schemas"]["EventSiteNews"];
 export type PrivacySetting = components["schemas"]["PrivacySetting"];
 export type User = components['schemas']['User'];
-export type UserEvent = components['schemas']['UserEvent'];
-export type UserEventLocation = components['schemas']['UserEvent']['location'];
 export type UserLocation = components["schemas"]["UserLocation"];
 export type UserSettings = components["schemas"]["UserSettings"];
 export type UserUpdate = components["schemas"]["UserUpdate"];
