@@ -11,10 +11,21 @@ export const fetchExternalRoot = async (): Promise<ExternalRoot> => {
     });
 };
 
+export const fetchMainEvents = async (): Promise<Event[]> => {
+  return apiClient
+    .get('/events/main')
+    .then(response => response.data ?? [])
+    .catch(error => {
+      console.error('Error fetching main events:', error);
+      throw error;
+    });
+};
+
 export const fetchEvents = async (params?: {
   attending?: boolean;
   bookable?: boolean;
   official?: boolean;
+  parent?: string;
 }): Promise<Event[]> => {
   return apiClient
     .get('/events', { params })

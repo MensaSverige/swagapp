@@ -175,6 +175,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/tags": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Interest Tags */
+        get: operations["get_interest_tags_v1_tags_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/profile-options": {
         parameters: {
             query?: never;
@@ -261,6 +278,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/events/main": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Main Events */
+        get: operations["get_main_events_v1_events_main_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/events/{event_id}": {
         parameters: {
             query?: never;
@@ -341,7 +375,7 @@ export interface paths {
         put?: never;
         /**
          * Attend Event
-         * @description Attend an event. Works for both user events (usr prefix) and external events (ext prefix).
+         * @description Attend an event. Works for user (usr), external (ext) and main events (cal, root).
          */
         post: operations["attend_event_v1_events__event_id__attend_post"];
         delete?: never;
@@ -377,8 +411,8 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get Events */
-        get: operations["get_events_v1_user_events_get"];
+        /** Outdated App Notice */
+        get: operations["outdated_app_notice_v1_user_events_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -483,14 +517,6 @@ export interface components {
             /** Url */
             url: string;
         };
-        /** Attendee */
-        Attendee: {
-            /**
-             * Userid
-             * @example 123
-             */
-            userId: number;
-        };
         /** AuthRequest */
         AuthRequest: {
             /** Username */
@@ -568,9 +594,19 @@ export interface components {
         Event: {
             /**
              * Id
-             * @description Globally unique event id, prefixed with source (ext / usr)
+             * @description Globally unique event id, prefixed with source (ext / usr / cal / root)
              */
             id: string;
+            /**
+             * Sourceid
+             * @description Original ID from the source system
+             */
+            sourceId?: string | null;
+            /**
+             * @description Source type of the event
+             * @default user
+             */
+            source: components["schemas"]["EventSource"];
             /**
              * Parentevent
              * @description Optional parent event id
@@ -677,114 +713,12 @@ export interface components {
             /** By */
             by: string;
         };
-        /** ExtendedUserEvent */
-        ExtendedUserEvent: {
-            /**
-             * Id
-             * @example 507f191e810c19729de860ea
-             */
-            id?: string | null;
-            /**
-             * Userid
-             * @example 123
-             */
-            userId: number;
-            /**
-             * Hosts
-             * @default []
-             * @example [
-             *       {
-             *         "userId": 123
-             *       }
-             *     ]
-             */
-            hosts: components["schemas"]["Host"][] | null;
-            /**
-             * Suggested Hosts
-             * @default []
-             * @example [
-             *       {
-             *         "userId": 123
-             *       }
-             *     ]
-             */
-            suggested_hosts: components["schemas"]["Host"][];
-            /**
-             * Name
-             * @example Event Name
-             */
-            name: string;
-            /**
-             * @example {
-             *       "latitude": 37.7749,
-             *       "longitude": -122.4194
-             *     }
-             */
-            location?: components["schemas"]["Location"] | null;
-            /**
-             * Start
-             * Format: date-time
-             * @example 2021-01-01T00:00:00
-             */
-            start: string;
-            /**
-             * End
-             * @example 2021-01-01T00:00:00
-             */
-            end?: string | null;
-            /**
-             * Description
-             * @example Event Description
-             */
-            description?: string | null;
-            /**
-             * Reports
-             * @default []
-             * @example [
-             *       {
-             *         "text": "Report Text",
-             *         "user": "John Doe"
-             *       }
-             *     ]
-             */
-            reports: components["schemas"]["Report"][];
-            /**
-             * Attendees
-             * @default []
-             * @example [
-             *       {
-             *         "userId": 123
-             *       }
-             *     ]
-             */
-            attendees: components["schemas"]["Attendee"][];
-            /**
-             * Maxattendees
-             * @example 10
-             */
-            maxAttendees?: number | null;
-            /**
-             * Ownername
-             * @example John Doe
-             */
-            ownerName: string;
-            /**
-             * Hostnames
-             * @default []
-             * @example [
-             *       "John Doe"
-             *     ]
-             */
-            hostNames: string[];
-            /**
-             * Attendeenames
-             * @default []
-             * @example [
-             *       "John Doe"
-             *     ]
-             */
-            attendeeNames: string[];
-        };
+        /**
+         * EventSource
+         * @description Source type for events
+         * @enum {string}
+         */
+        EventSource: "external" | "user" | "calendar" | "external_root";
         /** ExternalEventDetails */
         ExternalEventDetails: {
             /** Eventid */
@@ -937,48 +871,12 @@ export interface components {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
         };
-        /** Host */
-        Host: {
-            /**
-             * Userid
-             * @example 123
-             */
-            userId: number;
-        };
         /** InterestCategory */
         InterestCategory: {
             /** Category */
             category: string;
             /** Items */
             items: components["schemas"]["UserInterest"][];
-        };
-        /** Location */
-        Location: {
-            /**
-             * Description
-             * @example Location Description
-             */
-            description?: string | null;
-            /**
-             * Address
-             * @example 1234 Main St, San Francisco, CA 94123
-             */
-            address?: string | null;
-            /**
-             * Marker
-             * @example 🕑
-             */
-            marker?: string | null;
-            /**
-             * Latitude
-             * @example 37.7749
-             */
-            latitude?: number | null;
-            /**
-             * Longitude
-             * @example -122.4194
-             */
-            longitude?: number | null;
         };
         /**
          * PrivacySetting
@@ -1008,20 +906,7 @@ export interface components {
         /** RefreshTokenRequest */
         RefreshTokenRequest: {
             /** Refresh Token */
-            refresh_token: string;
-        };
-        /** Report */
-        Report: {
-            /**
-             * Userid
-             * @example 123
-             */
-            userId: number;
-            /**
-             * Text
-             * @example Report Text
-             */
-            text: string;
+            refresh_token?: string | null;
         };
         /**
          * ShowAttendees
@@ -1154,7 +1039,7 @@ export interface components {
             /** Timestamp */
             timestamp: string | null;
             /** Accuracy */
-            accuracy: number;
+            accuracy?: number | null;
         };
         /** UserSettings */
         UserSettings: {
@@ -1476,6 +1361,7 @@ export interface operations {
         parameters: {
             query?: {
                 show_location?: boolean;
+                event_id?: string | null;
             };
             header?: never;
             path?: never;
@@ -1673,6 +1559,26 @@ export interface operations {
             };
         };
     };
+    get_interest_tags_v1_tags_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Tag"][];
+                };
+            };
+        };
+    };
     get_profile_option_categories_v1_profile_options_get: {
         parameters: {
             query?: never;
@@ -1759,6 +1665,8 @@ export interface operations {
                 attending?: boolean | null;
                 bookable?: boolean | null;
                 official?: boolean | null;
+                /** @description Only children of this main event id */
+                parent?: string | null;
             };
             header?: never;
             path?: never;
@@ -1815,6 +1723,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_main_events_v1_events_main_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Event"][];
                 };
             };
         };
@@ -2007,7 +1935,7 @@ export interface operations {
             };
         };
     };
-    get_events_v1_user_events_get: {
+    outdated_app_notice_v1_user_events_get: {
         parameters: {
             query?: never;
             header?: never;
@@ -2022,7 +1950,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ExtendedUserEvent"][];
+                    "application/json": unknown;
                 };
             };
         };

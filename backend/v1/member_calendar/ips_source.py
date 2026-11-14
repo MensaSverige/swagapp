@@ -1,0 +1,229 @@
+"""Reads the member site calendar straight out of its MySQL database.
+
+medlem.mensa.se runs IPS Community Suite, which keeps its calendar in a
+`calendar_events` table. We reach it over an SSH tunnel and query it
+directly rather than subscribing to the site's iCalendar feed, because the
+table carries location, booking and category data the feed does not expose.
+
+IPS is an implementation detail of this file. Everything downstream works in
+terms of `MemberCalendarEvent`.
+"""
+from __future__ import annotations
+
+import json
+import logging
+import os
+import re
+from datetime import datetime, timezone
+from typing import List, Optional
+
+import pymysql
+from sshtunnel import SSHTunnelForwarder
+
+from v1.member_calendar.calendar_model import MemberCalendarEvent
+from v1.env_constants import (
+    IPS_SSH_HOST,
+    IPS_SSH_PORT,
+    IPS_SSH_USER,
+    IPS_SSH_PASSWORD,
+    IPS_SSH_KEY_PATH,
+    IPS_DB_HOST,
+    IPS_DB_NAME,
+    IPS_DB_USER,
+    IPS_DB_PASS,
+)
+
+
+logger = logging.getLogger(__name__)
+
+EVENTS_QUERY = """
+    SELECT
+        e.event_id,
+        e.event_title,
+        e.event_content,
+        e.event_location,
+        e.event_start_date,
+        e.event_end_date,
+        e.event_saved,
+        e.event_lastupdated,
+        e.event_calendar_id,
+        c.cal_title_seo
+    FROM calendar_events e
+    LEFT JOIN calendar_calendars c ON c.cal_id = e.event_calendar_id
+    WHERE e.event_approved = 1
+    ORDER BY e.event_start_date DESC
+"""
+
+EVENT_URL = "https://medlem.mensa.se/calendar/event/{event_id}/"
+
+
+def _ssh_tunnel() -> SSHTunnelForwarder:
+    """Open an SSH tunnel to the member site."""
+    kwargs = {
+        "ssh_address_or_host": (IPS_SSH_HOST, int(IPS_SSH_PORT or 22)),
+        "ssh_username": IPS_SSH_USER,
+        "remote_bind_address": (IPS_DB_HOST or "127.0.0.1", 3306),
+    }
+    if IPS_SSH_KEY_PATH:
+        kwargs["ssh_pkey"] = IPS_SSH_KEY_PATH
+    elif IPS_SSH_PASSWORD:
+        kwargs["ssh_password"] = IPS_SSH_PASSWORD
+    return SSHTunnelForwarder(**kwargs)
+
+
+def _strip_html(html: str) -> str:
+    """Reduce the stored HTML body to plain text."""
+    text = re.sub(r"<[^>]+>", "", html)
+    text = re.sub(r"&nbsp;", " ", text)
+    text = re.sub(r"&amp;", "&", text)
+    text = re.sub(r"&lt;", "<", text)
+    text = re.sub(r"&gt;", ">", text)
+    return re.sub(r"\s+", " ", text).strip()
+
+
+def _unix_to_utc(value) -> Optional[datetime]:
+    """Unix seconds (IPS stores UTC) to an aware datetime; 0/None/junk -> None."""
+    try:
+        seconds = int(value)
+    except (TypeError, ValueError):
+        return None
+    if seconds <= 0:
+        return None
+    return datetime.fromtimestamp(seconds, tz=timezone.utc)
+
+
+def _parse_location(raw) -> dict:
+    """`event_location` is a JSON string or NULL; anything else means no location."""
+    if not raw or not isinstance(raw, str):
+        return {}
+    try:
+        data = json.loads(raw)
+    except ValueError:
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+def _coord(value) -> Optional[float]:
+    """null, "" and 0 all mean "no coordinate"."""
+    if value in (None, ""):
+        return None
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return None
+    return number or None
+
+
+def _text(value) -> Optional[str]:
+    if value is None:
+        return None
+    value = str(value).strip()
+    return value or None
+
+
+def clean_region(slug: Optional[str]) -> Optional[str]:
+    """`lma-orebro-intern` -> `orebro`: drop the lf-/lma- prefix and -intern/-offentlig suffix."""
+    if not slug:
+        return None
+    region = slug.strip().lower()
+    for prefix in ("lf-", "lma-"):
+        if region.startswith(prefix):
+            region = region[len(prefix):]
+            break
+    for suffix in ("-intern", "-offentlig"):
+        if region.endswith(suffix):
+            region = region[: -len(suffix)]
+            break
+    return region or None
+
+
+def row_to_event(row: dict) -> Optional[MemberCalendarEvent]:
+    """Turn one joined `calendar_events` row into a MemberCalendarEvent.
+
+    Returns None for a row we cannot place on a calendar; an event with no
+    start date has nothing to show against.
+    """
+    if not row.get("event_start_date"):
+        logger.warning("Skipping calendar event %s without a start date", row.get("event_id"))
+        return None
+
+    content = row.get("event_content")
+    loc = _parse_location(row.get("event_location"))
+    lines = loc.get("addressLines")
+    if isinstance(lines, str):
+        lines = [lines]
+    address = ", ".join(str(l).strip() for l in (lines or []) if l and str(l).strip()) or None
+    city = _text(loc.get("city"))
+    slug = _text(row.get("cal_title_seo"))
+
+    return MemberCalendarEvent(
+        source_id=str(row["event_id"]),
+        title=row.get("event_title") or "Untitled Event",
+        description=_strip_html(content) if content else None,
+        location=city or address,
+        address=address,
+        city=city,
+        postal_code=_text(loc.get("postalCode")),
+        country=_text(loc.get("country")),
+        latitude=_coord(loc.get("lat")),
+        longitude=_coord(loc.get("long")),
+        region=clean_region(slug),
+        region_slug=slug,
+        region_id=row.get("event_calendar_id"),
+        start=row["event_start_date"],
+        end=row.get("event_end_date"),
+        created=_unix_to_utc(row.get("event_saved")),
+        last_modified=_unix_to_utc(row.get("event_lastupdated")),
+        # IPS stores the creator as a member id, which we cannot resolve to a
+        # name from here. Left unset until the sync learns to look it up.
+        organizer=None,
+        url=EVENT_URL.format(event_id=row["event_id"]),
+    )
+
+
+def fetch_member_calendar_events() -> List[MemberCalendarEvent]:
+    """Fetch every approved calendar event from the member site.
+
+    Returns an empty list on any connection failure: a calendar we cannot
+    reach should leave the last successful sync in place, not break the
+    scheduler.
+    """
+    if not all([IPS_SSH_HOST, IPS_SSH_USER, IPS_DB_NAME, IPS_DB_USER, IPS_DB_PASS]):
+        logger.warning("Member calendar database not fully configured, skipping sync")
+        return []
+
+    if IPS_SSH_KEY_PATH and not (
+        os.path.isfile(IPS_SSH_KEY_PATH) and os.path.getsize(IPS_SSH_KEY_PATH) > 0
+    ):
+        logger.warning("IPS SSH key file missing or empty, skipping member calendar sync")
+        return []
+
+    events: List[MemberCalendarEvent] = []
+    tunnel = _ssh_tunnel()
+    try:
+        tunnel.start()
+        logger.info("SSH tunnel established on local port %s", tunnel.local_bind_port)
+
+        conn = pymysql.connect(
+            host="127.0.0.1",
+            port=tunnel.local_bind_port,
+            user=IPS_DB_USER,
+            password=IPS_DB_PASS,
+            database=IPS_DB_NAME,
+            charset="utf8mb4",
+            cursorclass=pymysql.cursors.DictCursor,
+        )
+        try:
+            with conn.cursor() as cursor:
+                cursor.execute(EVENTS_QUERY)
+                rows = cursor.fetchall()
+                logger.info("Fetched %d rows from calendar_events", len(rows))
+                events = [e for e in (row_to_event(r) for r in rows) if e is not None]
+        finally:
+            conn.close()
+    except Exception as e:
+        logger.error("Failed to fetch member calendar events: %s", e, exc_info=True)
+    finally:
+        tunnel.stop()
+
+    return events

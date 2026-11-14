@@ -1,11 +1,12 @@
 import logging
 import shutil
 import os
-from typing import List
+from typing import List, Optional
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from v1.utilities import convert_to_tz_aware, get_current_time
 from v1.db.models.user import User, UserLocation, UserUpdate, PrivacySetting, viewer_can_see, effective_setting
 from v1.request_filter import validate_request
+from v1.events import main_events
 from v1.db.users import get_user, get_users_showing_location, update_user
 
 users_v1 = APIRouter(prefix="/v1")
@@ -44,6 +45,7 @@ def _apply_privacy_filter(user: dict, viewer: dict) -> dict:
 
 @users_v1.get("/users", response_model=List[User])
 async def get_users(show_location: bool = None,
+                    event_id: Optional[str] = None,
                     current_user: dict = Depends(validate_request)):
     if not show_location:
         raise HTTPException(
@@ -51,6 +53,13 @@ async def get_users(show_location: bool = None,
             detail="show_location parameter must be set to True to retrieve users."
         )
     users_list = get_users_showing_location()
+    if event_id is not None:
+        if not main_events.get_main_event(event_id):
+            raise HTTPException(status_code=404, detail="Event not found")
+        registered = main_events.get_registered_user_ids(event_id)
+        if current_user.get("userId") not in registered:
+            raise HTTPException(status_code=403, detail="Not registered to the main event")
+        users_list = [u for u in users_list if u.get("userId") in registered]
     result = []
     for user in users_list:
         _apply_privacy_filter(user, current_user)

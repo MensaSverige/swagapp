@@ -9,6 +9,7 @@ from v1.external.event_api import (
 )
 from v1.db.external_bookings import upsert_user_bookings
 from v1.db.database import get_session
+from v1.events.main_events import store_root_main_event
 from v1.db.tables import TokenStorageTable
 import logging
 
@@ -17,6 +18,8 @@ def refresh_external_events():
     if not root or not root.restUrl or root.restUrl == "" or not root.dates:
         logging.error("Failed to fetch external root or missing data.")
         return
+
+    store_root_main_event(root)
 
     all_external_events = []
     for date in root.dates:

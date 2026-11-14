@@ -14,6 +14,8 @@ alembic # Database migrations
 faker # Fake data generator
 googlemaps # Google Maps API
 apscheduler # Scheduling periodic tasks
+pymysql # MySQL driver for IPS calendar sync
+sshtunnel>=0.5.1 # SSH tunnel for remote DB access. 0.4.0 uses paramiko.DSSKey, which paramiko 4.0 removed
 
 # Documentation
 sphinx

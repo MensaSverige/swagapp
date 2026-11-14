@@ -1,6 +1,6 @@
 import { StateCreator } from 'zustand';
 import { ExtendedEvent } from '../types/eventUtilTypes';
-import { ExternalRoot, Tag } from '../../../api_schema/types';
+import { Event, ExternalRoot, Tag } from '../../../api_schema/types';
 import { INTEREST_TAGS } from '../utils/interestTags';
 
 export interface EventFilterOptions {
@@ -28,6 +28,14 @@ export interface EventsSlice {
   eventInfo: ExternalRoot | null;
   eventInfoLoading: boolean;
 
+  // Main events (riksträffar and local calendar events) and focus mode
+  mainEvents: Event[];
+  mainEventsLoading: boolean;
+  mainEventsInitialized: boolean;
+  selectedMainEventId: string | null;
+  // Set when the user leaves a main event; stops auto-select for the session.
+  autoSelectDismissed: boolean;
+
   // Active filter (source of truth — derivations live in useEvents useMemo)
   currentEventFilter: EventFilterOptions;
 
@@ -40,6 +48,15 @@ export interface EventsSlice {
 
   setEventInfo: (v: ExternalRoot | null) => void;
   setEventInfoLoading: (v: boolean) => void;
+
+  setMainEvents: (events: Event[]) => void;
+  setMainEventsLoading: (v: boolean) => void;
+  setMainEventsInitialized: (v: boolean) => void;
+  selectMainEvent: (id: string) => void;
+  /** Header back arrow: clear the selection and dismiss auto-select for the session. */
+  leaveMainEvent: () => void;
+  /** Auto-select (does not touch the dismissed flag). */
+  autoSelectMainEvent: (id: string) => void;
 
   setCurrentEventFilter: (filter: EventFilterOptions) => void;
   resetFilters: () => void;
@@ -67,6 +84,12 @@ export const createEventsSlice: StateCreator<EventsSlice> = (set, get) => ({
   eventInfo: null,
   eventInfoLoading: false,
 
+  mainEvents: [],
+  mainEventsLoading: false,
+  mainEventsInitialized: false,
+  selectedMainEventId: null,
+  autoSelectDismissed: false,
+
   currentEventFilter: defaultEventFilter,
 
   setEvents: (events) => set({ events }),
@@ -78,6 +101,13 @@ export const createEventsSlice: StateCreator<EventsSlice> = (set, get) => ({
 
   setEventInfo: (eventInfo) => set({ eventInfo }),
   setEventInfoLoading: (eventInfoLoading) => set({ eventInfoLoading }),
+
+  setMainEvents: (mainEvents) => set({ mainEvents }),
+  setMainEventsLoading: (mainEventsLoading) => set({ mainEventsLoading }),
+  setMainEventsInitialized: (mainEventsInitialized) => set({ mainEventsInitialized }),
+  selectMainEvent: (selectedMainEventId) => set({ selectedMainEventId }),
+  leaveMainEvent: () => set({ selectedMainEventId: null, autoSelectDismissed: true }),
+  autoSelectMainEvent: (selectedMainEventId) => set({ selectedMainEventId }),
 
   setCurrentEventFilter: (currentEventFilter) => set({ currentEventFilter }),
   resetFilters: () => set({ currentEventFilter: defaultEventFilter }),

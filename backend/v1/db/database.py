@@ -101,6 +101,7 @@ def initialize_db(max_retries: int = 5, retry_delay: float = 2.0):
     from v1.db.tables import ExternalRootTable, ExternalRootDateTable  # noqa: F401
     from v1.db.tables import ExternalEventBookingTable  # noqa: F401
     from v1.db.tables import FeedbackVoteTable, FeedbackUserIndexTable  # noqa: F401
+    from v1.db.tables import EventTable  # noqa: F401
 
     for attempt in range(1, max_retries + 1):
         try:
