@@ -6,6 +6,7 @@ export function useEventUsers(
   event: Pick<Event, 'id' | 'admin' | 'attendees' | 'showAttendees' | 'attending'>,
 ) {
   const usersById = useStore((s) => s.usersById);
+  const currentUserId = useStore((s) => s.user?.userId);
 
   const adminUsers = useMemo(
     () =>
@@ -15,9 +16,11 @@ export function useEventUsers(
     [event.admin, usersById]
   );
 
+  // Hosts see who comes, as the backend lets admins.
+  const isHost = currentUserId !== undefined && (event.admin ?? []).includes(currentUserId);
   const canSeeAttendees =
     event.showAttendees === 'all' ||
-    (event.showAttendees === 'toAttending' && event.attending);
+    (event.showAttendees === 'toAttending' && (!!event.attending || isHost));
 
   console.log(
     '[useEventUsers] event', event.id,

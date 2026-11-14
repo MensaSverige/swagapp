@@ -1,19 +1,18 @@
-import React, { useMemo, useState } from 'react';
-import { View, StyleSheet, TouchableOpacity, Alert, useColorScheme } from 'react-native';
+import React, { useMemo } from 'react';
+import { View, StyleSheet, TouchableOpacity, useColorScheme } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { Colors } from '@/constants/Colors';
-import { LocationLinkButton } from '@/features/map/components/LocationLinkIcon';
-import { confirmAsync } from '@/features/common/functions/confirmAsync';
-import useStore from '@/features/common/store/store';
 import { Event } from '../../../api_schema/types';
 import GroupedEventsList from './GroupedEventsList';
-import UserList from './UserList';
-import { useEventUsers } from '../hooks/useEventUsers';
+import EventInfoRows from './eventPage/EventInfoRows';
+import EventRegisterButton from './eventPage/EventRegisterButton';
+import EventDescription from './eventPage/EventDescription';
+import EventPeople from './eventPage/EventPeople';
 import { useEvents } from '../hooks/useEvents';
-import { setMainEventAttendance } from '../hooks/useMainEvents';
+import { useEventAttendance } from '../hooks/useEventAttendance';
 import {
     navigateToBookableEvents,
     navigateToLastMinuteEvents,
@@ -22,16 +21,12 @@ import {
 import { ExtendedEvent } from '../types/eventUtilTypes';
 import { groupEventsByDate } from '../utils/eventUtils';
 import {
-    formatMainEventDateRange,
-    formatRegion,
-    formatRelativeStart,
     getMainEventChildren,
     isLocalEvent,
-    splitAddress,
     selectMyBookings,
     selectToBook,
 } from '../utils/mainEventUtils';
-import { BUTTON_HEIGHT, DIVIDER_COLOR, EVENT_HEADER_BG, PAGE_PADDING, typeScale } from '../styles/typeScale';
+import { EVENT_HEADER_BG, PAGE_PADDING, typeScale } from '../styles/typeScale';
 
 type MaterialIconName = React.ComponentProps<typeof MaterialIcons>['name'];
 
@@ -49,23 +44,22 @@ interface ParentEventDashboardProps {
     mainEvent: Event;
 }
 
-/** Information tab content for the selected main event (below the EventHeader). */
+/**
+ * Information tab content for the selected main event (below the EventHeader).
+ * The same event page as an activity's -- rows, description, host and
+ * participants -- with the riksträff's shortcuts and programme added.
+ */
 const ParentEventDashboard: React.FC<ParentEventDashboardProps> = ({ mainEvent }) => {
     const colorScheme = useColorScheme() ?? 'light';
     const styles = useMemo(() => createStyles(colorScheme), [colorScheme]);
     const { allEvents, loading: eventsLoading, lastMinuteEvents: allLastMinute } = useEvents();
-    const [registering, setRegistering] = useState(false);
+    const { status, busy, register, unregister } = useEventAttendance(mainEvent);
 
     const attending = !!mainEvent.attending;
-    const { adminUsers } = useEventUsers(mainEvent);
-    const hostCount = mainEvent.admin?.length ?? 0;
     const isRoot = mainEvent.source === 'external_root';
-    const place = splitAddress(mainEvent.address, mainEvent.locationDescription);
-    const region = formatRegion(mainEvent);
     // The riksträff's description only repeats its dates; a local event's is
     // the invitation itself (what, where, cost, how to pay).
-    const description = isLocalEvent(mainEvent) ? mainEvent.description?.trim() : null;
-    const relativeLabel = formatRelativeStart(mainEvent, Date.now());
+    const description = isLocalEvent(mainEvent) ? mainEvent.description : null;
 
     const children = useMemo(
         () => getMainEventChildren(allEvents, mainEvent.id),
@@ -83,48 +77,6 @@ const ParentEventDashboard: React.FC<ParentEventDashboardProps> = ({ mainEvent }
     const handleEventPress = (event: ExtendedEvent) => {
         router.push({ pathname: '/events/[id]', params: { id: event.id } });
     };
-
-    const handleRegister = async () => {
-        if (registering) return;
-        setRegistering(true);
-        try {
-            await setMainEventAttendance(mainEvent.id, true);
-        } catch {
-            Alert.alert('Något gick fel', 'Det gick inte att anmäla dig. Försök igen.');
-        } finally {
-            setRegistering(false);
-        }
-    };
-
-    const handleUnregister = async () => {
-        if (registering) return;
-        const confirmed = await confirmAsync(
-            'Avanmäl dig?',
-            `Du avanmäls från ${mainEvent.name}.`,
-            'Avanmäl',
-        );
-        if (!confirmed) return;
-        setRegistering(true);
-        try {
-            await setMainEventAttendance(mainEvent.id, false);
-            // A riksträff booking keeps the registration: it is derived from the
-            // booking site, not stored by the app, so say why nothing changed.
-            const after = useStore.getState().mainEvents.find(e => e.id === mainEvent.id);
-            if (after?.attending) {
-                Alert.alert(
-                    'Du är fortfarande anmäld',
-                    'Du har bokat aktiviteter på evenemanget. Avboka dem först för att avanmäla dig.',
-                );
-            }
-        } catch {
-            Alert.alert('Något gick fel', 'Det gick inte att avanmäla dig. Försök igen.');
-        } finally {
-            setRegistering(false);
-        }
-    };
-
-    const iconGray = colorScheme === 'dark' ? Colors.coolGray400 : '#4B5563';
-    const registeredColor = colorScheme === 'dark' ? Colors.green400 : '#047857';
 
     const navigateToMyBookings = () =>
         navigateToScheduleWithFilter({ attendingOrHost: true, bookable: null, official: null, categories: [] });
@@ -157,110 +109,32 @@ const ParentEventDashboard: React.FC<ParentEventDashboardProps> = ({ mainEvent }
         </View>
     );
 
+    // Bookings and things to book only where there is a programme: a local
+    // event has none until someone adds activities to it.
+    const hasProgramme = isRoot || children.length > 0;
+
     return (
         <ThemedView style={styles.container}>
-            <View style={styles.infoRows}>
-                <View style={styles.infoRow}>
-                    <MaterialIcons name="event" size={22} color={iconGray} style={styles.rowIcon} />
-                    <View style={styles.rowText}>
-                        <ThemedText style={styles.rowLine1}>{formatMainEventDateRange(mainEvent)}</ThemedText>
-                        {!!relativeLabel && <ThemedText style={styles.rowLine2}>{relativeLabel}</ThemedText>}
-                    </View>
-                </View>
-                {!!region && (
-                    <View style={styles.infoRow}>
-                        <MaterialIcons name="groups" size={22} color={iconGray} style={styles.rowIcon} />
-                        <View style={styles.rowText}>
-                            <ThemedText style={styles.rowLine1}>{region}</ThemedText>
-                            {!place && <ThemedText style={styles.rowLine2}>Ingen plats angiven</ThemedText>}
-                        </View>
-                    </View>
-                )}
-                {!!place && (
-                    <View style={[styles.infoRow, styles.placeRow]}>
-                        <MaterialIcons name="place" size={22} color={iconGray} style={styles.rowIcon} />
-                        <View style={styles.rowText}>
-                            <ThemedText style={styles.rowLine1}>{place.line1}</ThemedText>
-                            {!!place.line2 && <ThemedText style={styles.rowLine2}>{place.line2}</ThemedText>}
-                        </View>
-                        {!!mainEvent.address && (
-                            <View style={styles.directions}>
-                                <LocationLinkButton address={mainEvent.address} />
-                            </View>
-                        )}
-                    </View>
-                )}
-                <View style={styles.infoRow}>
-                    <MaterialIcons
-                        name={attending ? 'check-circle' : 'info-outline'}
-                        size={22}
-                        color={attending ? registeredColor : iconGray}
-                        style={styles.rowIcon}
-                    />
-                    <ThemedText style={[styles.rowLine1, styles.rowText, { color: attending ? registeredColor : iconGray }]}>
-                        {attending ? 'Du är anmäld' : 'Du är inte anmäld'}
+            <EventInfoRows event={mainEvent} status={status} busy={busy} onUnregister={unregister} />
+            {status.kind === 'open' && <EventRegisterButton onPress={register} busy={busy} />}
+
+            {isRoot && <View style={styles.infoSection}>{infoTiles}</View>}
+
+            <EventDescription description={description} />
+            <EventPeople event={mainEvent} />
+
+            {!attending && isRoot && (
+                <View style={styles.lockedContainer}>
+                    <MaterialIcons name="lock" size={40} color="#9CA3AF" style={styles.lockedIcon} />
+                    <ThemedText style={styles.lockedTitle}>Aktiviteterna visas när du är anmäld</ThemedText>
+                    <ThemedText style={styles.lockedText}>
+                        Då ser du programmet, kan boka aktiviteter och se vilka som kommer, även på kartan.
                     </ThemedText>
-                    {attending && (
-                        <TouchableOpacity
-                            onPress={handleUnregister}
-                            disabled={registering}
-                            style={styles.rowAction}
-                            accessibilityRole="button"
-                            accessibilityLabel={`Avanmäl dig från ${mainEvent.name}`}
-                        >
-                            <ThemedText style={[styles.seeAllText, registering && styles.rowActionDisabled]}>
-                                {registering ? 'Avanmäler...' : 'Avanmäl'}
-                            </ThemedText>
-                        </TouchableOpacity>
-                    )}
                 </View>
-            </View>
-
-            {!!description && (
-                <ThemedText style={styles.description}>{description}</ThemedText>
             )}
 
-            {/* As on the event page: the profile when the host has an account, else the name. */}
-            {hostCount > 0 && (
-                <UserList
-                    users={adminUsers}
-                    title={hostCount === 1 ? 'Värd' : 'Värdar'}
-                    fallbackData={mainEvent.hosts}
-                    alwaysExpanded
-                    gridAvatarSize="md"
-                />
-            )}
-
-            {!attending && (
+            {attending && hasProgramme && (
                 <>
-                    {isRoot && <View style={styles.infoSection}>{infoTiles}</View>}
-
-                    <TouchableOpacity
-                        style={[styles.primaryButton, registering && styles.primaryButtonDisabled]}
-                        onPress={handleRegister}
-                        disabled={registering}
-                        activeOpacity={0.8}
-                        accessibilityRole="button"
-                    >
-                        <ThemedText style={styles.primaryButtonText}>
-                            {registering ? 'Anmäler...' : 'Anmäl mig!'}
-                        </ThemedText>
-                    </TouchableOpacity>
-
-                    <View style={styles.lockedContainer}>
-                        <MaterialIcons name="lock" size={40} color="#9CA3AF" style={styles.lockedIcon} />
-                        <ThemedText style={styles.lockedTitle}>Aktiviteterna visas när du är anmäld</ThemedText>
-                        <ThemedText style={styles.lockedText}>
-                            Då ser du programmet, kan boka aktiviteter och se vilka som kommer, även på kartan.
-                        </ThemedText>
-                    </View>
-                </>
-            )}
-
-            {attending && (
-                <>
-                    {isRoot && <View style={styles.infoSection}>{infoTiles}</View>}
-
                     <View style={styles.actionsRow}>
                         {lastMinuteEvents.length > 0 && (
                             <TouchableOpacity
@@ -345,57 +219,6 @@ const createStyles = (colorScheme: string) => {
             paddingBottom: PAGE_PADDING,
             flex: 1,
         },
-        infoRows: {
-            marginHorizontal: -PAGE_PADDING,
-            borderTopWidth: 1,
-            borderTopColor: DIVIDER_COLOR,
-        },
-        infoRow: {
-            flexDirection: 'row',
-            alignItems: 'center',
-            minHeight: 56,
-            paddingVertical: 12,
-            paddingHorizontal: 16,
-            borderBottomWidth: 1,
-            borderBottomColor: DIVIDER_COLOR,
-        },
-        placeRow: {
-            paddingRight: 8,
-        },
-        rowIcon: {
-            width: 22,
-            marginRight: 14,
-        },
-        rowText: {
-            flex: 1,
-        },
-        rowLine1: {
-            ...typeScale.body,
-            color: dark ? Colors.coolGray100 : '#11181C',
-        },
-        rowLine2: {
-            ...typeScale.meta,
-            color: dark ? Colors.coolGray400 : '#4B5563',
-        },
-        rowAction: {
-            minHeight: 44,
-            paddingHorizontal: 8,
-            justifyContent: 'center',
-        },
-        rowActionDisabled: {
-            opacity: 0.5,
-        },
-        description: {
-            ...typeScale.body,
-            marginTop: 16,
-            color: dark ? Colors.coolGray100 : '#11181C',
-        },
-        directions: {
-            width: 44,
-            height: 44,
-            alignItems: 'center',
-            justifyContent: 'center',
-        },
         h2: typeScale.h2,
         eventsSection: {
             marginTop: 24,
@@ -417,21 +240,6 @@ const createStyles = (colorScheme: string) => {
         emptyText: {
             ...typeScale.meta,
             color: dark ? Colors.coolGray400 : '#4B5563',
-        },
-        primaryButton: {
-            height: BUTTON_HEIGHT,
-            borderRadius: 10,
-            backgroundColor: EVENT_HEADER_BG,
-            alignItems: 'center',
-            justifyContent: 'center',
-            marginTop: 16,
-        },
-        primaryButtonDisabled: {
-            opacity: 0.6,
-        },
-        primaryButtonText: {
-            ...typeScale.button,
-            color: '#FFFFFF',
         },
         lockedContainer: {
             alignItems: 'center',

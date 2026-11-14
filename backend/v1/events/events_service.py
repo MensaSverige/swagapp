@@ -3,7 +3,7 @@ from typing import List, Optional
 from datetime import datetime, timedelta
 import logging
 
-from v1.events.events_model import Event, EventSource, _ID_PREFIX
+from v1.events.events_model import Event, EventAttendee, EventSource, ShowAttendees, _ID_PREFIX
 from v1.events.events_mappers import map_external_event, map_user_event, map_event_to_user_event
 from v1.db.external_events import get_stored_external_event_details, get_all_stored_external_event_details
 from v1.external.event_api import get_booked_external_events, book_external_event, unbook_external_event
@@ -89,6 +89,9 @@ def list_main_events(current_user: dict) -> List[Event]:
     """Main events that have not ended, with the viewer's registration applied.
 
     Member calendar events are left out for a viewer who is not a member.
+    Who else is registered is shown only to those registered themselves, as
+    for the participants on the map, and to the event's hosts; each person's
+    show_attendance setting still decides whether they appear.
     """
     registered = main_events.get_registered_event_ids(current_user["userId"])
     result = []
@@ -96,7 +99,20 @@ def list_main_events(current_user: dict) -> List[Event]:
         if not main_events.viewer_can_see(e.id, current_user):
             continue
         is_registered = e.id in registered
-        result.append(e.model_copy(update={"attending": is_registered, "bookable": not is_registered}))
+        update = {
+            "attending": is_registered,
+            "bookable": not is_registered,
+            "showAttendees": ShowAttendees.toAttending,
+            "attendees": [],
+        }
+        sees_participants = is_registered or current_user["userId"] in (e.admin or [])
+        if sees_participants:
+            update["attendees"] = [
+                EventAttendee(userId=uid)
+                for uid in sorted(main_events.get_registered_user_ids(e.id))
+            ]
+        event = e.model_copy(update=update)
+        result.append(_filter_event_attendees(event, current_user) if sees_participants else event)
     return result
 
 

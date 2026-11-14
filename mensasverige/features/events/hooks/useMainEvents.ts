@@ -18,8 +18,11 @@ export const refreshMainEvents = async (): Promise<void> => {
     state.setMainEventsLoading(true);
     const list = await fetchMainEvents();
     state.setMainEvents(Array.isArray(list) ? list : []);
-    // Organisers of local events, shown as hosts when they have an account.
-    prefetchUsers((Array.isArray(list) ? list : []).flatMap(e => e.admin ?? []));
+    // Hosts and participants, shown with their profiles when they have an account.
+    prefetchUsers((Array.isArray(list) ? list : []).flatMap(e => [
+      ...(e.admin ?? []),
+      ...(e.attendees ?? []).map(a => a.userId),
+    ]));
     state.setMainEventsInitialized(true);
 
     const { selectedMainEventId, autoSelectDismissed, mainEvents } = useStore.getState();

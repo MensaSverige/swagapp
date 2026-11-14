@@ -493,3 +493,48 @@ def test_users_event_id_is_404_for_a_non_member_on_a_member_calendar_event():
     with pytest.raises(HTTPException) as exc:
         _get_users(_companion(100), event_id=cal)
     assert exc.value.status_code == 404
+
+
+# -- participants on a main event ---------------------------------------------------------------------
+
+def test_registered_viewer_sees_who_else_is_registered():
+    for uid in (100, 200):
+        _visible_user(uid)
+    cal = _calendar_row()
+    svc.attend_event_via_unified(cal, _user(100))
+    svc.attend_event_via_unified(cal, _user(200))
+    event = next(e for e in svc.list_main_events(_user(100)) if e.id == cal)
+    assert event.showAttendees.value == "toAttending"
+    assert [a.userId for a in event.attendees] == [100, 200]
+
+
+def test_unregistered_viewer_sees_no_participants():
+    _visible_user(100)
+    cal = _calendar_row()
+    svc.attend_event_via_unified(cal, _user(100))
+    event = next(e for e in svc.list_main_events(_user(300)) if e.id == cal)
+    assert event.attendees == []
+
+
+def test_participant_who_hides_attendance_is_left_out():
+    for uid in (100, 200):
+        _visible_user(uid)
+    update_user(200, {"settings": {"show_attendance": "NO_ONE"}})
+    cal = _calendar_row()
+    svc.attend_event_via_unified(cal, _user(100))
+    svc.attend_event_via_unified(cal, _user(200))
+    event = next(e for e in svc.list_main_events(_user(100)) if e.id == cal)
+    assert [a.userId for a in event.attendees] == [100]
+
+
+def test_host_sees_participants_without_registering():
+    """The organiser is the admin of a local event and sees who comes."""
+    _visible_user(100)
+    cal = _calendar_row()
+    with get_session() as session:
+        row = session.query(EventTable).filter_by(source="calendar", source_id="42").first()
+        row.admin = [500]
+        session.commit()
+    svc.attend_event_via_unified(cal, _user(100))
+    event = next(e for e in svc.list_main_events(_user(500)) if e.id == cal)
+    assert [a.userId for a in event.attendees] == [100]
