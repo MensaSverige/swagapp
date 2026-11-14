@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, useColorScheme } from 'react-native';
 import { DisplayTime } from '../utilities/DisplayTime';
 import CategoryBadge from './badges/CategoryBadge';
+import { canonicalCategoryCode } from '../utilities/EventCategories';
 import { Colors } from '@/constants/Colors';
 import { ExtendedEvent } from '../types/eventUtilTypes';
 
@@ -71,7 +72,7 @@ const EventListItem: React.FC<EventListItemProps> = ({
                         {event.tags?.map((category, index) => (
                             <CategoryBadge
                                 key={index}
-                                categoryCode={category.code || ''}
+                                categoryCode={canonicalCategoryCode(category)}
                                 showLabel={false}
                                 size="small"
                             />

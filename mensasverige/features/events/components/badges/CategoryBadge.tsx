@@ -9,6 +9,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { ThemedText } from '@/components/ThemedText';
 import { Colors } from '@/constants/Colors';
 import OfficialEventIcon from '../../../../components/icons/OfficialEventIcon';
+import { EventCategory, getCategoryByCode } from '../../utilities/EventCategories';
 
 export interface CategoryBadgeProps {
   categoryCode?: string;
@@ -19,18 +20,6 @@ export interface CategoryBadgeProps {
   onPress?: () => void;
   tagFallback?: { text: string; colorText: string; colorBackground: string };
 }
-
-// Category definitions with colors and icons
-const CATEGORY_CONFIG = {
-  'F': { label: 'Föreläsning', color: Colors.indigo500, icon: 'co-present' as keyof typeof MaterialIcons.glyphMap },
-  'Fö': { label: 'Föreningsarbete', color: Colors.primary400, icon: 'groups' as keyof typeof MaterialIcons.glyphMap },
-  'M': { label: 'Middag', color: Colors.pink600, icon: 'restaurant' as keyof typeof MaterialIcons.glyphMap },
-  'S': { label: 'Spel', color: '#D97706', icon: 'casino' as keyof typeof MaterialIcons.glyphMap },
-  'U': { label: 'Ungdomsaktivitet', color: Colors.fuchsia600, icon: 'escalator-warning' as keyof typeof MaterialIcons.glyphMap },
-  'Up': { label: 'Uppträdande', color: Colors.amber600, icon: 'mic' as keyof typeof MaterialIcons.glyphMap },
-  'Ut': { label: 'Utflykt', color: Colors.lime600, icon: 'explore' as keyof typeof MaterialIcons.glyphMap },
-  'W': { label: 'Workshop', color: Colors.purple600, icon: 'handyman' as keyof typeof MaterialIcons.glyphMap },
-};
 
 // Event type definitions with colors and icons
 const EVENT_TYPE_CONFIG = {
@@ -65,7 +54,7 @@ const BadgeLabel = React.memo(function BadgeLabel({ text, size }: { text: string
 });
 
 type BadgeConfig =
-  | (typeof CATEGORY_CONFIG)[keyof typeof CATEGORY_CONFIG]
+  | EventCategory
   | (typeof EVENT_TYPE_CONFIG)[keyof typeof EVENT_TYPE_CONFIG];
 
 const CategoryBadge: React.FC<CategoryBadgeProps> = ({
@@ -85,7 +74,7 @@ const CategoryBadge: React.FC<CategoryBadgeProps> = ({
     config = EVENT_TYPE_CONFIG[eventType];
     isEventType = true;
   } else if (categoryCode) {
-    config = CATEGORY_CONFIG[categoryCode as keyof typeof CATEGORY_CONFIG];
+    config = getCategoryByCode(categoryCode) ?? null;
   }
 
   let iconSize: number;

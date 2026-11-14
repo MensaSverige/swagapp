@@ -111,6 +111,13 @@ describe('filterByOptions', () => {
     expect(result[0].id).toBe(tagged.id);
   });
 
+  test('matches a known category by label when its code is unknown', () => {
+    const social = makeEvent({ tags: [{ code: 'XYZ', text: 'Socialt', colorBackground: '#000', colorText: '#fff' }] });
+    const other = makeEvent({ tags: [{ code: 'M', text: 'Middag', colorBackground: '#000', colorText: '#fff' }] });
+    const result = filterByOptions([social, other], { categories: ['So'] });
+    expect(result.map(e => e.id)).toEqual([social.id]);
+  });
+
   test('excludes past events (already ended)', () => {
     const past = makeEvent({
       start: new Date(Date.now() - 5 * 3600_000).toISOString(),
@@ -145,6 +152,13 @@ describe('calcCategoryCounts', () => {
     const b = makeEvent({ bookable: true, tags: [{ code: 'art', text: 'Art', colorBackground: '#000', colorText: '#fff' }] });
     const counts = calcCategoryCounts([a, b]);
     expect(counts['art']).toBe(2);
+  });
+
+  test('counts a known category under its own code, whatever code the tag has', () => {
+    const a = makeEvent({ bookable: true, tags: [{ code: 'So', text: 'Socialt', colorBackground: '#000', colorText: '#fff' }] });
+    const b = makeEvent({ bookable: true, tags: [{ code: 'SOC', text: 'socialt ', colorBackground: '#000', colorText: '#fff' }] });
+    const counts = calcCategoryCounts([a, b]);
+    expect(counts).toEqual({ So: 2 });
   });
 });
 
