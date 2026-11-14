@@ -461,9 +461,9 @@ def _no_coords(**kw):
 
 
 def test_explicit_coordinates_are_not_approximate(monkeypatch):
-    from v1.member_calendar import calendar_db
+    from v1.google_maps_api import geocode_cache
     calls = []
-    monkeypatch.setattr(calendar_db, "geocode_address", lambda q: calls.append(q) or (1.0, 2.0))
+    monkeypatch.setattr(geocode_cache, "geocode_address", lambda q: calls.append(q) or (1.0, 2.0))
     store_member_calendar_events([_event(source_id="exp")])
     with get_session() as session:
         row = session.query(EventTable).filter_by(source_id="exp").one()
@@ -473,9 +473,9 @@ def test_explicit_coordinates_are_not_approximate(monkeypatch):
 
 
 def test_missing_coordinates_are_geocoded_from_postal_and_city(monkeypatch):
-    from v1.member_calendar import calendar_db
+    from v1.google_maps_api import geocode_cache
     calls = []
-    monkeypatch.setattr(calendar_db, "geocode_address", lambda q: calls.append(q) or (59.27, 15.21))
+    monkeypatch.setattr(geocode_cache, "geocode_address", lambda q: calls.append(q) or (59.27, 15.21))
     store_member_calendar_events([_no_coords(source_id="geo", postal_code="70218", city="Örebro", country="SE")])
     with get_session() as session:
         row = session.query(EventTable).filter_by(source_id="geo").one()
@@ -485,16 +485,16 @@ def test_missing_coordinates_are_geocoded_from_postal_and_city(monkeypatch):
 
 
 def test_query_defaults_country_to_sverige(monkeypatch):
-    from v1.member_calendar import calendar_db
+    from v1.google_maps_api import geocode_cache
     calls = []
-    monkeypatch.setattr(calendar_db, "geocode_address", lambda q: calls.append(q) or None)
+    monkeypatch.setattr(geocode_cache, "geocode_address", lambda q: calls.append(q) or None)
     store_member_calendar_events([_no_coords(source_id="c", postal_code=None, city="Lund", country=None)])
     assert calls == ["Lund, Sverige"]
 
 
 def test_failed_geocode_leaves_coordinates_empty(monkeypatch):
-    from v1.member_calendar import calendar_db
-    monkeypatch.setattr(calendar_db, "geocode_address", lambda q: None)
+    from v1.google_maps_api import geocode_cache
+    monkeypatch.setattr(geocode_cache, "geocode_address", lambda q: None)
     store_member_calendar_events([_no_coords(source_id="none")])
     with get_session() as session:
         row = session.query(EventTable).filter_by(source_id="none").one()
@@ -503,26 +503,27 @@ def test_failed_geocode_leaves_coordinates_empty(monkeypatch):
 
 
 def test_geocoder_exception_does_not_break_the_sync(monkeypatch):
-    from v1.member_calendar import calendar_db
+    from v1.google_maps_api import geocode_cache
 
     def boom(q):
         raise RuntimeError("down")
-    monkeypatch.setattr(calendar_db, "geocode_address", boom)
+    monkeypatch.setattr(geocode_cache, "geocode_address", boom)
     assert store_member_calendar_events([_no_coords(source_id="boom")]) == 1
 
 
 def test_no_place_means_no_geocoding(monkeypatch):
-    from v1.member_calendar import calendar_db
+    from v1.google_maps_api import geocode_cache
     calls = []
-    monkeypatch.setattr(calendar_db, "geocode_address", lambda q: calls.append(q))
+    monkeypatch.setattr(geocode_cache, "geocode_address", lambda q: calls.append(q))
     store_member_calendar_events([_no_coords(source_id="np", postal_code=None, city=None)])
     assert calls == []
 
 
-def test_repeated_city_is_geocoded_once_per_run(monkeypatch):
-    from v1.member_calendar import calendar_db
+def test_repeated_city_is_geocoded_once_across_runs(monkeypatch):
+    """The sync runs every half hour. A place is bought once, not every time."""
+    from v1.google_maps_api import geocode_cache
     calls = []
-    monkeypatch.setattr(calendar_db, "geocode_address", lambda q: calls.append(q) or (59.0, 15.0))
+    monkeypatch.setattr(geocode_cache, "geocode_address", lambda q: calls.append(q) or (59.0, 15.0))
     store_member_calendar_events([
         _no_coords(source_id="r1", city="Örebro"),
         _no_coords(source_id="r2", city="örebro "),
@@ -530,7 +531,7 @@ def test_repeated_city_is_geocoded_once_per_run(monkeypatch):
     ])
     assert len(calls) == 1
     store_member_calendar_events([_no_coords(source_id="r4", city="Örebro")])
-    assert len(calls) == 2  # cache is per run
+    assert len(calls) == 1
 
 
 def test_geocode_address_never_raises(monkeypatch):

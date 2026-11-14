@@ -605,3 +605,27 @@ class FeedbackUserIndexTable(Base):
     is_member = Column(Boolean, nullable=False, default=False)
     first_seen = Column(DateTime(timezone=True), nullable=False)
     last_seen = Column(DateTime(timezone=True), nullable=False)
+
+
+# ── Geocoding ─────────────────────────────────────────────────────────────────
+
+class GeocodeCacheTable(Base):
+    """One answer from the geocoder, keyed by the normalized query.
+
+    The member calendar gives explicit coordinates for 80 of its ~4900 events,
+    so a sync run geocodes several hundred places from postal code and city.
+    Those answers do not change, and the sync runs every half hour, so they are
+    kept here rather than bought again. A lookup the geocoder could not resolve
+    is kept too, with `found` false -- otherwise the addresses nobody can place
+    are the ones paid for most often.
+
+    Docs: docs/Geocoding.md
+    """
+
+    __tablename__ = "geocode_cache"
+
+    query = Column(String, primary_key=True)
+    latitude = Column(Float, nullable=True)
+    longitude = Column(Float, nullable=True)
+    found = Column(Boolean, nullable=False, default=False)
+    updated_at = Column(DateTime(timezone=True), nullable=False, default=_now)

@@ -10,14 +10,14 @@ from __future__ import annotations
 
 import logging
 from datetime import datetime, timezone
-from typing import Dict, List, Optional, Tuple
+from typing import List, Optional
 
 from v1.db.database import get_session
 from v1.db.tables import EventTable
 from v1.events.events_mappers import map_member_calendar_event
 from v1.events.events_model import Event, EventSource
 from v1.member_calendar.calendar_model import MemberCalendarEvent
-from v1.google_maps_api.geolocation_api import geocode_address
+from v1.google_maps_api.geocode_cache import geocode_cached
 from v1.utilities import ensure_aware
 
 
@@ -97,11 +97,12 @@ def _geocode_query(calendar_event: MemberCalendarEvent) -> Optional[str]:
     return f"{' '.join(parts)}, {calendar_event.country or 'Sverige'}"
 
 
-def _approximate_location(calendar_event, event, cache) -> None:
+def _approximate_location(calendar_event, event) -> None:
     """Fill coordinates from a postal code / city geocode when none are explicit.
 
-    Best-effort: any failure leaves the coordinates empty. `cache` is shared
-    across one sync run, keyed by the normalized query.
+    Best-effort: any failure leaves the coordinates empty. `geocode_cached`
+    holds the answers between runs, so a place is looked up once and not once
+    per sync -- see docs/Geocoding.md.
     """
     if event.latitude is not None and event.longitude is not None:
         event.extras["locationApprox"] = False
@@ -109,14 +110,7 @@ def _approximate_location(calendar_event, event, cache) -> None:
     query = _geocode_query(calendar_event)
     if not query:
         return
-    key = " ".join(query.lower().split())
-    if key not in cache:
-        try:
-            cache[key] = geocode_address(query)
-        except Exception as e:
-            logger.warning(f"Geocoding {query!r} failed: {e}")
-            cache[key] = None
-    coords = cache[key]
+    coords = geocode_cached(query)
     if coords:
         event.latitude, event.longitude = coords
         event.extras["locationApprox"] = True
@@ -129,11 +123,10 @@ def store_member_calendar_events(calendar_events: List[MemberCalendarEvent]) -> 
     single malformed event then fails alone instead of discarding the sync.
     """
     stored_count = 0
-    geocode_cache: Dict[str, Optional[Tuple[float, float]]] = {}
     for calendar_event in calendar_events:
         try:
             event = map_member_calendar_event(calendar_event)
-            _approximate_location(calendar_event, event, geocode_cache)
+            _approximate_location(calendar_event, event)
             values = _row_values(event, calendar_event)
             with get_session() as session:
                 existing = session.query(EventTable).filter_by(
