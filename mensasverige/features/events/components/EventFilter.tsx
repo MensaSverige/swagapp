@@ -6,7 +6,6 @@ import { Colors } from '@/constants/Colors';
 import { MaterialIcons } from '@expo/vector-icons';
 import { EVENT_CATEGORIES } from '../utilities/EventCategories';
 import { FilterButton } from './FilterButton';
-import OfficialEventIcon from '../../../components/icons/OfficialEventIcon';
 import { DatepickerField } from '@/features/common/components/inputs/DatepickerField';
 import { EventFilterOptions } from '../store/EventsSlice';
 import { ThemedText } from '@/components/ThemedText';
@@ -20,6 +19,13 @@ import {
 
 
 const { width: screenWidth } = Dimensions.get('window');
+
+type TriKey = 'attendingOrHost' | 'bookable' | 'official';
+const TRI_OPTIONS: Array<{ label: string; value: boolean | null }> = [
+  { label: 'Alla', value: null },
+  { label: 'Ja', value: true },
+  { label: 'Nej', value: false },
+];
 
 interface EventFilterProps {
   visible: boolean;
@@ -131,22 +137,6 @@ export const EventFilter: React.FC<EventFilterProps> = ({
     setLastRegions([]);
   };
 
-  const toggleTriStateOption = (
-    key: 'attendingOrHost' | 'bookable' | 'official',
-    currentValue: boolean | null | undefined
-  ) => {
-    let newValue: boolean | null;
-    if (currentValue === null || currentValue === undefined) {
-      newValue = true;
-    } else if (currentValue === true) {
-      newValue = false;
-    } else {
-      newValue = null;
-    }
-    
-    setLocalFilter(prev => ({ ...prev, [key]: newValue }));
-  };
-
   const toggleCategory = (categoryCode: string) => {
     setLocalFilter(prev => {
       const categories = prev.categories || [];
@@ -159,16 +149,6 @@ export const EventFilter: React.FC<EventFilterProps> = ({
           : [...categories, categoryCode]
       };
     });
-  };
-
-  const getTriStateLabel = (value: boolean | null | undefined): string => {
-    if (value === null || value === undefined) return 'Alla';
-    return value ? 'Ja' : 'Nej';
-  };
-
-  const getTriStateColor = (value: boolean | null | undefined): string => {
-    if (value === null || value === undefined) return colorScheme === 'dark' ? '#6b7280' : '#9ca3af';
-    return value ? Colors.primary300 : '#ef4444';
   };
 
   const handleDateFromChange = (date?: Date) => {
@@ -215,6 +195,33 @@ export const EventFilter: React.FC<EventFilterProps> = ({
         <ThemedText style={styles.choiceLabel}>{opts.label}</ThemedText>
         {opts.trailing ? <Text style={styles.choiceTrailing}>{opts.trailing}</Text> : null}
       </TouchableOpacity>
+    );
+  };
+
+  /** A yes/no filter as a row: its label, then Alla, Ja and Nej as plain text choices. */
+  const triStateRow = (key: TriKey, label: string) => {
+    const current = localFilter[key] ?? null;
+    return (
+      <View key={key} style={styles.choiceRow}>
+        <ThemedText style={styles.choiceLabel}>{label}</ThemedText>
+        {TRI_OPTIONS.map(option => {
+          const selected = current === option.value;
+          return (
+            <TouchableOpacity
+              key={option.label}
+              onPress={() => setLocalFilter(prev => ({ ...prev, [key]: option.value }))}
+              style={styles.triOption}
+              accessibilityRole="radio"
+              accessibilityState={{ checked: selected }}
+              accessibilityLabel={`${label}: ${option.label}`}
+            >
+              <Text style={[styles.triOptionText, { color: selected ? selectedColor : unselectedColor }, selected && styles.triOptionSelected]}>
+                {option.label}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
     );
   };
 
@@ -310,47 +317,9 @@ export const EventFilter: React.FC<EventFilterProps> = ({
 
           <View style={styles.section}>
             <ThemedText type='sectionHeader'>Status</ThemedText>
-            
-            <View style={styles.filterRow}>
-              <ThemedText>Deltagande</ThemedText>
-              <TouchableOpacity
-                style={[styles.triStateButton, { borderColor: getTriStateColor(localFilter.attendingOrHost) }]}
-                onPress={() => toggleTriStateOption('attendingOrHost', localFilter.attendingOrHost)}
-              >
-                <Text style={[styles.triStateButtonText, { color: getTriStateColor(localFilter.attendingOrHost) }]}>
-                  {getTriStateLabel(localFilter.attendingOrHost)}
-                </Text>
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.filterRow}>
-              <ThemedText >Bokningsbar</ThemedText>
-              <TouchableOpacity
-                style={[styles.triStateButton, { borderColor: getTriStateColor(localFilter.bookable) }]}
-                onPress={() => toggleTriStateOption('bookable', localFilter.bookable)}
-              >
-                <Text style={[styles.triStateButtonText, { color: getTriStateColor(localFilter.bookable) }]}>
-                  {getTriStateLabel(localFilter.bookable)}
-                </Text>
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.filterRow}>
-              <View style={styles.filterLabelContainer}>
-                <ThemedText>Officiell</ThemedText>
-                <View style={{ marginLeft: 4 }}>
-                  <OfficialEventIcon size={14} color={getTriStateColor(localFilter.official)} />
-                </View>
-              </View>
-              <TouchableOpacity
-                style={[styles.triStateButton, { borderColor: getTriStateColor(localFilter.official) }]}
-                onPress={() => toggleTriStateOption('official', localFilter.official)}
-              >
-                <Text style={[styles.triStateButtonText, { color: getTriStateColor(localFilter.official) }]}>
-                  {getTriStateLabel(localFilter.official)}
-                </Text>
-              </TouchableOpacity>
-            </View>
+            {triStateRow('attendingOrHost', 'Deltagande')}
+            {triStateRow('bookable', 'Bokningsbar')}
+            {triStateRow('official', 'Officiell')}
           </View>
 
           {/* Date Range Filters */}
@@ -375,38 +344,22 @@ export const EventFilter: React.FC<EventFilterProps> = ({
           {/* Category Filters */}
           <View style={styles.section}>
             <ThemedText type='sectionHeader'>Kategorier</ThemedText>
-            <View style={styles.categoryGrid}>
-              {EVENT_CATEGORIES.map((category) => {
-                const isSelected = localFilter.categories?.includes(category.code) ?? false;
-                return (
-                  <TouchableOpacity
-                    key={category.code}
-                    style={[
-                      styles.categoryButton,
-                      {
-                        backgroundColor: isSelected ? category.color : 'transparent',
-                        borderColor: category.color,
-                      }
-                    ]}
-                    onPress={() => toggleCategory(category.code)}
-                  >
-                    <View style={styles.categoryButtonContent}>
-                      <MaterialIcons 
-                        name={category.icon} 
-                        size={16} 
-                        color={isSelected ? '#ffffff' : category.color} 
-                      />
-                      <Text style={[
-                        styles.categoryButtonText,
-                        { color: isSelected ? '#ffffff' : category.color }
-                      ]}>
-                        {category.label}
-                      </Text>
-                    </View>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
+            {EVENT_CATEGORIES.map((category) => {
+              const isSelected = localFilter.categories?.includes(category.code) ?? false;
+              return (
+                <TouchableOpacity
+                  key={category.code}
+                  style={styles.choiceRow}
+                  onPress={() => toggleCategory(category.code)}
+                  accessibilityRole="checkbox"
+                  accessibilityState={{ checked: isSelected }}
+                >
+                  <MaterialIcons name={category.icon} size={22} color={category.color} />
+                  <ThemedText style={styles.choiceLabel}>{category.label}</ThemedText>
+                  {isSelected && <MaterialIcons name="check" size={20} color={selectedColor} />}
+                </TouchableOpacity>
+              );
+            })}
           </View>
         </ScrollView>
 
@@ -501,6 +454,19 @@ const createStyles = (colorScheme: string) => StyleSheet.create({
     fontSize: 13,
     color: colorScheme === 'dark' ? '#9ca3af' : '#6b7280',
   },
+  triOption: {
+    minWidth: 44,
+    minHeight: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  triOptionText: {
+    fontSize: 15,
+  },
+  triOptionSelected: {
+    fontWeight: '600',
+    textDecorationLine: 'underline',
+  },
   choiceHint: {
     fontSize: 13,
     lineHeight: 18,
@@ -512,53 +478,6 @@ const createStyles = (colorScheme: string) => StyleSheet.create({
     fontWeight: '600',
     marginBottom: 16,
     color: colorScheme === 'dark' ? '#ffffff' : '#000000',
-  },
-  filterRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  filterLabel: {
-    fontSize: 12,
-    color: colorScheme === 'dark' ? '#d1d5db' : '#374151',
-  },
-  filterLabelContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  triStateButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 6,
-    borderRadius: 16,
-    borderWidth: 1,
-    minWidth: 60,
-    alignItems: 'center',
-  },
-  triStateButtonText: {
-    fontSize: 12,
-    fontWeight: '500',
-  },
-  categoryGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 6,
-  },
-  categoryButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 16,
-    borderWidth: 1,
-    marginTop: 4,
-  },
-  categoryButtonContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  categoryButtonText: {
-    fontSize: 12,
-    fontWeight: '500',
   },
   buttonContainer: {
     flexDirection: 'row',
@@ -577,18 +496,18 @@ const createStyles = (colorScheme: string) => StyleSheet.create({
   },
   buttonOutline: {
     borderWidth: 1,
-    borderColor: Colors.primary300,
+    borderColor: colorScheme === 'dark' ? Colors.primary300 : '#005DB4',
     backgroundColor: 'transparent',
   },
   buttonSolid: {
-    backgroundColor: Colors.primary500,
+    backgroundColor: '#005DB4',
   },
   buttonText: {
     fontSize: 16,
     fontWeight: '600',
   },
   buttonTextOutline: {
-    color: Colors.primary300,
+    color: colorScheme === 'dark' ? Colors.primary300 : '#005DB4',
   },
   buttonTextSolid: {
     color: '#ffffff',

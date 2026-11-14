@@ -117,7 +117,7 @@ const ParentEventDashboard: React.FC<ParentEventDashboardProps> = ({ mainEvent }
             {isRoot && <View style={styles.infoSection}>{infoTiles}</View>}
 
             <EventDescription description={description} />
-            <EventPeople event={mainEvent} />
+            <EventPeople event={mainEvent} omitHiddenNote={!attending && isRoot} />
 
             {!attending && isRoot && (
                 <View style={styles.lockedContainer}>

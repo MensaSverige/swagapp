@@ -14,27 +14,38 @@ import { typeScale } from '../../styles/typeScale';
  * as a name otherwise. Participants show only to those who may see them;
  * where registering would reveal them, the section says so.
  */
-const EventPeople: React.FC<{ event: Event }> = ({ event }) => {
+const EventPeople: React.FC<{
+  event: Event;
+  /** Leave out "visas när du är anmäld" where the page already says so, as the riksträff's locked box does. */
+  omitHiddenNote?: boolean;
+}> = ({ event, omitHiddenNote = false }) => {
   const dark = useColorScheme() === 'dark';
   const { adminUsers, attendeeUsers, canSeeAttendees } = useEventUsers(event);
 
   const adminCount = event.admin?.length ?? 0;
   // A local event's organiser without a membership number has a name but no admin id.
   const showHosts = adminCount > 0 || (isLocalEvent(event) && (event.hosts?.length ?? 0) > 0);
-  const hiddenUntilRegistered = !canSeeAttendees && event.showAttendees === 'toAttending';
+  const hiddenUntilRegistered = !omitHiddenNote && !canSeeAttendees && event.showAttendees === 'toAttending';
+  const showAttendees = canSeeAttendees && attendeeUsers.length > 0;
 
   return (
     <View>
       {showHosts && (
-        <UserList
-          users={adminUsers}
-          title={adminCount > 1 ? 'Värdar' : 'Värd'}
-          fallbackData={event.hosts}
-          alwaysExpanded
-          gridAvatarSize="md"
-        />
+        <View style={styles.section}>
+          <UserList
+            users={adminUsers}
+            title={adminCount > 1 ? 'Värdar' : 'Värd'}
+            fallbackData={event.hosts}
+            alwaysExpanded
+            gridAvatarSize="md"
+          />
+        </View>
       )}
-      {canSeeAttendees && <UserList users={attendeeUsers} title="Deltagare" />}
+      {showAttendees && (
+        <View style={styles.section}>
+          <UserList users={attendeeUsers} title="Deltagare" />
+        </View>
+      )}
       {hiddenUntilRegistered && (
         <View style={styles.hidden}>
           <ThemedText style={styles.h2}>Deltagare</ThemedText>
@@ -48,6 +59,7 @@ const EventPeople: React.FC<{ event: Event }> = ({ event }) => {
 };
 
 const styles = StyleSheet.create({
+  section: { marginTop: 24 },
   hidden: { marginTop: 24, gap: 4 },
   h2: { ...typeScale.h2 },
   meta: { ...typeScale.meta },

@@ -322,7 +322,7 @@ const CreateEventCard: React.FC<CreateEventCardProps> = ({
               onPress={onCancel}
               disabled={isCreating}
             >
-              <Text style={eventCardStyles.buttonText}>Avbryt</Text>
+              <Text style={[eventCardStyles.buttonText, eventCardStyles.cancelButtonText]}>Avbryt</Text>
             </TouchableOpacity>
 
             <TouchableOpacity

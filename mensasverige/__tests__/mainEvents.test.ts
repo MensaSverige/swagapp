@@ -14,6 +14,8 @@ import {
   formatRowDateColumn,
   getMainEventChildren,
   groupMainEvents,
+  isAllDay,
+  isEventOver,
   isMainEventOngoing,
   selectActivityListEvents,
   selectToBook,
@@ -144,7 +146,25 @@ describe('date formatting', () => {
   it('formats the row date column for multi-day and one-day events', () => {
     expect(formatRowDateColumn(main())).toEqual({ start: '20 nov', end: '22 nov' });
     const oneDay = main({ start: '2026-11-21T18:30:00', end: '2026-11-21T21:00:00' });
-    expect(formatRowDateColumn(oneDay)).toEqual({ start: '18:30', end: '' });
+    expect(formatRowDateColumn(oneDay)).toEqual({ start: '21 nov', end: '18:30' });
+  });
+
+  it('treats an ongoing event as not over', () => {
+    const now = at('2026-11-21T12:00:00');
+    expect(isEventOver(main({ start: '2026-11-21T10:00:00', end: '2026-11-21T14:00:00' }), now)).toBe(false);
+    expect(isEventOver(main({ start: '2026-11-21T00:00:00', end: null }), now)).toBe(false);
+    expect(isEventOver(main({ start: '2026-11-21T10:00:00', end: null }), now)).toBe(true);
+    expect(isEventOver(main({ start: '2026-11-20T10:00:00', end: '2026-11-20T14:00:00' }), now)).toBe(true);
+  });
+
+  it('says Heldag for a whole-day event instead of 00:00', () => {
+    const allDay = main({ start: '2026-11-21T00:00:00', end: null });
+    expect(isAllDay(allDay)).toBe(true);
+    expect(formatRowDateColumn(allDay)).toEqual({ start: '21 nov', end: 'Heldag' });
+    expect(formatMainEventDateRange(allDay)).toBe('Lördag 21 november, heldag');
+    expect(isAllDay(main({ start: '2026-11-21T00:00:00', end: '2026-11-21T23:59:00' }))).toBe(true);
+    expect(isAllDay(main({ start: '2026-11-21T00:00:00', end: '2026-11-21T03:00:00' }))).toBe(false);
+    expect(isAllDay(main({ start: '2026-11-21T18:00:00', end: null }))).toBe(false);
   });
 
   it('formats multi-day ranges within and across months', () => {

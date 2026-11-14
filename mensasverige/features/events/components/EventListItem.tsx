@@ -5,7 +5,7 @@ import CategoryBadge from './badges/CategoryBadge';
 import { canonicalCategoryCode } from '../utilities/EventCategories';
 import { Colors } from '@/constants/Colors';
 import { ExtendedEvent } from '../types/eventUtilTypes';
-import { formatRegion } from '../utils/mainEventUtils';
+import { formatRegion, formatShortDate, isAllDay, isEventOver, isMultiDay } from '../utils/mainEventUtils';
 import { PAGE_PADDING } from '../styles/typeScale';
 
 interface EventListItemProps {
@@ -30,8 +30,12 @@ const EventListItem: React.FC<EventListItemProps> = ({
     const colorScheme = useColorScheme();
     const styles = useMemo(() => createStyles(colorScheme ?? 'light'), [colorScheme]);
 
-    const shouldGrayOut = (!event.bookable && !event.attending) || !event.isFutureEvent;
+    // Dimmed when it can no longer be joined: over, or closed to the viewer. An
+    // ongoing event is not over.
+    const shouldGrayOut = (!event.bookable && !event.attending) || isEventOver(event, Date.now());
     const meta = [formatRegion(event), event.locationDescription].filter(Boolean).join(' · ');
+    const multiDay = isMultiDay(event);
+    const allDay = !multiDay && isAllDay(event);
     const opacityStyle = useMemo(() => (opacity < 1 ? { opacity } : undefined), [opacity]);
 
     return (
@@ -49,11 +53,13 @@ const EventListItem: React.FC<EventListItemProps> = ({
             ]}>
                 <View style={styles.timeContainer}>
                     <Text style={shouldGrayOut ? styles.startTimeGrayOut : styles.startTime}>
-                        {DisplayTime(event.start)}
+                        {multiDay ? formatShortDate(event.start as string) : allDay ? 'Heldag' : DisplayTime(event.start)}
                     </Text>
-                    <Text style={shouldGrayOut ? styles.endTimeGrayOut : styles.endTime}>
-                        {event.end ? DisplayTime(event.end) : ''}
-                    </Text>
+                    {(multiDay || (!allDay && !!event.end)) && (
+                        <Text style={shouldGrayOut ? styles.endTimeGrayOut : styles.endTime}>
+                            {multiDay ? formatShortDate(event.end as string) : DisplayTime(event.end as string)}
+                        </Text>
+                    )}
                 </View>
                 <View style={styles.eventContent}>
                     <View style={styles.titleContainer}>
@@ -94,8 +100,9 @@ const createStyles = (colorScheme: string) => StyleSheet.create({
     dimmed: {
         opacity: 0.4,
     },
+    // Fixed, so titles line up whether the column says 10:00, 13 nov or Heldag.
     timeContainer: {
-        minWidth: 40,
+        width: 48,
     },
     startTime: {
         fontSize: 14,

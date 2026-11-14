@@ -1,5 +1,6 @@
 import { StyleSheet } from 'react-native';
 import { Colors } from '../../../constants/Colors';
+import { BUTTON_HEIGHT, EVENT_HEADER_BG, typeScale } from './typeScale';
 
 /**
  * Shared styles for event card components (UnifiedEventCard and CreateEventCard)
@@ -7,6 +8,8 @@ import { Colors } from '../../../constants/Colors';
  */
 export const createEventCardStyles = (colorScheme: string) => {
   const colors = colorScheme === 'dark' ? Colors.dark : Colors.light;
+  // The app's one link and button blue, lighter on dark backgrounds.
+  const link = colorScheme === 'dark' ? Colors.primary300 : EVENT_HEADER_BG;
   
   return StyleSheet.create({
   // Divider
@@ -120,9 +123,8 @@ export const createEventCardStyles = (colorScheme: string) => {
     gap: 4,
   },
   viewAllText: {
-    fontSize: 12,
-    fontWeight: '600',
-    opacity: 0.55,
+    ...typeScale.link,
+    color: link,
   },
   userListContainer: {
     flexDirection: 'row',
@@ -184,10 +186,11 @@ export const createEventCardStyles = (colorScheme: string) => {
   },
   button: {
     flex: 1,
-    paddingVertical: 12,
+    minHeight: BUTTON_HEIGHT,
     paddingHorizontal: 20,
-    borderRadius: 8,
+    borderRadius: 10,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   buttonText: {
     color: colors.white,
@@ -227,10 +230,15 @@ export const createEventCardStyles = (colorScheme: string) => {
 
   // Component-specific button colors
   createButton: {
-    backgroundColor: colors.teal600,
+    backgroundColor: EVENT_HEADER_BG,
   },
   cancelButton: {
-    backgroundColor: colors.blueGray500,
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: link,
+  },
+  cancelButtonText: {
+    color: link,
   },
   });
 };

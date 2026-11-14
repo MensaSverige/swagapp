@@ -210,8 +210,8 @@ export const ActivitiesList: React.FC<ActivitiesListProps> = ({ initialFilter })
                     {!locked && filterButton}
                 </View>
             ) : (
-                <View style={styles.header}>
-                    <ThemedText type="title">Aktiviteter</ThemedText>
+                <View style={styles.eventTitleRow}>
+                    <ThemedText style={styles.h1}>Aktiviteter</ThemedText>
                     <View style={styles.headerActions}>
                         {filteredCount !== filteredTotalCount && (
                             <Text style={styles.filterCount}>
@@ -299,18 +299,10 @@ export const ActivitiesList: React.FC<ActivitiesListProps> = ({ initialFilter })
 }
 
 const createStyles = (colorScheme: string) => StyleSheet.create({
-    header: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        height: 50,
-        paddingLeft: 20,
-    },
     headerActions: {
         flexDirection: 'row',
         alignItems: 'center',
         gap: 8,
-        paddingRight: 15,
     },
     filterCount: {
         fontSize: 12,

@@ -2,7 +2,6 @@ import React from 'react';
 import { View, Pressable, useColorScheme } from 'react-native';
 import { User } from '../../../api_schema/types';
 import { ThemedText } from '@/components/ThemedText';
-import { IconSymbol } from '@/components/ui/IconSymbol';
 import PressableUser, { AvatarSize } from '@/features/account/components/PressableUser';
 import UserAvatar from '@/features/map/components/UserAvatar';
 import { Colors } from '../../../constants/Colors';
@@ -125,13 +124,6 @@ const UserList: React.FC<UserListProps> = ({
             <ThemedText style={styles.viewAllText}>
               {showAll ? 'Visa färre' : 'Visa alla'}
             </ThemedText>
-            <IconSymbol
-              name="chevron.right"
-              size={18}
-              weight="medium"
-              color={isDark ? 'rgba(255,255,255,0.55)' : 'rgba(0,0,0,0.55)'}
-              style={{ transform: [{ rotate: showAll ? '270deg' : '90deg' }] }}
-            />
           </Pressable>
         )}
       </View>

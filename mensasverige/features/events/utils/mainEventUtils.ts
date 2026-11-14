@@ -114,11 +114,39 @@ export const formatShortDate = (iso: string): string => {
   return `${d.getDate()} ${MONTHS_SHORT[d.getMonth()]}`;
 };
 
-/** Date column of a row: start/end dates for multi-day, start time otherwise. */
+/**
+ * A whole-day event: the member calendar stores one as local midnight with no
+ * end (or an end at 23:59). Its "00:00" means no time at all.
+ */
+export const isAllDay = (e: Pick<Event, 'start' | 'end'>): boolean => {
+  if (!e.start) return false;
+  const s = new Date(e.start);
+  if (s.getHours() !== 0 || s.getMinutes() !== 0) return false;
+  if (!e.end) return true;
+  const en = new Date(e.end);
+  return sameLocalDay(s, en) && en.getHours() === 23 && en.getMinutes() === 59;
+};
+
+/**
+ * Whether an event is over: its end has passed. Without an end, a whole-day
+ * event lasts the day and any other is over once it has started.
+ */
+export const isEventOver = (e: Pick<Event, 'start' | 'end'>, now: number): boolean => {
+  if (e.end) return new Date(e.end).getTime() < now;
+  if (!e.start) return false;
+  const start = new Date(e.start).getTime();
+  return (isAllDay(e) ? start + DAY_MS : start) < now;
+};
+
+/**
+ * Date column of a row: start/end dates for multi-day, otherwise the date
+ * with the start time below it ("Heldag" for a whole-day event), so a row
+ * on a list mixing days still says which day.
+ */
 export const formatRowDateColumn = (e: Event): { start: string; end: string } => {
   if (!e.start) return { start: '', end: '' };
   if (isMultiDay(e)) return { start: formatShortDate(e.start), end: formatShortDate(e.end as string) };
-  return { start: timeOf(new Date(e.start)), end: '' };
+  return { start: formatShortDate(e.start), end: isAllDay(e) ? 'Heldag' : timeOf(new Date(e.start)) };
 };
 
 const dayLabel = (d: Date) => `${WEEKDAYS[d.getDay()]} ${d.getDate()}`;
@@ -135,6 +163,7 @@ export const formatMainEventDateRange = (e: Event): string => {
     return capitalize(`${left} – ${dayLabel(en)} ${MONTHS[en.getMonth()]}`);
   }
   const date = capitalize(`${dayLabel(s)} ${MONTHS[s.getMonth()]}`);
+  if (isAllDay(e)) return `${date}, heldag`;
   const end = e.end ? new Date(e.end) : null;
   const range = end && !Number.isNaN(end.getTime()) ? `${timeOf(s)}–${timeOf(end)}` : timeOf(s);
   return `${date}, ${range}`;

@@ -9,6 +9,8 @@ interface FilterButtonProps {
   icon: keyof typeof MaterialIcons.glyphMap;
   size?: number;
   style?: any;
+  /** Read out by screen readers; defaults to what the icon does. */
+  accessibilityLabel?: string;
 }
 
 export const FilterButton: React.FC<FilterButtonProps> = ({
@@ -16,7 +18,8 @@ export const FilterButton: React.FC<FilterButtonProps> = ({
   isActive = false,
   icon,
   size = 20,
-  style
+  style,
+  accessibilityLabel,
 }) => {
   const colorScheme = useColorScheme();
   const styles = createStyles(colorScheme ?? 'light');
@@ -31,6 +34,9 @@ export const FilterButton: React.FC<FilterButtonProps> = ({
   return (
     <TouchableOpacity
       onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel ?? (icon === 'close' ? 'Stäng filter' : 'Filtrera')}
+      accessibilityState={{ selected: isActive }}
       style={[
         styles.filterButton,
         isActive && styles.filterButtonActive,
@@ -48,9 +54,9 @@ export const FilterButton: React.FC<FilterButtonProps> = ({
 
 const createStyles = (colorScheme: string) => StyleSheet.create({
   filterButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: colorScheme === 'dark' ? Colors.background800 : Colors.background50,
