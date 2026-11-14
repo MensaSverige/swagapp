@@ -1,5 +1,6 @@
 import { MaterialIcons } from '@expo/vector-icons';
 import { Colors } from '@/constants/Colors';
+import { Tag } from '../../../api_schema/types';
 
 export interface EventCategory {
   code: string;
@@ -34,6 +35,12 @@ export const EVENT_CATEGORIES: EventCategory[] = [
     icon: 'casino',
   },
   {
+    code: 'So',
+    label: 'Socialt',
+    color: Colors.cyan600,
+    icon: 'diversity-3',
+  },
+  {
     code: 'U',
     label: 'Ungdomsaktivitet',
     color: Colors.fuchsia600,
@@ -59,8 +66,18 @@ export const EVENT_CATEGORIES: EventCategory[] = [
   },
 ];
 
-// Helper function to get category by code
-export const getCategoryByCode = (code: string): EventCategory | undefined => {
-  return EVENT_CATEGORIES.find(category => category.code === code);
-};
+const normalize = (s: string) => s.trim().toLowerCase();
+
+const BY_CODE = new Map(EVENT_CATEGORIES.map(c => [c.code, c]));
+const BY_LABEL = new Map(EVENT_CATEGORIES.map(c => [normalize(c.label), c]));
+
+export const getCategoryByCode = (code: string): EventCategory | undefined => BY_CODE.get(code);
+
+/**
+ * The code to use for a tag: a known category's, matched by code first and
+ * then by label, so a category whose code we don't know (e.g. "Socialt")
+ * still maps. Falls back to the tag's own code.
+ */
+export const canonicalCategoryCode = (tag: Pick<Tag, 'code' | 'text'>): string =>
+  (BY_CODE.get(tag.code) ?? BY_LABEL.get(normalize(tag.text)))?.code ?? tag.code;
 

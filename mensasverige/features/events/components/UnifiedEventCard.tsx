@@ -21,6 +21,7 @@ import useStore from '@/features/common/store/store';
 import { useEvents } from '../hooks/useEvents';
 import { useEventUsers } from '../hooks/useEventUsers';
 import CategoryBadge from './badges/CategoryBadge';
+import { canonicalCategoryCode } from '../utilities/EventCategories';
 import { createEventCardStyles } from '../styles/eventCardStyles';
 import { ExtendedEvent } from '../types/eventUtilTypes';
 import UserList from './UserList';
@@ -141,7 +142,7 @@ const UnifiedEventCard: React.FC<{
             {currentEvent.tags?.map((category, index) => (
               <CategoryBadge
                 key={index}
-                categoryCode={category.code || ''}
+                categoryCode={canonicalCategoryCode(category)}
                 showLabel={true}
                 size="medium"
                 tagFallback={{ text: category.text, colorText: category.colorText, colorBackground: category.colorBackground }}

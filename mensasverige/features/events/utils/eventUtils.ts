@@ -1,6 +1,7 @@
 import { Event } from '../../../api_schema/types';
 import { EventFilter, ExtendedEvent, GroupedEvents } from '../types/eventUtilTypes';
 import { EventFilterOptions } from '../store/EventsSlice';
+import { canonicalCategoryCode } from '../utilities/EventCategories';
 
 /**
  * Check if user is effectively attending an event (including admin/host status)
@@ -145,7 +146,7 @@ export const filterByOptions = (events: ExtendedEvent[], eventFilter: EventFilte
       if (event.official !== eventFilter.official) return false;
     }
     if (categorySet) {
-      if (!event.tags || !event.tags.some(tag => categorySet.has(tag.code))) return false;
+      if (!event.tags || !event.tags.some(tag => categorySet.has(canonicalCategoryCode(tag)))) return false;
     }
     if (!event.start) return false;
     const eventStartDate = new Date(event.start);
@@ -166,7 +167,8 @@ export const calcCategoryCounts = (events: ExtendedEvent[]): Record<string, numb
     .filter(e => e.bookable)
     .forEach(e => {
       e.tags?.forEach(tag => {
-        if (tag.code) counts[tag.code] = (counts[tag.code] || 0) + 1;
+        const code = canonicalCategoryCode(tag);
+        if (code) counts[code] = (counts[code] || 0) + 1;
       });
     });
   return counts;
