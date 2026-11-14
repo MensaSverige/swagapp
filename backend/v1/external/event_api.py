@@ -6,7 +6,9 @@ import requests
 from fastapi import HTTPException
 from v1.utilities import convert_string_to_datetime, ensure_aware
 from v1.db.external_events import store_external_event_details, store_external_root
-from v1.db.models.external_events import ExternalRoot, ExternalEvent, ExternalEventDetails
+from v1.db.models.external_events import (
+    ExternalAttendeeList, ExternalRoot, ExternalEvent, ExternalEventDetails,
+)
 from v1.db.external_token_storage import get_external_token
 from v1.env_constants import EVENT_API_TOKEN, URL_EXTERNAL_ROOT
 
@@ -205,3 +207,28 @@ def get_external_event_details(url: str, date: str) -> List[ExternalEventDetails
         return validated_events
     except Exception as e:
         logging.error(f"Failed to store external event details: {e}")
+
+
+def fetch_external_attendees(rest_url: str) -> ExternalAttendeeList | None:
+    """Who is registered to the riksträff, as the booking site lists them.
+
+    Called with the backend token rather than a member's: the site applies
+    the same filtering as on its own pages, leaving out anyone who chose not
+    to be shown, and `count` still includes them. None when the site does not
+    answer with a list.
+    """
+    response = requests.post(
+        rest_url,
+        json={'operation': 'attendees', 'token': EVENT_API_TOKEN},
+        headers={'Content-Type': 'application/json'},
+        verify=False,
+        timeout=30,
+    )
+    if response.status_code != 200:
+        logging.error(f"attendees: HTTP {response.status_code}")
+        return None
+    listing = ExternalAttendeeList.model_validate(response.json())
+    if listing.status not in (None, 'OK'):
+        logging.error(f"attendees: status {listing.status}")
+        return None
+    return listing

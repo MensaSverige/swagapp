@@ -538,3 +538,102 @@ def test_host_sees_participants_without_registering():
     svc.attend_event_via_unified(cal, _user(100))
     event = next(e for e in svc.list_main_events(_user(500)) if e.id == cal)
     assert [a.userId for a in event.attendees] == [100]
+
+
+# -- the booking site's list of riksträff attendees ---------------------------------------------
+
+from v1.db.external_attendees import store_external_attendees
+from v1.db.models.external_events import ExternalAttendee, ExternalAttendeeList
+
+
+def _listing(*people, count=None):
+    attendees = [ExternalAttendee(memberId=m, firstName=f, lastName=l, city="Borås", registered="2026-10-01")
+                 for m, f, l in people]
+    return ExternalAttendeeList(status="OK", count=count if count is not None else len(attendees) + 5,
+                                attendees=attendees)
+
+
+def _root_for(viewer):
+    return next(e for e in svc.list_main_events(viewer) if e.id == ROOT_ID)
+
+
+def test_listed_on_the_booking_site_counts_as_registered_to_the_riksträff():
+    main_events.store_root_main_event(_root())
+    store_external_attendees(_listing(("100", "Anna", "Andersson")))
+    assert main_events.is_registered(100, ROOT_ID) is True
+    assert _root_for(_user(100)).attending is True
+    assert 100 in main_events.get_registered_user_ids(ROOT_ID)
+
+
+def test_riksträff_participants_are_the_booking_site_list_with_names_and_count():
+    main_events.store_root_main_event(_root())
+    _visible_user(100)
+    store_external_attendees(_listing(("100", "Anna", "Andersson"), ("200", "Bo", "Berg"),
+                                      ("9990001", "Cia", "Companion"), count=12))
+    root = _root_for(_user(100))
+    assert [a.userId for a in root.attendees] == [100, 200, 9990001]
+    assert root.extras["attendeeNames"] == ["Anna Andersson", "Bo Berg", "Cia Companion"]
+    assert root.extras["attendeeAccounts"] == [100]
+    assert root.extras["attendeeCount"] == 12
+
+
+def test_the_count_shows_to_everyone_but_the_list_only_to_the_registered():
+    main_events.store_root_main_event(_root())
+    store_external_attendees(_listing(("100", "Anna", "Andersson"), count=7))
+    root = _root_for(_user(300))
+    assert root.attending is False
+    assert root.attendees == []
+    assert root.extras["attendeeCount"] == 7
+
+
+def test_an_app_user_hiding_attendance_is_left_out_of_the_list():
+    main_events.store_root_main_event(_root())
+    for uid in (100, 200):
+        _visible_user(uid)
+    update_user(200, {"settings": {"show_attendance": "NO_ONE"}})
+    store_external_attendees(_listing(("100", "Anna", "Andersson"), ("200", "Bo", "Berg"), ("300", "Cia", "Ek")))
+    root = _root_for(_user(100))
+    assert [a.userId for a in root.attendees] == [100, 300]
+    assert root.extras["attendeeNames"] == ["Anna Andersson", "Cia Ek"]
+    assert root.extras["attendeeAccounts"] == [100]
+
+
+def test_a_new_list_replaces_the_old_one():
+    main_events.store_root_main_event(_root())
+    store_external_attendees(_listing(("100", "Anna", "Andersson")))
+    store_external_attendees(_listing(("200", "Bo", "Berg"), count=3))
+    assert main_events.is_registered(100, ROOT_ID) is False
+    assert _root_for(_user(200)).extras["attendeeCount"] == 3
+
+
+def test_without_a_fetched_list_the_riksträff_has_no_count():
+    main_events.store_root_main_event(_root())
+    assert "attendeeCount" not in (_root_for(_user(100)).extras or {})
+
+
+def test_refresh_keeps_the_last_list_when_the_site_fails(monkeypatch):
+    from v1.jobs import refresh_events as job
+    store_external_attendees(_listing(("100", "Anna", "Andersson"), count=4))
+    monkeypatch.setattr(job, "fetch_external_attendees", lambda url: None)
+    job.refresh_external_attendees("https://example.com/api")
+    from v1.db.external_attendees import get_external_attendee_count
+    assert get_external_attendee_count() == 4
+
+
+def test_fetch_reads_the_sites_answer(monkeypatch):
+    from v1.external import event_api
+
+    class _Resp:
+        status_code = 200
+        def json(self):
+            return {"status": "OK", "count": 3, "attendees": [
+                {"memberId": "100", "firstName": "Anna", "lastName": "Andersson", "city": "Borås", "registered": "2026-10-01"}]}
+
+    seen = {}
+    def _post(url, json, headers, verify, timeout):
+        seen.update(json)
+        return _Resp()
+    monkeypatch.setattr(event_api.requests, "post", _post)
+    listing = event_api.fetch_external_attendees("https://example.com/api")
+    assert seen["operation"] == "attendees"
+    assert listing.count == 3 and listing.attendees[0].memberId == "100"

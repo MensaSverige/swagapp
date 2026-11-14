@@ -16,6 +16,7 @@ from typing import List, Optional, Set, Tuple
 from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
 
+from v1.db import external_attendees
 from v1.db.database import get_session
 from v1.db.models.external_events import ExternalRoot
 from v1.db.tables import (
@@ -208,8 +209,12 @@ def get_registered_user_ids(main_event_id: str) -> Set[int]:
             r.user_id for r in
             session.query(MainEventAttendeeTable.user_id).filter_by(event_id=main_event_id).all()
         }
-        if main_event_id == get_external_root_event_id():
+        is_root = main_event_id == get_external_root_event_id()
+        if is_root:
             users |= {r.userId for r in _booked_stored_events_query(session).distinct().all()}
+    if is_root:
+        # Registered on the booking site itself, booked or not.
+        users |= external_attendees.get_listed_member_ids()
     return users
 
 
@@ -223,7 +228,9 @@ def get_registered_event_ids(user_id: int) -> Set[str]:
         has_booking = _booked_stored_events_query(session).filter(
             ExternalEventBookingTable.userId == user_id
         ).first() is not None
-    if has_booking:
+    # The booking site's list says who registered there; someone hidden from
+    # it still counts through a booking or the app's own registration.
+    if has_booking or external_attendees.is_listed(user_id):
         root_id = get_external_root_event_id()
         if root_id:
             ids.add(root_id)

@@ -633,3 +633,33 @@ class GeocodeCacheTable(Base):
     precision = Column(String, nullable=True)
     found = Column(Boolean, nullable=False, default=False)
     updated_at = Column(DateTime(timezone=True), nullable=False, default=_now)
+
+
+class ExternalAttendeeTable(Base):
+    """One person registered to the riksträff, as the booking site lists them.
+
+    The booking site's `attendees` list, fetched with the backend token every
+    15 minutes and replaced whole. Someone who chose not to be listed on the
+    site is not here either; ExternalAttendeeCountTable's count includes them.
+    `member_id` is the membership number as text: companions and members of
+    other countries have made-up numbers starting with 999.
+    """
+    __tablename__ = "external_attendees"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    member_id = Column(String, nullable=False, index=True)
+    first_name = Column(String, nullable=True)
+    last_name = Column(String, nullable=True)
+    city = Column(String, nullable=True)
+    registered = Column(String, nullable=True)
+    # The site's order: last name, first name, membership number.
+    position = Column(Integer, nullable=False)
+
+
+class ExternalAttendeeCountTable(Base):
+    """How many are registered to the riksträff, listed or not. One row, id 1."""
+    __tablename__ = "external_attendee_count"
+
+    id = Column(Integer, primary_key=True)
+    count = Column(Integer, nullable=False)
+    fetched_at = Column(DateTime(timezone=True), default=_now, nullable=False)
