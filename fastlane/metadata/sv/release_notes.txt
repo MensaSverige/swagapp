@@ -1,4 +1,0 @@
-# Version 2023.11.23
-* Logga in med Mensa-konto
-* Se användare och evenemang på kartan
-* Se evenemang i listform
