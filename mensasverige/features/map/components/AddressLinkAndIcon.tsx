@@ -1,9 +1,8 @@
 import React from 'react';
-import { Platform, Linking, View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { LocationLinkProps, openLocation } from '../functions/openLocation';
 import { useColorScheme } from '@/hooks/useColorScheme';
-import { Colors } from '@/constants/Colors';
 
 const createStyles = (colorMode: string) => StyleSheet.create({
   container: {
@@ -23,7 +22,17 @@ const createStyles = (colorMode: string) => StyleSheet.create({
   },
 });
 
-export const AddressLinkAndIcon: React.FC<LocationLinkProps> = (props) => {
+/**
+ * An address a member can open in their map app.
+ *
+ * `approximate` is for a place the backend geocoded rather than a venue
+ * somebody typed: it still opens a map search, which is honest for a postal
+ * code, but it does not offer directions to a city centre as if that were the
+ * address. Docs: docs/Events.md
+ */
+export const AddressLinkAndIcon: React.FC<
+  LocationLinkProps & { approximate?: boolean }
+> = (props) => {
     const colorScheme = useColorScheme();
     const colorMode = colorScheme ?? 'light';
     const styles = createStyles(colorMode);
@@ -39,7 +48,7 @@ export const AddressLinkAndIcon: React.FC<LocationLinkProps> = (props) => {
                     {props.displayName}
                 </Text>
                 <MaterialIcons 
-                    name="directions" 
+                    name={props.approximate ? 'place' : 'directions'} 
                     size={18} 
                     color={colorMode === 'dark' ? '#60a5fa' : '#3b82f6'} 
                 />

@@ -22,6 +22,7 @@ import { useEvents } from '../hooks/useEvents';
 import { useEventUsers } from '../hooks/useEventUsers';
 import CategoryBadge from './badges/CategoryBadge';
 import { canonicalCategoryCode } from '../utilities/EventCategories';
+import { describeLocationAccuracy } from '../utilities/locationAccuracy';
 import { createEventCardStyles } from '../styles/eventCardStyles';
 import { ExtendedEvent } from '../types/eventUtilTypes';
 import UserList from './UserList';
@@ -50,6 +51,12 @@ const UnifiedEventCard: React.FC<{
   const parentName = useMemo(
     () => (currentEvent.parentEvent ? getMainEventName(mainEvents, currentEvent.parentEvent) : null),
     [mainEvents, currentEvent.parentEvent]
+  );
+
+  // Null unless the coordinates were geocoded from a postal code or a city.
+  const locationAccuracy = useMemo(
+    () => describeLocationAccuracy(currentEvent.extras),
+    [currentEvent.extras]
   );
 
   const { adminUsers, attendeeUsers } = useEventUsers(currentEvent);
@@ -129,7 +136,15 @@ const UnifiedEventCard: React.FC<{
                   : currentEvent.address
               }
               address={currentEvent.address}
+              approximate={!!locationAccuracy}
             />
+          )}
+          {!!locationAccuracy && (
+            <ThemedText lightColor="#6B7280" darkColor="#9CA3AF">
+              {locationAccuracy.spread
+                ? `${locationAccuracy.label} · ${locationAccuracy.spread}`
+                : locationAccuracy.label}
+            </ThemedText>
           )}
           {!!currentEvent.locationDescription && (
             <ThemedText lightColor="#6B7280" darkColor="#9CA3AF">{currentEvent.locationDescription}</ThemedText>
